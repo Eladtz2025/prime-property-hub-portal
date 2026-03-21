@@ -4,6 +4,90 @@
  */
 
 import { normalizeCityName, isInvalidAddress } from "./broker-detection.ts";
+import { NEIGHBORHOODS, CITY_ALIASES, type Neighborhood } from "./locations.ts";
+
+// ==================== Neighborhood Normalization ====================
+
+/**
+ * Alias-to-canonical mapping built from NEIGHBORHOODS config.
+ * Maps scraper names (e.g. "לב העיר") → canonical label (e.g. "מרכז העיר")
+ */
+const NEIGHBORHOOD_ALIAS_MAP: Record<string, string> = (() => {
+  const map: Record<string, string> = {};
+  for (const [_city, neighborhoods] of Object.entries(NEIGHBORHOODS)) {
+    for (const n of neighborhoods) {
+      // Map value → label
+      map[n.value.toLowerCase()] = n.label;
+      // Map each alias → label
+      for (const alias of n.aliases) {
+        map[alias.toLowerCase()] = n.label;
+      }
+    }
+  }
+  return map;
+})();
+
+/**
+ * Normalize a neighborhood name to its canonical label.
+ * 1. Check alias map from NEIGHBORHOODS config
+ * 2. Look up street in street_neighborhoods table
+ * 3. Fallback: return original (cleaned)
+ */
+export async function normalizeNeighborhood(
+  supabase: any,
+  address: string | null,
+  neighborhood: string | null,
+  city: string
+): Promise<string | null> {
+  // Skip city-as-neighborhood (e.g. "תל אביב יפו")
+  if (neighborhood) {
+    const normalizedCity = city.toLowerCase();
+    const normalizedHood = neighborhood.trim().toLowerCase();
+    // Check if it's a city name alias
+    for (const [canonical, aliases] of Object.entries(CITY_ALIASES)) {
+      if (normalizedHood === canonical.toLowerCase() || 
+          aliases.some(a => a.toLowerCase() === normalizedHood)) {
+        // Don't use city name as neighborhood - fall through to street lookup
+        neighborhood = null;
+        break;
+      }
+    }
+  }
+
+  // 1. Try alias mapping
+  if (neighborhood) {
+    const canonical = NEIGHBORHOOD_ALIAS_MAP[neighborhood.trim().toLowerCase()];
+    if (canonical) return canonical;
+  }
+
+  // 2. Try street_neighborhoods lookup
+  if (address) {
+    const streetName = address.replace(/[0-9].*$/, '').trim();
+    if (streetName && streetName.length > 1) {
+      const { data } = await supabase
+        .from('street_neighborhoods')
+        .select('neighborhood')
+        .eq('city', city)
+        .eq('street_name', streetName)
+        .limit(1)
+        .maybeSingle();
+      
+      if (data?.neighborhood) return data.neighborhood;
+    }
+  }
+
+  // 3. If neighborhood is already a canonical label, keep it
+  if (neighborhood) {
+    for (const neighborhoods of Object.values(NEIGHBORHOODS)) {
+      for (const n of neighborhoods) {
+        if (n.label === neighborhood.trim()) return n.label;
+      }
+    }
+  }
+
+  // 4. Return original (may be non-canonical but better than null)
+  return neighborhood?.trim() || null;
+}
 
 // ==================== Listing ID Extraction ====================
 
