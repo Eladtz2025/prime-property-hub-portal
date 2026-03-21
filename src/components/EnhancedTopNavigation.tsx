@@ -2,7 +2,8 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, 
-  Building, 
+  Building,
+  Megaphone,
   LogOut, 
   Settings,
   ChevronDown,
@@ -26,6 +27,7 @@ import {
 
 const navigationItems = [
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
+  { title: "שיווק", url: "/admin-dashboard/marketing", icon: Megaphone },
   { title: "לקוחות", url: "/admin-dashboard/customers", icon: Users },
   
   
