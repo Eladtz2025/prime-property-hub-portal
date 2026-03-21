@@ -1,29 +1,44 @@
 
 
-## שינוי סגנון הפיד — מעבר מ-badges צבעוניים לטקסט אפור עם מפרידים
+## תיקון: הכרטיס הראשי מציג 3,739 "ממתינים" במקום 0
 
-### בעיה
-ה-PropertyBadges (מחיר, חדרים, קומה, פרטי/תיווך) מוצגים כמלבנים צבעוניים עם רקע (`bg-green-500/15`, `bg-white/[0.04]`, `rounded`, `px-1.5 py-0.5`). המשתמש מעדיף את הסגנון של טאב ההשלמה — טקסט אפור פשוט עם קו מפריד `|` ביניהם.
+### הבעיה
+ה-matching engine שומר `status: 'new'` גם לנכסים שכבר עברו בדיקה אבל לא נמצאו להם התאמות (שורה 134 ב-`trigger-matching/index.ts`). לכן 3,739 נכסים שכבר נבדקו נספרים כ"ממתינים".
 
-### פתרון
+### פתרון — שני שינויים
 
-**`LiveFeedTab.tsx`** — שינוי רכיב `PropertyBadges`:
-
-במקום:
+**1. Edge Function (`trigger-matching/index.ts`, שורה 134)**
+שינוי הסטטוס מ-`'new'` ל-`'checked'` כשאין התאמות:
 ```
-[₪3200K] [3 חד׳] [ק׳1] [🏠פרטי]
+status: result.hasMatches ? 'matched' : 'checked'
 ```
-
-יהיה:
+וגם ב-`match-batch/index.ts` (שורה 237) — שם כשנכס מאבד התאמות:
 ```
-₪3200K | 3 חד׳ | ק׳1 | פרטי
+.update({ status: 'checked', matched_leads: [] })
 ```
 
-שינויים ב-`PropertyBadges` (שורות 54-77):
-- הסרת `px-1.5 py-0.5 rounded bg-...` מכל badge
-- שינוי לטקסט אפור פשוט (`text-xs text-gray-400`)
-- הוספת מפריד `|` (`text-gray-600`) בין הפריטים
-- פרטי/תיווך — ללא אייקון, רק טקסט אפור (ירוק קצת לפרטי, כתום לתיווך — או שניהם אפורים)
+**2. Dashboard (`ChecksDashboard.tsx`)**
+ה-query כבר נכון — סופר `status = 'new'`. אחרי התיקון ב-edge function, נכסים חדשים שעוד לא עברו בדיקה יישארו `'new'`, ונכסים שנבדקו ולא נמצאה התאמה יהיו `'checked'`. אז המספר ירד ל-0 (או קרוב).
 
-קובץ אחד בלבד: `LiveFeedTab.tsx`
+**3. DB migration — עדכון 3,739 נכסים קיימים**
+```sql
+UPDATE scouted_properties 
+SET status = 'checked' 
+WHERE is_active = true 
+  AND status = 'new' 
+  AND (matched_leads IS NULL OR matched_leads = '[]'::jsonb);
+```
+
+**4. פונקציות DB שמשתמשות ב-status**
+- `get_properties_needing_availability_check` — כבר בודק `status IN ('matched', 'new')` → צריך להוסיף `'checked'`
+- `prevent_content_ok_on_inactive` — לא מושפע
+- `clean_matches_on_price_change` — מחזיר ל-`'new'` כשמחיר משתנה → נשאר כך (נכון, כי צריך לבדוק מחדש)
+
+### סיכום שינויים
+| קובץ | שינוי |
+|---|---|
+| `supabase/functions/trigger-matching/index.ts` | `'new'` → `'checked'` |
+| `supabase/functions/match-batch/index.ts` | `'new'` → `'checked'` |
+| Migration SQL | עדכון 3,739 נכסים קיימים |
+| `get_properties_needing_availability_check` | הוספת `'checked'` ל-IN clause |
 
