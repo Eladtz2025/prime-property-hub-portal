@@ -549,7 +549,7 @@ export async function saveProperty(
     source_id: property.source_id,
     title: property.title,
     city: normalizedCity,
-    neighborhood: property.neighborhood,
+    neighborhood: normalizedNeighborhood,
     address: property.address,
     price: property.price,
     rooms: property.rooms,
