@@ -74,6 +74,7 @@ const SaleMemorandumFormPage = React.lazy(() => import('./pages/SaleMemorandumFo
 const BrokerSharingFormPage = React.lazy(() => import('./pages/BrokerSharingFormPage'));
 
 const AdminPropertyScout = React.lazy(() => import('./pages/AdminPropertyScout'));
+const MarketingHub = React.lazy(() => import('./pages/MarketingHub'));
 const ClientIntakePage = React.lazy(() => import('./pages/ClientIntakePage'));
 const ClientIntakePageEN = React.lazy(() => import('./pages/ClientIntakePageEN'));
 const PresentationExclusivityForm = React.lazy(() => import('./pages/PresentationExclusivityForm'));
@@ -289,6 +290,16 @@ const AppContent: React.FC = () => {
                   <Layout onLogout={signOut}>
                     <ProtectedRoute requiredRole="viewer">
                       <WhatsAppCenter />
+                    </ProtectedRoute>
+                  </Layout>
+                } 
+              />
+              <Route 
+                path="/admin-dashboard/marketing" 
+                element={
+                  <Layout onLogout={signOut}>
+                    <ProtectedRoute requiredRole="viewer">
+                      <MarketingHub />
                     </ProtectedRoute>
                   </Layout>
                 } 

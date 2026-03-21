@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Building, AlertTriangle, MessageSquare, BarChart3, Phone, LogOut, Users, Search } from 'lucide-react';
+import { Home, Building, AlertTriangle, MessageSquare, BarChart3, Phone, LogOut, Users, Search, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
@@ -11,7 +11,7 @@ const navigationItems = [
   { title: "דף הבית", url: "/", icon: Home },
   { title: "לוח בקרה", url: "/admin-dashboard", icon: BarChart3, requireAdmin: true },
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
-  
+  { title: "שיווק", url: "/admin-dashboard/marketing", icon: Megaphone },
   { title: "סקאוט נדל\"ן", url: "/admin-dashboard/property-scout", icon: Search, requireAdmin: true },
   { title: "צור קשר", url: "/contact-queue", icon: Phone },
   { title: "התראות", url: "/alerts", icon: AlertTriangle },

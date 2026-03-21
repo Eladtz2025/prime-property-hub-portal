@@ -12,7 +12,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Pagination } from "@/components/ui/pagination";
 import { 
@@ -46,12 +46,9 @@ import { PropertyDetailModal } from '../components/PropertyDetailModal';
 import { PropertyEditRow } from '../components/PropertyEditRow';
 import { AddPropertyModal } from '../components/AddPropertyModal';
 import { MobilePropertyCard } from '../components/MobilePropertyCard';
-import { PropertyWhatsAppHistory } from '../components/PropertyWhatsAppHistory';
 import { PullToRefresh } from '../components/PullToRefresh';
 import { PropertyListSkeleton } from '../components/PropertyListSkeleton';
 import { PropertyTableSkeleton } from '../components/PropertyTableSkeleton';
-import { PropertyWhatsAppTab } from '../components/PropertyWhatsAppTab';
-import { WhatsAppAutomations } from '../components/WhatsAppAutomations';
 
 import { SearchHighlight } from '../components/SearchHighlight';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
@@ -470,23 +467,6 @@ export const Properties: React.FC = memo(() => {
 
         {/* Main Content */}
         <Card>
-          <Tabs defaultValue={isMobile ? "list" : "list"} className="w-full" dir="rtl">
-            <TabsList className="grid w-full grid-cols-4 justify-start">
-              <TabsTrigger value="list" className="text-xs md:text-sm">
-                {isMobile ? "רשימה" : "רשימה"}
-              </TabsTrigger>
-              <TabsTrigger value="whatsapp" className="text-xs md:text-sm">
-                {isMobile ? "הודעות" : "שליחת הודעות"}
-              </TabsTrigger>
-              <TabsTrigger value="history" className="text-xs md:text-sm">
-                {isMobile ? "היסטוריה" : "היסטורית שיחות"}
-              </TabsTrigger>
-              <TabsTrigger value="automations" className="text-xs md:text-sm">
-                {isMobile ? "אוטומציות" : "אוטומציות ווטסאפ"}
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="list" className="space-y-4">
               <PullToRefresh onRefresh={handleRefresh}>
                 {isMobile ? (
                   <div className="space-y-3 px-2">
@@ -827,26 +807,6 @@ export const Properties: React.FC = memo(() => {
                   </div>
                 )}
               </PullToRefresh>
-            </TabsContent>
-
-            <TabsContent value="automations" className="space-y-4">
-              <WhatsAppAutomations />
-            </TabsContent>
-
-            <TabsContent value="history" className="space-y-4">
-              <PropertyWhatsAppHistory 
-                properties={filteredAndSortedProperties}
-                onPropertySelect={(property) => handleViewDetails(property.id)}
-              />
-            </TabsContent>
-
-            <TabsContent value="whatsapp">
-              <PropertyWhatsAppTab 
-                properties={filteredAndSortedProperties}
-                searchTerm={filters.searchTerm}
-              />
-            </TabsContent>
-          </Tabs>
         </Card>
 
         {/* Property Detail Modal */}
