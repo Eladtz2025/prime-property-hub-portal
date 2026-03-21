@@ -1510,9 +1510,9 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">מקור</TableHead>
-                  <TableHead>פרטים</TableHead>
-                  <TableHead className="w-[100px]">מחיר</TableHead>
+                  <TableHead className="w-[80px]">מקור</TableHead>
+                  <TableHead className="w-[250px]">פרטים</TableHead>
+                  <TableHead className="w-[120px]">מחיר</TableHead>
                   <TableHead className="w-[80px]">חדרים</TableHead>
                   <TableHead className="w-[80px]">גודל</TableHead>
                   <TableHead className="w-[110px]">סטטוס</TableHead>
