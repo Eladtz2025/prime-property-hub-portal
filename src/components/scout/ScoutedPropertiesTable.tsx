@@ -1656,7 +1656,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                     <TableCell>
                       <div>
                         <p className="font-medium">
-                          {cleanDisplayAddress(property.address, property.neighborhood)}
+                          {cleanDisplayAddress(property.address, property.neighborhood, streetNeighborhoodMap)}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {property.city?.replace(' יפו', '') || 'תל אביב'}
