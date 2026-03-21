@@ -54,7 +54,7 @@ const AllFeatures = React.lazy(() => import('./pages/AllFeatures').then(m => ({ 
 const Login = React.lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
 const ImportData = React.lazy(() => import('./pages/ImportData'));
 const ImportFromStorage = React.lazy(() => import('./pages/ImportFromStorage'));
-const WhatsAppCenter = React.lazy(() => import('./pages/WhatsAppCenter'));
+
 const PriceOfferView = React.lazy(() => import('./pages/PriceOfferView'));
 const PriceOfferLuxuryView = React.lazy(() => import('./pages/PriceOfferLuxuryView'));
 const PriceOfferLightView = React.lazy(() => import('./pages/PriceOfferLightView'));
