@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AdminPWAInstallPrompt } from './AdminPWAInstallPrompt';
+
 import { MessageSquare } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { ActivePropertiesCard } from './ActivePropertiesCard';
