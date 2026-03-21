@@ -988,8 +988,10 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
         return <Badge className="bg-blue-500 w-fit">יובא למערכת</Badge>;
       case 'inactive':
         return <Badge variant="outline" className="text-red-600 border-red-600">לא פעיל</Badge>;
+      case 'checked':
+        return <Badge variant="secondary" className="w-fit bg-muted text-muted-foreground">נבדק</Badge>;
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge className="w-fit">{status}</Badge>;
     }
   };
 
@@ -1513,7 +1515,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                   <TableHead className="w-[100px]">מחיר</TableHead>
                   <TableHead className="w-[80px]">חדרים</TableHead>
                   <TableHead className="w-[80px]">גודל</TableHead>
-                  <TableHead className="w-[140px]">סטטוס</TableHead>
+                  <TableHead className="w-[110px]">סטטוס</TableHead>
                   {appliedFilters.status === 'check_failed' && (
                     <TableHead className="w-[120px]">סיבה</TableHead>
                   )}
