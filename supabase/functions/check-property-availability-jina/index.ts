@@ -246,50 +246,91 @@ async function processPropertiesInParallel(
   supabase: any,
   runId: string | null
 ): Promise<CheckResult[]> {
-  const results: CheckResult[] = [];
   const perPropertyTimeout = settings.per_property_timeout_ms || 25000;
-  
-  // Process in parallel batches of concurrencyLimit (default 3)
-  const parallelism = Math.min(concurrencyLimit, 5); // Cap at 5 concurrent
-  const delayBetweenBatches = 1500; // 1.5s between parallel batches
-  
-  for (let i = 0; i < properties.length; i += parallelism) {
-    if (abortSignal.aborted) {
-      console.log(`⏱️ Global timeout reached, stopping after ${results.length} results`);
-      break;
-    }
 
-    // Check if run was stopped before each mini-batch
-    if (await isRunStopped(supabase, runId)) {
-      console.log(`🛑 Run ${runId} stopped by user, halting after ${results.length} properties`);
-      break;
-    }
-    
-    const batch = properties.slice(i, i + parallelism);
-    console.log(`🔄 Parallel batch ${Math.floor(i / parallelism) + 1}: ${batch.length} properties simultaneously`);
-    
-    // Process batch in parallel with Promise.allSettled for resilience
-    const batchResults = await Promise.allSettled(
-      batch.map(prop => checkSingleProperty(prop, settings, perPropertyTimeout))
-    );
-    
-    for (let j = 0; j < batchResults.length; j++) {
-      const result = batchResults[j];
-      if (result.status === 'fulfilled') {
-        results.push(result.value);
-      } else {
-        console.error(`Error checking property ${batch[j].id}:`, result.reason);
-        results.push({ id: batch[j].id, isInactive: false, reason: 'check_error', error: true });
+  // Split properties: Madlan uses Direct Fetch (no rate limit), Yad2/Homeless use Jina (20 RPM limit)
+  const madlanProps = properties.filter(p => p.source === 'madlan');
+  const jinaProps = properties.filter(p => p.source !== 'madlan');
+
+  console.log(`📊 Split: ${madlanProps.length} Madlan (parallel), ${jinaProps.length} Jina (sequential 3.5s delay)`);
+
+  // --- Madlan: parallel batches (same as before, no rate limit) ---
+  async function processMadlanParallel(): Promise<CheckResult[]> {
+    const results: CheckResult[] = [];
+    const parallelism = Math.min(concurrencyLimit, 5);
+    const delayBetweenBatches = 1500;
+
+    for (let i = 0; i < madlanProps.length; i += parallelism) {
+      if (abortSignal.aborted) break;
+      if (await isRunStopped(supabase, runId)) {
+        console.log(`🛑 Run stopped, halting Madlan batch after ${results.length}`);
+        break;
+      }
+
+      const batch = madlanProps.slice(i, i + parallelism);
+      console.log(`🔄 Madlan batch ${Math.floor(i / parallelism) + 1}: ${batch.length} properties`);
+
+      const batchResults = await Promise.allSettled(
+        batch.map(prop => checkSingleProperty(prop, settings, perPropertyTimeout))
+      );
+
+      for (let j = 0; j < batchResults.length; j++) {
+        const result = batchResults[j];
+        if (result.status === 'fulfilled') {
+          results.push(result.value);
+        } else {
+          console.error(`Error checking Madlan property ${batch[j].id}:`, result.reason);
+          results.push({ id: batch[j].id, isInactive: false, reason: 'check_error', error: true });
+        }
+      }
+
+      if (i + parallelism < madlanProps.length && !abortSignal.aborted) {
+        await new Promise(r => setTimeout(r, delayBetweenBatches));
       }
     }
-    
-    // Brief delay between parallel batches
-    if (i + parallelism < properties.length && !abortSignal.aborted) {
-      await new Promise(r => setTimeout(r, delayBetweenBatches));
-    }
+    return results;
   }
-  
-  return results;
+
+  // --- Jina (Yad2/Homeless): sequential with 3.5s delay to stay under 20 RPM ---
+  async function processJinaSequential(): Promise<CheckResult[]> {
+    const results: CheckResult[] = [];
+    const JINA_DELAY_MS = 3500; // ~17 RPM, safely under 20 RPM limit
+
+    for (let i = 0; i < jinaProps.length; i++) {
+      if (abortSignal.aborted) break;
+      if (await isRunStopped(supabase, runId)) {
+        console.log(`🛑 Run stopped, halting Jina sequential after ${results.length}`);
+        break;
+      }
+
+      const prop = jinaProps[i];
+      console.log(`🔄 Jina sequential ${i + 1}/${jinaProps.length}: ${prop.source} - ${prop.id}`);
+
+      try {
+        const result = await checkSingleProperty(prop, settings, perPropertyTimeout);
+        results.push(result);
+      } catch (err) {
+        console.error(`Error checking Jina property ${prop.id}:`, err);
+        results.push({ id: prop.id, isInactive: false, reason: 'check_error', error: true });
+      }
+
+      // Delay before next Jina request (skip after last one)
+      if (i < jinaProps.length - 1 && !abortSignal.aborted) {
+        await new Promise(r => setTimeout(r, JINA_DELAY_MS));
+      }
+    }
+    return results;
+  }
+
+  // Run both in parallel — Madlan batches + Jina sequential don't compete
+  const [madlanResults, jinaResults] = await Promise.all([
+    processMadlanParallel(),
+    processJinaSequential(),
+  ]);
+
+  const allResults = [...madlanResults, ...jinaResults];
+  console.log(`✅ Combined results: ${madlanResults.length} Madlan + ${jinaResults.length} Jina = ${allResults.length} total`);
+  return allResults;
 }
 
 serve(async (req) => {
