@@ -69,7 +69,7 @@ const PropertyBadges: React.FC<{ extra?: FeedItem['extra'] }> = ({ extra }) => {
     badges.push(<span key="rm" className="text-xs text-gray-400 px-1.5 py-0.5 rounded bg-white/[0.04]">{extra.rooms} חד׳</span>);
   }
   if (extra.floor !== undefined && extra.floor !== null) {
-    badges.push(<span key="fl" className="text-[11px] text-gray-500 px-1.5 py-0.5 rounded bg-white/[0.04]">ק׳ {extra.floor}</span>);
+    badges.push(<span key="fl" className="text-xs text-gray-500 px-1.5 py-0.5 rounded bg-white/[0.04]">ק׳ {extra.floor}</span>);
   }
 
   if (badges.length === 0) return null;
