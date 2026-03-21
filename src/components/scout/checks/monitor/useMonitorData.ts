@@ -571,21 +571,17 @@ export function useMonitorData() {
         // Add individual dedup properties
         if (dedupProperties?.length) {
           dedupProperties.forEach(prop => {
-            const detailParts: string[] = [];
-            if (prop.neighborhood) detailParts.push(prop.neighborhood);
-            if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
-            if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
-            if (prop.duplicate_group_id) detailParts.push(`קבוצה: ${prop.duplicate_group_id.slice(0, 6)}`);
+            const groupLabel = prop.duplicate_group_id ? `קבוצה: ${prop.duplicate_group_id.slice(0, 6)}` : '';
 
             items.push({
               type: 'dedup',
               timestamp: prop.dedup_checked_at || '',
-              primary: formatCleanAddress(prop.address, prop.neighborhood),
-              details: detailParts.join(' | ') || 'ללא פרטים',
+              primary: formatCleanAddress(prop.address, undefined),
+              details: groupLabel,
               source: prop.source ?? undefined,
               status: 'ok',
               url: prop.source_url ?? undefined,
-              extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined },
+              extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined, floor: (prop as any).floor ?? undefined, neighborhood: prop.neighborhood ?? undefined, is_private: (prop as any).is_private ?? undefined },
               eventKind: 'found',
             });
           });
