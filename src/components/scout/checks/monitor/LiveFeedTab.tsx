@@ -140,27 +140,25 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
                   key={`${item.type}-${i}`}
                   className={`${cfg.bgClass} ${isLast ? 'animate-in fade-in-50 slide-in-from-bottom-1 duration-300' : ''} transition-colors hover:bg-white/[0.03]`}
                 >
-                  {/* Desktop: row 1 — time, icon, status, eventKind, primary text, source */}
-                  <div className="hidden md:flex items-center gap-2 px-3 py-1.5 pb-0.5">
-                    <span className="text-[10px] text-gray-600 font-mono shrink-0 w-[52px]" dir="ltr">
+                  {/* Desktop: single row */}
+                  <div className="hidden md:flex items-center gap-2 px-3 py-2">
+                    <span className="text-[11px] text-gray-600 font-mono shrink-0 w-[52px]" dir="ltr">
                       {item.timestamp ? format(new Date(item.timestamp), 'HH:mm:ss') : '--:--:--'}
                     </span>
-                    <Icon className="h-3.5 w-3.5 text-gray-600 shrink-0" />
+                    <Icon className="h-4 w-4 text-gray-600 shrink-0" />
                     <span className="shrink-0">{statusIcon(item.status)}</span>
                     {item.eventKind && <span className="shrink-0">{eventKindBadge(item.eventKind)}</span>}
                     {item.url ? (
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-200 flex-1 truncate font-medium hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[15px] text-gray-200 shrink-0 max-w-[280px] truncate font-medium hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
                         {item.primary}
                       </a>
                     ) : (
-                      <span className="text-sm text-gray-200 flex-1 truncate font-medium">{item.primary}</span>
+                      <span className="text-[15px] text-gray-200 shrink-0 max-w-[280px] truncate font-medium">{item.primary}</span>
                     )}
-                    {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
-                  </div>
-                  {/* Desktop: row 2 — property badges + details text */}
-                  <div className="hidden md:flex items-center gap-2 px-3 pb-1.5 pr-[60px] flex-wrap">
                     <PropertyBadges extra={item.extra} />
-                    {item.details && <span className="text-[11px] text-gray-500 truncate">{item.details}</span>}
+                    {item.details && <span className="text-xs text-gray-500 truncate">{item.details}</span>}
+                    <span className="flex-1" />
+                    {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
                   </div>
 
                   {/* Mobile: two rows */}
