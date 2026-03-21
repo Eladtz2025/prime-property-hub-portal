@@ -58,21 +58,18 @@ const PropertyBadges: React.FC<{ extra?: FeedItem['extra'] }> = ({ extra }) => {
   if (extra.is_private !== undefined) {
     badges.push(
       extra.is_private
-        ? <span key="prv" className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 flex items-center gap-0.5"><Home className="h-2.5 w-2.5" />פרטי</span>
-        : <span key="brk" className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 flex items-center gap-0.5"><Building2 className="h-2.5 w-2.5" />תיווך</span>
+        ? <span key="prv" className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 flex items-center gap-0.5"><Home className="h-2.5 w-2.5" />פרטי</span>
+        : <span key="brk" className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 flex items-center gap-0.5"><Building2 className="h-2.5 w-2.5" />תיווך</span>
     );
   }
-  if (extra.neighborhood) {
-    badges.push(<span key="nb" className="text-[10px] text-gray-400 px-1.5 py-0.5 rounded bg-white/[0.04]">{extra.neighborhood}</span>);
-  }
   if (extra.price) {
-    badges.push(<span key="pr" className="text-[10px] text-gray-300 font-mono px-1.5 py-0.5 rounded bg-white/[0.04]">₪{(extra.price / 1000).toFixed(0)}K</span>);
+    badges.push(<span key="pr" className="text-[11px] text-gray-300 font-mono px-1.5 py-0.5 rounded bg-white/[0.04]">₪{(extra.price / 1000).toFixed(0)}K</span>);
   }
   if (extra.rooms) {
-    badges.push(<span key="rm" className="text-[10px] text-gray-400 px-1.5 py-0.5 rounded bg-white/[0.04]">{extra.rooms} חד׳</span>);
+    badges.push(<span key="rm" className="text-[11px] text-gray-400 px-1.5 py-0.5 rounded bg-white/[0.04]">{extra.rooms} חד׳</span>);
   }
   if (extra.floor !== undefined && extra.floor !== null) {
-    badges.push(<span key="fl" className="text-[10px] text-gray-500 px-1.5 py-0.5 rounded bg-white/[0.04]">ק׳ {extra.floor}</span>);
+    badges.push(<span key="fl" className="text-[11px] text-gray-500 px-1.5 py-0.5 rounded bg-white/[0.04]">ק׳ {extra.floor}</span>);
   }
 
   if (badges.length === 0) return null;
