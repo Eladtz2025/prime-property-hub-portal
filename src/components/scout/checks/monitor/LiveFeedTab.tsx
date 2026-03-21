@@ -182,19 +182,6 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
         )}
       </div>
 
-      {/* Scroll-to-bottom button */}
-      {!autoScroll && filtered.length > 10 && (
-        <button
-          onClick={() => {
-            setAutoScroll(true);
-            if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-          }}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-gray-800/90 border border-white/10 text-gray-300 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-gray-700/90 transition-colors backdrop-blur-sm shadow-lg"
-        >
-          <ArrowDown className="h-3 w-3" />
-          חזור למטה
-        </button>
-      )}
     </div>
   );
 };
