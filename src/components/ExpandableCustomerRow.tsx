@@ -581,8 +581,8 @@ export const ExpandableCustomerRow = ({
                   </div>
                 </div>
 
-                {/* Row 3: Location + Entry Date */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Row 3: Location + Entry Date + Dynamic fields + Agent */}
+                <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
                   <div>
                     <Label className="text-xs">ערים</Label>
                     <CitySelectorDropdown
@@ -598,9 +598,16 @@ export const ExpandableCustomerRow = ({
                       onChange={(neighborhoods) => setFormData({ ...formData, preferred_neighborhoods: neighborhoods })}
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div>
                     <Label className="text-xs">תאריך כניסה</Label>
-                    <div className="flex items-center gap-2">
+                    <Input
+                      type="date"
+                      value={formData.move_in_date || ''}
+                      onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
+                      className="h-8 text-sm"
+                      disabled={formData.immediate_entry === true}
+                    />
+                    <div className="flex items-center gap-2 mt-1">
                       <div className="flex items-center gap-1">
                         <Checkbox 
                           id={`immediate-entry-${customer.id}`}
@@ -611,15 +618,8 @@ export const ExpandableCustomerRow = ({
                             move_in_date: c ? null : formData.move_in_date
                           })}
                         />
-                        <Label htmlFor={`immediate-entry-${customer.id}`} className="text-[10px] text-muted-foreground cursor-pointer whitespace-nowrap">מיידי</Label>
+                        <Label htmlFor={`immediate-entry-${customer.id}`} className="text-[10px] text-muted-foreground cursor-pointer">מיידי</Label>
                       </div>
-                      <Input
-                        type="date"
-                        value={formData.move_in_date || ''}
-                        onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
-                        className="h-8 text-sm flex-1"
-                        disabled={formData.immediate_entry === true}
-                      />
                       <div className="flex items-center gap-1">
                         <Checkbox 
                           id={`move-date-flex-${customer.id}`}
@@ -627,14 +627,10 @@ export const ExpandableCustomerRow = ({
                           onCheckedChange={(c) => setFormData({ ...formData, flexible_move_date: !!c })}
                           disabled={formData.immediate_entry === true}
                         />
-                        <Label htmlFor={`move-date-flex-${customer.id}`} className="text-[10px] text-muted-foreground cursor-pointer whitespace-nowrap">גמיש (+חודש)</Label>
+                        <Label htmlFor={`move-date-flex-${customer.id}`} className="text-[10px] text-muted-foreground cursor-pointer">גמיש</Label>
                       </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Row 4: Dynamic fields (rental/sale) + Agent */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {isRental && (
                     <>
                       <div>
