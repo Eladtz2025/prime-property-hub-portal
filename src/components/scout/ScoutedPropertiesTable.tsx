@@ -21,11 +21,34 @@ import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 
 // Clean address for display — removes city names, duplicates, generic words, artifacts
-const cleanDisplayAddress = (address: string | null, neighborhood: string | null): string => {
-  const hood = neighborhood?.trim() || '';
+// streetNeighborhoodMap: Map<street_name, canonical_neighborhood> from DB
+const cleanDisplayAddress = (
+  address: string | null, 
+  neighborhood: string | null,
+  streetNeighborhoodMap?: Map<string, string>
+): string => {
+  let hood = neighborhood?.trim() || '';
   if (!address?.trim()) return hood || '—';
 
   let clean = address.trim();
+
+  // Try to resolve neighborhood from street_neighborhoods table
+  if (streetNeighborhoodMap && streetNeighborhoodMap.size > 0) {
+    // Extract street name: remove house number and everything after
+    const streetOnly = clean
+      .split(',')[0]  // Take first part before comma
+      .replace(/\s*\d+[א-ת]?\s*$/g, '') // Remove trailing house number
+      .replace(/^\d+[\s,]*/g, '')  // Remove leading house number
+      .replace(/^(רח'|רחוב|שד'|שדרות|סמ'|סמטת)\s*/i, '') // Remove street prefixes
+      .trim();
+    
+    if (streetOnly) {
+      const resolvedHood = streetNeighborhoodMap.get(streetOnly);
+      if (resolvedHood) {
+        hood = resolvedHood;
+      }
+    }
+  }
 
   // Remove city names
   clean = clean.replace(/,?\s*תל\s*אביב[\s-]*יפו/g, '').replace(/,?\s*תל\s*אביב/g, '').trim();
