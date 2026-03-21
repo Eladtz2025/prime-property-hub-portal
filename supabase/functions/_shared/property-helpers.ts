@@ -360,6 +360,11 @@ export async function saveProperty(
     return { isNew: false, skipped: true };
   }
 
+  // Normalize neighborhood using alias map + street_neighborhoods table
+  const normalizedNeighborhood = await normalizeNeighborhood(
+    supabase, property.address, property.neighborhood, normalizedCity || 'תל אביב יפו'
+  );
+
   // Ensure is_private is strictly boolean or null (defensive check)
   const safeIsPrivate = property.is_private === true ? true 
     : property.is_private === false ? false 
