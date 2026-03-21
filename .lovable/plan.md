@@ -1,16 +1,18 @@
 
 
-## תיקון: גלילה לא רצויה בהחלפת טאבים
+## תיקון: הסרת הגלילה לחלוטין בהחלפת טאבים
 
 ### בעיה
-ב-`ChecksSubTabs.tsx`, שורה 20 — כשלוחצים על טאב, `scrollIntoView({ block: 'start' })` גולל את כל הקונטיינר לתחילתו, אבל כיוון שהתוכן נטען אחרי הגלילה, התוצאה היא גלילה למטה.
+אין סיבה אמיתית לגלול בכלל כשמחליפים טאב — המשתמש כבר רואה את שורת הטאבים, אז למה להזיז משהו?
 
 ### פתרון
-להחליף את ה-`scrollIntoView` על ה-Tabs container ב-`scrollIntoView` על ה-**TabsList** בלבד — כך שהגלילה תמיד מביאה את שורת הטאבים לראש המסך, לא את כל הקומפוננטה.
+מחיקת כל לוגיקת ה-`scrollIntoView` וה-`useRef` מ-`ChecksSubTabs.tsx`. החלפת טאב פשוט מחליפה תוכן במקום, בלי גלילה.
 
 ### שינוי — `ChecksSubTabs.tsx`
-- ה-`ref` יצביע על ה-`TabsList` (שורת הכפתורים) במקום על ה-`Tabs` container
-- `scrollIntoView({ behavior: 'smooth', block: 'nearest' })` — ישתמש ב-`nearest` כדי לגלול רק אם הטאבים לא נראים, ולא לגלול מיותר כשהם כבר על המסך
+- מחיקת `useRef` import ו-`tabsListRef`
+- מחיקת פונקציית `handleTabChange` (שמכילה את ה-scrollIntoView)
+- החלפת `onValueChange={handleTabChange}` ב-`onValueChange={setActiveTab}`
+- הסרת `ref={tabsListRef}` מה-TabsList
 
-שינוי של ~3 שורות בקובץ אחד.
+~5 שורות פחות בקובץ.
 
