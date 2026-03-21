@@ -248,7 +248,7 @@ export const WhatsAppCompose: React.FC = () => {
                 {filteredRecipients.length} תוצאות
               </span>
             </div>
-            <div className="max-h-40 overflow-y-auto border rounded-md divide-y">
+            <div className="max-h-32 overflow-y-auto border rounded-md divide-y">
               {filteredRecipients.map(r => {
                 const isSelected = selectedRecipients.some(s => s.phone === r.phone);
                 return (
@@ -259,15 +259,13 @@ export const WhatsAppCompose: React.FC = () => {
                     }`}
                     onClick={() => toggleRecipient(r)}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{r.name}</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={isSelected} className="pointer-events-none" />
+                      <span className="font-medium flex-1">{r.name}</span>
                       <span className="text-muted-foreground text-xs" dir="ltr">
-                        {formatPhone(r.phone)}
+                        {formatIsraeliPhone(r.phone)}
                       </span>
                     </div>
-                    {r.extra && (
-                      <span className="text-xs text-muted-foreground">{r.extra}</span>
-                    )}
                   </div>
                 );
               })}
