@@ -315,7 +315,7 @@ export const WhatsAppCompose: React.FC = () => {
         <Button
           onClick={handleSend}
           disabled={isSending || selectedRecipients.length === 0 || !message.trim()}
-          className="w-full"
+          className="w-full bg-green-600 hover:bg-green-700 text-white"
         >
           <Send className="h-4 w-4 ml-2" />
           {isSending
