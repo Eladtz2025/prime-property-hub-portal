@@ -1,32 +1,14 @@
 
 
-## איחוד כפתורי הוספה לתפריט דרופדאון אחד
+## הסרת הודעת התקנת PWA מהאדמין
 
 ### מה ישתנה
-ב-`AdminCustomers.tsx`, שני הכפתורים "לקוח חדש" ו"מתווך חדש" יוחלפו בכפתור אחד **"+ הוספה"** עם DropdownMenu שמציע שתי אפשרויות: "לקוח" ו"מתווך".
+הסרה מלאה של `AdminPWAInstallPrompt` מהפרויקט — הקומפוננטה לא נחוצה.
 
-### שינוי — `src/pages/AdminCustomers.tsx`
-- הוספת imports: `DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger`
-- החלפת שני כפתורי ה-Plus בכפתור דרופדאון אחד:
+### שינויים
+1. **`src/pages/AdminDashboard.tsx`** — הסרת import ושימוש ב-`<AdminPWAInstallPrompt />`
+2. **`src/components/MobileDashboard.tsx`** — הסרת import ושימוש ב-`<AdminPWAInstallPrompt />`
+3. **`src/components/AdminPWAInstallPrompt.tsx`** — מחיקת הקובץ
 
-```tsx
-<DropdownMenu>
-  <DropdownMenuTrigger asChild>
-    <Button size="sm">
-      הוספה
-      <Plus className="h-4 w-4 sm:mr-2" />
-    </Button>
-  </DropdownMenuTrigger>
-  <DropdownMenuContent align="start">
-    <DropdownMenuItem onClick={() => setAddCustomerModalOpen(true)}>
-      לקוח חדש
-    </DropdownMenuItem>
-    <DropdownMenuItem onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }}>
-      מתווך חדש
-    </DropdownMenuItem>
-  </DropdownMenuContent>
-</DropdownMenu>
-```
-
-קובץ אחד, ~10 שורות שינוי.
+3 קבצים, שינוי מינימלי.
 
