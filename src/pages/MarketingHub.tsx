@@ -10,11 +10,7 @@ const MarketingHub: React.FC = () => {
   const { isMobile } = useMobileOptimization();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Megaphone className="h-6 w-6 text-primary" />
-        <h2 className={`font-bold text-foreground ${isMobile ? 'text-xl' : 'text-3xl'}`}>שיווק</h2>
-      </div>
+    <div className="space-y-4">
 
       <Tabs defaultValue="whatsapp" className="w-full" dir="rtl">
         <TabsList className="grid w-full grid-cols-3">

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Send, X, Users, User, Phone } from 'lucide-react';
 import { formatIsraeliPhone } from '@/utils/phoneFormatter';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +18,11 @@ interface Recipient {
   name: string;
   phone: string;
   type: 'lead' | 'owner' | 'manual';
-  extra?: string; // address or source info
+  extra?: string;
+  status?: string;
+  priority?: string;
+  preferred_cities?: string[];
+  budget_max?: number;
 }
 
 interface MessageTemplate {
@@ -26,6 +31,21 @@ interface MessageTemplate {
   content: string;
   category: string;
 }
+
+const statusMap: Record<string, string> = {
+  new: 'חדש',
+  active: 'פעיל',
+  contacted: 'נוצר קשר',
+  matched: 'שודך',
+  closed: 'סגור',
+  inactive: 'לא פעיל',
+};
+
+const priorityMap: Record<string, string> = {
+  high: 'גבוהה',
+  medium: 'בינונית',
+  low: 'נמוכה',
+};
 
 export const WhatsAppCompose: React.FC = () => {
   const [recipientSource, setRecipientSource] = useState<'leads' | 'owners' | 'manual'>('leads');
@@ -65,17 +85,21 @@ export const WhatsAppCompose: React.FC = () => {
       if (recipientSource === 'leads') {
         const { data } = await supabase
           .from('contact_leads')
-          .select('id, name, phone, source, status')
+          .select('id, name, phone, source, status, priority, preferred_cities, budget_max')
           .not('phone', 'is', null)
           .neq('phone', '')
           .order('name');
-        
+
         setAvailableRecipients(
           (data || []).map(l => ({
             id: l.id,
             name: l.name,
             phone: l.phone,
             type: 'lead' as const,
+            status: l.status || undefined,
+            priority: l.priority || undefined,
+            preferred_cities: l.preferred_cities || undefined,
+            budget_max: l.budget_max || undefined,
           }))
         );
       } else if (recipientSource === 'owners') {
@@ -88,7 +112,7 @@ export const WhatsAppCompose: React.FC = () => {
           `)
           .not('profiles.phone', 'is', null)
           .neq('profiles.phone', '');
-        
+
         const seen = new Set<string>();
         const recipients: Recipient[] = [];
         (data || []).forEach((item: any) => {
@@ -153,8 +177,6 @@ export const WhatsAppCompose: React.FC = () => {
     setSelectedTemplate(templateId);
   };
 
-  const formatPhone = (phone: string) => formatIsraeliPhone(phone);
-
   const handleSend = async () => {
     if (selectedRecipients.length === 0 || !message.trim()) {
       toast({ title: "נא לבחור נמענים ולכתוב הודעה", variant: "destructive" });
@@ -188,6 +210,13 @@ export const WhatsAppCompose: React.FC = () => {
 
   const selectAll = () => setSelectedRecipients([...filteredRecipients]);
   const clearAll = () => setSelectedRecipients([]);
+
+  const formatBudget = (n?: number) => {
+    if (!n) return '—';
+    return n >= 1_000_000
+      ? `₪${(n / 1_000_000).toFixed(1)}M`
+      : `₪${(n / 1_000).toFixed(0)}K`;
+  };
 
   return (
     <Card>
@@ -237,10 +266,11 @@ export const WhatsAppCompose: React.FC = () => {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="חפש לפי שם, טלפון או כתובת..."
+              className="h-8 text-sm"
             />
             <div className="flex gap-2 items-center">
-              <Button size="sm" variant="ghost" onClick={selectAll} className="text-xs">בחר הכל</Button>
-              <Button size="sm" variant="ghost" onClick={clearAll} className="text-xs">נקה</Button>
+              <Button size="sm" variant="ghost" onClick={selectAll} className="text-xs h-6 px-2">בחר הכל</Button>
+              <Button size="sm" variant="ghost" onClick={clearAll} className="text-xs h-6 px-2">נקה</Button>
               {selectedRecipients.length > 0 && (
                 <span className="text-xs font-medium text-primary">{selectedRecipients.length} נבחרו</span>
               )}
@@ -248,32 +278,67 @@ export const WhatsAppCompose: React.FC = () => {
                 {filteredRecipients.length} תוצאות
               </span>
             </div>
-            <div className="max-h-32 overflow-y-auto border rounded-md divide-y">
-              {filteredRecipients.map(r => {
-                const isSelected = selectedRecipients.some(s => s.phone === r.phone);
-                return (
-                  <div
-                    key={r.id}
-                    className={`px-3 py-2 cursor-pointer transition-colors text-sm ${
-                      isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'
-                    }`}
-                    onClick={() => toggleRecipient(r)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Checkbox checked={isSelected} className="pointer-events-none" />
-                      <span className="font-medium flex-1">{r.name}</span>
-                      <span className="text-muted-foreground text-xs" dir="ltr">
-                        {formatIsraeliPhone(r.phone)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-              {filteredRecipients.length === 0 && !loading && (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  {searchQuery ? 'לא נמצאו תוצאות' : 'אין נמענים זמינים'}
-                </div>
-              )}
+            <div className="max-h-48 overflow-y-auto border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow className="text-xs">
+                    <TableHead className="w-8 px-2 py-1.5"></TableHead>
+                    <TableHead className="px-2 py-1.5 text-xs">שם</TableHead>
+                    <TableHead className="px-2 py-1.5 text-xs">טלפון</TableHead>
+                    {recipientSource === 'leads' && (
+                      <>
+                        <TableHead className="px-2 py-1.5 text-xs">סטטוס</TableHead>
+                        <TableHead className="px-2 py-1.5 text-xs">עדיפות</TableHead>
+                        <TableHead className="px-2 py-1.5 text-xs">ערים</TableHead>
+                        <TableHead className="px-2 py-1.5 text-xs">תקציב</TableHead>
+                      </>
+                    )}
+                    {recipientSource === 'owners' && (
+                      <TableHead className="px-2 py-1.5 text-xs">כתובת נכס</TableHead>
+                    )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRecipients.map(r => {
+                    const isSelected = selectedRecipients.some(s => s.phone === r.phone);
+                    return (
+                      <TableRow
+                        key={r.id}
+                        className={`cursor-pointer text-xs ${isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
+                        onClick={() => toggleRecipient(r)}
+                      >
+                        <TableCell className="px-2 py-1.5">
+                          <Checkbox checked={isSelected} className="pointer-events-none h-3.5 w-3.5" />
+                        </TableCell>
+                        <TableCell className="px-2 py-1.5 font-medium">{r.name}</TableCell>
+                        <TableCell className="px-2 py-1.5 text-muted-foreground" dir="ltr">
+                          {formatIsraeliPhone(r.phone)}
+                        </TableCell>
+                        {recipientSource === 'leads' && (
+                          <>
+                            <TableCell className="px-2 py-1.5">{statusMap[r.status || ''] || '—'}</TableCell>
+                            <TableCell className="px-2 py-1.5">{priorityMap[r.priority || ''] || '—'}</TableCell>
+                            <TableCell className="px-2 py-1.5 max-w-[120px] truncate">
+                              {r.preferred_cities?.join(', ') || '—'}
+                            </TableCell>
+                            <TableCell className="px-2 py-1.5" dir="ltr">{formatBudget(r.budget_max)}</TableCell>
+                          </>
+                        )}
+                        {recipientSource === 'owners' && (
+                          <TableCell className="px-2 py-1.5">{r.extra || '—'}</TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  })}
+                  {filteredRecipients.length === 0 && !loading && (
+                    <TableRow>
+                      <TableCell colSpan={recipientSource === 'leads' ? 7 : 4} className="text-center py-4 text-muted-foreground">
+                        {searchQuery ? 'לא נמצאו תוצאות' : 'אין נמענים זמינים'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </div>
         )}
@@ -282,8 +347,8 @@ export const WhatsAppCompose: React.FC = () => {
         {selectedRecipients.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {selectedRecipients.map(r => (
-              <Badge key={r.phone} variant="secondary" className="gap-1">
-                {r.name || formatPhone(r.phone)}
+              <Badge key={r.phone} variant="secondary" className="gap-1 text-xs">
+                {r.name || formatIsraeliPhone(r.phone)}
                 <X
                   className="h-3 w-3 cursor-pointer"
                   onClick={() => setSelectedRecipients(prev => prev.filter(p => p.phone !== r.phone))}
