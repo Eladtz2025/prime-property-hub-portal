@@ -508,7 +508,8 @@ export const ExpandableCustomerRow = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Row 2: Transaction Type + Budget + Rooms + Size */}
+                <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
                   <div>
                     <Label className="text-xs">סוג עסקה</Label>
                     <Select value={formData.property_type || 'rental'} onValueChange={(value) => setFormData({ ...formData, property_type: value })}>
@@ -522,10 +523,6 @@ export const ExpandableCustomerRow = ({
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-
-                {/* Budget, Rooms, Size, Cities, Neighborhoods */}
-                <div className="grid grid-cols-2 md:grid-cols-8 gap-3">
                   <div>
                     <Label className="text-xs">תקציב מינ.</Label>
                     <Input
@@ -582,6 +579,10 @@ export const ExpandableCustomerRow = ({
                       className="h-8 text-sm"
                     />
                   </div>
+                </div>
+
+                {/* Row 3: Location + Entry Date */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div>
                     <Label className="text-xs">ערים</Label>
                     <CitySelectorDropdown
@@ -597,11 +598,7 @@ export const ExpandableCustomerRow = ({
                       onChange={(neighborhoods) => setFormData({ ...formData, preferred_neighborhoods: neighborhoods })}
                     />
                   </div>
-                </div>
-
-                {/* Dates, Tenant Type, Pets, Features, Agent */}
-                <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
-                  <div className="col-span-2 md:col-span-2">
+                  <div className="col-span-2">
                     <Label className="text-xs">תאריך כניסה</Label>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1">
@@ -634,7 +631,11 @@ export const ExpandableCustomerRow = ({
                       </div>
                     </div>
                   </div>
-                  {isRental ? (
+                </div>
+
+                {/* Row 4: Dynamic fields (rental/sale) + Agent */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {isRental && (
                     <>
                       <div>
                         <Label className="text-xs">סוג דייר</Label>
@@ -665,7 +666,7 @@ export const ExpandableCustomerRow = ({
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
+                      <div>
                         <Label className="text-xs text-muted-foreground">דרישות מהנכס:</Label>
                         <PropertyRequirementsDropdown
                           values={{
@@ -708,7 +709,7 @@ export const ExpandableCustomerRow = ({
                         />
                       </div>
                     </>
-                  ) : null}
+                  )}
                   <div>
                     <Label className="text-xs">סוכן</Label>
                     <Select 
