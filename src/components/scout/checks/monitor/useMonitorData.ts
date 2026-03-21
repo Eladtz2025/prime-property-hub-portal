@@ -525,20 +525,16 @@ export function useMonitorData() {
 
           sorted.forEach(prop => {
             const isNew = prop.created_at >= runTimes.started_at && prop.created_at <= runTimes.completed_at;
-            const detailParts: string[] = [];
-            if (prop.neighborhood) detailParts.push(prop.neighborhood);
-            if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
-            if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
 
             items.push({
               type: 'scan',
               timestamp: prop.last_seen_at || prop.created_at,
-              primary: formatCleanAddress(prop.address, prop.neighborhood),
-              details: detailParts.join(' | ') || 'ללא פרטים',
+              primary: formatCleanAddress(prop.address, undefined),
+              details: '',
               source: prop.source ?? undefined,
               status: 'ok',
               url: prop.source_url ?? undefined,
-              extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined },
+              extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined, floor: (prop as any).floor ?? undefined, neighborhood: prop.neighborhood ?? undefined, is_private: (prop as any).is_private ?? undefined },
               eventKind: isNew ? 'found' : 'checked',
             });
           });
