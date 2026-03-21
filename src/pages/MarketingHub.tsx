@@ -3,7 +3,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, Megaphone, Lightbulb } from 'lucide-react';
 import { WhatsAppCompose } from '@/components/WhatsAppCompose';
-import { WhatsAppRecentChats } from '@/components/WhatsAppRecentChats';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 
 const MarketingHub: React.FC = () => {

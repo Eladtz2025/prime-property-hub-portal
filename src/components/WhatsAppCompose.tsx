@@ -7,17 +7,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Send, X, Users, User, Phone } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Send, X, Users, User, MessageCircle, Pencil, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { formatIsraeliPhone } from '@/utils/phoneFormatter';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
+import { formatDistanceToNow } from 'date-fns';
+import { he } from 'date-fns/locale';
 
 interface Recipient {
   id: string;
   name: string;
   phone: string;
-  type: 'lead' | 'owner' | 'manual';
+  type: 'lead' | 'owner';
   extra?: string;
   property_type?: string;
   rooms_min?: number;
@@ -33,6 +36,17 @@ interface MessageTemplate {
   category: string;
 }
 
+interface WhatsAppMessage {
+  id: string;
+  phone: string;
+  message: string;
+  created_at: string;
+  direction: string;
+  status: string;
+  sender_name?: string;
+  contact_name?: string;
+}
+
 const propertyTypeMap: Record<string, string> = {
   buy: 'קנייה',
   rent: 'שכירות',
@@ -40,15 +54,25 @@ const propertyTypeMap: Record<string, string> = {
 };
 
 export const WhatsAppCompose: React.FC = () => {
-  const [recipientSource, setRecipientSource] = useState<'leads' | 'owners' | 'manual'>('leads');
+  const [recipientSource, setRecipientSource] = useState<'leads' | 'owners'>('leads');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<Recipient[]>([]);
   const [availableRecipients, setAvailableRecipients] = useState<Recipient[]>([]);
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [message, setMessage] = useState('');
-  const [manualPhone, setManualPhone] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Template editing state
+  const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
+  const [editTemplateName, setEditTemplateName] = useState('');
+  const [editTemplateContent, setEditTemplateContent] = useState('');
+
+  // Chat history state
+  const [chatPhone, setChatPhone] = useState<string | null>(null);
+  const [chatName, setChatName] = useState('');
+  const [chatMessages, setChatMessages] = useState<WhatsAppMessage[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
 
   const { toast } = useToast();
   const { sendWhatsAppMessage, isSending } = useWhatsAppSender();
@@ -58,9 +82,7 @@ export const WhatsAppCompose: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (recipientSource !== 'manual') {
-      loadRecipients();
-    }
+    loadRecipients();
   }, [recipientSource]);
 
   const loadTemplates = async () => {
@@ -94,7 +116,7 @@ export const WhatsAppCompose: React.FC = () => {
             budget_max: l.budget_max || undefined,
           }))
         );
-      } else if (recipientSource === 'owners') {
+      } else {
         const { data } = await supabase
           .from('properties')
           .select('id, address, city, owner_name, owner_phone')
@@ -139,26 +161,85 @@ export const WhatsAppCompose: React.FC = () => {
     );
   };
 
-  const addManualRecipient = () => {
-    const phone = manualPhone.trim();
-    if (!phone) return;
-    if (selectedRecipients.some(r => r.phone === phone)) {
-      toast({ title: "המספר כבר נוסף", variant: "destructive" });
-      return;
-    }
-    setSelectedRecipients(prev => [...prev, {
-      id: `manual-${Date.now()}`,
-      name: phone,
-      phone,
-      type: 'manual'
-    }]);
-    setManualPhone('');
-  };
-
   const handleTemplateSelect = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     if (template) setMessage(template.content);
     setSelectedTemplate(templateId);
+  };
+
+  const openEditTemplate = () => {
+    const template = templates.find(t => t.id === selectedTemplate);
+    if (!template) {
+      toast({ title: 'בחר תבנית לעריכה', variant: 'destructive' });
+      return;
+    }
+    setEditingTemplate(template);
+    setEditTemplateName(template.name);
+    setEditTemplateContent(template.content);
+  };
+
+  const saveTemplate = async () => {
+    if (!editingTemplate) return;
+    const { error } = await supabase
+      .from('message_templates')
+      .update({ name: editTemplateName, content: editTemplateContent })
+      .eq('id', editingTemplate.id);
+
+    if (error) {
+      toast({ title: 'שגיאה בשמירת התבנית', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'התבנית עודכנה בהצלחה' });
+    setEditingTemplate(null);
+    await loadTemplates();
+    // Update message if this template is currently selected
+    if (selectedTemplate === editingTemplate.id) {
+      setMessage(editTemplateContent);
+    }
+  };
+
+  const openChatHistory = async (phone: string, name: string) => {
+    setChatPhone(phone);
+    setChatName(name);
+    setChatLoading(true);
+    setChatMessages([]);
+
+    try {
+      // Try multiple phone formats
+      const cleanPhone = phone.replace(/\D/g, '');
+      const phoneVariants = [phone, cleanPhone];
+      if (cleanPhone.startsWith('0')) {
+        phoneVariants.push('972' + cleanPhone.slice(1));
+        phoneVariants.push('+972' + cleanPhone.slice(1));
+      }
+      if (cleanPhone.startsWith('972')) {
+        phoneVariants.push('0' + cleanPhone.slice(3));
+      }
+
+      const { data } = await supabase
+        .from('whatsapp_messages')
+        .select('*')
+        .in('phone', phoneVariants)
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      setChatMessages(data || []);
+    } catch (err) {
+      console.error('Error loading chat:', err);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'sent': case 'delivered': case 'read':
+        return <CheckCircle className="h-3 w-3 text-green-600" />;
+      case 'failed':
+        return <XCircle className="h-3 w-3 text-destructive" />;
+      default:
+        return <Clock className="h-3 w-3 text-muted-foreground" />;
+    }
   };
 
   const handleSend = async () => {
@@ -209,48 +290,35 @@ export const WhatsAppCompose: React.FC = () => {
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Send className="h-5 w-5 text-green-600" />
-          שליחת הודעה
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Source selector */}
-        <div className="flex gap-2">
-          {[
-            { value: 'leads' as const, label: 'לקוחות', icon: Users },
-            { value: 'owners' as const, label: 'בעלי נכסים', icon: User },
-            { value: 'manual' as const, label: 'מספר חופשי', icon: Phone },
-          ].map(({ value, label, icon: Icon }) => (
-            <Button
-              key={value}
-              variant={recipientSource === value ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => { setRecipientSource(value); setSearchQuery(''); }}
-              className="flex-1"
-            >
-              <Icon className="h-4 w-4 ml-1" />
-              {label}
-            </Button>
-          ))}
-        </div>
-
-        {/* Recipients selection */}
-        {recipientSource === 'manual' ? (
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Send className="h-5 w-5 text-green-600" />
+            שליחת הודעה
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Source selector — only leads & owners */}
           <div className="flex gap-2">
-            <Input
-              value={manualPhone}
-              onChange={e => setManualPhone(e.target.value)}
-              placeholder="05xxxxxxxx"
-              dir="ltr"
-              className="flex-1"
-              onKeyDown={e => e.key === 'Enter' && addManualRecipient()}
-            />
-            <Button size="sm" variant="outline" onClick={addManualRecipient}>הוסף</Button>
+            {[
+              { value: 'leads' as const, label: 'לקוחות', icon: Users },
+              { value: 'owners' as const, label: 'בעלי נכסים', icon: User },
+            ].map(({ value, label, icon: Icon }) => (
+              <Button
+                key={value}
+                variant={recipientSource === value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => { setRecipientSource(value); setSearchQuery(''); }}
+                className="flex-1"
+              >
+                <Icon className="h-4 w-4 ml-1" />
+                {label}
+              </Button>
+            ))}
           </div>
-        ) : (
+
+          {/* Recipients table */}
           <div className="space-y-2">
             <Input
               value={searchQuery}
@@ -288,6 +356,7 @@ export const WhatsAppCompose: React.FC = () => {
                         <TableHead className="px-2 py-1.5 text-xs">עיר</TableHead>
                       </>
                     )}
+                    <TableHead className="w-8 px-2 py-1.5"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -319,12 +388,25 @@ export const WhatsAppCompose: React.FC = () => {
                             <TableCell className="px-2 py-1.5">{r.city || '—'}</TableCell>
                           </>
                         )}
+                        <TableCell className="px-2 py-1.5">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openChatHistory(r.phone, r.name);
+                            }}
+                          >
+                            <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
                   {filteredRecipients.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={recipientSource === 'leads' ? 6 : recipientSource === 'owners' ? 5 : 3} className="text-center py-4 text-muted-foreground">
+                      <TableCell colSpan={recipientSource === 'leads' ? 7 : 6} className="text-center py-4 text-muted-foreground">
                         {searchQuery ? 'לא נמצאו תוצאות' : 'אין נמענים זמינים'}
                       </TableCell>
                     </TableRow>
@@ -333,55 +415,136 @@ export const WhatsAppCompose: React.FC = () => {
               </Table>
             </div>
           </div>
-        )}
 
-        {/* Selected recipients badges */}
-        {selectedRecipients.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {selectedRecipients.map(r => (
-              <Badge key={r.phone} variant="secondary" className="gap-1 text-xs">
-                {r.name || formatIsraeliPhone(r.phone)}
-                <X
-                  className="h-3 w-3 cursor-pointer"
-                  onClick={() => setSelectedRecipients(prev => prev.filter(p => p.phone !== r.phone))}
-                />
-              </Badge>
-            ))}
+          {/* Selected recipients badges */}
+          {selectedRecipients.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {selectedRecipients.map(r => (
+                <Badge key={r.phone} variant="secondary" className="gap-1 text-xs">
+                  {r.name || formatIsraeliPhone(r.phone)}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedRecipients(prev => prev.filter(p => p.phone !== r.phone))}
+                  />
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Template + Edit */}
+          <div className="flex gap-2 items-center">
+            <div className="flex-1">
+              <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר תבנית (אופציונלי)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={openEditTemplate}
+              disabled={!selectedTemplate}
+              className="h-9 px-2"
+              title="ערוך תבנית"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
           </div>
-        )}
 
-        {/* Template + Message */}
-        <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
-          <SelectTrigger>
-            <SelectValue placeholder="בחר תבנית (אופציונלי)" />
-          </SelectTrigger>
-          <SelectContent>
-            {templates.map(t => (
-              <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Textarea
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            placeholder="כתוב הודעה... (השתמש ב-{שם} ו-{כתובת} להתאמה אישית)"
+            rows={3}
+          />
 
-        <Textarea
-          value={message}
-          onChange={e => setMessage(e.target.value)}
-          placeholder="כתוב הודעה... (השתמש ב-{שם} ו-{כתובת} להתאמה אישית)"
-          rows={3}
-        />
+          <Button
+            onClick={handleSend}
+            disabled={isSending || selectedRecipients.length === 0 || !message.trim()}
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Send className="h-4 w-4 ml-2" />
+            {isSending
+              ? 'שולח...'
+              : selectedRecipients.length > 1
+                ? `שלח ל-${selectedRecipients.length} נמענים`
+                : 'שלח הודעה'}
+          </Button>
+        </CardContent>
+      </Card>
 
-        <Button
-          onClick={handleSend}
-          disabled={isSending || selectedRecipients.length === 0 || !message.trim()}
-          className="w-full bg-green-600 hover:bg-green-700 text-white"
-        >
-          <Send className="h-4 w-4 ml-2" />
-          {isSending
-            ? 'שולח...'
-            : selectedRecipients.length > 1
-              ? `שלח ל-${selectedRecipients.length} נמענים`
-              : 'שלח הודעה'}
-        </Button>
-      </CardContent>
-    </Card>
+      {/* Edit Template Dialog */}
+      <Dialog open={!!editingTemplate} onOpenChange={() => setEditingTemplate(null)}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>עריכת תבנית</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              value={editTemplateName}
+              onChange={e => setEditTemplateName(e.target.value)}
+              placeholder="שם התבנית"
+            />
+            <Textarea
+              value={editTemplateContent}
+              onChange={e => setEditTemplateContent(e.target.value)}
+              placeholder="תוכן ההודעה"
+              rows={5}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" onClick={() => setEditingTemplate(null)}>ביטול</Button>
+              <Button onClick={saveTemplate}>שמור</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Chat History Dialog */}
+      <Dialog open={!!chatPhone} onOpenChange={() => setChatPhone(null)}>
+        <DialogContent className="max-w-md max-h-[80vh]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-green-600" />
+              {chatName}
+              <span className="text-sm font-normal text-muted-foreground" dir="ltr">
+                {chatPhone && formatIsraeliPhone(chatPhone)}
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+          {chatLoading ? (
+            <div className="text-center py-6 text-muted-foreground text-sm">טוען...</div>
+          ) : chatMessages.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground text-sm">אין הודעות להצגה</div>
+          ) : (
+            <div className="space-y-2 overflow-y-auto max-h-[60vh] p-2">
+              {chatMessages.map(msg => (
+                <div
+                  key={msg.id}
+                  className={`max-w-[85%] rounded-lg p-2.5 text-sm ${
+                    msg.direction === 'outbound'
+                      ? 'bg-green-100 dark:bg-green-900/30 mr-auto'
+                      : 'bg-muted ml-auto'
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap">{msg.message}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(msg.created_at).toLocaleString('he-IL')}
+                    </span>
+                    {msg.direction === 'outbound' && getStatusIcon(msg.status)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
