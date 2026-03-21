@@ -149,16 +149,16 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
                     <span className="shrink-0">{statusIcon(item.status)}</span>
                     {item.eventKind && <span className="shrink-0">{eventKindBadge(item.eventKind)}</span>}
                     {item.url ? (
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[13px] text-gray-200 flex-1 truncate font-medium hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-200 flex-1 truncate font-medium hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
                         {item.primary}
                       </a>
                     ) : (
-                      <span className="text-[13px] text-gray-200 flex-1 truncate font-medium">{item.primary}</span>
+                      <span className="text-sm text-gray-200 flex-1 truncate font-medium">{item.primary}</span>
                     )}
                     {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
                   </div>
                   {/* Desktop: row 2 — property badges + details text */}
-                  <div className="hidden md:flex items-center gap-1.5 px-3 pb-1.5 pr-[72px] flex-wrap">
+                  <div className="hidden md:flex items-center gap-2 px-3 pb-1.5 pr-[60px] flex-wrap">
                     <PropertyBadges extra={item.extra} />
                     {item.details && <span className="text-[11px] text-gray-500 truncate">{item.details}</span>}
                   </div>

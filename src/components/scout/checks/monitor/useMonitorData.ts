@@ -622,6 +622,7 @@ export function useMonitorData() {
             source: item.source,
             status: statusMap[item.status] || 'warning',
             url: item.source_url,
+            extra: { neighborhood: item.neighborhood ?? undefined },
             eventKind: item.status === 'ok' ? 'pushed' : item.status === 'no_new_data' ? 'skipped' : 'error',
           });
         });
