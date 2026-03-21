@@ -53,27 +53,36 @@ const sourceBadge = (source?: string) => {
 
 const PropertyBadges: React.FC<{ extra?: FeedItem['extra'] }> = ({ extra }) => {
   if (!extra) return null;
-  const badges: React.ReactNode[] = [];
+  const parts: React.ReactNode[] = [];
 
   if (extra.is_private !== undefined) {
-    badges.push(
+    parts.push(
       extra.is_private
-        ? <span key="prv" className="text-xs font-medium px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 flex items-center gap-0.5"><Home className="h-3 w-3" />פרטי</span>
-        : <span key="brk" className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 flex items-center gap-0.5"><Building2 className="h-3 w-3" />תיווך</span>
+        ? <span key="prv" className="text-xs text-green-400/80">פרטי</span>
+        : <span key="brk" className="text-xs text-amber-400/80">תיווך</span>
     );
   }
   if (extra.price) {
-    badges.push(<span key="pr" className="text-xs text-gray-300 font-mono px-1.5 py-0.5 rounded bg-white/[0.04]">₪{(extra.price / 1000).toFixed(0)}K</span>);
+    parts.push(<span key="pr" className="text-xs text-gray-400 font-mono">₪{(extra.price / 1000).toFixed(0)}K</span>);
   }
   if (extra.rooms) {
-    badges.push(<span key="rm" className="text-xs text-gray-400 px-1.5 py-0.5 rounded bg-white/[0.04]">{extra.rooms} חד׳</span>);
+    parts.push(<span key="rm" className="text-xs text-gray-400">{extra.rooms} חד׳</span>);
   }
   if (extra.floor !== undefined && extra.floor !== null) {
-    badges.push(<span key="fl" className="text-xs text-gray-500 px-1.5 py-0.5 rounded bg-white/[0.04]">ק׳ {extra.floor}</span>);
+    parts.push(<span key="fl" className="text-xs text-gray-500">ק׳ {extra.floor}</span>);
   }
 
-  if (badges.length === 0) return null;
-  return <>{badges}</>;
+  if (parts.length === 0) return null;
+  return (
+    <span className="flex items-center gap-0">
+      {parts.map((part, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <span className="text-gray-600 mx-1.5">|</span>}
+          {part}
+        </React.Fragment>
+      ))}
+    </span>
+  );
 };
 
 interface LiveFeedTabProps {
