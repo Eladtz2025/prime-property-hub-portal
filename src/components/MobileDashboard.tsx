@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AdminPWAInstallPrompt } from './AdminPWAInstallPrompt';
+
 import { MessageSquare } from 'lucide-react';
 import { Property, PropertyStats, Alert } from '../types/property';
 import { ActivePropertiesCard } from './ActivePropertiesCard';
@@ -52,8 +52,6 @@ export const MobileDashboard: React.FC<MobileDashboardProps> = ({
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       <div className="space-y-4 p-4 pb-24 mobile-scroll max-w-screen-sm mx-auto">
-        {/* PWA Install Prompt */}
-        <AdminPWAInstallPrompt />
         
         {/* Quick Action Forms */}
         <DashboardFormsCubes />
