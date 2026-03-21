@@ -1,23 +1,31 @@
 
 
-## שינויים בעמוד השיווק
+## שינויים בעמוד הווטסאפ
 
-### 1. הסרת כותרת "שיווק" — `MarketingHub.tsx`
-- מחיקת ה-div עם האייקון והכותרת (שורות 14-17)
-- הטאבים יעלו ישירות למעלה
+### 1. הסרת כותרת "שיווק" מ-`MarketingHub.tsx`
+כבר בוצע בעבר — אוודא שזה אכן מוסר.
 
-### 2. רשימת נמענים בסגנון טבלה צפופה — `WhatsAppCompose.tsx`
+### 2. תיקון "בעלי נכסים" — `WhatsAppCompose.tsx`
+**הבעיה**: השאילתה שולפת מ-`property_owners` → `profiles`, שזה טבלת המשתמשים/סוכנים במערכת — לא בעלי הנכסים האמיתיים.
 
-במקום שורות רחבות עם שם + טלפון בלבד, הרשימה תהפוך לטבלה קומפקטית עם עמודות מופרדות בקווים:
+**הפתרון**: לשלוף ישירות מטבלת `properties` שיש בה `owner_name` ו-`owner_phone`:
+```sql
+SELECT id, address, city, owner_name, owner_phone
+FROM properties
+WHERE owner_phone IS NOT NULL AND owner_phone != ''
+```
+עמודות: צ'קבוקס | שם בעלים | טלפון | כתובת | עיר
 
-**ללקוחות (leads)**: צ'קבוקס | שם | טלפון | סטטוס | עדיפות | ערים מועדפות | תקציב
-**לבעלי נכסים (owners)**: צ'קבוקס | שם | טלפון | כתובת נכס
+### 3. עמודות חדשות ללקוחות (leads)
+במקום סטטוס/עדיפות/ערים/תקציב, להציג:
+- **שם** (כבר קיים)
+- **טלפון** (כבר קיים)
+- **סוג עסקה** (`property_type` — קנייה/שכירות)
+- **חדרים** (`rooms_min`-`rooms_max`)
+- **תקציב** (`budget_max`)
 
-- שליפת שדות נוספים מ-`contact_leads`: `status`, `priority`, `preferred_cities`, `budget_max`
-- הצגה כ-`<table>` עם `divide-x` בין עמודות ו-`divide-y` בין שורות
-- טקסט קטן (`text-xs`) וריפוד מצומצם (`px-2 py-1.5`)
-- Header קבוע עם שמות העמודות
+שליפה מעודכנת: `id, name, phone, property_type, rooms_min, rooms_max, budget_max`
 
 ### קבצים
-- **עריכה**: `MarketingHub.tsx` (הסרת כותרת), `WhatsAppCompose.tsx` (טבלת נמענים צפופה)
+- **עריכה**: `src/components/WhatsAppCompose.tsx` בלבד
 
