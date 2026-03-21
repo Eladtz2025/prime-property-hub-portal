@@ -66,15 +66,10 @@ const cleanDisplayAddress = (
   // English-only text (likely broker name) → fallback
   if (/^[a-zA-Z\s.&'-]+$/.test(clean)) return hood || '—';
 
-  // Remove neighborhood from comma-separated parts
-  if (hood) {
-    const parts = clean.split(',').map(p => p.trim()).filter(Boolean);
-    const filtered = parts.filter(p => {
-      const normalized = p.replace(/[\s_-]+/g, '');
-      const hoodNormalized = hood.replace(/[\s_-]+/g, '');
-      return normalized !== hoodNormalized;
-    });
-    clean = filtered.join(', ').trim();
+  // Keep only first part (street + number), drop scraper neighborhoods
+  const parts = clean.split(',').map(p => p.trim()).filter(Boolean);
+  if (parts.length > 1) {
+    clean = parts[0];
   }
 
   // Remove leading/trailing commas and whitespace
