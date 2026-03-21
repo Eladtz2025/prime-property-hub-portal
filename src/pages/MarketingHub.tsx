@@ -29,7 +29,6 @@ const MarketingHub: React.FC = () => {
 
         <TabsContent value="whatsapp" className="space-y-4 mt-4">
           <WhatsAppCompose />
-          <WhatsAppRecentChats />
         </TabsContent>
 
         <TabsContent value="advertising" className="mt-4">
