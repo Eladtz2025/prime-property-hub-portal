@@ -28,7 +28,7 @@ const eventKindBadge = (kind?: string) => {
   if (!kind) return null;
   const m = map[kind];
   if (!m) return null;
-  return <span className={`${m.cls} text-[9px] font-mono font-bold px-1.5 py-0.5 rounded`}>{m.text}</span>;
+  return <span className={`${m.cls} text-[10px] font-mono font-bold px-1.5 py-0.5 rounded`}>{m.text}</span>;
 };
 
 const statusIcon = (s: FeedItem['status']) => {
