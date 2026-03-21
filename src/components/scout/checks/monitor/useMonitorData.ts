@@ -440,11 +440,11 @@ export function useMonitorData() {
         type: 'availability',
         timestamp: d.checked_at || '',
         primary: formatCleanAddress(d.address, d.neighborhood) || d.property_id?.slice(0, 8) || '?',
-        details: `${truncateUrl(d.source_url)} | ${detail} | ${label}`,
+        details: `${detail} | ${label}`,
         source: d.source,
         status,
         url: d.source_url,
-        extra: { price: d.price, rooms: d.rooms, floor: d.floor },
+        extra: { price: d.price, rooms: d.rooms, floor: d.floor, neighborhood: d.neighborhood },
         eventKind,
       });
     });
