@@ -355,7 +355,7 @@ export function useMonitorData() {
       if (!latestDedupRun) return [];
       const { data } = await supabase
         .from('scouted_properties')
-        .select('address, neighborhood, price, rooms, source, source_url, duplicate_group_id, dedup_checked_at')
+        .select('address, neighborhood, price, rooms, source, source_url, duplicate_group_id, dedup_checked_at, is_private, floor')
         .not('duplicate_group_id', 'is', null)
         .gte('dedup_checked_at', latestDedupRun.started_at)
         .lte('dedup_checked_at', latestDedupRun.completed_at)
