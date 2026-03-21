@@ -9,7 +9,7 @@ import { AddPropertyModal } from '../components/AddPropertyModal';
 import { Alert } from '../types/property';
 import { usePropertyData, usePropertyStats } from '../hooks/usePropertyData';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AdminPWAInstallPrompt } from '../components/AdminPWAInstallPrompt';
+
 
 
 const AdminDashboard = memo(() => {
