@@ -1822,8 +1822,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                 {/* Row 2: Address + City — full width */}
                 <div className="mt-1 text-sm">
                   <span className="font-medium">
-                    {property.address?.split(',')[0]?.trim() || ''}
-                    {property.neighborhood ? `, ${property.neighborhood}` : ''}
+                    {cleanDisplayAddress(property.address, property.neighborhood)}
                   </span>
                   <span className="text-muted-foreground text-xs mr-1.5">
                     {property.city?.replace(' יפו', '') || 'תל אביב'}
