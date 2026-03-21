@@ -104,8 +104,6 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
   return (
     <div className="relative h-full">
       <div
-        ref={scrollRef}
-        onScroll={handleScroll}
         className="h-full overflow-y-auto scrollbar-thin"
         dir="rtl"
       >
