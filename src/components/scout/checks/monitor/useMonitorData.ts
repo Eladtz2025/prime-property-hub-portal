@@ -576,7 +576,7 @@ export function useMonitorData() {
             items.push({
               type: 'dedup',
               timestamp: prop.dedup_checked_at || '',
-              primary: formatCleanAddress(prop.address, undefined),
+              primary: formatCleanAddress(prop.address, prop.neighborhood),
               details: groupLabel,
               source: prop.source ?? undefined,
               status: 'ok',
