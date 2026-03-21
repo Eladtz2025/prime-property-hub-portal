@@ -273,28 +273,24 @@ export default function AdminCustomers() {
           
           {/* Buttons row - two rows on mobile */}
           <div className="flex flex-col sm:flex-row gap-2 items-center">
-            {/* Add buttons */}
-            <div className="flex gap-2">
-              <Button onClick={() => setAddCustomerModalOpen(true)} size="sm" className="flex-1 sm:flex-none">
+            {/* All action buttons in one row */}
+            <div className="flex gap-1.5 flex-wrap">
+              <Button onClick={() => setAddCustomerModalOpen(true)} size="sm" className="flex-none">
                 <span className="hidden sm:inline">לקוח חדש</span>
                 <span className="sm:hidden">לקוח</span>
                 <Plus className="h-4 w-4 sm:mr-2" />
               </Button>
-              <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline" className="flex-1 sm:flex-none">
+              <Button onClick={() => { setEditBroker(null); setAddBrokerModalOpen(true); }} size="sm" variant="outline" className="flex-none">
                 <span className="hidden sm:inline">מתווך חדש</span>
                 <span className="sm:hidden">מתווך</span>
                 <Plus className="h-4 w-4 sm:mr-2" />
               </Button>
-            </div>
-            
-            {/* Action buttons */}
-            <div className="flex gap-2">
               <Button 
                 onClick={handleResetAllMatches} 
                 size="sm" 
                 variant="outline"
                 disabled={isMatchingAll}
-                className="flex-1 sm:flex-none"
+                className="flex-none"
               >
                 <span className="hidden sm:inline">חשב התאמות מחדש</span>
                 <span className="sm:hidden">התאמות</span>
@@ -309,7 +305,7 @@ export default function AdminCustomers() {
                 size="sm" 
                 variant="outline"
                 disabled={isScanningOwn}
-                className="flex-1 sm:flex-none bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                className="flex-none bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
               >
                 <span className="hidden sm:inline">סרוק נכסים שלנו</span>
                 <span className="sm:hidden">סרוק</span>
