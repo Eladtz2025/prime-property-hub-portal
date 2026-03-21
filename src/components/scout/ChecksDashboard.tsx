@@ -582,11 +582,11 @@ export const ChecksDashboard: React.FC = () => {
           title="התאמות"
           icon={<Users className="h-4 w-4 text-green-600" />}
           status={isMatchRunning ? 'running' : matchStats ? 'completed' : 'idle'}
-          primaryValue={matchStats?.leads_matched ?? 0}
-          primaryLabel="התאמות אחרונות"
-          secondaryLine={`${leadCounts?.eligible ?? 0} לידים eligible`}
-          insight={(leadCounts?.eligible ?? 0) === 0 ? 'אין לידים שמחכים' : `${leadCounts?.eligible} ממתינים להתאמה`}
-          insightType={(leadCounts?.eligible ?? 0) === 0 ? 'ok' : 'info'}
+          primaryValue={matchingPendingCount ?? 0}
+          primaryLabel="נכסים ממתינים להתאמה"
+          secondaryLine={`${leadCounts?.eligible ?? 0} לקוחות פעילים | ${leadCounts?.withMatches ?? 0} עם התאמות`}
+          insight={(leadCounts?.withoutMatches ?? 0) > 0 ? `${leadCounts?.withoutMatches} לקוחות ללא התאמות` : 'כל הלקוחות הותאמו ✓'}
+          insightType={(leadCounts?.withoutMatches ?? 0) > 0 ? 'warning' : 'ok'}
           lastRun={matchStats?.completed_at ? format(new Date(matchStats.completed_at), 'dd/MM HH:mm', { locale: he }) : undefined}
           onRun={() => triggerMatching.mutate()}
           isRunPending={triggerMatching.isPending}
