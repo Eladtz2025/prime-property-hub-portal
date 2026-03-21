@@ -138,6 +138,7 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
     const map: Record<string, string> = {
       'madlan_direct_status_403': '403 חסום',
       'timeout': 'טיימאאוט',
+      'per_property_timeout': 'טיימאאוט נכס',
       'blocked': 'חסום',
       'rate_limited': 'הגבלת קצב',
       'check_error': 'שגיאה',
@@ -237,13 +238,10 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
                   <TableHeader>
                     <TableRow>
                       <TableHead>כתובת</TableHead>
-                      <TableHead>עיר</TableHead>
                       <TableHead>חדרים</TableHead>
-                      <TableHead>קומה</TableHead>
                       <TableHead>מחיר</TableHead>
-                      <TableHead>מקור</TableHead>
                       <TableHead>סיבה</TableHead>
-                      <TableHead>נבדק לאחרונה</TableHead>
+                      <TableHead>נבדק</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -254,25 +252,29 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
                         className={p._isManualCheck ? 'bg-destructive/10' : ''}
                       >
                         <TableCell>
-                          {p.source_url ? (
-                            <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                          <div>
+                            {p.source_url ? (
+                              <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                                <SearchHighlight text={cleanAddress(p.address)} searchTerm={search} />
+                              </a>
+                            ) : (
                               <SearchHighlight text={cleanAddress(p.address)} searchTerm={search} />
-                            </a>
-                          ) : (
-                            <SearchHighlight text={cleanAddress(p.address)} searchTerm={search} />
-                          )}
+                            )}
+                            {p.city && (
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                <SearchHighlight text={p.city} searchTerm={search} />
+                              </p>
+                            )}
+                          </div>
                         </TableCell>
-                        <TableCell><SearchHighlight text={p.city || '—'} searchTerm={search} /></TableCell>
                         <TableCell>{p.rooms ?? '—'}</TableCell>
-                        <TableCell>{p.floor ?? '—'}</TableCell>
                         <TableCell>{p.price ? `₪${p.price.toLocaleString('he-IL')}` : '—'}</TableCell>
-                        <TableCell><SearchHighlight text={p.source || '—'} searchTerm={search} /></TableCell>
                         <TableCell className="text-xs">
                           {p._isManualCheck ? (
                             <span className="text-destructive font-medium">{reasonLabel(p.availability_check_reason)}</span>
                           ) : '—'}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {p.availability_checked_at
                             ? format(new Date(p.availability_checked_at), 'dd/MM HH:mm', { locale: he })
                             : 'לא נבדק'}
