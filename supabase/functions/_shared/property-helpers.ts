@@ -534,7 +534,7 @@ export async function saveProperty(
     property.price !== undefined && property.price !== null &&
     property.size !== undefined && property.size !== null &&
     property.floor !== undefined && property.floor !== null &&
-    property.neighborhood &&
+    normalizedNeighborhood &&
     property.features && Object.keys(property.features).length > 0
   );
   const backfillStatus = hasAllCriticalFields ? 'not_needed' : 'pending';
