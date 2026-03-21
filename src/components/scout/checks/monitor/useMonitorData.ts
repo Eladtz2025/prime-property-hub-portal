@@ -657,24 +657,20 @@ export function useMonitorData() {
       matchingProperties.forEach(prop => {
         const ml = prop.matched_leads as unknown as any[];
         const matchCount = ml?.length ?? 0;
-        const detailParts: string[] = [];
-        if (prop.neighborhood) detailParts.push(prop.neighborhood);
-        if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
-        if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
         const names = ml?.map((m: any) => m.name).filter(Boolean) ?? [];
         const displayNames = names.slice(0, 4).join(', ');
         const extra_names = names.length > 4 ? ` ועוד ${names.length - 4}` : '';
-        detailParts.push(`${matchCount} התאמות` + (displayNames ? ` — ${displayNames}${extra_names}` : ''));
+        const matchDetail = `${matchCount} התאמות` + (displayNames ? ` — ${displayNames}${extra_names}` : '');
 
         items.push({
           type: 'matching',
           timestamp: prop.updated_at || '',
-          primary: formatCleanAddress(prop.address, prop.neighborhood),
-          details: detailParts.join(' | '),
+          primary: formatCleanAddress(prop.address, undefined),
+          details: matchDetail,
           source: prop.source ?? undefined,
           status: 'ok',
           url: prop.source_url ?? undefined,
-          extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined },
+          extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined, floor: (prop as any).floor ?? undefined, neighborhood: prop.neighborhood ?? undefined, is_private: (prop as any).is_private ?? undefined },
           eventKind: 'matched',
         });
       });
