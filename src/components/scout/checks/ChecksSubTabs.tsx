@@ -12,18 +12,18 @@ import { AvailabilityHistorySection } from './AvailabilityHistorySection';
 
 export const ChecksSubTabs: React.FC = () => {
   const [activeTab, setActiveTab] = useState('scans');
-  const tabsRef = useRef<HTMLDivElement>(null);
+  const tabsListRef = useRef<HTMLDivElement>(null);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setTimeout(() => {
-      tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      tabsListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 50);
   };
 
   return (
-    <Tabs ref={tabsRef} value={activeTab} onValueChange={handleTabChange}>
-      <TabsList className="w-full flex h-auto gap-1 bg-muted/50 p-1 overflow-x-auto scrollbar-none" dir="ltr">
+    <Tabs value={activeTab} onValueChange={handleTabChange}>
+      <TabsList ref={tabsListRef} className="w-full flex h-auto gap-1 bg-muted/50 p-1 overflow-x-auto scrollbar-none" dir="ltr">
         <TabsTrigger value="backfill" className="flex items-center gap-1 text-xs whitespace-nowrap shrink-0">
           <Database className="h-3.5 w-3.5 shrink-0" />
           <span>Backfill</span>
