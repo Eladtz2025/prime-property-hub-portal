@@ -375,7 +375,7 @@ export function useMonitorData() {
     queryFn: async () => {
       const { data } = await supabase
         .from('scouted_properties')
-        .select('address, neighborhood, price, rooms, source, source_url, matched_leads, updated_at')
+        .select('address, neighborhood, price, rooms, source, source_url, matched_leads, updated_at, is_private, floor')
         .gte('updated_at', since24h)
         .not('matched_leads', 'is', null)
         .order('updated_at', { ascending: false })
