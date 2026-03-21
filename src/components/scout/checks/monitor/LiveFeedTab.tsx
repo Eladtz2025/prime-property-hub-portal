@@ -1,7 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React from 'react';
 import {
   CheckCircle, XCircle, Clock, AlertTriangle,
-  Search, Shield, Database, Copy, ArrowDown, Home, Building2,
+  Search, Shield, Database, Copy,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { FeedItem } from './useMonitorData';
