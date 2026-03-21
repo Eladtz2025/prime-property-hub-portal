@@ -33,10 +33,10 @@ const eventKindBadge = (kind?: string) => {
 
 const statusIcon = (s: FeedItem['status']) => {
   switch (s) {
-    case 'ok': return <CheckCircle className="h-3.5 w-3.5 text-green-400" />;
-    case 'error': return <XCircle className="h-3.5 w-3.5 text-red-400" />;
-    case 'warning': return <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />;
-    case 'pending': return <Clock className="h-3.5 w-3.5 text-gray-500" />;
+    case 'ok': return <CheckCircle className="h-4 w-4 text-green-400" />;
+    case 'error': return <XCircle className="h-4 w-4 text-red-400" />;
+    case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-400" />;
+    case 'pending': return <Clock className="h-4 w-4 text-gray-500" />;
   }
 };
 
