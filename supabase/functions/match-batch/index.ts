@@ -234,7 +234,7 @@ serve(async (req) => {
         // No matches: clear leads and keep as 'new' (NOT 'matched')
         await supabase
           .from('scouted_properties')
-          .update({ status: 'new', matched_leads: [] })
+          .update({ status: 'checked', matched_leads: [] })
           .eq('id', property.id);
       }
     }

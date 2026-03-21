@@ -131,7 +131,7 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
         .from('scouted_properties')
         .update({
           matched_leads: result.matched_leads,
-          status: result.hasMatches ? 'matched' : 'new'
+          status: result.hasMatches ? 'matched' : 'checked'
         })
         .eq('id', result.id);
       
