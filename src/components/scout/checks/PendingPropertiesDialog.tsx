@@ -138,6 +138,7 @@ export const PendingPropertiesDialog: React.FC<PendingPropertiesDialogProps> = (
     const map: Record<string, string> = {
       'madlan_direct_status_403': '403 חסום',
       'timeout': 'טיימאאוט',
+      'per_property_timeout': 'טיימאאוט נכס',
       'blocked': 'חסום',
       'rate_limited': 'הגבלת קצב',
       'check_error': 'שגיאה',
