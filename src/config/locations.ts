@@ -229,9 +229,11 @@ export const NEIGHBORHOODS: Record<string, Neighborhood[]> = {
         'נווה שאנן', 
         'התקווה', 
         'שכונת התקווה', 
-        'כפר שלם', 
-        'יד אליהו',
-        'south tel aviv'
+        'כפר שלם',
+        'south tel aviv',
+        'התקוה, בית יעקב, נווה צה"ל',
+        'בית יעקב',
+        'נווה צה"ל'
       ] 
     },
     { 
