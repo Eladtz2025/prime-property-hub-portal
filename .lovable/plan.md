@@ -1,30 +1,22 @@
 
-
-## מיזוג שורות הפיד לשורה אחת + הגדלת פונט
+## עדכון כרטיס ההתאמות הראשי (ProcessCard)
 
 ### בעיה
-בדסקטופ כל פריט בפיד תופס 2 שורות: שורה 1 (כותרת + badges) ושורה 2 (מחיר/חדרים/פרטי + details). זה מבזבז מקום ומקטין קריאות. בזמינות למשל שורה 2 מציגה רק טקסט כמו "תוכן תקין — מחיר/חדרים נמצאו בדף | אקטיבי".
+ה-4 כרטיסים החדשים (ממתינים, לקוחות, עברו התאמה, ללא התאמות) נמצאים רק בדיאלוג ההיסטוריה. הכרטיס הראשי (`ProcessCard`) עדיין מציג את הנתונים הישנים: "531 התאמות אחרונות" + "43 ממתינים להתאמה".
 
-### פתרון — שורה אחת בדסקטופ
+### פתרון — עדכון ה-ProcessCard props
 
-**`LiveFeedTab.tsx`** — מיזוג שורות 1+2 ל-div אחד:
+**`ChecksDashboard.tsx`**, שורות 533-541 — שינוי ה-props של ProcessCard:
 
-```
-[MDLN] [✓] [CHECK] הרכבי 3, צפון ישן  ₪3200K  3 חד׳  ק׳1  🏠פרטי  Q 23:41:42
-```
+- **primaryValue**: במקום `matchStats?.leads_matched` (531) → מספר הנכסים שממתינים להתאמה (צריך שאילתה חדשה ל-`scouted_properties` עם `status='new'` ו-`is_active=true`)
+- **primaryLabel**: "ממתינים להתאמה" (במקום "התאמות אחרונות")
+- **secondaryLine**: `"43 לידים פעילים | 31 עם התאמות"` — מידע על לידים
+- **insight**: `"12 לידים ללא התאמות"` אם יש כאלה, או `"כל הלידים הותאמו ✓"` אם כולם עם התאמות
+- **insightType**: `warning` אם יש ללא התאמות, `ok` אם כולם הותאמו
 
-שינויים:
-- **מחיקת שורה 2** (שורות 160-164) — ה-div הנפרד של `pr-[60px]`
-- **מיזוג לשורה 1** (שורות 143-159) — הוספת PropertyBadges + details **באותו flex row**, אחרי ה-primary text ולפני source badge
-- **הגדלת פונטים**:
-  - כותרת: `text-sm` → `text-[15px]`
-  - badges (מחיר/חדרים/פרטי): `text-[11px]` → `text-xs` (12px)
-  - source badge: `text-[10px]` → `text-[11px]`
-  - event kind badge: `text-[9px]` → `text-[10px]`
-  - timestamp: `text-[10px]` → `text-[11px]`
-  - status icons: `h-3.5 w-3.5` → `h-4 w-4`
-- **padding**: `py-1.5 pb-0.5` → `py-2` (שורה אחת צריכה קצת יותר גובה)
-- **details text** — מופיע inline אחרי ה-badges בצבע בהיר, `truncate`
+### שינויים טכניים
 
-### קובץ אחד: `LiveFeedTab.tsx`
-
+**`ChecksDashboard.tsx`**:
+1. הוספת שאילתה חדשה לספירת נכסים `status='new'` + `is_active=true` (כמו ב-MatchingStatus)
+2. הוספת שאילתה לספירת לידים עם/בלי התאמות (דומה ל-MatchingStatus — שליפת `matched_leads` וחיתוך עם eligible leads)
+3. עדכון 4 ה-props של ProcessCard בשורות 537-541
