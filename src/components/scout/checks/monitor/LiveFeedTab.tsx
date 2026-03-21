@@ -28,15 +28,15 @@ const eventKindBadge = (kind?: string) => {
   if (!kind) return null;
   const m = map[kind];
   if (!m) return null;
-  return <span className={`${m.cls} text-[9px] font-mono font-bold px-1.5 py-0.5 rounded`}>{m.text}</span>;
+  return <span className={`${m.cls} text-[10px] font-mono font-bold px-1.5 py-0.5 rounded`}>{m.text}</span>;
 };
 
 const statusIcon = (s: FeedItem['status']) => {
   switch (s) {
-    case 'ok': return <CheckCircle className="h-3.5 w-3.5 text-green-400" />;
-    case 'error': return <XCircle className="h-3.5 w-3.5 text-red-400" />;
-    case 'warning': return <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />;
-    case 'pending': return <Clock className="h-3.5 w-3.5 text-gray-500" />;
+    case 'ok': return <CheckCircle className="h-4 w-4 text-green-400" />;
+    case 'error': return <XCircle className="h-4 w-4 text-red-400" />;
+    case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-400" />;
+    case 'pending': return <Clock className="h-4 w-4 text-gray-500" />;
   }
 };
 
@@ -48,7 +48,7 @@ const sourceBadge = (source?: string) => {
   };
   const s = map[source?.toLowerCase() || ''];
   if (!s) return null;
-  return <span className={`${s.cls} font-mono text-[10px] font-bold px-1.5 py-0.5 rounded`}>{s.text}</span>;
+  return <span className={`${s.cls} font-mono text-[11px] font-bold px-1.5 py-0.5 rounded`}>{s.text}</span>;
 };
 
 const PropertyBadges: React.FC<{ extra?: FeedItem['extra'] }> = ({ extra }) => {
@@ -58,18 +58,18 @@ const PropertyBadges: React.FC<{ extra?: FeedItem['extra'] }> = ({ extra }) => {
   if (extra.is_private !== undefined) {
     badges.push(
       extra.is_private
-        ? <span key="prv" className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 flex items-center gap-0.5"><Home className="h-2.5 w-2.5" />פרטי</span>
-        : <span key="brk" className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 flex items-center gap-0.5"><Building2 className="h-2.5 w-2.5" />תיווך</span>
+        ? <span key="prv" className="text-xs font-medium px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 flex items-center gap-0.5"><Home className="h-3 w-3" />פרטי</span>
+        : <span key="brk" className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 flex items-center gap-0.5"><Building2 className="h-3 w-3" />תיווך</span>
     );
   }
   if (extra.price) {
-    badges.push(<span key="pr" className="text-[11px] text-gray-300 font-mono px-1.5 py-0.5 rounded bg-white/[0.04]">₪{(extra.price / 1000).toFixed(0)}K</span>);
+    badges.push(<span key="pr" className="text-xs text-gray-300 font-mono px-1.5 py-0.5 rounded bg-white/[0.04]">₪{(extra.price / 1000).toFixed(0)}K</span>);
   }
   if (extra.rooms) {
-    badges.push(<span key="rm" className="text-[11px] text-gray-400 px-1.5 py-0.5 rounded bg-white/[0.04]">{extra.rooms} חד׳</span>);
+    badges.push(<span key="rm" className="text-xs text-gray-400 px-1.5 py-0.5 rounded bg-white/[0.04]">{extra.rooms} חד׳</span>);
   }
   if (extra.floor !== undefined && extra.floor !== null) {
-    badges.push(<span key="fl" className="text-[11px] text-gray-500 px-1.5 py-0.5 rounded bg-white/[0.04]">ק׳ {extra.floor}</span>);
+    badges.push(<span key="fl" className="text-xs text-gray-500 px-1.5 py-0.5 rounded bg-white/[0.04]">ק׳ {extra.floor}</span>);
   }
 
   if (badges.length === 0) return null;
@@ -140,27 +140,25 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
                   key={`${item.type}-${i}`}
                   className={`${cfg.bgClass} ${isLast ? 'animate-in fade-in-50 slide-in-from-bottom-1 duration-300' : ''} transition-colors hover:bg-white/[0.03]`}
                 >
-                  {/* Desktop: row 1 — time, icon, status, eventKind, primary text, source */}
-                  <div className="hidden md:flex items-center gap-2 px-3 py-1.5 pb-0.5">
-                    <span className="text-[10px] text-gray-600 font-mono shrink-0 w-[52px]" dir="ltr">
+                  {/* Desktop: single row */}
+                  <div className="hidden md:flex items-center gap-2 px-3 py-2">
+                    <span className="text-[11px] text-gray-600 font-mono shrink-0 w-[52px]" dir="ltr">
                       {item.timestamp ? format(new Date(item.timestamp), 'HH:mm:ss') : '--:--:--'}
                     </span>
-                    <Icon className="h-3.5 w-3.5 text-gray-600 shrink-0" />
+                    <Icon className="h-4 w-4 text-gray-600 shrink-0" />
                     <span className="shrink-0">{statusIcon(item.status)}</span>
                     {item.eventKind && <span className="shrink-0">{eventKindBadge(item.eventKind)}</span>}
                     {item.url ? (
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-200 flex-1 truncate font-medium hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[15px] text-gray-200 shrink-0 max-w-[280px] truncate font-medium hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
                         {item.primary}
                       </a>
                     ) : (
-                      <span className="text-sm text-gray-200 flex-1 truncate font-medium">{item.primary}</span>
+                      <span className="text-[15px] text-gray-200 shrink-0 max-w-[280px] truncate font-medium">{item.primary}</span>
                     )}
-                    {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
-                  </div>
-                  {/* Desktop: row 2 — property badges + details text */}
-                  <div className="hidden md:flex items-center gap-2 px-3 pb-1.5 pr-[60px] flex-wrap">
                     <PropertyBadges extra={item.extra} />
-                    {item.details && <span className="text-[11px] text-gray-500 truncate">{item.details}</span>}
+                    {item.details && <span className="text-xs text-gray-500 truncate">{item.details}</span>}
+                    <span className="flex-1" />
+                    {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
                   </div>
 
                   {/* Mobile: two rows */}
