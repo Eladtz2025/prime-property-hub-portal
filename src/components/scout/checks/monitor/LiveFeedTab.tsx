@@ -1,7 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React from 'react';
 import {
   CheckCircle, XCircle, Clock, AlertTriangle,
-  Search, Shield, Database, Copy, ArrowDown, Home, Building2,
+  Search, Shield, Database, Copy,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { FeedItem } from './useMonitorData';
@@ -91,10 +91,6 @@ interface LiveFeedTabProps {
 }
 
 export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilter }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [autoScroll, setAutoScroll] = useState(true);
-  const [prevLength, setPrevLength] = useState(0);
-
   // Filter by source
   const filtered = sourceFilter === 'all'
     ? feedItems
@@ -105,27 +101,9 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
           (sourceFilter === 'avail' && f.type === 'availability')
         );
 
-  // Auto-scroll
-  useEffect(() => {
-    if (autoScroll && scrollRef.current && filtered.length > prevLength) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-    setPrevLength(filtered.length);
-  }, [filtered.length, autoScroll]);
-
-  // Detect manual scroll-up
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 60;
-    setAutoScroll(isAtBottom);
-  };
-
   return (
     <div className="relative h-full">
       <div
-        ref={scrollRef}
-        onScroll={handleScroll}
         className="h-full overflow-y-auto scrollbar-thin"
         dir="rtl"
       >
@@ -204,19 +182,6 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
         )}
       </div>
 
-      {/* Scroll-to-bottom button */}
-      {!autoScroll && filtered.length > 10 && (
-        <button
-          onClick={() => {
-            setAutoScroll(true);
-            if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-          }}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-gray-800/90 border border-white/10 text-gray-300 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-gray-700/90 transition-colors backdrop-blur-sm shadow-lg"
-        >
-          <ArrowDown className="h-3 w-3" />
-          חזור למטה
-        </button>
-      )}
     </div>
   );
 };
