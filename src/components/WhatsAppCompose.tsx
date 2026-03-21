@@ -76,7 +76,6 @@ export const WhatsAppCompose: React.FC = () => {
             name: l.name,
             phone: l.phone,
             type: 'lead' as const,
-            extra: l.source || l.status || ''
           }))
         );
       } else if (recipientSource === 'owners') {
