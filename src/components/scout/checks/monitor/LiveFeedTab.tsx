@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import {
   CheckCircle, XCircle, Clock, AlertTriangle,
-  Search, Shield, Database, Copy, ArrowDown,
+  Search, Shield, Database, Copy, ArrowDown, Home, Building2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { FeedItem } from './useMonitorData';
@@ -49,6 +49,34 @@ const sourceBadge = (source?: string) => {
   const s = map[source?.toLowerCase() || ''];
   if (!s) return null;
   return <span className={`${s.cls} font-mono text-[10px] font-bold px-1.5 py-0.5 rounded`}>{s.text}</span>;
+};
+
+const PropertyBadges: React.FC<{ extra?: FeedItem['extra'] }> = ({ extra }) => {
+  if (!extra) return null;
+  const badges: React.ReactNode[] = [];
+
+  if (extra.is_private !== undefined) {
+    badges.push(
+      extra.is_private
+        ? <span key="prv" className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 flex items-center gap-0.5"><Home className="h-2.5 w-2.5" />פרטי</span>
+        : <span key="brk" className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 flex items-center gap-0.5"><Building2 className="h-2.5 w-2.5" />תיווך</span>
+    );
+  }
+  if (extra.neighborhood) {
+    badges.push(<span key="nb" className="text-[10px] text-gray-400 px-1.5 py-0.5 rounded bg-white/[0.04]">{extra.neighborhood}</span>);
+  }
+  if (extra.price) {
+    badges.push(<span key="pr" className="text-[10px] text-gray-300 font-mono px-1.5 py-0.5 rounded bg-white/[0.04]">₪{(extra.price / 1000).toFixed(0)}K</span>);
+  }
+  if (extra.rooms) {
+    badges.push(<span key="rm" className="text-[10px] text-gray-400 px-1.5 py-0.5 rounded bg-white/[0.04]">{extra.rooms} חד׳</span>);
+  }
+  if (extra.floor !== undefined && extra.floor !== null) {
+    badges.push(<span key="fl" className="text-[10px] text-gray-500 px-1.5 py-0.5 rounded bg-white/[0.04]">ק׳ {extra.floor}</span>);
+  }
+
+  if (badges.length === 0) return null;
+  return <>{badges}</>;
 };
 
 interface LiveFeedTabProps {
@@ -108,13 +136,14 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
               const cfg = typeConfig[item.type];
               const Icon = cfg.icon;
               const isLast = i === filtered.length - 1;
+              const hasPropertyBadges = item.extra && (item.extra.price || item.extra.rooms || item.extra.neighborhood || item.extra.is_private !== undefined || item.extra.floor !== undefined);
 
               return (
                 <div
                   key={`${item.type}-${i}`}
                   className={`${cfg.bgClass} ${isLast ? 'animate-in fade-in-50 slide-in-from-bottom-1 duration-300' : ''} transition-colors hover:bg-white/[0.03]`}
                 >
-                  {/* Desktop: single row */}
+                  {/* Desktop: row 1 — time, icon, status, eventKind, primary text, source */}
                   <div className="hidden md:flex items-center gap-2 px-3 py-1.5 pb-0.5">
                     <span className="text-[10px] text-gray-600 font-mono shrink-0 w-[52px]" dir="ltr">
                       {item.timestamp ? format(new Date(item.timestamp), 'HH:mm:ss') : '--:--:--'}
@@ -130,11 +159,11 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
                       <span className="text-[13px] text-gray-200 flex-1 truncate font-medium">{item.primary}</span>
                     )}
                     {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
-                    {item.extra?.price && <span className="text-[10px] text-gray-500 shrink-0 font-mono">₪{(item.extra.price / 1000).toFixed(0)}K</span>}
-                    {item.extra?.rooms && <span className="text-[10px] text-gray-500 shrink-0">{item.extra.rooms}ח׳</span>}
                   </div>
-                  <div className="hidden md:flex items-center gap-2 px-3 pb-1.5 pr-[72px]">
-                    <span className="text-[11px] text-gray-500 truncate flex-1">{item.details}</span>
+                  {/* Desktop: row 2 — property badges + details text */}
+                  <div className="hidden md:flex items-center gap-1.5 px-3 pb-1.5 pr-[72px] flex-wrap">
+                    <PropertyBadges extra={item.extra} />
+                    {item.details && <span className="text-[11px] text-gray-500 truncate">{item.details}</span>}
                   </div>
 
                   {/* Mobile: two rows */}
@@ -143,8 +172,6 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
                       {item.source && <span className="shrink-0">{sourceBadge(item.source)}</span>}
                       {item.eventKind && <span className="shrink-0">{eventKindBadge(item.eventKind)}</span>}
                       <span className="shrink-0">{statusIcon(item.status)}</span>
-                      {item.extra?.price && <span className="text-[10px] text-gray-400 font-mono shrink-0">₪{(item.extra.price / 1000).toFixed(0)}K</span>}
-                      {item.extra?.rooms && <span className="text-[10px] text-gray-500 shrink-0">{item.extra.rooms}ח׳</span>}
                       <span className="flex-1" />
                       <span className="text-[10px] text-gray-600 font-mono shrink-0" dir="ltr">
                         {item.timestamp ? format(new Date(item.timestamp), 'HH:mm:ss') : '--:--:--'}
@@ -157,6 +184,11 @@ export const LiveFeedTab: React.FC<LiveFeedTabProps> = ({ feedItems, sourceFilte
                         </a>
                       ) : (
                         <span className="text-[12px] text-gray-200 font-medium line-clamp-1">{item.primary}</span>
+                      )}
+                      {hasPropertyBadges && (
+                        <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                          <PropertyBadges extra={item.extra} />
+                        </div>
                       )}
                       {item.details && <p className="text-[10px] text-gray-500 line-clamp-1 mt-0.5">{item.details}</p>}
                     </div>

@@ -77,7 +77,7 @@ export interface FeedItem {
   source?: string;
   status: 'ok' | 'error' | 'warning' | 'pending';
   url?: string;
-  extra?: { price?: number; rooms?: number; floor?: number };
+  extra?: { price?: number; rooms?: number; floor?: number; neighborhood?: string; is_private?: boolean };
   eventKind?: 'found' | 'matched' | 'timeout' | 'pushed' | 'skipped' | 'checked' | 'inactive' | 'error';
 }
 
@@ -311,7 +311,7 @@ export function useMonitorData() {
       for (const [source, run] of latestCompletedRuns) {
         const { data } = await supabase
           .from('scouted_properties')
-          .select('address, neighborhood, price, rooms, source, source_url, created_at, last_seen_at')
+          .select('address, neighborhood, price, rooms, source, source_url, created_at, last_seen_at, is_private, floor')
           .eq('source', source)
           .gte('last_seen_at', run.started_at)
           .lte('last_seen_at', run.completed_at)
@@ -355,7 +355,7 @@ export function useMonitorData() {
       if (!latestDedupRun) return [];
       const { data } = await supabase
         .from('scouted_properties')
-        .select('address, neighborhood, price, rooms, source, source_url, duplicate_group_id, dedup_checked_at')
+        .select('address, neighborhood, price, rooms, source, source_url, duplicate_group_id, dedup_checked_at, is_private, floor')
         .not('duplicate_group_id', 'is', null)
         .gte('dedup_checked_at', latestDedupRun.started_at)
         .lte('dedup_checked_at', latestDedupRun.completed_at)
@@ -375,7 +375,7 @@ export function useMonitorData() {
     queryFn: async () => {
       const { data } = await supabase
         .from('scouted_properties')
-        .select('address, neighborhood, price, rooms, source, source_url, matched_leads, updated_at')
+        .select('address, neighborhood, price, rooms, source, source_url, matched_leads, updated_at, is_private, floor')
         .gte('updated_at', since24h)
         .not('matched_leads', 'is', null)
         .order('updated_at', { ascending: false })
@@ -440,11 +440,11 @@ export function useMonitorData() {
         type: 'availability',
         timestamp: d.checked_at || '',
         primary: formatCleanAddress(d.address, d.neighborhood) || d.property_id?.slice(0, 8) || '?',
-        details: `${truncateUrl(d.source_url)} | ${detail} | ${label}`,
+        details: `${detail} | ${label}`,
         source: d.source,
         status,
         url: d.source_url,
-        extra: { price: d.price, rooms: d.rooms, floor: d.floor },
+        extra: { price: d.price, rooms: d.rooms, floor: d.floor, neighborhood: d.neighborhood },
         eventKind,
       });
     });
@@ -525,20 +525,16 @@ export function useMonitorData() {
 
           sorted.forEach(prop => {
             const isNew = prop.created_at >= runTimes.started_at && prop.created_at <= runTimes.completed_at;
-            const detailParts: string[] = [];
-            if (prop.neighborhood) detailParts.push(prop.neighborhood);
-            if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
-            if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
 
             items.push({
               type: 'scan',
               timestamp: prop.last_seen_at || prop.created_at,
-              primary: formatCleanAddress(prop.address, prop.neighborhood),
-              details: detailParts.join(' | ') || 'ללא פרטים',
+              primary: formatCleanAddress(prop.address, undefined),
+              details: '',
               source: prop.source ?? undefined,
               status: 'ok',
               url: prop.source_url ?? undefined,
-              extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined },
+              extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined, floor: (prop as any).floor ?? undefined, neighborhood: prop.neighborhood ?? undefined, is_private: (prop as any).is_private ?? undefined },
               eventKind: isNew ? 'found' : 'checked',
             });
           });
@@ -575,21 +571,17 @@ export function useMonitorData() {
         // Add individual dedup properties
         if (dedupProperties?.length) {
           dedupProperties.forEach(prop => {
-            const detailParts: string[] = [];
-            if (prop.neighborhood) detailParts.push(prop.neighborhood);
-            if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
-            if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
-            if (prop.duplicate_group_id) detailParts.push(`קבוצה: ${prop.duplicate_group_id.slice(0, 6)}`);
+            const groupLabel = prop.duplicate_group_id ? `קבוצה: ${prop.duplicate_group_id.slice(0, 6)}` : '';
 
             items.push({
               type: 'dedup',
               timestamp: prop.dedup_checked_at || '',
-              primary: formatCleanAddress(prop.address, prop.neighborhood),
-              details: detailParts.join(' | ') || 'ללא פרטים',
+              primary: formatCleanAddress(prop.address, undefined),
+              details: groupLabel,
               source: prop.source ?? undefined,
               status: 'ok',
               url: prop.source_url ?? undefined,
-              extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined },
+              extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined, floor: (prop as any).floor ?? undefined, neighborhood: prop.neighborhood ?? undefined, is_private: (prop as any).is_private ?? undefined },
               eventKind: 'found',
             });
           });
@@ -665,24 +657,20 @@ export function useMonitorData() {
       matchingProperties.forEach(prop => {
         const ml = prop.matched_leads as unknown as any[];
         const matchCount = ml?.length ?? 0;
-        const detailParts: string[] = [];
-        if (prop.neighborhood) detailParts.push(prop.neighborhood);
-        if (prop.price) detailParts.push(`₪${(prop.price / 1000).toFixed(0)}K`);
-        if (prop.rooms) detailParts.push(`${prop.rooms} חד׳`);
         const names = ml?.map((m: any) => m.name).filter(Boolean) ?? [];
         const displayNames = names.slice(0, 4).join(', ');
         const extra_names = names.length > 4 ? ` ועוד ${names.length - 4}` : '';
-        detailParts.push(`${matchCount} התאמות` + (displayNames ? ` — ${displayNames}${extra_names}` : ''));
+        const matchDetail = `${matchCount} התאמות` + (displayNames ? ` — ${displayNames}${extra_names}` : '');
 
         items.push({
           type: 'matching',
           timestamp: prop.updated_at || '',
-          primary: formatCleanAddress(prop.address, prop.neighborhood),
-          details: detailParts.join(' | '),
+          primary: formatCleanAddress(prop.address, undefined),
+          details: matchDetail,
           source: prop.source ?? undefined,
           status: 'ok',
           url: prop.source_url ?? undefined,
-          extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined },
+          extra: { price: prop.price ?? undefined, rooms: prop.rooms ?? undefined, floor: (prop as any).floor ?? undefined, neighborhood: prop.neighborhood ?? undefined, is_private: (prop as any).is_private ?? undefined },
           eventKind: 'matched',
         });
       });
@@ -1030,7 +1018,7 @@ export function useMonitorData() {
 
     const details: { name: string; ok: boolean; found: number; isNew: number; time: string }[] = [];
     bySource.forEach((runs, source) => {
-      const anyCompleted = runs.some(r => r.status === 'completed');
+      const anyCompleted = runs.some(r => r.status === 'completed' || r.status === 'partial');
       const totalFound = runs.reduce((s, r) => s + (r.properties_found ?? 0), 0);
       const totalNew = runs.reduce((s, r) => s + (r.new_properties ?? 0), 0);
       const lastRun = runs[0];
