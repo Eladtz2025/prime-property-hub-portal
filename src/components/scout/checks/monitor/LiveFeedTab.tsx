@@ -63,7 +63,7 @@ const PropertyBadges: React.FC<{ extra?: FeedItem['extra'] }> = ({ extra }) => {
     );
   }
   if (extra.price) {
-    badges.push(<span key="pr" className="text-[11px] text-gray-300 font-mono px-1.5 py-0.5 rounded bg-white/[0.04]">₪{(extra.price / 1000).toFixed(0)}K</span>);
+    badges.push(<span key="pr" className="text-xs text-gray-300 font-mono px-1.5 py-0.5 rounded bg-white/[0.04]">₪{(extra.price / 1000).toFixed(0)}K</span>);
   }
   if (extra.rooms) {
     badges.push(<span key="rm" className="text-[11px] text-gray-400 px-1.5 py-0.5 rounded bg-white/[0.04]">{extra.rooms} חד׳</span>);
