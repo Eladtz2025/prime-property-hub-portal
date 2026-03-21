@@ -1,18 +1,20 @@
 
 
-## תיקון: הסרת הגלילה לחלוטין בהחלפת טאבים
+## הסרת auto-scroll מהמוניטור
 
 ### בעיה
-אין סיבה אמיתית לגלול בכלל כשמחליפים טאב — המשתמש כבר רואה את שורת הטאבים, אז למה להזיז משהו?
+כשמחליפים טאב במוניטור, ה-`LiveFeedTab` גולל אוטומטית לתחתית הרשימה בגלל `autoScroll` שמופעל כברירת מחדל ו-`useEffect` שמזיז את `scrollTop` ל-`scrollHeight` בכל פעם שנוספים פריטים.
 
 ### פתרון
-מחיקת כל לוגיקת ה-`scrollIntoView` וה-`useRef` מ-`ChecksSubTabs.tsx`. החלפת טאב פשוט מחליפה תוכן במקום, בלי גלילה.
+הסרת כל לוגיקת ה-auto-scroll מ-`LiveFeedTab.tsx`:
 
-### שינוי — `ChecksSubTabs.tsx`
-- מחיקת `useRef` import ו-`tabsListRef`
-- מחיקת פונקציית `handleTabChange` (שמכילה את ה-scrollIntoView)
-- החלפת `onValueChange={handleTabChange}` ב-`onValueChange={setActiveTab}`
-- הסרת `ref={tabsListRef}` מה-TabsList
+- מחיקת `useState(autoScroll)` ו-`useState(prevLength)`
+- מחיקת ה-`useEffect` שמבצע `scrollTop = scrollHeight`
+- מחיקת `handleScroll` שמזהה גלילה ידנית
+- מחיקת `onScroll={handleScroll}` מה-div
+- מחיקת כפתור "חזור למטה" (`ArrowDown`)
+- הסרת imports מיותרים (`useEffect`, `useState`, `ArrowDown`)
 
-~5 שורות פחות בקובץ.
+### קובץ: `src/components/scout/checks/monitor/LiveFeedTab.tsx`
+~30 שורות פחות. הרשימה תמיד תתחיל מלמעלה ולא תזוז אוטומטית.
 
