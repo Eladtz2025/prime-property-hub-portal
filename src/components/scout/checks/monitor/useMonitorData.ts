@@ -1018,7 +1018,7 @@ export function useMonitorData() {
 
     const details: { name: string; ok: boolean; found: number; isNew: number; time: string }[] = [];
     bySource.forEach((runs, source) => {
-      const anyCompleted = runs.some(r => r.status === 'completed');
+      const anyCompleted = runs.some(r => r.status === 'completed' || r.status === 'partial');
       const totalFound = runs.reduce((s, r) => s + (r.properties_found ?? 0), 0);
       const totalNew = runs.reduce((s, r) => s + (r.new_properties ?? 0), 0);
       const lastRun = runs[0];
