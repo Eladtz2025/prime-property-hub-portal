@@ -1,39 +1,31 @@
 
 
-## הגדרת WhatsApp לכל משתמש — Green API אישי בפרופיל
+## מילוי פרטי Green API בפרופיל של אלעד
 
-### הרעיון
-כרגע כל שליחת WhatsApp עוברת דרך ה-Green API שלך (אלעד). משתמשים אחרים כמו טלי לא יכולים לשלוח הודעות כי זה לא הווטסאפ שלהם. הפתרון: כל משתמש יוכל להגדיר את ה-Green API שלו בהגדרות הפרופיל, ואם לא הגדיר — יקבל הודעה שצריך לחבר WhatsApp.
+### הבעיה
+הפרופיל של אלעד (eladtz@gmail.com) ריק בשדות `green_api_instance_id` ו-`green_api_token`, אז שליחת WhatsApp לא תעבוד.
+
+### הפתרון
+מיגרציה שתמלא את הפרטים מה-env vars הקיימים (`GREEN_API_INSTANCE_ID`, `GREEN_API_TOKEN`) לתוך הפרופיל של אלעד.
 
 ### שינויים
 
-**1. מיגרציה — הוספת עמודות לטבלת `profiles`**
-- `green_api_instance_id` (text, nullable)
-- `green_api_token` (text, nullable)
+**1. מיגרציה חדשה** — עדכון פרופיל אלעד
+```sql
+UPDATE profiles 
+SET green_api_instance_id = '...', green_api_token = '...'
+WHERE id = 'bfd1625c-7bb5-424f-8969-966cbbdd00ef';
+```
 
-**2. `src/components/UserSettings.tsx` — הוספת שדות WhatsApp**
-- סקשן חדש "חיבור WhatsApp" עם שני שדות: Instance ID ו-API Token
-- הסבר קצר איך להשיג את הפרטים מ-Green API
-- שמירה ב-profiles יחד עם שאר הפרטים
+הערה: אני צריך לשלוף את הערכים מה-secrets כדי לשים אותם במיגרציה. לחלופין, אפשר לעשות את זה ידנית דרך ה-edge function או שתזין את הפרטים בהגדרות הפרופיל שלך.
 
-**3. `supabase/functions/whatsapp-send/index.ts` — שליפת credentials מהפרופיל**
-- לקרוא את ה-JWT מה-Authorization header כדי לזהות את המשתמש
-- לשלוף את `green_api_instance_id` ו-`green_api_token` מטבלת profiles של המשתמש
-- fallback: אם למשתמש אין credentials → להחזיר שגיאה ברורה ("WhatsApp לא מחובר")
-- להסיר שימוש ב-env vars `GREEN_API_TOKEN` / `GREEN_API_INSTANCE_ID` עבור שליחת הודעות (להשאיר רק ל-notify functions)
+### בעיה — אבטחה
+לשים API tokens בתוך קוד מיגרציה (שנשמר ב-Git) זה לא מומלץ מבחינת אבטחה. 
 
-**4. `src/hooks/useWhatsAppSender.ts` — טיפול בשגיאה**
-- אם חוזרת שגיאה "WhatsApp לא מחובר" — להציג toast עם הפניה להגדרות
+**הדרך הכי פשוטה**: פשוט תלך להגדרות הפרופיל שלך (אתה כבר שם עכשיו), תגלול למטה לסקשן "חיבור WhatsApp", ותזין את ה-Instance ID וה-API Token שלך. זה ממש 30 שניות.
 
-**5. `src/types/auth.ts` — עדכון UserProfile**
-- הוספת `green_api_instance_id` ו-`green_api_token`
+לחלופין, אני יכול להריץ SQL query ישירות שתמלא את הפרטים — בלי לשמור אותם בקוד.
 
-### מה לא משתנה
-- `notify-new-lead` ו-`notify-form-signed` — ממשיכים עם ה-env vars הגלובליים (התראות מערכת)
-- `whatsapp-status` — נשאר כמו שהוא
-- כל ה-UI של שליחת WhatsApp — נשאר זהה, רק ה-backend מביא credentials מהפרופיל
-
-### אבטחה
-- ה-tokens נשמרים ב-profiles עם RLS — כל משתמש רואה ומעדכן רק את שלו
-- ב-edge function: אימות JWT + שליפת credentials מהפרופיל בלבד
+### מה עוד צריך
+שום דבר. ה-edge function כבר מוכנה לקרוא מהפרופיל, ושאר המשתמשים (טלי, Nova) פשוט יראו את השדות ריקים ויצטרכו לחבר בעצמם.
 
