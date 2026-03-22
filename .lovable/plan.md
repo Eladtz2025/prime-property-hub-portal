@@ -1,36 +1,39 @@
 
 
-## תיקון זיהוי מאפיינים מהומלס — לפי Bold בלבד
+## הגדרת WhatsApp לכל משתמש — Green API אישי בפרופיל
 
-### הבעיה
-בהומלס, מאפיינים שקיימים מופיעים ב**טקסט מודגש** (bold) ומאפיינים שלא קיימים מופיעים בטקסט רגיל/אפור. אין טקסט "אין" — רק הבדל עיצובי.
+### הרעיון
+כרגע כל שליחת WhatsApp עוברת דרך ה-Green API שלך (אלעד). משתמשים אחרים כמו טלי לא יכולים לשלוח הודעות כי זה לא הווטסאפ שלהם. הפתרון: כל משתמש יוכל להגדיר את ה-Green API שלו בהגדרות הפרופיל, ואם לא הגדיר — יקבל הודעה שצריך לחבר WhatsApp.
 
-כש-Jina מביא את העמוד כ-markdown, bold הופך ל-`**מרפסת**` ולא-bold נשאר `מרפסת`. הפרסר הנוכחי מחפש רק את המילה `מרפסת` — ולכן תמיד מסמן `true`, גם כשאין.
+### שינויים
 
-### התיקון — בקובץ אחד בלבד
+**1. מיגרציה — הוספת עמודות לטבלת `profiles`**
+- `green_api_instance_id` (text, nullable)
+- `green_api_token` (text, nullable)
 
-**`supabase/functions/backfill-property-data-jina/index.ts`** — פונקציית `extractFeatures`
+**2. `src/components/UserSettings.tsx` — הוספת שדות WhatsApp**
+- סקשן חדש "חיבור WhatsApp" עם שני שדות: Instance ID ו-API Token
+- הסבר קצר איך להשיג את הפרטים מ-Green API
+- שמירה ב-profiles יחד עם שאר הפרטים
 
-כשה-source הוא `homeless`, הלוגיקה תהיה:
-- אם המאפיין מופיע כ-`**מרפסת**` (עטוף בכוכביות = bold) → `true`
-- אם המאפיין מופיע רק כ-`מרפסת` (בלי כוכביות = לא bold) → `false` (מפורש)
-- אם המאפיין לא מופיע בכלל → לא מוגדר (כמו היום)
+**3. `supabase/functions/whatsapp-send/index.ts` — שליפת credentials מהפרופיל**
+- לקרוא את ה-JWT מה-Authorization header כדי לזהות את המשתמש
+- לשלוף את `green_api_instance_id` ו-`green_api_token` מטבלת profiles של המשתמש
+- fallback: אם למשתמש אין credentials → להחזיר שגיאה ברורה ("WhatsApp לא מחובר")
+- להסיר שימוש ב-env vars `GREEN_API_TOKEN` / `GREEN_API_INSTANCE_ID` עבור שליחת הודעות (להשאיר רק ל-notify functions)
 
-זה ישפיע רק על נכסים מהומלס. נכסים מ-Yad2/Madlan ימשיכו עם הלוגיקה הקיימת ללא שינוי.
+**4. `src/hooks/useWhatsAppSender.ts` — טיפול בשגיאה**
+- אם חוזרת שגיאה "WhatsApp לא מחובר" — להציג toast עם הפניה להגדרות
 
-### מה ישתנה בפועל
-הפונקציה `extractFeatures` כבר מקבלת `source` כפרמטר. נוסיף בלוק בתחילת הפונקציה: אם `source === 'homeless'`, נפעיל לוגיקה חלופית שבודקת bold (`**...**`) במקום סתם הופעת המילה.
-
-המאפיינים שייבדקו: מרפסת, חניה/חנייה, מעלית, ממ"ד, מחסן, מזגן, חצר/גינה, גג
-
-### קבצים
-| פעולה | קובץ |
-|-------|------|
-| עריכה | `supabase/functions/backfill-property-data-jina/index.ts` — לוגיקת bold להומלס ב-extractFeatures |
-| Deploy | `backfill-property-data-jina` |
+**5. `src/types/auth.ts` — עדכון UserProfile**
+- הוספת `green_api_instance_id` ו-`green_api_token`
 
 ### מה לא משתנה
-- פרסר SERP (`parser-utils.ts`) — לא משתנה (הוא מפרסר את טבלת החיפוש, שם אין מאפיינים)
-- לוגיקת Yad2/Madlan — לא משתנה
-- שום דבר אחר במערכת
+- `notify-new-lead` ו-`notify-form-signed` — ממשיכים עם ה-env vars הגלובליים (התראות מערכת)
+- `whatsapp-status` — נשאר כמו שהוא
+- כל ה-UI של שליחת WhatsApp — נשאר זהה, רק ה-backend מביא credentials מהפרופיל
+
+### אבטחה
+- ה-tokens נשמרים ב-profiles עם RLS — כל משתמש רואה ומעדכן רק את שלו
+- ב-edge function: אימות JWT + שליפת credentials מהפרופיל בלבד
 
