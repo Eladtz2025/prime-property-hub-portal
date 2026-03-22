@@ -120,6 +120,8 @@ export const CustomerMobileTable = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hideDialogOpen, setHideDialogOpen] = useState(false);
   const [matchesSheetOpen, setMatchesSheetOpen] = useState(false);
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
+  const [whatsappTarget, setWhatsappTarget] = useState<{ phone: string; name: string; context?: string } | null>(null);
   const [matchesData, setMatchesData] = useState<{
     customerName: string;
     customerPhone?: string;

@@ -892,6 +892,16 @@ export const ExpandableCustomerRow = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {customer.phone && (
+        <WhatsAppSendDialog
+          open={whatsappDialogOpen}
+          onOpenChange={setWhatsappDialogOpen}
+          phone={customer.phone}
+          name={customer.name}
+          context={whatsappContext}
+        />
+      )}
     </>
   );
 };
