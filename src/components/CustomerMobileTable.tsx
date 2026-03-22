@@ -274,8 +274,11 @@ export const CustomerMobileTable = ({
                       className="h-6 w-6 p-0 text-green-600 shrink-0" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        const message = encodeURIComponent(`שלום ${customer.name}!`);
-                        window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+                        const ctx = customer.preferred_cities?.length
+                          ? `מחפש דירה ב${customer.preferred_cities.join(', ')}`
+                          : undefined;
+                        setWhatsappTarget({ phone: customer.phone, name: customer.name, context: ctx });
+                        setWhatsappDialogOpen(true);
                       }}
                     >
                       <MessageSquare className="h-3.5 w-3.5" />
