@@ -41,6 +41,8 @@ interface ExpandableCustomerRowProps {
   onUnhideCustomer?: (id: string) => void;
   onSave: () => void;
   agents?: Agent[];
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }
 
 const priorityColors: Record<string, string> = {
