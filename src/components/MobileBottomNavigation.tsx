@@ -5,12 +5,14 @@ import {
   Building, 
   Users,
   Search,
+  Megaphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const mainNavItems = [
   { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
+  { title: "שיווק", url: "/admin-dashboard/marketing", icon: Megaphone },
   { title: "לקוחות", url: "/admin-dashboard/customers", icon: Users },
   { title: "סקאוט", url: "/admin-dashboard/property-scout", icon: Search },
 ];
