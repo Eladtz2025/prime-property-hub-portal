@@ -289,6 +289,7 @@ export const CustomerMobileTable = ({
                       <Checkbox checked={selectedIds.has(customer.id)} className="h-3.5 w-3.5" />
                     </div>
                   )}
+                  {customer.phone && (
                     <Button 
                       size="sm" 
                       variant="ghost" 
