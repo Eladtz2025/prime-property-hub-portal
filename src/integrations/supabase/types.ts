@@ -2156,6 +2156,8 @@ export type Database = {
           created_at: string
           email: string
           full_name: string | null
+          green_api_instance_id: string | null
+          green_api_token: string | null
           id: string
           id_number: string | null
           is_approved: boolean
@@ -2169,6 +2171,8 @@ export type Database = {
           created_at?: string
           email: string
           full_name?: string | null
+          green_api_instance_id?: string | null
+          green_api_token?: string | null
           id: string
           id_number?: string | null
           is_approved?: boolean
@@ -2182,6 +2186,8 @@ export type Database = {
           created_at?: string
           email?: string
           full_name?: string | null
+          green_api_instance_id?: string | null
+          green_api_token?: string | null
           id?: string
           id_number?: string | null
           is_approved?: boolean
