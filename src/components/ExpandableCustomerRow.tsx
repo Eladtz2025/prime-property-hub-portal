@@ -444,7 +444,7 @@ export const ExpandableCustomerRow = ({
 
       {/* Expanded Edit Section */}
       <TableRow className={isExpanded ? '' : 'hidden'}>
-        <TableCell colSpan={6} className="p-0 border-0">
+        <TableCell colSpan={7} className="p-0 border-0">
           <Collapsible open={isExpanded}>
             <CollapsibleContent className="bg-muted/20 border-t">
               <div className="p-4 space-y-4">
