@@ -812,7 +812,7 @@ export const Properties: React.FC = memo(() => {
                             {/* Expandable Edit Row */}
                             {expandedPropertyId === property.id && (
                               <TableRow>
-                                <TableCell colSpan={7} className="p-0 border-0">
+                                <TableCell colSpan={10} className="p-0 border-0">
                                   <PropertyEditRow
                                     property={property}
                                     isOpen={true}
