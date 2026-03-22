@@ -25,6 +25,8 @@ export const UserSettings: React.FC = () => {
     broker_license_number: '',
     id_number: '',
     address: '',
+    green_api_instance_id: '',
+    green_api_token: '',
   });
 
   const validateFormField = (field: FormFields, value: string) => {
