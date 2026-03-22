@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { WhatsAppSendDialog } from "@/components/WhatsAppSendDialog";
+import { WhatsAppBulkBar } from "@/components/WhatsAppBulkBar";
+import { WhatsAppBulkSendDialog } from "@/components/WhatsAppBulkSendDialog";
 import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
