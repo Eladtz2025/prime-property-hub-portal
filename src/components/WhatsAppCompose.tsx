@@ -3,12 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Send, X, Users, User, MessageCircle, Pencil, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Send, X, Users, User, MessageCircle, Pencil, CheckCircle, Clock, XCircle, ChevronDown } from 'lucide-react';
 import { formatIsraeliPhone } from '@/utils/phoneFormatter';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -54,6 +54,7 @@ const propertyTypeMap: Record<string, string> = {
 };
 
 export const WhatsAppCompose: React.FC = () => {
+  const [templatePopoverOpen, setTemplatePopoverOpen] = useState(false);
   const [recipientSource, setRecipientSource] = useState<'leads' | 'owners'>('leads');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<Recipient[]>([]);
@@ -431,31 +432,54 @@ export const WhatsAppCompose: React.FC = () => {
             </div>
           )}
 
-          {/* Template + Edit */}
-          <div className="flex gap-2 items-center">
-            <div className="flex-1">
-              <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="בחר תבנית (אופציונלי)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.map(t => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={openEditTemplate}
-              disabled={!selectedTemplate}
-              className="h-9 px-2"
-              title="ערוך תבנית"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </div>
+          {/* Template selector with inline edit */}
+          <Popover open={templatePopoverOpen} onOpenChange={setTemplatePopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-between font-normal">
+                {selectedTemplate
+                  ? templates.find(t => t.id === selectedTemplate)?.name
+                  : 'בחר תבנית (אופציונלי)'}
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1" align="start">
+              <div className="max-h-48 overflow-y-auto">
+                {templates.map(t => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+                  >
+                    <span
+                      className="flex-1 truncate"
+                      onClick={() => {
+                        handleTemplateSelect(t.id);
+                        setTemplatePopoverOpen(false);
+                      }}
+                    >
+                      {t.name}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingTemplate(t);
+                        setEditTemplateName(t.name);
+                        setEditTemplateContent(t.content);
+                        setTemplatePopoverOpen(false);
+                      }}
+                    >
+                      <Pencil className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </div>
+                ))}
+                {templates.length === 0 && (
+                  <div className="text-center py-2 text-sm text-muted-foreground">אין תבניות</div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Textarea
             value={message}
