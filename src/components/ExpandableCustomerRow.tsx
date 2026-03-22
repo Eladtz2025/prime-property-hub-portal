@@ -124,6 +124,7 @@ export const ExpandableCustomerRow = ({
   const [hideDialogOpen, setHideDialogOpen] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
   const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean }>({});
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
 
   const handleFieldBlur = (field: 'name' | 'phone' | 'email') => {
     setTouched(prev => ({ ...prev, [field]: true }));
