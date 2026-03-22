@@ -337,26 +337,26 @@ export const WhatsAppCompose: React.FC = () => {
               </span>
             </div>
             <div className="max-h-48 overflow-y-auto border rounded-md">
-              <Table>
+              <Table className="table-fixed w-full">
                 <TableHeader>
-                  <TableRow className="text-xs">
-                    <TableHead className="w-8 px-2 py-1.5"></TableHead>
-                    <TableHead className="px-2 py-1.5 text-xs">שם</TableHead>
-                    <TableHead className="px-2 py-1.5 text-xs">טלפון</TableHead>
+                  <TableRow className="text-[10px] sm:text-xs">
+                    <TableHead className="w-6 sm:w-8 px-1 py-1 sm:px-2 sm:py-1.5"></TableHead>
+                    <TableHead className="px-1 py-1 sm:px-2 sm:py-1.5 text-[10px] sm:text-xs">שם</TableHead>
+                    <TableHead className="px-1 py-1 sm:px-2 sm:py-1.5 text-[10px] sm:text-xs">טלפון</TableHead>
                     {recipientSource === 'leads' && (
                       <>
-                        <TableHead className="px-2 py-1.5 text-xs">סוג עסקה</TableHead>
-                        <TableHead className="px-2 py-1.5 text-xs">חדרים</TableHead>
-                        <TableHead className="px-2 py-1.5 text-xs">תקציב</TableHead>
+                        <TableHead className="px-1 py-1 sm:px-2 sm:py-1.5 text-[10px] sm:text-xs">עסקה</TableHead>
+                        <TableHead className="px-1 py-1 sm:px-2 sm:py-1.5 text-[10px] sm:text-xs">חד׳</TableHead>
+                        <TableHead className="px-1 py-1 sm:px-2 sm:py-1.5 text-[10px] sm:text-xs">תקציב</TableHead>
                       </>
                     )}
                     {recipientSource === 'owners' && (
                       <>
-                        <TableHead className="px-2 py-1.5 text-xs">כתובת</TableHead>
-                        <TableHead className="px-2 py-1.5 text-xs">עיר</TableHead>
+                        <TableHead className="px-1 py-1 sm:px-2 sm:py-1.5 text-[10px] sm:text-xs">כתובת</TableHead>
+                        <TableHead className="px-1 py-1 sm:px-2 sm:py-1.5 text-[10px] sm:text-xs">עיר</TableHead>
                       </>
                     )}
-                    <TableHead className="w-8 px-2 py-1.5"></TableHead>
+                    <TableHead className="w-6 sm:w-8 px-1 py-1 sm:px-2 sm:py-1.5"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -365,40 +365,40 @@ export const WhatsAppCompose: React.FC = () => {
                     return (
                       <TableRow
                         key={r.id}
-                        className={`cursor-pointer text-xs ${isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
+                        className={`cursor-pointer text-[10px] sm:text-xs ${isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
                         onClick={() => toggleRecipient(r)}
                       >
-                        <TableCell className="px-2 py-1.5">
-                          <Checkbox checked={isSelected} className="pointer-events-none h-3.5 w-3.5" />
+                        <TableCell className="px-1 py-1 sm:px-2 sm:py-1.5">
+                          <Checkbox checked={isSelected} className="pointer-events-none h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         </TableCell>
-                        <TableCell className="px-2 py-1.5 font-medium">{r.name}</TableCell>
-                        <TableCell className="px-2 py-1.5 text-muted-foreground" dir="ltr">
+                        <TableCell className="px-1 py-1 sm:px-2 sm:py-1.5 font-medium truncate">{r.name}</TableCell>
+                        <TableCell className="px-1 py-1 sm:px-2 sm:py-1.5 text-muted-foreground" dir="ltr">
                           {formatIsraeliPhone(r.phone)}
                         </TableCell>
                         {recipientSource === 'leads' && (
                           <>
-                            <TableCell className="px-2 py-1.5">{propertyTypeMap[r.property_type || ''] || '—'}</TableCell>
-                            <TableCell className="px-2 py-1.5">{formatRooms(r.rooms_min, r.rooms_max)}</TableCell>
-                            <TableCell className="px-2 py-1.5" dir="ltr">{formatBudget(r.budget_max)}</TableCell>
+                            <TableCell className="px-1 py-1 sm:px-2 sm:py-1.5">{propertyTypeMap[r.property_type || ''] || '—'}</TableCell>
+                            <TableCell className="px-1 py-1 sm:px-2 sm:py-1.5">{formatRooms(r.rooms_min, r.rooms_max)}</TableCell>
+                            <TableCell className="px-1 py-1 sm:px-2 sm:py-1.5" dir="ltr">{formatBudget(r.budget_max)}</TableCell>
                           </>
                         )}
                         {recipientSource === 'owners' && (
                           <>
-                            <TableCell className="px-2 py-1.5">{r.extra || '—'}</TableCell>
-                            <TableCell className="px-2 py-1.5">{r.city || '—'}</TableCell>
+                            <TableCell className="px-1 py-1 sm:px-2 sm:py-1.5 truncate">{r.extra || '—'}</TableCell>
+                            <TableCell className="px-1 py-1 sm:px-2 sm:py-1.5 truncate">{r.city || '—'}</TableCell>
                           </>
                         )}
-                        <TableCell className="px-2 py-1.5">
+                        <TableCell className="px-1 py-1 sm:px-2 sm:py-1.5">
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-6 w-6 p-0"
+                            className="h-5 w-5 sm:h-6 sm:w-6 p-0"
                             onClick={(e) => {
                               e.stopPropagation();
                               openChatHistory(r.phone, r.name);
                             }}
                           >
-                            <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                            <MessageCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
                           </Button>
                         </TableCell>
                       </TableRow>
