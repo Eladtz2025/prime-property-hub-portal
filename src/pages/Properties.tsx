@@ -532,6 +532,12 @@ export const Properties: React.FC = memo(() => {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="text-center px-2 py-3 w-10">
+                            <Checkbox
+                              checked={paginatedProperties.length > 0 && selectedIds.size === paginatedProperties.length}
+                              onCheckedChange={handleToggleAll}
+                            />
+                          </TableHead>
                           <TableHead 
                             className="text-center cursor-pointer hover:bg-muted/50 px-4 py-3" 
                             onClick={() => handleSort('address')}
