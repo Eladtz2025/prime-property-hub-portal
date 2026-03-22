@@ -37,7 +37,7 @@ interface WhatsAppSendDialogProps {
   templateCategory?: string;
 }
 
-export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context }: WhatsAppSendDialogProps) => {
+export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context, templateCategory = 'general' }: WhatsAppSendDialogProps) => {
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [message, setMessage] = useState('');
