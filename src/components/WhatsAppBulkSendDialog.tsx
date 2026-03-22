@@ -29,6 +29,7 @@ interface WhatsAppBulkSendDialogProps {
   onOpenChange: (open: boolean) => void;
   recipients: Recipient[];
   onComplete?: () => void;
+  templateCategory?: string;
 }
 
 type SendStatus = 'pending' | 'sending' | 'sent' | 'failed';
