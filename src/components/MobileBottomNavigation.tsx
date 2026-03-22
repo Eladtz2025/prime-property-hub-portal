@@ -5,6 +5,7 @@ import {
   Building, 
   Users,
   Search,
+  Megaphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
