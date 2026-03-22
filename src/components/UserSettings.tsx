@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User, Phone, Mail, Save, Award, CreditCard, MapPin, Shield, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { User, Phone, Mail, Save, Award, CreditCard, MapPin, Shield, CheckCircle, Clock, AlertCircle, MessageCircle } from 'lucide-react';
 import { validateField, phoneSchema, israeliIdSchema, FormErrors, FormTouched } from '@/utils/formValidation';
 
 type FormFields = 'phone' | 'id_number';
@@ -25,6 +25,8 @@ export const UserSettings: React.FC = () => {
     broker_license_number: '',
     id_number: '',
     address: '',
+    green_api_instance_id: '',
+    green_api_token: '',
   });
 
   const validateFormField = (field: FormFields, value: string) => {
@@ -65,6 +67,8 @@ export const UserSettings: React.FC = () => {
         broker_license_number: profile?.broker_license_number || '',
         id_number: profile?.id_number || '',
         address: profile?.address || '',
+        green_api_instance_id: (profile as any)?.green_api_instance_id || '',
+        green_api_token: (profile as any)?.green_api_token || '',
       });
     }
   }, [profile, user]);
@@ -98,7 +102,9 @@ export const UserSettings: React.FC = () => {
           broker_license_number: formData.broker_license_number,
           id_number: formData.id_number,
           address: formData.address,
-        })
+          green_api_instance_id: formData.green_api_instance_id || null,
+          green_api_token: formData.green_api_token || null,
+        } as any)
         .eq('id', user.id);
 
       if (error) throw error;
@@ -266,6 +272,41 @@ export const UserSettings: React.FC = () => {
                   {errors.id_number}
                 </p>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* WhatsApp Connection Section */}
+        <div className="border-t pt-4">
+          <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <MessageCircle className="h-4 w-4" />
+            חיבור WhatsApp (Green API)
+          </h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            כדי לשלוח הודעות WhatsApp מהמערכת, חבר את חשבון ה-Green API שלך. 
+            ניתן להירשם ב-<a href="https://green-api.com" target="_blank" rel="noopener noreferrer" className="underline text-primary">green-api.com</a> ולהעתיק את ה-Instance ID וה-API Token.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="green_api_instance_id">Instance ID</Label>
+              <Input
+                id="green_api_instance_id"
+                value={formData.green_api_instance_id}
+                onChange={(e) => handleFieldChange('green_api_instance_id', e.target.value)}
+                placeholder="לדוגמה: 1234567890"
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="green_api_token">API Token</Label>
+              <Input
+                id="green_api_token"
+                type="password"
+                value={formData.green_api_token}
+                onChange={(e) => handleFieldChange('green_api_token', e.target.value)}
+                placeholder="הזן API Token"
+                dir="ltr"
+              />
             </div>
           </div>
         </div>

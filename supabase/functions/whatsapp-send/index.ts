@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { supabase } from "../_shared/supabase.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,25 +19,62 @@ interface SendMessageRequest {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const greenApiToken = Deno.env.get('GREEN_API_TOKEN');
-    const greenApiInstanceId = Deno.env.get('GREEN_API_INSTANCE_ID');
-
-    if (!greenApiToken || !greenApiInstanceId) {
-      console.error('Missing Green API credentials');
+    // Get user credentials from profile
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({ error: 'Green API credentials not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(
+      authHeader.replace('Bearer ', '')
+    );
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Fetch user's Green API credentials from profile
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    const { data: profile, error: profileError } = await serviceClient
+      .from('profiles')
+      .select('green_api_instance_id, green_api_token')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile?.green_api_instance_id || !profile?.green_api_token) {
+      return new Response(
+        JSON.stringify({ error: 'WhatsApp לא מחובר. יש להגדיר את פרטי Green API בהגדרות הפרופיל.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const greenApiToken = profile.green_api_token;
+    const greenApiInstanceId = profile.green_api_instance_id;
+
     const requestData: SendMessageRequest = await req.json();
-    console.log('WhatsApp send request:', requestData);
+    console.log('WhatsApp send request:', { ...requestData, user: userId });
 
     // For bulk sending
     if (requestData.type === 'bulk' && requestData.bulkData) {
@@ -50,6 +87,7 @@ serve(async (req) => {
             item.message,
             greenApiToken,
             greenApiInstanceId,
+            serviceClient,
             item.propertyId
           );
           results.push({ phone: item.phone, success: true, result });
@@ -80,6 +118,7 @@ serve(async (req) => {
       requestData.message,
       greenApiToken,
       greenApiInstanceId,
+      serviceClient,
       requestData.propertyId
     );
 
@@ -102,22 +141,19 @@ async function sendSingleMessage(
   message: string,
   apiToken: string,
   instanceId: string,
+  supabase: any,
   propertyId?: string
 ) {
-  // Clean and format phone number
   const cleanPhone = phone.replace(/\D/g, '');
   const formattedPhone = cleanPhone.startsWith('972') ? cleanPhone : `972${cleanPhone.replace(/^0/, '')}`;
   
-  console.log(`Sending WhatsApp to ${formattedPhone}: ${message}`);
+  console.log(`Sending WhatsApp to ${formattedPhone}`);
 
-  // Send message via Green API
   const greenApiUrl = `https://api.green-api.com/waInstance${instanceId}/sendMessage/${apiToken}`;
   
   const response = await fetch(greenApiUrl, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       chatId: `${formattedPhone}@c.us`,
       message: message

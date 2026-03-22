@@ -14,6 +14,8 @@ export interface UserProfile {
   broker_license_number?: string;
   id_number?: string;
   address?: string;
+  green_api_instance_id?: string;
+  green_api_token?: string;
 }
 
 export interface Permission {
