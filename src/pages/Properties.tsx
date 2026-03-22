@@ -507,22 +507,29 @@ export const Properties: React.FC = memo(() => {
                   <div className="space-y-3 px-2">
                     {paginatedProperties.map((property) => (
                       <React.Fragment key={property.id}>
-                        <div id={`property-row-${property.id}`}>
-                          <OptimizedMobilePropertyCard
-                          property={property}
-                          onViewDetails={handleViewDetails}
-                          onEdit={(p) => setExpandedPropertyId(expandedPropertyId === p.id ? null : p.id)}
-                          onDelete={handleDeleteProperty}
-                          ownerPropertyCount={getOwnerPropertyCount(property)}
-                          searchTerm={filters.searchTerm}
-                          canEdit={canEditProperties}
-                        />
-                          <PropertyEditRow
-                            property={property}
-                            isOpen={expandedPropertyId === property.id}
-                            onClose={() => setExpandedPropertyId(null)}
-                            onSave={handlePropertyUpdate}
+                        <div id={`property-row-${property.id}`} className="flex items-start gap-2">
+                          <Checkbox
+                            checked={selectedIds.has(property.id)}
+                            onCheckedChange={() => handleToggleSelect(property.id)}
+                            className="mt-4 flex-shrink-0"
                           />
+                          <div className="flex-1 min-w-0">
+                            <OptimizedMobilePropertyCard
+                              property={property}
+                              onViewDetails={handleViewDetails}
+                              onEdit={(p) => setExpandedPropertyId(expandedPropertyId === p.id ? null : p.id)}
+                              onDelete={handleDeleteProperty}
+                              ownerPropertyCount={getOwnerPropertyCount(property)}
+                              searchTerm={filters.searchTerm}
+                              canEdit={canEditProperties}
+                            />
+                            <PropertyEditRow
+                              property={property}
+                              isOpen={expandedPropertyId === property.id}
+                              onClose={() => setExpandedPropertyId(null)}
+                              onSave={handlePropertyUpdate}
+                            />
+                          </div>
                         </div>
                       </React.Fragment>
                     ))}
