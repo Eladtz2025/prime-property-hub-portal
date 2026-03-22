@@ -69,12 +69,16 @@ ${property.status === 'vacant' ? 'הבנתי שהנכס פנוי כרגע.' : ''
 
       if (error) {
         console.error('WhatsApp send error:', error);
+        const errorMsg = error.message || "אירעה שגיאה לא צפויה";
+        const isNotConnected = errorMsg.includes('WhatsApp לא מחובר');
         toast({
-          title: "שגיאה בשליחת ההודעה",
-          description: error.message || "אירעה שגיאה לא צפויה",
+          title: isNotConnected ? "WhatsApp לא מחובר" : "שגיאה בשליחת ההודעה",
+          description: isNotConnected 
+            ? "יש להגדיר את פרטי Green API בהגדרות הפרופיל שלך" 
+            : errorMsg,
           variant: "destructive"
         });
-        return { success: false, error: error.message };
+        return { success: false, error: errorMsg };
       }
 
       if (data.success) {

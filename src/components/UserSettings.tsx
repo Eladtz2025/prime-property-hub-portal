@@ -276,6 +276,41 @@ export const UserSettings: React.FC = () => {
           </div>
         </div>
 
+        {/* WhatsApp Connection Section */}
+        <div className="border-t pt-4">
+          <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <MessageCircle className="h-4 w-4" />
+            חיבור WhatsApp (Green API)
+          </h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            כדי לשלוח הודעות WhatsApp מהמערכת, חבר את חשבון ה-Green API שלך. 
+            ניתן להירשם ב-<a href="https://green-api.com" target="_blank" rel="noopener noreferrer" className="underline text-primary">green-api.com</a> ולהעתיק את ה-Instance ID וה-API Token.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="green_api_instance_id">Instance ID</Label>
+              <Input
+                id="green_api_instance_id"
+                value={formData.green_api_instance_id}
+                onChange={(e) => handleFieldChange('green_api_instance_id', e.target.value)}
+                placeholder="לדוגמה: 1234567890"
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="green_api_token">API Token</Label>
+              <Input
+                id="green_api_token"
+                type="password"
+                value={formData.green_api_token}
+                onChange={(e) => handleFieldChange('green_api_token', e.target.value)}
+                placeholder="הזן API Token"
+                dir="ltr"
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="flex justify-end pt-2">
           <Button 
             onClick={handleSave} 
