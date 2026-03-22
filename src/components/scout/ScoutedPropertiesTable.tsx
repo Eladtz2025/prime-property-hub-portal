@@ -1639,18 +1639,31 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 9 : 8} className="text-center py-8">
+                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 10 : 9} className="text-center py-8">
                       טוען...
                     </TableCell>
                   </TableRow>
                 ) : filteredProperties?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 9 : 8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 10 : 9} className="text-center py-8 text-muted-foreground">
                       לא נמצאו דירות התואמות את החיפוש
                     </TableCell>
                   </TableRow>
                 ) : filteredProperties?.map((property) => (
                   <TableRow key={property.id} className={property.is_active === false ? 'opacity-60' : ''}>
+                    <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedIds.has(property.id)}
+                        onCheckedChange={() => {
+                          setSelectedIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(property.id)) next.delete(property.id);
+                            else next.add(property.id);
+                            return next;
+                          });
+                        }}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         {getSourceBadge(property.source)}
