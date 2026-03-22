@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { WhatsAppSendDialog } from "@/components/WhatsAppSendDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,8 @@ export const CustomerMobileTable = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hideDialogOpen, setHideDialogOpen] = useState(false);
   const [matchesSheetOpen, setMatchesSheetOpen] = useState(false);
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
+  const [whatsappTarget, setWhatsappTarget] = useState<{ phone: string; name: string; context?: string } | null>(null);
   const [matchesData, setMatchesData] = useState<{
     customerName: string;
     customerPhone?: string;
@@ -133,12 +136,11 @@ export const CustomerMobileTable = ({
 
   const handleWhatsApp = () => {
     if (selectedCustomer?.phone) {
-      const message = encodeURIComponent(
-        `שלום ${selectedCustomer.name}, אני מ-City Market נדל"ן.\n` +
-        (selectedCustomer.preferred_cities?.length ? `ראיתי שאתה מחפש דירה ב${selectedCustomer.preferred_cities[0]}` : 'ראיתי שאתה מחפש דירה') +
-        `.\nיש לי כמה נכסים שיכולים להתאים לך, מתי נוח לדבר?`
-      );
-      window.open(`https://wa.me/${selectedCustomer.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+      const ctx = selectedCustomer.preferred_cities?.length
+        ? `מחפש דירה ב${selectedCustomer.preferred_cities.join(', ')}`
+        : undefined;
+      setWhatsappTarget({ phone: selectedCustomer.phone, name: selectedCustomer.name, context: ctx });
+      setWhatsappDialogOpen(true);
     }
   };
 
@@ -271,8 +273,11 @@ export const CustomerMobileTable = ({
                       className="h-6 w-6 p-0 text-green-600 shrink-0" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        const message = encodeURIComponent(`שלום ${customer.name}!`);
-                        window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+                        const ctx = customer.preferred_cities?.length
+                          ? `מחפש דירה ב${customer.preferred_cities.join(', ')}`
+                          : undefined;
+                        setWhatsappTarget({ phone: customer.phone, name: customer.name, context: ctx });
+                        setWhatsappDialogOpen(true);
                       }}
                     >
                       <MessageSquare className="h-3.5 w-3.5" />
@@ -781,6 +786,16 @@ export const CustomerMobileTable = ({
           customerName={matchesData.customerName}
           customerPhone={matchesData.customerPhone}
           scoutedMatchGroups={matchesData.scoutedMatchGroups}
+        />
+      )}
+
+      {whatsappTarget && (
+        <WhatsAppSendDialog
+          open={whatsappDialogOpen}
+          onOpenChange={setWhatsappDialogOpen}
+          phone={whatsappTarget.phone}
+          name={whatsappTarget.name}
+          context={whatsappTarget.context}
         />
       )}
     </>

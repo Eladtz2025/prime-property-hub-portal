@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { WhatsAppSendDialog } from "@/components/WhatsAppSendDialog";
 import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -351,6 +352,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [checkingPropertyId, setCheckingPropertyId] = useState<CheckingPropertyId>(null);
   const [checkUrlDialogOpen, setCheckUrlDialogOpen] = useState(false);
   const [urlToCheck, setUrlToCheck] = useState('');
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
+  const [whatsappTarget, setWhatsappTarget] = useState<{ phone: string; name: string; context?: string } | null>(null);
 
   // New filter states
   const [roomsMin, setRoomsMin] = useState<string>('');
@@ -1760,9 +1763,29 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                             disabled={matchLeadsMutation.isPending}
                             title="התאם ללקוחות ושלח WhatsApp"
                           >
-                            <MessageSquare className="h-4 w-4" />
+                            <Users className="h-4 w-4" />
                           </Button>
                         )}
+                        
+                        {/* WhatsApp send button - opens dialog for manual message */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const addr = cleanDisplayAddress(property.address, property.neighborhood, streetNeighborhoodMap);
+                            const ctx = [
+                              addr,
+                              property.rooms ? `${property.rooms} חד'` : '',
+                              property.price ? `₪${property.price.toLocaleString()}` : '',
+                            ].filter(Boolean).join(' | ');
+                            // Use a placeholder name and phone - user will fill from matched leads
+                            setWhatsappTarget({ phone: '', name: '', context: ctx });
+                            setWhatsappDialogOpen(true);
+                          }}
+                          title="שלח הודעת WhatsApp"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
                         
                         {property.status !== 'archived' && (
                           <Button
@@ -2209,6 +2232,16 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
           </div>
         </DialogContent>
       </Dialog>
+
+      {whatsappTarget && (
+        <WhatsAppSendDialog
+          open={whatsappDialogOpen}
+          onOpenChange={setWhatsappDialogOpen}
+          phone={whatsappTarget.phone}
+          name={whatsappTarget.name}
+          context={whatsappTarget.context}
+        />
+      )}
     </>
   );
 };

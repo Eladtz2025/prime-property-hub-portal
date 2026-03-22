@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { WhatsAppSendDialog } from "@/components/WhatsAppSendDialog";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -123,6 +124,7 @@ export const ExpandableCustomerRow = ({
   const [hideDialogOpen, setHideDialogOpen] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
   const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean }>({});
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
 
   const handleFieldBlur = (field: 'name' | 'phone' | 'email') => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -147,14 +149,15 @@ export const ExpandableCustomerRow = ({
   const handleWhatsApp = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (customer.phone) {
-      const message = encodeURIComponent(
-        `שלום ${customer.name}, אני מ-City Market נדל"ן.\n` +
-        (customer.preferred_cities?.length ? `ראיתי שאתה מחפש דירה ב${customer.preferred_cities[0]}` : 'ראיתי שאתה מחפש דירה') +
-        `.\nיש לי כמה נכסים שיכולים להתאים לך, מתי נוח לדבר?`
-      );
-      window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+      setWhatsappDialogOpen(true);
     }
   };
+
+  const whatsappContext = customer.preferred_cities?.length
+    ? `מחפש דירה ב${customer.preferred_cities.join(', ')}` +
+      (customer.budget_max ? ` | תקציב עד ₪${customer.budget_max.toLocaleString()}` : '') +
+      (customer.rooms_min ? ` | ${customer.rooms_min}+ חדרים` : '')
+    : undefined;
 
   const getMissingRecommendedFields = (data: typeof formData): string[] => {
     const missing: string[] = [];
@@ -889,6 +892,16 @@ export const ExpandableCustomerRow = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {customer.phone && (
+        <WhatsAppSendDialog
+          open={whatsappDialogOpen}
+          onOpenChange={setWhatsappDialogOpen}
+          phone={customer.phone}
+          name={customer.name}
+          context={whatsappContext}
+        />
+      )}
     </>
   );
 };
