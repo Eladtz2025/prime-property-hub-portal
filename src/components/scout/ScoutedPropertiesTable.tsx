@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { WhatsAppSendDialog } from "@/components/WhatsAppSendDialog";
+import { WhatsAppBulkBar } from "@/components/WhatsAppBulkBar";
+import { WhatsAppBulkSendDialog } from "@/components/WhatsAppBulkSendDialog";
 import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -354,6 +356,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [urlToCheck, setUrlToCheck] = useState('');
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
   const [whatsappTarget, setWhatsappTarget] = useState<{ phone: string; name: string; context?: string } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
 
   // New filter states
   const [roomsMin, setRoomsMin] = useState<string>('');
@@ -1607,6 +1611,18 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[40px] text-center">
+                    <Checkbox
+                      checked={filteredProperties && filteredProperties.length > 0 && filteredProperties.every(p => selectedIds.has(p.id))}
+                      onCheckedChange={(checked) => {
+                        if (checked && filteredProperties) {
+                          setSelectedIds(new Set(filteredProperties.map(p => p.id)));
+                        } else {
+                          setSelectedIds(new Set());
+                        }
+                      }}
+                    />
+                  </TableHead>
                   <TableHead className="w-[80px]">מקור</TableHead>
                   <TableHead className="w-[250px]">פרטים</TableHead>
                   <TableHead className="w-[120px]">מחיר</TableHead>
@@ -1623,18 +1639,31 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 9 : 8} className="text-center py-8">
+                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 10 : 9} className="text-center py-8">
                       טוען...
                     </TableCell>
                   </TableRow>
                 ) : filteredProperties?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 9 : 8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={appliedFilters.status === 'check_failed' ? 10 : 9} className="text-center py-8 text-muted-foreground">
                       לא נמצאו דירות התואמות את החיפוש
                     </TableCell>
                   </TableRow>
                 ) : filteredProperties?.map((property) => (
                   <TableRow key={property.id} className={property.is_active === false ? 'opacity-60' : ''}>
+                    <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedIds.has(property.id)}
+                        onCheckedChange={() => {
+                          setSelectedIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(property.id)) next.delete(property.id);
+                            else next.add(property.id);
+                            return next;
+                          });
+                        }}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         {getSourceBadge(property.source)}
@@ -2242,6 +2271,45 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
           context={whatsappTarget.context}
         />
       )}
+
+      <WhatsAppBulkBar
+        selectedCount={selectedIds.size}
+        onSendClick={() => {
+          // Collect unique matched leads from selected properties
+          const leadsMap = new Map<string, { id: string; name: string; phone: string }>();
+          filteredProperties?.filter(p => selectedIds.has(p.id)).forEach(p => {
+            p.matched_leads?.forEach((ml: any) => {
+              if (ml.phone && !leadsMap.has(ml.phone)) {
+                leadsMap.set(ml.phone, { id: ml.lead_id || ml.phone, name: ml.name || 'לקוח', phone: ml.phone });
+              }
+            });
+          });
+          if (leadsMap.size === 0) {
+            toast.error('אין לקוחות מותאמים לנכסים שנבחרו');
+            return;
+          }
+          setBulkDialogOpen(true);
+        }}
+        onClearSelection={() => setSelectedIds(new Set())}
+        label="דירות"
+      />
+
+      <WhatsAppBulkSendDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        recipients={(() => {
+          const leadsMap = new Map<string, { id: string; name: string; phone: string }>();
+          filteredProperties?.filter(p => selectedIds.has(p.id)).forEach(p => {
+            p.matched_leads?.forEach((ml: any) => {
+              if (ml.phone && !leadsMap.has(ml.phone)) {
+                leadsMap.set(ml.phone, { id: ml.lead_id || ml.phone, name: ml.name || 'לקוח', phone: ml.phone });
+              }
+            });
+          });
+          return Array.from(leadsMap.values());
+        })()}
+        onComplete={() => setSelectedIds(new Set())}
+      />
     </>
   );
 };

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { WhatsAppSendDialog } from "@/components/WhatsAppSendDialog";
+import { WhatsAppBulkBar } from "@/components/WhatsAppBulkBar";
+import { WhatsAppBulkSendDialog } from "@/components/WhatsAppBulkSendDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -127,6 +129,22 @@ export const CustomerMobileTable = ({
     customerPhone?: string;
     scoutedMatchGroups: any[];
   } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+
+  const handleToggleSelect = (customerId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(customerId)) next.delete(customerId);
+      else next.add(customerId);
+      return next;
+    });
+  };
+
+  const selectedRecipients = customers
+    .filter(c => selectedIds.has(c.id) && c.phone)
+    .map(c => ({ id: c.id, name: c.name, phone: c.phone }));
 
   const handleSelectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -260,12 +278,17 @@ export const CustomerMobileTable = ({
           return (
             <div
               key={customer.id}
-              className={`rounded-lg border bg-card p-2.5 cursor-pointer active:bg-muted/80 transition-colors ${customer.is_hidden ? 'opacity-50' : ''}`}
+              className={`rounded-lg border bg-card p-2.5 cursor-pointer active:bg-muted/80 transition-colors ${customer.is_hidden ? 'opacity-50' : ''} ${selectedIds.has(customer.id) ? 'ring-2 ring-primary' : ''}`}
               onClick={() => handleSelectCustomer(customer)}
             >
-              {/* Row 1: WhatsApp + Name + Type badge ... Budget + Priority */}
+              {/* Row 1: Checkbox + WhatsApp + Name + Type badge ... Budget + Priority */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  {customer.phone && (
+                    <div className="shrink-0" onClick={(e) => handleToggleSelect(customer.id, e)}>
+                      <Checkbox checked={selectedIds.has(customer.id)} className="h-3.5 w-3.5" />
+                    </div>
+                  )}
                   {customer.phone && (
                     <Button 
                       size="sm" 
@@ -798,6 +821,20 @@ export const CustomerMobileTable = ({
           context={whatsappTarget.context}
         />
       )}
+
+      <WhatsAppBulkBar
+        selectedCount={selectedIds.size}
+        onSendClick={() => setBulkDialogOpen(true)}
+        onClearSelection={() => setSelectedIds(new Set())}
+        label="לקוחות"
+      />
+
+      <WhatsAppBulkSendDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        recipients={selectedRecipients}
+        onComplete={() => setSelectedIds(new Set())}
+      />
     </>
   );
 };

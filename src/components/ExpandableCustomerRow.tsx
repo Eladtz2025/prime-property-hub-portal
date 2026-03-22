@@ -41,6 +41,8 @@ interface ExpandableCustomerRowProps {
   onUnhideCustomer?: (id: string) => void;
   onSave: () => void;
   agents?: Agent[];
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }
 
 const priorityColors: Record<string, string> = {
@@ -110,6 +112,8 @@ export const ExpandableCustomerRow = ({
   onUnhideCustomer,
   onSave,
   agents = [],
+  isSelected = false,
+  onToggleSelect,
 }: ExpandableCustomerRowProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<Customer>>(() => ({
@@ -323,6 +327,13 @@ export const ExpandableCustomerRow = ({
         className={`hover:bg-muted/30 cursor-pointer transition-colors ${customer.is_hidden ? 'opacity-50 bg-muted/20' : ''} ${isExpanded ? 'bg-muted/40' : ''}`}
         onClick={onToggleExpand}
       >
+        <TableCell className="text-center w-[40px]" onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect?.()}
+            disabled={!customer.phone}
+          />
+        </TableCell>
         <TableCell className="font-medium text-right">
           <div className="flex items-center gap-2">
             {customer.phone && (

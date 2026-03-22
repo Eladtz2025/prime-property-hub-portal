@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ExpandableCustomerRow } from "@/components/ExpandableCustomerRow";
+import { WhatsAppBulkBar } from "@/components/WhatsAppBulkBar";
+import { WhatsAppBulkSendDialog } from "@/components/WhatsAppBulkSendDialog";
 import type { Customer } from "@/hooks/useCustomerData";
 
 interface Agent {
@@ -41,10 +44,37 @@ export const CustomerTableView = ({
   isHiddenView = false,
 }: CustomerTableViewProps) => {
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
 
   const handleToggleExpand = (customerId: string) => {
     setExpandedRowId(prev => prev === customerId ? null : customerId);
   };
+
+  const handleToggleSelect = (customerId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(customerId)) next.delete(customerId);
+      else next.add(customerId);
+      return next;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allWithPhone = customers.filter(c => c.phone).map(c => c.id);
+      setSelectedIds(new Set(allWithPhone));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const customersWithPhone = customers.filter(c => c.phone);
+  const allSelected = customersWithPhone.length > 0 && customersWithPhone.every(c => selectedIds.has(c.id));
+
+  const selectedRecipients = customers
+    .filter(c => selectedIds.has(c.id) && c.phone)
+    .map(c => ({ id: c.id, name: c.name, phone: c.phone }));
 
   const SortableHeader = ({ label, sortKey }: { label: string; sortKey: string }) => (
     <Button
@@ -65,41 +95,66 @@ export const CustomerTableView = ({
   );
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="text-right w-[22%]">
-              <SortableHeader label="שם לקוח" sortKey="name" />
-            </TableHead>
-            <TableHead className="text-right w-[14%]">סוג עסקה</TableHead>
-            <TableHead className="text-right w-[16%]">תקציב</TableHead>
-            <TableHead className="text-right w-[14%]">עדיפות</TableHead>
-            <TableHead className="text-right w-[17%]">התאמות</TableHead>
-            <TableHead className="text-right w-[17%]">
-              <SortableHeader label="קשר אחרון" sortKey="last_contact" />
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {customers.map((customer) => (
-            <ExpandableCustomerRow
-              key={customer.id}
-              customer={customer}
-              isExpanded={expandedRowId === customer.id}
-              onToggleExpand={() => handleToggleExpand(customer.id)}
-              onUpdateStatus={onUpdateStatus}
-              onUpdatePriority={onUpdatePriority}
-              onAssignAgent={onAssignAgent}
-              onDeleteCustomer={onDeleteCustomer}
-              onHideCustomer={onHideCustomer}
-              onUnhideCustomer={onUnhideCustomer}
-              onSave={onSave}
-              agents={agents}
-            />
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-[40px] text-center">
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </TableHead>
+              <TableHead className="text-right w-[20%]">
+                <SortableHeader label="שם לקוח" sortKey="name" />
+              </TableHead>
+              <TableHead className="text-right w-[13%]">סוג עסקה</TableHead>
+              <TableHead className="text-right w-[15%]">תקציב</TableHead>
+              <TableHead className="text-right w-[13%]">עדיפות</TableHead>
+              <TableHead className="text-right w-[16%]">התאמות</TableHead>
+              <TableHead className="text-right w-[15%]">
+                <SortableHeader label="קשר אחרון" sortKey="last_contact" />
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {customers.map((customer) => (
+              <ExpandableCustomerRow
+                key={customer.id}
+                customer={customer}
+                isExpanded={expandedRowId === customer.id}
+                onToggleExpand={() => handleToggleExpand(customer.id)}
+                onUpdateStatus={onUpdateStatus}
+                onUpdatePriority={onUpdatePriority}
+                onAssignAgent={onAssignAgent}
+                onDeleteCustomer={onDeleteCustomer}
+                onHideCustomer={onHideCustomer}
+                onUnhideCustomer={onUnhideCustomer}
+                onSave={onSave}
+                agents={agents}
+                isSelected={selectedIds.has(customer.id)}
+                onToggleSelect={() => handleToggleSelect(customer.id)}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <WhatsAppBulkBar
+        selectedCount={selectedIds.size}
+        onSendClick={() => setBulkDialogOpen(true)}
+        onClearSelection={() => setSelectedIds(new Set())}
+        label="לקוחות"
+      />
+
+      <WhatsAppBulkSendDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        recipients={selectedRecipients}
+        onComplete={() => setSelectedIds(new Set())}
+      />
+    </>
   );
 };
