@@ -33,7 +33,8 @@ interface WhatsAppSendDialogProps {
   onOpenChange: (open: boolean) => void;
   phone: string;
   name: string;
-  context?: string; // e.g. property address or search details
+  context?: string;
+  templateCategory?: string;
 }
 
 export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context }: WhatsAppSendDialogProps) => {
