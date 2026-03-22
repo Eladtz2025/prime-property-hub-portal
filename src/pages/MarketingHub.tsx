@@ -1,8 +1,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { MessageSquare, Megaphone, Lightbulb } from 'lucide-react';
-import { WhatsAppCompose } from '@/components/WhatsAppCompose';
+import { Megaphone, Lightbulb } from 'lucide-react';
 import { SocialDashboard } from '@/components/social/SocialDashboard';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 
@@ -12,12 +11,8 @@ const MarketingHub: React.FC = () => {
   return (
     <div className="space-y-4">
 
-      <Tabs defaultValue="whatsapp" className="w-full" dir="rtl">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="whatsapp" className="flex items-center gap-2 text-xs md:text-sm">
-            <MessageSquare className="h-4 w-4" />
-            ווטסאפ
-          </TabsTrigger>
+      <Tabs defaultValue="advertising" className="w-full" dir="rtl">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="advertising" className="flex items-center gap-2 text-xs md:text-sm">
             <Megaphone className="h-4 w-4" />
             פרסום
@@ -27,10 +22,6 @@ const MarketingHub: React.FC = () => {
             עוד
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="whatsapp" className="space-y-4 mt-4">
-          <WhatsAppCompose />
-        </TabsContent>
 
         <TabsContent value="advertising" className="mt-4">
           <SocialDashboard />

@@ -821,6 +821,20 @@ export const CustomerMobileTable = ({
           context={whatsappTarget.context}
         />
       )}
+
+      <WhatsAppBulkBar
+        selectedCount={selectedIds.size}
+        onSendClick={() => setBulkDialogOpen(true)}
+        onClearSelection={() => setSelectedIds(new Set())}
+        label="לקוחות"
+      />
+
+      <WhatsAppBulkSendDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        recipients={selectedRecipients}
+        onComplete={() => setSelectedIds(new Set())}
+      />
     </>
   );
 };
