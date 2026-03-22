@@ -54,6 +54,7 @@ const propertyTypeMap: Record<string, string> = {
 };
 
 export const WhatsAppCompose: React.FC = () => {
+  const [templatePopoverOpen, setTemplatePopoverOpen] = useState(false);
   const [recipientSource, setRecipientSource] = useState<'leads' | 'owners'>('leads');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<Recipient[]>([]);
