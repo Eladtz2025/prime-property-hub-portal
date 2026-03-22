@@ -352,6 +352,8 @@ export const ScoutedPropertiesTable: React.FC = () => {
   const [checkingPropertyId, setCheckingPropertyId] = useState<CheckingPropertyId>(null);
   const [checkUrlDialogOpen, setCheckUrlDialogOpen] = useState(false);
   const [urlToCheck, setUrlToCheck] = useState('');
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
+  const [whatsappTarget, setWhatsappTarget] = useState<{ phone: string; name: string; context?: string } | null>(null);
 
   // New filter states
   const [roomsMin, setRoomsMin] = useState<string>('');
