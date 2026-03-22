@@ -1114,6 +1114,35 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
   const features: PropertyFeatures = {};
   const text = isolatePropertyDescription(markdown, source);
 
+  // === Homeless: bold = feature exists, non-bold = feature doesn't exist ===
+  if (source === 'homeless') {
+    const homelessFeatureMap: Array<{ key: keyof PropertyFeatures; boldPatterns: RegExp[]; plainPatterns: RegExp[] }> = [
+      { key: 'balcony',  boldPatterns: [/\*\*מרפסת\*\*/], plainPatterns: [/(?<!\*\*)מרפסת(?!\*\*)/] },
+      { key: 'yard',     boldPatterns: [/\*\*(חצר|גינה)\*\*/, /\*\*גינה\*\*/], plainPatterns: [/(?<!\*\*)(חצר|גינה)(?!\*\*)/] },
+      { key: 'elevator', boldPatterns: [/\*\*מעלית\*\*/], plainPatterns: [/(?<!\*\*)מעלית(?!\*\*)/] },
+      { key: 'parking',  boldPatterns: [/\*\*חניי?ה\*\*/, /\*\*חניה\*\*/], plainPatterns: [/(?<!\*\*)חניי?ה(?!\*\*)/, /(?<!\*\*)חניה(?!\*\*)/] },
+      { key: 'mamad',    boldPatterns: [/\*\*ממ"?ד\*\*/], plainPatterns: [/(?<!\*\*)ממ"?ד(?!\*\*)/] },
+      { key: 'storage',  boldPatterns: [/\*\*מחסן\*\*/], plainPatterns: [/(?<!\*\*)מחסן(?!\*\*)/] },
+      { key: 'aircon',   boldPatterns: [/\*\*מזגנ?\*\*/, /\*\*מיזוג\*\*/], plainPatterns: [/(?<!\*\*)מזגנ?(?!\*\*)/, /(?<!\*\*)מיזוג(?!\*\*)/] },
+      { key: 'roof',     boldPatterns: [/\*\*גג\*\*/], plainPatterns: [/(?<!\*\*)גג(?!\*\*)/] },
+    ];
+
+    for (const { key, boldPatterns, plainPatterns } of homelessFeatureMap) {
+      const isBold = boldPatterns.some(p => p.test(text));
+      const isPlain = plainPatterns.some(p => p.test(text));
+      if (isBold) {
+        features[key] = true;
+      } else if (isPlain) {
+        features[key] = false;
+      }
+      // If neither found — leave undefined (as before)
+    }
+
+    console.log(`🏠 Homeless bold-based features:`, JSON.stringify(features));
+    return features;
+  }
+
+  // === Non-homeless sources: existing logic ===
   const hasFeature = (positivePatterns: RegExp[], negativePatterns: RegExp[] = []): boolean => {
     for (const neg of negativePatterns) { if (neg.test(text)) return false; }
     for (const pos of positivePatterns) { if (pos.test(text)) return true; }
