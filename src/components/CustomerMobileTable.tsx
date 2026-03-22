@@ -835,6 +835,7 @@ export const CustomerMobileTable = ({
         onOpenChange={setBulkDialogOpen}
         recipients={selectedRecipients}
         onComplete={() => setSelectedIds(new Set())}
+        templateCategory="customers"
       />
     </>
   );

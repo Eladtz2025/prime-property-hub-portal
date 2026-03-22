@@ -154,6 +154,7 @@ export const CustomerTableView = ({
         onOpenChange={setBulkDialogOpen}
         recipients={selectedRecipients}
         onComplete={() => setSelectedIds(new Set())}
+        templateCategory="customers"
       />
     </>
   );

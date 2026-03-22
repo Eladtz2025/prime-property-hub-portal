@@ -911,6 +911,7 @@ export const ExpandableCustomerRow = ({
           phone={customer.phone}
           name={customer.name}
           context={whatsappContext}
+          templateCategory="customers"
         />
       )}
     </>

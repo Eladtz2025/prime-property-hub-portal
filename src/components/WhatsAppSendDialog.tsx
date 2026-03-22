@@ -62,7 +62,7 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context, t
   }, [open]);
 
   const loadTemplates = async () => {
-    const { data } = await supabase.from('message_templates').select('*').order('name');
+    const { data } = await supabase.from('message_templates').select('*').eq('category', templateCategory).order('name');
     setTemplates(data || []);
   };
 
