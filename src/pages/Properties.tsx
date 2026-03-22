@@ -1,6 +1,9 @@
 import React, { useState, useMemo, memo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { WhatsAppBulkBar } from '@/components/WhatsAppBulkBar';
+import { WhatsAppBulkSendDialog } from '@/components/WhatsAppBulkSendDialog';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
