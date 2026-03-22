@@ -2271,6 +2271,45 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
           context={whatsappTarget.context}
         />
       )}
+
+      <WhatsAppBulkBar
+        selectedCount={selectedIds.size}
+        onSendClick={() => {
+          // Collect unique matched leads from selected properties
+          const leadsMap = new Map<string, { id: string; name: string; phone: string }>();
+          filteredProperties?.filter(p => selectedIds.has(p.id)).forEach(p => {
+            p.matched_leads?.forEach((ml: any) => {
+              if (ml.phone && !leadsMap.has(ml.phone)) {
+                leadsMap.set(ml.phone, { id: ml.lead_id || ml.phone, name: ml.name || 'לקוח', phone: ml.phone });
+              }
+            });
+          });
+          if (leadsMap.size === 0) {
+            toast.error('אין לקוחות מותאמים לנכסים שנבחרו');
+            return;
+          }
+          setBulkDialogOpen(true);
+        }}
+        onClearSelection={() => setSelectedIds(new Set())}
+        label="דירות"
+      />
+
+      <WhatsAppBulkSendDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        recipients={(() => {
+          const leadsMap = new Map<string, { id: string; name: string; phone: string }>();
+          filteredProperties?.filter(p => selectedIds.has(p.id)).forEach(p => {
+            p.matched_leads?.forEach((ml: any) => {
+              if (ml.phone && !leadsMap.has(ml.phone)) {
+                leadsMap.set(ml.phone, { id: ml.lead_id || ml.phone, name: ml.name || 'לקוח', phone: ml.phone });
+              }
+            });
+          });
+          return Array.from(leadsMap.values());
+        })()}
+        onComplete={() => setSelectedIds(new Set())}
+      />
     </>
   );
 };
