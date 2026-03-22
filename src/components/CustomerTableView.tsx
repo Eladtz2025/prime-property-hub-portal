@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ExpandableCustomerRow } from "@/components/ExpandableCustomerRow";
+import { WhatsAppBulkBar } from "@/components/WhatsAppBulkBar";
+import { WhatsAppBulkSendDialog } from "@/components/WhatsAppBulkSendDialog";
 import type { Customer } from "@/hooks/useCustomerData";
 
 interface Agent {
