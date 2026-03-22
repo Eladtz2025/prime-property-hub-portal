@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { WhatsAppSendDialog } from "@/components/WhatsAppSendDialog";
+import { WhatsAppBulkBar } from "@/components/WhatsAppBulkBar";
+import { WhatsAppBulkSendDialog } from "@/components/WhatsAppBulkSendDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
