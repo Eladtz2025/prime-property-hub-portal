@@ -1,22 +1,28 @@
 
 
-## הוספת כפתור עריכה לכל תבנית בתפריט הנפתח
+## מערכת פרסום אוטומטי לרשתות חברתיות — הושלם ✅
 
-### שינוי ב-`WhatsAppCompose.tsx`
+### מה נבנה
+- 4 טבלאות DB: `social_accounts`, `social_posts`, `social_templates`, `social_facebook_groups` + RLS
+- Edge Function `social-publish` — פרסום לפייסבוק ואינסטגרם דרך Graph API v21.0
+- Edge Function `social-scheduler` — Cron כל 5 דקות לתזמון אוטומטי
+- UI מלא בטאב "פרסום" ב-MarketingHub:
+  - הגדרת חשבון Meta עם מדריך מובנה
+  - יצירת פוסט חדש (מנכס / חופשי) עם preview
+  - היסטוריית פוסטים + סינון
+  - ניהול קבוצות פייסבוק (חצי-אוטומטי)
+  - ניהול תבניות עם placeholders
+- 3 תבניות ברירת מחדל
+- Cron job מוגדר
 
-1. **הסרת כפתור העיפרון החיצוני** (שורות 448-457) — כבר לא צריך אותו מחוץ ל-Select.
-
-2. **החלפת Select ברשימה מותאמת** — כיוון ש-`SelectItem` של Radix לא תומך בכפתורים פנימיים, נחליף את ה-Select ב:
-   - כפתור trigger שפותח `Popover` (או `DropdownMenu`)
-   - בתוך התפריט: כל תבנית כשורה עם שם התבנית (לחיצה בוחרת) + אייקון עיפרון בצד (לחיצה פותחת עריכה)
-
-3. **מבנה כל שורה בתפריט**:
-   ```
-   [שם התבנית .................. ✏️]
-   ```
-   לחיצה על השם → בוחרת את התבנית וסוגרת את התפריט
-   לחיצה על העיפרון → פותחת את דיאלוג העריכה
-
-### קובץ
-- **עריכה**: `src/components/WhatsAppCompose.tsx` — החלפת Select+כפתור חיצוני ב-Popover עם עיפרון בכל שורה
-
+### קבצים
+- `supabase/functions/social-publish/index.ts`
+- `supabase/functions/social-scheduler/index.ts`
+- `src/hooks/useSocialPosts.ts`
+- `src/components/social/SocialDashboard.tsx`
+- `src/components/social/SocialAccountSetup.tsx`
+- `src/components/social/SocialPostComposer.tsx`
+- `src/components/social/SocialPostsList.tsx`
+- `src/components/social/FacebookGroupsManager.tsx`
+- `src/components/social/SocialTemplatesManager.tsx`
+- `src/pages/MarketingHub.tsx` (עדכון)
