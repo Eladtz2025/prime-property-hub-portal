@@ -20,7 +20,6 @@ export interface ScoutSettings {
   };
   matching: {
     max_matches_per_property: number;
-    auto_send_whatsapp: boolean;
     entry_date_range_strict: number;
     entry_date_range_flexible: number;
     immediate_max_days: number;
