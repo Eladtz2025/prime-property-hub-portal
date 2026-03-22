@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { WhatsAppSendDialog } from "@/components/WhatsAppSendDialog";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
