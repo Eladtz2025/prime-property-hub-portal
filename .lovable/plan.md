@@ -1,19 +1,22 @@
 
+## החלפת מיקום הטקסט והחץ ב-Select
 
-## הפיכת הטבלה לקומפקטית במובייל — בלי להסתיר עמודות
+### שינוי ב-`src/components/ui/select.tsx` (שורות 25-29)
+להחליף את סדר ה-`children` וה-`Icon` — כך שהטקסט ("בחר תבנית") יהיה בצד ימין והחץ (chevron) בצד שמאל:
 
-### גישה
-במקום להסתיר עמודות, לכווץ את כולן כך שייכנסו גם ב-384px:
+```tsx
+// לפני:
+<SelectPrimitive.Icon asChild>
+  <ChevronDown className="h-4 w-4 opacity-50" />
+</SelectPrimitive.Icon>
+{children}
 
-### שינויים ב-`WhatsAppCompose.tsx`
-
-1. **טקסט קטן יותר במובייל** — הוספת `text-[10px] sm:text-xs` לשורות הטבלה
-2. **ריפוד מינימלי** — שינוי מ-`px-2 py-1.5` ל-`px-1 py-1 sm:px-2 sm:py-1.5` בכל TableHead/TableCell
-3. **טלפון מקוצר במובייל** — במובייל להציג רק 7 ספרות אחרונות (למשל `52-1234567` במקום `052-123-4567`) באמצעות CSS `text-[10px]` או קיצור בלוגיקה
-4. **עמודת צ'קבוקס צרה יותר** — `w-6` במקום `w-8`
-5. **עמודת צ'אט צרה יותר** — `w-6` במקום `w-8`, אייקון `h-3 w-3`
-6. **שמות מקוצרים** בכותרות: "עסקה" במקום "סוג עסקה", "חד'" במקום "חדרים"
-7. **`table-fixed` עם רוחבי עמודות** — כדי שהטבלה לא תגלוש
+// אחרי:
+{children}
+<SelectPrimitive.Icon asChild>
+  <ChevronDown className="h-4 w-4 opacity-50" />
+</SelectPrimitive.Icon>
+```
 
 ### קובץ
-- **עריכה**: `src/components/WhatsAppCompose.tsx` — ש
+- **עריכה**: `src/components/ui/select.tsx` — החלפת סדר בלבד
