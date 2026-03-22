@@ -6,6 +6,7 @@ interface WhatsAppBulkBarProps {
   onSendClick: () => void;
   onClearSelection: () => void;
   label?: string;
+  templateCategory?: string;
 }
 
 export const WhatsAppBulkBar = ({ selectedCount, onSendClick, onClearSelection, label = 'פריטים' }: WhatsAppBulkBarProps) => {

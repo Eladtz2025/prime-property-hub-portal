@@ -29,11 +29,12 @@ interface WhatsAppBulkSendDialogProps {
   onOpenChange: (open: boolean) => void;
   recipients: Recipient[];
   onComplete?: () => void;
+  templateCategory?: string;
 }
 
 type SendStatus = 'pending' | 'sending' | 'sent' | 'failed';
 
-export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onComplete }: WhatsAppBulkSendDialogProps) => {
+export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onComplete, templateCategory = 'general' }: WhatsAppBulkSendDialogProps) => {
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [message, setMessage] = useState('');
@@ -60,7 +61,7 @@ export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onCompl
   }, [open]);
 
   const loadTemplates = async () => {
-    const { data } = await supabase.from('message_templates').select('*').order('name');
+    const { data } = await supabase.from('message_templates').select('*').eq('category', templateCategory).order('name');
     setTemplates(data || []);
   };
 

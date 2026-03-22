@@ -901,6 +901,7 @@ export const Properties: React.FC = memo(() => {
             setSelectedIds(new Set());
             setBulkDialogOpen(false);
           }}
+          templateCategory="properties"
         />
       </div>
     </TooltipProvider>

@@ -2269,6 +2269,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
           phone={whatsappTarget.phone}
           name={whatsappTarget.name}
           context={whatsappTarget.context}
+          templateCategory="scouted"
         />
       )}
 
@@ -2309,6 +2310,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
           return Array.from(leadsMap.values());
         })()}
         onComplete={() => setSelectedIds(new Set())}
+        templateCategory="scouted"
       />
     </>
   );

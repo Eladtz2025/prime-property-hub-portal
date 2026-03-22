@@ -819,6 +819,7 @@ export const CustomerMobileTable = ({
           phone={whatsappTarget.phone}
           name={whatsappTarget.name}
           context={whatsappTarget.context}
+          templateCategory="customers"
         />
       )}
 
@@ -834,6 +835,7 @@ export const CustomerMobileTable = ({
         onOpenChange={setBulkDialogOpen}
         recipients={selectedRecipients}
         onComplete={() => setSelectedIds(new Set())}
+        templateCategory="customers"
       />
     </>
   );

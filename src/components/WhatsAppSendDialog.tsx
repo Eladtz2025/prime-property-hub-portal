@@ -33,10 +33,11 @@ interface WhatsAppSendDialogProps {
   onOpenChange: (open: boolean) => void;
   phone: string;
   name: string;
-  context?: string; // e.g. property address or search details
+  context?: string;
+  templateCategory?: string;
 }
 
-export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context }: WhatsAppSendDialogProps) => {
+export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context, templateCategory = 'general' }: WhatsAppSendDialogProps) => {
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [message, setMessage] = useState('');
@@ -61,7 +62,7 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context }:
   }, [open]);
 
   const loadTemplates = async () => {
-    const { data } = await supabase.from('message_templates').select('*').order('name');
+    const { data } = await supabase.from('message_templates').select('*').eq('category', templateCategory).order('name');
     setTemplates(data || []);
   };
 
