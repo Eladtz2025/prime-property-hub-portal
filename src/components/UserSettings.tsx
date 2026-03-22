@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User, Phone, Mail, Save, Award, CreditCard, MapPin, Shield, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { User, Phone, Mail, Save, Award, CreditCard, MapPin, Shield, CheckCircle, Clock, AlertCircle, MessageCircle } from 'lucide-react';
 import { validateField, phoneSchema, israeliIdSchema, FormErrors, FormTouched } from '@/utils/formValidation';
 
 type FormFields = 'phone' | 'id_number';
