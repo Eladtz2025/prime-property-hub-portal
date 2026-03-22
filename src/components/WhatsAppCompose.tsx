@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Send, X, Users, User, MessageCircle, Pencil, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Send, X, Users, User, MessageCircle, Pencil, CheckCircle, Clock, XCircle, ChevronDown } from 'lucide-react';
 import { formatIsraeliPhone } from '@/utils/phoneFormatter';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
