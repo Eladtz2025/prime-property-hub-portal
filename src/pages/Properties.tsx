@@ -584,7 +584,13 @@ export const Properties: React.FC = memo(() => {
                       <TableBody>
                         {paginatedProperties.map((property) => (
                           <React.Fragment key={property.id}>
-                            <TableRow id={`property-row-${property.id}`} className="hover:bg-muted/50">
+                            <TableRow id={`property-row-${property.id}`} className={`hover:bg-muted/50 ${selectedIds.has(property.id) ? 'bg-primary/5' : ''}`}>
+                              <TableCell className="text-center px-2 py-3 w-10">
+                                <Checkbox
+                                  checked={selectedIds.has(property.id)}
+                                  onCheckedChange={() => handleToggleSelect(property.id)}
+                                />
+                              </TableCell>
                               <TableCell className="font-semibold text-base text-foreground text-center px-4 py-3 border-l border-border">
                                 <SearchHighlight 
                                   text={property.address} 
