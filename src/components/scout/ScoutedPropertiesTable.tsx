@@ -1761,9 +1761,29 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
                             disabled={matchLeadsMutation.isPending}
                             title="התאם ללקוחות ושלח WhatsApp"
                           >
-                            <MessageSquare className="h-4 w-4" />
+                            <Users className="h-4 w-4" />
                           </Button>
                         )}
+                        
+                        {/* WhatsApp send button - opens dialog for manual message */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const addr = cleanDisplayAddress(property.address, property.neighborhood, streetNeighborhoodMap);
+                            const ctx = [
+                              addr,
+                              property.rooms ? `${property.rooms} חד'` : '',
+                              property.price ? `₪${property.price.toLocaleString()}` : '',
+                            ].filter(Boolean).join(' | ');
+                            // Use a placeholder name and phone - user will fill from matched leads
+                            setWhatsappTarget({ phone: '', name: '', context: ctx });
+                            setWhatsappDialogOpen(true);
+                          }}
+                          title="שלח הודעת WhatsApp"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
                         
                         {property.status !== 'archived' && (
                           <Button
