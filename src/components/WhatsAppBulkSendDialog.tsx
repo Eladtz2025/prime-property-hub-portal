@@ -34,7 +34,7 @@ interface WhatsAppBulkSendDialogProps {
 
 type SendStatus = 'pending' | 'sending' | 'sent' | 'failed';
 
-export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onComplete }: WhatsAppBulkSendDialogProps) => {
+export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onComplete, templateCategory = 'general' }: WhatsAppBulkSendDialogProps) => {
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [message, setMessage] = useState('');
