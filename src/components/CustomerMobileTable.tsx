@@ -136,12 +136,11 @@ export const CustomerMobileTable = ({
 
   const handleWhatsApp = () => {
     if (selectedCustomer?.phone) {
-      const message = encodeURIComponent(
-        `שלום ${selectedCustomer.name}, אני מ-City Market נדל"ן.\n` +
-        (selectedCustomer.preferred_cities?.length ? `ראיתי שאתה מחפש דירה ב${selectedCustomer.preferred_cities[0]}` : 'ראיתי שאתה מחפש דירה') +
-        `.\nיש לי כמה נכסים שיכולים להתאים לך, מתי נוח לדבר?`
-      );
-      window.open(`https://wa.me/${selectedCustomer.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+      const ctx = selectedCustomer.preferred_cities?.length
+        ? `מחפש דירה ב${selectedCustomer.preferred_cities.join(', ')}`
+        : undefined;
+      setWhatsappTarget({ phone: selectedCustomer.phone, name: selectedCustomer.name, context: ctx });
+      setWhatsappDialogOpen(true);
     }
   };
 
