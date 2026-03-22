@@ -83,6 +83,8 @@ export const Properties: React.FC = memo(() => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [expandedPropertyId, setExpandedPropertyId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   
   const { 
     properties, 
