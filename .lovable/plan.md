@@ -1,31 +1,13 @@
 
 
-## שינויים בעמוד הווטסאפ
+## הוספת "שיווק" לניווט המובייל התחתון
 
-### 1. הסרת כותרת "שיווק" מ-`MarketingHub.tsx`
-כבר בוצע בעבר — אוודא שזה אכן מוסר.
+### בעיה
+`MobileBottomNavigation.tsx` מכיל 4 פריטים בלבד: לוח בקרה, נכסים, לקוחות, סקאוט. חסר "שיווק".
 
-### 2. תיקון "בעלי נכסים" — `WhatsAppCompose.tsx`
-**הבעיה**: השאילתה שולפת מ-`property_owners` → `profiles`, שזה טבלת המשתמשים/סוכנים במערכת — לא בעלי הנכסים האמיתיים.
+### פתרון
+הוספת פריט `{ title: "שיווק", url: "/admin-dashboard/marketing", icon: Megaphone }` למערך `mainNavItems` — אחרי "נכסים" (שורה 13), בדיוק כמו בדסקטופ.
 
-**הפתרון**: לשלוף ישירות מטבלת `properties` שיש בה `owner_name` ו-`owner_phone`:
-```sql
-SELECT id, address, city, owner_name, owner_phone
-FROM properties
-WHERE owner_phone IS NOT NULL AND owner_phone != ''
-```
-עמודות: צ'קבוקס | שם בעלים | טלפון | כתובת | עיר
-
-### 3. עמודות חדשות ללקוחות (leads)
-במקום סטטוס/עדיפות/ערים/תקציב, להציג:
-- **שם** (כבר קיים)
-- **טלפון** (כבר קיים)
-- **סוג עסקה** (`property_type` — קנייה/שכירות)
-- **חדרים** (`rooms_min`-`rooms_max`)
-- **תקציב** (`budget_max`)
-
-שליפה מעודכנת: `id, name, phone, property_type, rooms_min, rooms_max, budget_max`
-
-### קבצים
-- **עריכה**: `src/components/WhatsAppCompose.tsx` בלבד
+### קובץ
+- **עריכה**: `src/components/MobileBottomNavigation.tsx` — הוספת import ל-`Megaphone` ושורה אחת למערך
 
