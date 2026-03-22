@@ -362,7 +362,7 @@ export const ChecksDashboard: React.FC = () => {
   // Trigger matching
   const triggerMatching = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('trigger-matching', { body: { send_whatsapp: false, force: true } });
+      const { data, error } = await supabase.functions.invoke('trigger-matching', { body: { force: true } });
       if (error) throw error;
       return data;
     },

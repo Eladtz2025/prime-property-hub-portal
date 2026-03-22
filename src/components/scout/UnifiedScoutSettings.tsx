@@ -518,7 +518,7 @@ export const UnifiedScoutSettings: React.FC<{ triggerFunction?: string }> = ({ t
   const runMatchingMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('trigger-matching', {
-        body: { send_whatsapp: false, force: true }
+        body: { force: true }
       });
       if (error) throw error;
       return data;

@@ -960,7 +960,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
       // Single property re-matching - runs trigger-matching with force
       // This matches all leads against the property 
       const { data, error } = await supabase.functions.invoke('trigger-matching', {
-        body: { force: true, send_whatsapp: true }
+        body: { force: true }
       });
       if (error) throw error;
       return data;
@@ -979,7 +979,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
   const matchAllMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('trigger-matching', {
-        body: { send_whatsapp: false, force: true }
+        body: { force: true }
       });
       if (error) throw error;
       return data;

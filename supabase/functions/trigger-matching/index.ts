@@ -164,7 +164,6 @@ serve(async (req) => {
   try {
     // Parse request body for optional parameters
     const body = await req.json().catch(() => ({}));
-    const sendWhatsapp = body.send_whatsapp ?? false;
     const isForced = body.force === true;
     const leadId = body.lead_id;
 
@@ -318,7 +317,6 @@ serve(async (req) => {
         body: JSON.stringify({ 
           property_ids: batch,
           run_id: trackingRunId,
-          send_whatsapp: sendWhatsapp,
           batch_index: i + 1,
           total_batches: batches.length,
           matching_settings: matchingSettingsForBatches

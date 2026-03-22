@@ -286,7 +286,7 @@ export const ExpandableCustomerRow = ({
       // Re-run matching in background if preferences changed
       if (preferencesChanged) {
         supabase.functions.invoke('trigger-matching', {
-          body: { lead_id: customer.id, send_whatsapp: false }
+          body: { lead_id: customer.id }
         })
         .then(() => {
           toast({ description: 'ההתאמות עודכנו בהצלחה' });
