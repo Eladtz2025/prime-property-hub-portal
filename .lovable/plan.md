@@ -1,16 +1,21 @@
 
 
-## תיקון: שורה מורחבת לא תופסת את כל רוחב הטבלה
+## הסרת טאבים מ-MarketingHub + שינוי שם בניווט
 
-### הבעיה
-כשהוספנו את עמודת הצ'קבוקס לטבלת הלקוחות, הטבלה עלתה מ-6 ל-7 עמודות. אבל ה-`colSpan` של השורה המורחבת (פרטי הלקוח) נשאר 6 — ולכן התוכן לא משתרע על כל רוחב הטבלה.
+### שינויים
 
-### תיקון
-שינוי אחד ב-`src/components/ExpandableCustomerRow.tsx`:
-- שורה 447: `colSpan={6}` → `colSpan={7}`
+**1. `src/pages/MarketingHub.tsx`** — הסרת כל מבנה ה-Tabs, רינדור ישיר של `<SocialDashboard />`
+
+**2. שינוי שם "שיווק" → "פרסום" ב-3 קבצי ניווט:**
+- `src/components/TopNavigation.tsx` — שורה 14
+- `src/components/EnhancedTopNavigation.tsx` — שורה 30
+- `src/components/MobileBottomNavigation.tsx` — שורה 15
 
 ### קבצים
 | פעולה | קובץ |
 |-------|------|
-| עריכה | `src/components/ExpandableCustomerRow.tsx` — תיקון colSpan מ-6 ל-7 |
+| עריכה | `src/pages/MarketingHub.tsx` — הסרת Tabs, רינדור ישיר SocialDashboard |
+| עריכה | `src/components/TopNavigation.tsx` — "שיווק" → "פרסום" |
+| עריכה | `src/components/EnhancedTopNavigation.tsx` — "שיווק" → "פרסום" |
+| עריכה | `src/components/MobileBottomNavigation.tsx` — "שיווק" → "פרסום" |
 
