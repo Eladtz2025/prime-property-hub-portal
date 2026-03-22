@@ -788,6 +788,16 @@ export const CustomerMobileTable = ({
           scoutedMatchGroups={matchesData.scoutedMatchGroups}
         />
       )}
+
+      {whatsappTarget && (
+        <WhatsAppSendDialog
+          open={whatsappDialogOpen}
+          onOpenChange={setWhatsappDialogOpen}
+          phone={whatsappTarget.phone}
+          name={whatsappTarget.name}
+          context={whatsappTarget.context}
+        />
+      )}
     </>
   );
 };
