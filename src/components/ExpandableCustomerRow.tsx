@@ -112,6 +112,8 @@ export const ExpandableCustomerRow = ({
   onUnhideCustomer,
   onSave,
   agents = [],
+  isSelected = false,
+  onToggleSelect,
 }: ExpandableCustomerRowProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<Customer>>(() => ({
