@@ -1,50 +1,36 @@
 
 
-## הסרת שליחת WhatsApp אוטומטית מההתאמות — לחלוטין
+## תיקון זיהוי מאפיינים מהומלס — לפי Bold בלבד
 
-### מה יוסר
+### הבעיה
+בהומלס, מאפיינים שקיימים מופיעים ב**טקסט מודגש** (bold) ומאפיינים שלא קיימים מופיעים בטקסט רגיל/אפור. אין טקסט "אין" — רק הבדל עיצובי.
 
-כל הלוגיקה שקשורה לשליחת WhatsApp אוטומטית ללקוחות כחלק מתהליך ההתאמות. ההתאמות עצמן ימשיכו לעבוד כרגיל — רק בשבילך. שאר מערכת ה-WhatsApp (שליחה ידנית, בתפזורת, תבניות) לא תיפגע.
+כש-Jina מביא את העמוד כ-markdown, bold הופך ל-`**מרפסת**` ולא-bold נשאר `מרפסת`. הפרסר הנוכחי מחפש רק את המילה `מרפסת` — ולכן תמיד מסמן `true`, גם כשאין.
 
-### שינויים
+### התיקון — בקובץ אחד בלבד
 
-**1. `supabase/functions/match-batch/index.ts`**
-- הסרת import של `buildWhatsAppMessage`, `cleanPhoneNumber`
-- הסרת env vars: `greenApiInstance`, `greenApiToken`
-- הסרת param `send_whatsapp` מה-destructuring
-- הסרת `totalWhatsAppSent` ושימושיו
-- הסרת בלוק שליחת WhatsApp (שורות 197-232)
-- הסרת עדכון WhatsApp count ב-scout_runs (שורות 272-288)
-- הסרת `whatsapp_sent` מה-response
+**`supabase/functions/backfill-property-data-jina/index.ts`** — פונקציית `extractFeatures`
 
-**2. `supabase/functions/trigger-matching/index.ts`**
-- הסרת `sendWhatsapp` (שורה 167)
-- הסרת `send_whatsapp: sendWhatsapp` מה-body שנשלח ל-batch (שורה 321)
+כשה-source הוא `homeless`, הלוגיקה תהיה:
+- אם המאפיין מופיע כ-`**מרפסת**` (עטוף בכוכביות = bold) → `true`
+- אם המאפיין מופיע רק כ-`מרפסת` (בלי כוכביות = לא bold) → `false` (מפורש)
+- אם המאפיין לא מופיע בכלל → לא מוגדר (כמו היום)
 
-**3. `supabase/functions/_shared/matching.ts`**
-- הסרת הפונקציה `buildWhatsAppMessage` (לא בשימוש יותר)
+זה ישפיע רק על נכסים מהומלס. נכסים מ-Yad2/Madlan ימשיכו עם הלוגיקה הקיימת ללא שינוי.
 
-**4. `supabase/functions/_shared/settings.ts`**
-- הסרת `auto_send_whatsapp` מהממשק ומה-defaults
+### מה ישתנה בפועל
+הפונקציה `extractFeatures` כבר מקבלת `source` כפרמטר. נוסיף בלוק בתחילת הפונקציה: אם `source === 'homeless'`, נפעיל לוגיקה חלופית שבודקת bold (`**...**`) במקום סתם הופעת המילה.
 
-**5. `src/hooks/useScoutSettings.ts`**
-- הסרת `auto_send_whatsapp` מהטיפוס ומה-defaults
+המאפיינים שייבדקו: מרפסת, חניה/חנייה, מעלית, ממ"ד, מחסן, מזגן, חצר/גינה, גג
 
-**6. קבצי Frontend** — הסרת `send_whatsapp` מכל הקריאות (כבר לא רלוונטי):
-- `src/components/scout/ScoutedPropertiesTable.tsx` — שורה 963
-- `src/components/scout/ScoutedPropertiesTable.tsx` — שורה 982
-- `src/pages/AdminCustomers.tsx` — שורות 109, 133
-- `src/components/scout/UnifiedScoutSettings.tsx` — שורה 521
-- `src/components/scout/ChecksDashboard.tsx` — שורה 365
-- `src/components/ExpandableCustomerRow.tsx` — שורה 289
-- `src/components/customers/CustomerMatchesCell.tsx` — שורה 118
+### קבצים
+| פעולה | קובץ |
+|-------|------|
+| עריכה | `supabase/functions/backfill-property-data-jina/index.ts` — לוגיקת bold להומלס ב-extractFeatures |
+| Deploy | `backfill-property-data-jina` |
 
-**7. Deploy**: `match-batch`, `trigger-matching`
-
-### מה לא נפגע
-- `whatsapp-send` (שליחה ידנית) ✅
-- `WhatsAppSendDialog` / `WhatsAppBulkSendDialog` ✅
-- `whatsapp-webhook` (קבלת הודעות) ✅
-- `notify-new-lead` (התראה על ליד חדש) ✅
-- תבניות הודעות ✅
+### מה לא משתנה
+- פרסר SERP (`parser-utils.ts`) — לא משתנה (הוא מפרסר את טבלת החיפוש, שם אין מאפיינים)
+- לוגיקת Yad2/Madlan — לא משתנה
+- שום דבר אחר במערכת
 
