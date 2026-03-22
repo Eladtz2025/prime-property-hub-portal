@@ -130,7 +130,7 @@ export default function AdminCustomers() {
       if (clearError) throw clearError;
       
       const { data, error } = await supabase.functions.invoke('trigger-matching', {
-        body: { force: true, send_whatsapp: false }
+        body: { force: true }
       });
       if (error) throw error;
       toast.success(`חישוב מחדש הופעל: ${data.total_properties || 0} נכסים ב-${data.batches_triggered || 0} batches`);

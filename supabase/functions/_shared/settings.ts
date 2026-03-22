@@ -70,7 +70,6 @@ export const defaultSettings: ScoutSettings = {
     min_score: 60,
     max_matches_per_property: 20,
     flexible_price_threshold: 0.15,
-    auto_send_whatsapp: false,
     entry_date_range_strict: 10,
     entry_date_range_flexible: 14,
     immediate_max_days: 30,

@@ -115,7 +115,7 @@ export const CustomerMatchesCell = ({
     setIsMatching(true);
     try {
       await supabase.functions.invoke('trigger-matching', {
-        body: { lead_id: customerId, send_whatsapp: false }
+        body: { lead_id: customerId }
       });
       toast({ title: 'התאמה הושלמה', description: 'ההתאמות עודכנו בהצלחה' });
       onRefresh();

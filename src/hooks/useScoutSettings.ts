@@ -80,7 +80,6 @@ export const defaultSettings: ScoutSettings = {
   },
   matching: {
     max_matches_per_property: 20,
-    auto_send_whatsapp: false,
     entry_date_range_strict: 10,
     entry_date_range_flexible: 14,
     immediate_max_days: 30,

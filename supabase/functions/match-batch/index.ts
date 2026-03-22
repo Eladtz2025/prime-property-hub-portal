@@ -5,8 +5,6 @@ import {
   ContactLead, 
   MatchResult, 
   calculateMatch, 
-  buildWhatsAppMessage, 
-  cleanPhoneNumber,
   MatchingSettings,
   defaultMatchingSettings
 } from "../_shared/matching.ts";
@@ -24,8 +22,6 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const greenApiInstance = Deno.env.get('GREEN_API_INSTANCE_ID');
-  const greenApiToken = Deno.env.get('GREEN_API_TOKEN');
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -33,7 +29,6 @@ serve(async (req) => {
     const { 
       property_ids, 
       run_id, 
-      send_whatsapp = false,
       batch_index,
       total_batches,
       matching_settings: providedSettings
@@ -94,8 +89,6 @@ serve(async (req) => {
     }
 
     // Fetch all ELIGIBLE leads once for this batch
-    // Lead eligibility is determined by database trigger (update_lead_eligibility)
-    // which sets matching_status = 'eligible' when lead has: cities, neighborhoods, budget, rooms
     const PAGE_SIZE = 1000;
     let allLeads: any[] = [];
     let from = 0;
@@ -107,7 +100,7 @@ serve(async (req) => {
         .select('*')
         .neq('status', 'closed')
         .eq('is_hidden', false)
-        .eq('matching_status', 'eligible')  // Only eligible leads!
+        .eq('matching_status', 'eligible')
         .range(from, from + PAGE_SIZE - 1);
 
       if (leadsError) throw leadsError;
@@ -123,7 +116,6 @@ serve(async (req) => {
 
     const leads = allLeads;
     
-    // Log eligible leads count (all have required fields thanks to trigger filter)
     console.log(`📊 Batch stats: ${properties.length} properties × ${leads.length} eligible leads`);
 
     if (leads.length === 0) {
@@ -138,7 +130,6 @@ serve(async (req) => {
     }
 
     let totalMatched = 0;
-    let totalWhatsAppSent = 0;
     let processedCount = 0;
 
     for (const property of properties) {
@@ -165,7 +156,7 @@ serve(async (req) => {
           name: m.lead.name,
           phone: m.lead.phone,
           score: m.matchScore,
-          priority: m.priority, // Store priority for client-side sorting
+          priority: m.priority,
           reasons: m.matchReasons
         }));
 
@@ -178,10 +169,8 @@ serve(async (req) => {
           })
           .eq('id', property.id);
 
-        // If property belongs to a duplicate group, sync match data to all members (WITHOUT triggering WhatsApp)
-        // This ensures the group has consistent data, but WhatsApp is only sent for the winner (above)
+        // If property belongs to a duplicate group, sync match data to all members
         if (property.duplicate_group_id) {
-          // Sync data to losers in the group (they won't be processed for WhatsApp since they're filtered out)
           await supabase
             .from('scouted_properties')
             .update({
@@ -191,47 +180,10 @@ serve(async (req) => {
             .eq('duplicate_group_id', property.duplicate_group_id)
             .neq('id', property.id);
           
-          console.log(`Synced matches to duplicates in group ${property.duplicate_group_id} (data only, no WhatsApp)`);
-        }
-
-        // Send WhatsApp to matched leads (if enabled) - ONLY for winners (losers are already filtered out)
-        if (send_whatsapp && greenApiInstance && greenApiToken) {
-          for (const match of matches.slice(0, 5)) {
-            const message = buildWhatsAppMessage(property as ScoutedProperty, match);
-            
-            try {
-              const phone = cleanPhoneNumber(match.lead.phone);
-              
-              const waResponse = await fetch(
-                `https://api.green-api.com/waInstance${greenApiInstance}/sendMessage/${greenApiToken}`,
-                {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chatId: `${phone}@c.us`,
-                    message
-                  })
-                }
-              );
-
-              if (waResponse.ok) {
-                totalWhatsAppSent++;
-                
-                await supabase.from('whatsapp_messages').insert({
-                  phone: match.lead.phone,
-                  message,
-                  direction: 'outgoing',
-                  status: 'sent',
-                  sent_by: 'system'
-                });
-              }
-            } catch (waError) {
-              console.error('WhatsApp send error:', waError);
-            }
-          }
+          console.log(`Synced matches to duplicates in group ${property.duplicate_group_id}`);
         }
       } else {
-        // No matches: clear leads and keep as 'new' (NOT 'matched')
+        // No matches: clear leads and keep as 'checked'
         await supabase
           .from('scouted_properties')
           .update({ status: 'checked', matched_leads: [] })
@@ -241,7 +193,6 @@ serve(async (req) => {
 
     // Update progress in tracking run using atomic increment
     if (run_id) {
-      // Use RPC for atomic increment to avoid race conditions
       const { data: updatedProgress, error: rpcError } = await supabase
         .rpc('increment_matching_progress', {
           p_run_id: run_id,
@@ -268,24 +219,6 @@ serve(async (req) => {
           console.log(`🎉 Matching complete! Total matches: ${progress.leads_matched}`);
         }
       }
-
-      // Update WhatsApp count separately (not in RPC)
-      if (totalWhatsAppSent > 0) {
-        const { data: currentRun } = await supabase
-          .from('scout_runs')
-          .select('whatsapp_sent')
-          .eq('id', run_id)
-          .single();
-        
-        if (currentRun) {
-          await supabase
-            .from('scout_runs')
-            .update({
-              whatsapp_sent: (currentRun.whatsapp_sent || 0) + totalWhatsAppSent
-            })
-            .eq('id', run_id);
-        }
-      }
     }
 
     console.log(`✅ Batch ${batch_index || '?'} complete: ${processedCount} properties, ${totalMatched} matches`);
@@ -293,8 +226,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       properties_processed: processedCount,
-      leads_matched: totalMatched,
-      whatsapp_sent: totalWhatsAppSent
+      leads_matched: totalMatched
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
