@@ -106,7 +106,7 @@ export default function AdminCustomers() {
     try {
       // Use the unified trigger-matching orchestrator
       await supabase.functions.invoke('trigger-matching', {
-        body: { send_whatsapp: false, force: true }
+        body: { force: true }
       });
       toast.success('ההתאמות הופעלו - ניתן לעקוב בהיסטוריית הסריקות');
       fetchCustomers();
