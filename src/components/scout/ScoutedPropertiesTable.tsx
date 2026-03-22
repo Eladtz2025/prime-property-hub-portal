@@ -1611,6 +1611,18 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[40px] text-center">
+                    <Checkbox
+                      checked={filteredProperties && filteredProperties.length > 0 && filteredProperties.every(p => selectedIds.has(p.id))}
+                      onCheckedChange={(checked) => {
+                        if (checked && filteredProperties) {
+                          setSelectedIds(new Set(filteredProperties.map(p => p.id)));
+                        } else {
+                          setSelectedIds(new Set());
+                        }
+                      }}
+                    />
+                  </TableHead>
                   <TableHead className="w-[80px]">מקור</TableHead>
                   <TableHead className="w-[250px]">פרטים</TableHead>
                   <TableHead className="w-[120px]">מחיר</TableHead>
