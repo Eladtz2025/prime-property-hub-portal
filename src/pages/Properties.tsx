@@ -885,6 +885,23 @@ export const Properties: React.FC = memo(() => {
             setShowAddModal(false);
           }}
         />
+
+        {/* WhatsApp Bulk Bar + Dialog */}
+        <WhatsAppBulkBar
+          selectedCount={selectedIds.size}
+          onSendClick={() => setBulkDialogOpen(true)}
+          onClearSelection={() => setSelectedIds(new Set())}
+          label="נכסים"
+        />
+        <WhatsAppBulkSendDialog
+          open={bulkDialogOpen}
+          onOpenChange={setBulkDialogOpen}
+          recipients={bulkRecipients}
+          onComplete={() => {
+            setSelectedIds(new Set());
+            setBulkDialogOpen(false);
+          }}
+        />
       </div>
     </TooltipProvider>
   );
