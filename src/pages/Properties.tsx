@@ -248,6 +248,36 @@ export const Properties: React.FC = memo(() => {
     return filteredAndSortedProperties.filter(property => property.ownerPhone && property.ownerPhone.trim() !== '');
   }, [filteredAndSortedProperties]);
 
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const handleToggleAll = () => {
+    if (selectedIds.size === paginatedProperties.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginatedProperties.map(p => p.id)));
+    }
+  };
+
+  const bulkRecipients = useMemo(() => {
+    const seen = new Set<string>();
+    return paginatedProperties
+      .filter(p => selectedIds.has(p.id) && p.ownerPhone?.trim())
+      .reduce<{ id: string; name: string; phone: string }[]>((acc, p) => {
+        const phone = p.ownerPhone!.trim();
+        if (!seen.has(phone)) {
+          seen.add(phone);
+          acc.push({ id: p.id, name: p.ownerName, phone });
+        }
+        return acc;
+      }, []);
+  }, [selectedIds, paginatedProperties]);
+
   const handleExportCSV = () => {
     const headers = [
       'כתובת',
