@@ -1,22 +1,22 @@
 
-## החלפת מיקום הטקסט והחץ ב-Select
 
-### שינוי ב-`src/components/ui/select.tsx` (שורות 25-29)
-להחליף את סדר ה-`children` וה-`Icon` — כך שהטקסט ("בחר תבנית") יהיה בצד ימין והחץ (chevron) בצד שמאל:
+## הוספת כפתור עריכה לכל תבנית בתפריט הנפתח
 
-```tsx
-// לפני:
-<SelectPrimitive.Icon asChild>
-  <ChevronDown className="h-4 w-4 opacity-50" />
-</SelectPrimitive.Icon>
-{children}
+### שינוי ב-`WhatsAppCompose.tsx`
 
-// אחרי:
-{children}
-<SelectPrimitive.Icon asChild>
-  <ChevronDown className="h-4 w-4 opacity-50" />
-</SelectPrimitive.Icon>
-```
+1. **הסרת כפתור העיפרון החיצוני** (שורות 448-457) — כבר לא צריך אותו מחוץ ל-Select.
+
+2. **החלפת Select ברשימה מותאמת** — כיוון ש-`SelectItem` של Radix לא תומך בכפתורים פנימיים, נחליף את ה-Select ב:
+   - כפתור trigger שפותח `Popover` (או `DropdownMenu`)
+   - בתוך התפריט: כל תבנית כשורה עם שם התבנית (לחיצה בוחרת) + אייקון עיפרון בצד (לחיצה פותחת עריכה)
+
+3. **מבנה כל שורה בתפריט**:
+   ```
+   [שם התבנית .................. ✏️]
+   ```
+   לחיצה על השם → בוחרת את התבנית וסוגרת את התפריט
+   לחיצה על העיפרון → פותחת את דיאלוג העריכה
 
 ### קובץ
-- **עריכה**: `src/components/ui/select.tsx` — החלפת סדר בלבד
+- **עריכה**: `src/components/WhatsAppCompose.tsx` — החלפת Select+כפתור חיצוני ב-Popover עם עיפרון בכל שורה
+
