@@ -149,14 +149,15 @@ export const ExpandableCustomerRow = ({
   const handleWhatsApp = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (customer.phone) {
-      const message = encodeURIComponent(
-        `שלום ${customer.name}, אני מ-City Market נדל"ן.\n` +
-        (customer.preferred_cities?.length ? `ראיתי שאתה מחפש דירה ב${customer.preferred_cities[0]}` : 'ראיתי שאתה מחפש דירה') +
-        `.\nיש לי כמה נכסים שיכולים להתאים לך, מתי נוח לדבר?`
-      );
-      window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+      setWhatsappDialogOpen(true);
     }
   };
+
+  const whatsappContext = customer.preferred_cities?.length
+    ? `מחפש דירה ב${customer.preferred_cities.join(', ')}` +
+      (customer.budget_max ? ` | תקציב עד ₪${customer.budget_max.toLocaleString()}` : '') +
+      (customer.rooms_min ? ` | ${customer.rooms_min}+ חדרים` : '')
+    : undefined;
 
   const getMissingRecommendedFields = (data: typeof formData): string[] => {
     const missing: string[] = [];
