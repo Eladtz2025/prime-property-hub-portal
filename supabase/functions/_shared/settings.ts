@@ -16,7 +16,6 @@ export interface ScoutSettings {
     min_score: number;
     max_matches_per_property: number;
     flexible_price_threshold: number;
-    auto_send_whatsapp: boolean;
     entry_date_range_strict: number;
     entry_date_range_flexible: number;
     immediate_max_days: number;
