@@ -2232,6 +2232,16 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
           </div>
         </DialogContent>
       </Dialog>
+
+      {whatsappTarget && (
+        <WhatsAppSendDialog
+          open={whatsappDialogOpen}
+          onOpenChange={setWhatsappDialogOpen}
+          phone={whatsappTarget.phone}
+          name={whatsappTarget.name}
+          context={whatsappTarget.context}
+        />
+      )}
     </>
   );
 };
