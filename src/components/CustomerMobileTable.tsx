@@ -278,13 +278,17 @@ export const CustomerMobileTable = ({
           return (
             <div
               key={customer.id}
-              className={`rounded-lg border bg-card p-2.5 cursor-pointer active:bg-muted/80 transition-colors ${customer.is_hidden ? 'opacity-50' : ''}`}
+              className={`rounded-lg border bg-card p-2.5 cursor-pointer active:bg-muted/80 transition-colors ${customer.is_hidden ? 'opacity-50' : ''} ${selectedIds.has(customer.id) ? 'ring-2 ring-primary' : ''}`}
               onClick={() => handleSelectCustomer(customer)}
             >
-              {/* Row 1: WhatsApp + Name + Type badge ... Budget + Priority */}
+              {/* Row 1: Checkbox + WhatsApp + Name + Type badge ... Budget + Priority */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                   {customer.phone && (
+                    <div className="shrink-0" onClick={(e) => handleToggleSelect(customer.id, e)}>
+                      <Checkbox checked={selectedIds.has(customer.id)} className="h-3.5 w-3.5" />
+                    </div>
+                  )}
                     <Button 
                       size="sm" 
                       variant="ghost" 
