@@ -102,7 +102,9 @@ export const UserSettings: React.FC = () => {
           broker_license_number: formData.broker_license_number,
           id_number: formData.id_number,
           address: formData.address,
-        })
+          green_api_instance_id: formData.green_api_instance_id || null,
+          green_api_token: formData.green_api_token || null,
+        } as any)
         .eq('id', user.id);
 
       if (error) throw error;
