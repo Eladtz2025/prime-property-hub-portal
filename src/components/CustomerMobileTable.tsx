@@ -129,6 +129,22 @@ export const CustomerMobileTable = ({
     customerPhone?: string;
     scoutedMatchGroups: any[];
   } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+
+  const handleToggleSelect = (customerId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(customerId)) next.delete(customerId);
+      else next.add(customerId);
+      return next;
+    });
+  };
+
+  const selectedRecipients = customers
+    .filter(c => selectedIds.has(c.id) && c.phone)
+    .map(c => ({ id: c.id, name: c.name, phone: c.phone }));
 
   const handleSelectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
