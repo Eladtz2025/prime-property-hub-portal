@@ -67,6 +67,8 @@ export const UserSettings: React.FC = () => {
         broker_license_number: profile?.broker_license_number || '',
         id_number: profile?.id_number || '',
         address: profile?.address || '',
+        green_api_instance_id: (profile as any)?.green_api_instance_id || '',
+        green_api_token: (profile as any)?.green_api_token || '',
       });
     }
   }, [profile, user]);
