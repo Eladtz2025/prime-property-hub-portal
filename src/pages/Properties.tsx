@@ -1,6 +1,9 @@
 import React, { useState, useMemo, memo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { WhatsAppBulkBar } from '@/components/WhatsAppBulkBar';
+import { WhatsAppBulkSendDialog } from '@/components/WhatsAppBulkSendDialog';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -80,6 +83,8 @@ export const Properties: React.FC = memo(() => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [expandedPropertyId, setExpandedPropertyId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   
   const { 
     properties, 
@@ -242,6 +247,36 @@ export const Properties: React.FC = memo(() => {
   const propertiesWithWhatsApp = useMemo(() => {
     return filteredAndSortedProperties.filter(property => property.ownerPhone && property.ownerPhone.trim() !== '');
   }, [filteredAndSortedProperties]);
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const handleToggleAll = () => {
+    if (selectedIds.size === paginatedProperties.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginatedProperties.map(p => p.id)));
+    }
+  };
+
+  const bulkRecipients = useMemo(() => {
+    const seen = new Set<string>();
+    return paginatedProperties
+      .filter(p => selectedIds.has(p.id) && p.ownerPhone?.trim())
+      .reduce<{ id: string; name: string; phone: string }[]>((acc, p) => {
+        const phone = p.ownerPhone!.trim();
+        if (!seen.has(phone)) {
+          seen.add(phone);
+          acc.push({ id: p.id, name: p.ownerName, phone });
+        }
+        return acc;
+      }, []);
+  }, [selectedIds, paginatedProperties]);
 
   const handleExportCSV = () => {
     const headers = [
@@ -472,22 +507,29 @@ export const Properties: React.FC = memo(() => {
                   <div className="space-y-3 px-2">
                     {paginatedProperties.map((property) => (
                       <React.Fragment key={property.id}>
-                        <div id={`property-row-${property.id}`}>
-                          <OptimizedMobilePropertyCard
-                          property={property}
-                          onViewDetails={handleViewDetails}
-                          onEdit={(p) => setExpandedPropertyId(expandedPropertyId === p.id ? null : p.id)}
-                          onDelete={handleDeleteProperty}
-                          ownerPropertyCount={getOwnerPropertyCount(property)}
-                          searchTerm={filters.searchTerm}
-                          canEdit={canEditProperties}
-                        />
-                          <PropertyEditRow
-                            property={property}
-                            isOpen={expandedPropertyId === property.id}
-                            onClose={() => setExpandedPropertyId(null)}
-                            onSave={handlePropertyUpdate}
+                        <div id={`property-row-${property.id}`} className="flex items-start gap-2">
+                          <Checkbox
+                            checked={selectedIds.has(property.id)}
+                            onCheckedChange={() => handleToggleSelect(property.id)}
+                            className="mt-4 flex-shrink-0"
                           />
+                          <div className="flex-1 min-w-0">
+                            <OptimizedMobilePropertyCard
+                              property={property}
+                              onViewDetails={handleViewDetails}
+                              onEdit={(p) => setExpandedPropertyId(expandedPropertyId === p.id ? null : p.id)}
+                              onDelete={handleDeleteProperty}
+                              ownerPropertyCount={getOwnerPropertyCount(property)}
+                              searchTerm={filters.searchTerm}
+                              canEdit={canEditProperties}
+                            />
+                            <PropertyEditRow
+                              property={property}
+                              isOpen={expandedPropertyId === property.id}
+                              onClose={() => setExpandedPropertyId(null)}
+                              onSave={handlePropertyUpdate}
+                            />
+                          </div>
                         </div>
                       </React.Fragment>
                     ))}
@@ -497,6 +539,12 @@ export const Properties: React.FC = memo(() => {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="text-center px-2 py-3 w-10">
+                            <Checkbox
+                              checked={paginatedProperties.length > 0 && selectedIds.size === paginatedProperties.length}
+                              onCheckedChange={handleToggleAll}
+                            />
+                          </TableHead>
                           <TableHead 
                             className="text-center cursor-pointer hover:bg-muted/50 px-4 py-3" 
                             onClick={() => handleSort('address')}
@@ -543,7 +591,13 @@ export const Properties: React.FC = memo(() => {
                       <TableBody>
                         {paginatedProperties.map((property) => (
                           <React.Fragment key={property.id}>
-                            <TableRow id={`property-row-${property.id}`} className="hover:bg-muted/50">
+                            <TableRow id={`property-row-${property.id}`} className={`hover:bg-muted/50 ${selectedIds.has(property.id) ? 'bg-primary/5' : ''}`}>
+                              <TableCell className="text-center px-2 py-3 w-10">
+                                <Checkbox
+                                  checked={selectedIds.has(property.id)}
+                                  onCheckedChange={() => handleToggleSelect(property.id)}
+                                />
+                              </TableCell>
                               <TableCell className="font-semibold text-base text-foreground text-center px-4 py-3 border-l border-border">
                                 <SearchHighlight 
                                   text={property.address} 
@@ -765,7 +819,7 @@ export const Properties: React.FC = memo(() => {
                             {/* Expandable Edit Row */}
                             {expandedPropertyId === property.id && (
                               <TableRow>
-                                <TableCell colSpan={7} className="p-0 border-0">
+                                <TableCell colSpan={10} className="p-0 border-0">
                                   <PropertyEditRow
                                     property={property}
                                     isOpen={true}
@@ -829,6 +883,23 @@ export const Properties: React.FC = memo(() => {
           onPropertyAdded={(newProperty) => {
             addProperty(newProperty);
             setShowAddModal(false);
+          }}
+        />
+
+        {/* WhatsApp Bulk Bar + Dialog */}
+        <WhatsAppBulkBar
+          selectedCount={selectedIds.size}
+          onSendClick={() => setBulkDialogOpen(true)}
+          onClearSelection={() => setSelectedIds(new Set())}
+          label="נכסים"
+        />
+        <WhatsAppBulkSendDialog
+          open={bulkDialogOpen}
+          onOpenChange={setBulkDialogOpen}
+          recipients={bulkRecipients}
+          onComplete={() => {
+            setSelectedIds(new Set());
+            setBulkDialogOpen(false);
           }}
         />
       </div>
