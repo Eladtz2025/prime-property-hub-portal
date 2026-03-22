@@ -170,3 +170,9 @@ verify_jwt = false
 
 [functions.test-direct-fetch]
 verify_jwt = false
+
+[functions.social-publish]
+verify_jwt = false
+
+[functions.social-scheduler]
+verify_jwt = false

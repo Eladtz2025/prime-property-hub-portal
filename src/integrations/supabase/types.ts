@@ -3308,6 +3308,264 @@ export type Database = {
         }
         Relationships: []
       }
+      social_accounts: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          id: string
+          ig_user_id: string | null
+          is_active: boolean
+          page_id: string | null
+          page_name: string | null
+          platform: string
+          token_expires_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          ig_user_id?: string | null
+          is_active?: boolean
+          page_id?: string | null
+          page_name?: string | null
+          platform: string
+          token_expires_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          ig_user_id?: string | null
+          is_active?: boolean
+          page_id?: string | null
+          page_name?: string | null
+          platform?: string
+          token_expires_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_facebook_groups: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          group_name: string
+          group_url: string
+          id: string
+          is_active: boolean
+          notes: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          group_name: string
+          group_url: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          group_name?: string
+          group_url?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_facebook_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_facebook_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_posts: {
+        Row: {
+          content_text: string | null
+          created_at: string
+          created_by: string
+          error_message: string | null
+          external_post_id: string | null
+          external_post_url: string | null
+          hashtags: string | null
+          id: string
+          image_urls: Json | null
+          platform: string
+          post_type: string
+          property_id: string | null
+          published_at: string | null
+          retry_count: number
+          scheduled_at: string | null
+          status: string
+          target_group_id: string | null
+          template_id: string | null
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          content_text?: string | null
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          external_post_id?: string | null
+          external_post_url?: string | null
+          hashtags?: string | null
+          id?: string
+          image_urls?: Json | null
+          platform: string
+          post_type?: string
+          property_id?: string | null
+          published_at?: string | null
+          retry_count?: number
+          scheduled_at?: string | null
+          status?: string
+          target_group_id?: string | null
+          template_id?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          content_text?: string | null
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          external_post_id?: string | null
+          external_post_url?: string | null
+          hashtags?: string | null
+          id?: string
+          image_urls?: Json | null
+          platform?: string
+          post_type?: string
+          property_id?: string | null
+          published_at?: string | null
+          retry_count?: number
+          scheduled_at?: string | null
+          status?: string
+          target_group_id?: string | null
+          template_id?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_target_group_id_fkey"
+            columns: ["target_group_id"]
+            isOneToOne: false
+            referencedRelation: "social_facebook_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "social_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          hashtags: string | null
+          id: string
+          is_active: boolean
+          name: string
+          platform: string
+          post_type: string
+          template_text: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          hashtags?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          platform?: string
+          post_type?: string
+          template_text: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          hashtags?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          platform?: string
+          post_type?: string
+          template_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_with_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       street_neighborhoods: {
         Row: {
           city: string
