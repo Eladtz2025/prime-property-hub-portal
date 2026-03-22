@@ -34,8 +34,8 @@ export const Settings: React.FC = () => {
           </p>
         </div>
 
-        {/* Personal Settings - only for non-super_admin users */}
-        {!isSuperAdmin && (
+        {/* Personal Settings */}
+        {(
           <Collapsible open={openSections.settings} onOpenChange={() => toggleSection('settings')}>
             <Card>
               <CollapsibleTrigger asChild>
