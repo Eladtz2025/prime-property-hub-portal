@@ -819,6 +819,7 @@ export const CustomerMobileTable = ({
           phone={whatsappTarget.phone}
           name={whatsappTarget.name}
           context={whatsappTarget.context}
+          templateCategory="customers"
         />
       )}
 
