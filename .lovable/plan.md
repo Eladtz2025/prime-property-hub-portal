@@ -1,12 +1,15 @@
 
 
-## הצגת הגדרות אישיות גם ל-super_admin
+## הוספת Meta Tag לאימות דומיין פייסבוק
 
-### הבעיה
-בקובץ `src/pages/Settings.tsx` שורה 38, יש תנאי `{!isSuperAdmin && ...}` שמסתיר את סקשן ההגדרות האישיות (כולל שדות WhatsApp) ממשתמשי super_admin.
+### מה צריך
+להוסיף את ה-meta tag של Facebook Domain Verification ל-`<head>` של האתר.
 
-### התיקון
-**`src/pages/Settings.tsx`** — הסרת התנאי `!isSuperAdmin` כך שכל המשתמשים, כולל super_admin, יראו את ההגדרות האישיות וסקשן חיבור WhatsApp.
+### שינוי
+**`index.html`** — הוספת שורה אחת ב-`<head>`:
+```html
+<meta name="facebook-domain-verification" content="tk488dibx42pxrk7elauy7lxy9mzxu" />
+```
 
-שינוי של שורה אחת בלבד.
+אחרי ההוספה, תצטרך לפרסם את האתר ואז ללחוץ "Verify domain" בפייסבוק.
 
