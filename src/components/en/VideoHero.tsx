@@ -58,9 +58,6 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
             Properties
           </p>
         </div>
-        <p className="reliz-subtitle text-white mb-12 max-w-2xl animate-fade-in animation-delay-200">
-          {subtitle}
-        </p>
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400">
