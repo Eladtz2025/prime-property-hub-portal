@@ -400,8 +400,8 @@ export const AutoPublishManager: React.FC = () => {
       <ConfirmDialog
         open={!!deleteConfirm}
         onOpenChange={() => setDeleteConfirm(null)}
-        title="מחיקת תור"
-        description="האם אתה בטוח שברצונך למחוק תור זה? כל הכתבות וההיסטוריה ימחקו."
+        title="מחיקת תבנית"
+        description="האם אתה בטוח שברצונך למחוק תבנית זו? כל הכתבות וההיסטוריה ימחקו."
         onConfirm={() => {
           if (deleteConfirm) {
             deleteQueue.mutate(deleteConfirm);
