@@ -35,15 +35,42 @@ const FREQUENCY_OPTIONS = [
   { value: '7', label: 'שבועי' },
 ];
 
-const DEFAULT_PROPERTY_TEMPLATE = `🏠 דירה להשכרה!
+const TEMPLATE_PRESETS = [
+  {
+    id: 'minimal',
+    label: '🎯 מינימלית',
+    text: `🏠 דירה {property_type}!
 
-📍 {address}, {neighborhood}, {city}
+📍 {address}, {city}
 🛏️ {rooms} חדרים | 📐 {size} מ"ר | 🏢 קומה {floor}
-💰 {price} לחודש
+💰 {price}
 
-{description}
+📞 לפרטים נוספים צרו קשר`,
+  },
+  {
+    id: 'marketing',
+    label: '✨ שיווקית',
+    text: `✨ הזדמנות! דירת {rooms} חדרים {property_type}
 
-📞 לפרטים נוספים צרו קשר`;
+📍 {neighborhood}, {city}
+📐 {size} מ"ר | 🏢 קומה {floor}
+💰 רק {price}
+
+⬇️ לחצו על הלינק לפרטים נוספים`,
+  },
+  {
+    id: 'simple',
+    label: '📝 פשוטה',
+    text: `דירת {rooms} חדרים {property_type} ב{city}
+{address}, {neighborhood}
+{size} מ"ר, קומה {floor}
+{price}
+
+לפרטים: 👇`,
+  },
+];
+
+const DEFAULT_PROPERTY_TEMPLATE = TEMPLATE_PRESETS[0].text;
 
 type PublishMode = 'one_time' | 'recurring';
 type QueueType = 'property_rotation' | 'article_oneshot';
@@ -593,9 +620,25 @@ export const AutoPublishManager: React.FC = () => {
                 <span className="text-[10px] text-muted-foreground">{charCount} תווים</span>
               </div>
               {mode === 'recurring' && queueType === 'property_rotation' && (
-                <p className="text-[10px] text-muted-foreground mb-1">
-                  placeholders: {'{address}'}, {'{price}'}, {'{rooms}'}, {'{size}'}, {'{floor}'}, {'{neighborhood}'}, {'{city}'}, {'{description}'}
-                </p>
+                <div className="space-y-1 mb-1">
+                  <div className="flex gap-1.5 flex-wrap">
+                    {TEMPLATE_PRESETS.map(preset => (
+                      <Button
+                        key={preset.id}
+                        type="button"
+                        variant={contentText === preset.text ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-6 text-[11px] px-2"
+                        onClick={() => setContentText(preset.text)}
+                      >
+                        {preset.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    placeholders: {'{address}'}, {'{price}'}, {'{rooms}'}, {'{size}'}, {'{floor}'}, {'{neighborhood}'}, {'{city}'}, {'{property_type}'}
+                  </p>
+                </div>
               )}
               <Textarea
                 value={contentText}
