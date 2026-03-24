@@ -50,10 +50,7 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
 
       {/* Content */}
       <div className="relative h-full flex flex-col items-center justify-center text-center px-4 -translate-y-[5%]">
-        <p className="font-heebo text-sm md:text-base tracking-[0.2em] mb-8 animate-fade-in font-bold" style={{ color: 'hsl(38, 60%, 45%)' }}>
-          {subtitle}
-        </p>
-        <div className="mb-10 animate-fade-in animation-delay-200">
+        <div className="mb-10 animate-fade-in">
           <h1 className="reliz-hero-title text-white font-bold">
             {title}
           </h1>
