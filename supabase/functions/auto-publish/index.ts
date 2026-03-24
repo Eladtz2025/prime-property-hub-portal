@@ -123,7 +123,7 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
 
   const hashtags = (queue.hashtags as string) || '';
   const platforms = (queue.platforms as string[]) || ['facebook_page'];
-
+  const publishTarget = (queue.publish_target as { type: string; group_ids?: string[] }) || { type: 'page' };
   for (const platform of platforms) {
     const { data: post, error: postErr } = await supabase
       .from('social_posts')
