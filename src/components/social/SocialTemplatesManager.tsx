@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, FileText } from 'lucide-react';
 import { useSocialTemplates, useSaveSocialTemplate, useDeleteSocialTemplate } from '@/hooks/useSocialPosts';
+import { ConfirmDialog } from './ConfirmDialog';
 
 const PLACEHOLDERS = [
   { key: '{address}', label: 'כתובת' },
@@ -35,6 +36,7 @@ export const SocialTemplatesManager: React.FC = () => {
   const [postType, setPostType] = useState('property_listing');
   const [templateText, setTemplateText] = useState('');
   const [hashtags, setHashtags] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const openAdd = () => {
     setEditId('');
@@ -73,7 +75,6 @@ export const SocialTemplatesManager: React.FC = () => {
     setDialogOpen(false);
   };
 
-  // Preview with sample data
   const previewText = templateText
     .replace(/{address}/g, 'הרצל 10')
     .replace(/{price}/g, '₪5,500')
@@ -90,7 +91,10 @@ export const SocialTemplatesManager: React.FC = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">תבניות פוסטים</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              תבניות פוסטים
+            </CardTitle>
             <Button size="sm" onClick={openAdd}>
               <Plus className="h-3.5 w-3.5 ml-1" />
               תבנית חדשה
@@ -101,7 +105,11 @@ export const SocialTemplatesManager: React.FC = () => {
           {isLoading ? (
             <div className="text-center py-6 text-sm text-muted-foreground">טוען...</div>
           ) : !templates || templates.length === 0 ? (
-            <div className="text-center py-6 text-sm text-muted-foreground">אין תבניות — צרו תבנית חדשה</div>
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">אין תבניות</p>
+              <p className="text-xs mt-1">צרו תבנית חדשה כדי להתחיל</p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -133,7 +141,7 @@ export const SocialTemplatesManager: React.FC = () => {
                           size="icon"
                           variant="ghost"
                           className="h-6 w-6 text-destructive"
-                          onClick={() => deleteMutation.mutate(t.id)}
+                          onClick={() => setDeleteConfirm(t.id)}
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -225,6 +233,20 @@ export const SocialTemplatesManager: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={() => setDeleteConfirm(null)}
+        title="מחיקת תבנית"
+        description="האם אתה בטוח שברצונך למחוק תבנית זו?"
+        confirmLabel="מחק"
+        variant="destructive"
+        onConfirm={() => {
+          if (deleteConfirm) deleteMutation.mutate(deleteConfirm);
+          setDeleteConfirm(null);
+        }}
+      />
     </>
   );
 };

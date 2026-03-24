@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Pencil, ExternalLink, Copy } from 'lucide-react';
+import { Plus, Trash2, Pencil, ExternalLink, Users2 } from 'lucide-react';
 import { useFacebookGroups, useSaveFacebookGroup, useDeleteFacebookGroup } from '@/hooks/useSocialPosts';
 import { useToast } from '@/hooks/use-toast';
+import { ConfirmDialog } from './ConfirmDialog';
 
 export const FacebookGroupsManager: React.FC = () => {
   const { data: groups, isLoading } = useFacebookGroups();
@@ -22,6 +23,7 @@ export const FacebookGroupsManager: React.FC = () => {
   const [groupUrl, setGroupUrl] = useState('');
   const [category, setCategory] = useState('');
   const [notes, setNotes] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const openAdd = () => {
     setEditId('');
@@ -61,7 +63,10 @@ export const FacebookGroupsManager: React.FC = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">קבוצות פייסבוק</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users2 className="h-4 w-4" />
+              קבוצות פייסבוק
+            </CardTitle>
             <Button size="sm" onClick={openAdd}>
               <Plus className="h-3.5 w-3.5 ml-1" />
               הוסף קבוצה
@@ -75,7 +80,11 @@ export const FacebookGroupsManager: React.FC = () => {
           {isLoading ? (
             <div className="text-center py-6 text-sm text-muted-foreground">טוען...</div>
           ) : !groups || groups.length === 0 ? (
-            <div className="text-center py-6 text-sm text-muted-foreground">אין קבוצות — הוסיפו קבוצה חדשה</div>
+            <div className="text-center py-8 text-muted-foreground">
+              <Users2 className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">אין קבוצות</p>
+              <p className="text-xs mt-1">הוסיפו קבוצה חדשה כדי להתחיל</p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -109,7 +118,7 @@ export const FacebookGroupsManager: React.FC = () => {
                           size="icon"
                           variant="ghost"
                           className="h-6 w-6 text-destructive"
-                          onClick={() => deleteMutation.mutate(g.id)}
+                          onClick={() => setDeleteConfirm(g.id)}
                           title="מחק"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -152,6 +161,20 @@ export const FacebookGroupsManager: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={() => setDeleteConfirm(null)}
+        title="מחיקת קבוצה"
+        description="האם אתה בטוח שברצונך למחוק קבוצה זו?"
+        confirmLabel="מחק"
+        variant="destructive"
+        onConfirm={() => {
+          if (deleteConfirm) deleteMutation.mutate(deleteConfirm);
+          setDeleteConfirm(null);
+        }}
+      />
     </>
   );
 };
