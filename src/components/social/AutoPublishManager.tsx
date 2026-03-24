@@ -98,6 +98,7 @@ export const AutoPublishManager: React.FC = () => {
         .from('properties')
         .select('id, address, city, rooms, property_size, floor, neighborhood, monthly_rent, current_market_value, description, property_type')
         .eq('available', true)
+        .eq('show_on_website', true)
         .order('created_at', { ascending: false })
         .limit(100);
       setProperties(data || []);
