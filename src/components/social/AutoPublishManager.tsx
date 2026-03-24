@@ -20,10 +20,10 @@ import { HashtagGroupSelector } from './HashtagGroupSelector';
 const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
 const FREQUENCY_OPTIONS = [
-  { value: '1', label: 'כל יום' },
+  { value: '1', label: 'יומי' },
   { value: '2', label: 'כל יומיים' },
   { value: '3', label: 'כל 3 ימים' },
-  { value: '7', label: 'פעם בשבוע' },
+  { value: '7', label: 'שבועי' },
 ];
 
 const DEFAULT_PROPERTY_TEMPLATE = `🏠 דירה להשכרה!
