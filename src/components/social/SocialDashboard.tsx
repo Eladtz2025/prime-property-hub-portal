@@ -87,6 +87,7 @@ export const SocialDashboard: React.FC = () => {
 
       <SocialPostComposer />
       <SocialPostsList />
+      <AutoPublishManager />
       <SocialToolsPanel />
 
       {/* Settings Sheet */}
