@@ -444,7 +444,26 @@ export const AutoPublishManager: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="free">פוסט חופשי</SelectItem>
-                      {properties.map(p => (
+                      {properties.filter(p => p.property_type === 'rental').length > 0 && (
+                        <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground">להשכרה</div>
+                      )}
+                      {properties.filter(p => p.property_type === 'rental').map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.address}, {p.city} — {p.rooms} חד׳ — ₪{Number(p.monthly_rent || 0).toLocaleString()}
+                        </SelectItem>
+                      ))}
+                      {properties.filter(p => p.property_type === 'sale').length > 0 && (
+                        <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground">למכירה</div>
+                      )}
+                      {properties.filter(p => p.property_type === 'sale').map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.address}, {p.city} — {p.rooms} חד׳ — ₪{Number(p.current_market_value || 0).toLocaleString()}
+                        </SelectItem>
+                      ))}
+                      {properties.filter(p => !['rental', 'sale'].includes(p.property_type)).length > 0 && (
+                        <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground">אחר</div>
+                      )}
+                      {properties.filter(p => !['rental', 'sale'].includes(p.property_type)).map(p => (
                         <SelectItem key={p.id} value={p.id}>
                           {p.address}, {p.city} — {p.rooms} חד׳
                         </SelectItem>
