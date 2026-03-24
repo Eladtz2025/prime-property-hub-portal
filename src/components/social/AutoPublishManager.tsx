@@ -521,9 +521,56 @@ export const AutoPublishManager: React.FC = () => {
                   <Instagram className="h-3 w-3" /> אינסטגרם
                 </Button>
               </div>
-            </div>
 
-            {/* Recurring: Frequency & Time */}
+              {/* Publish target (page vs groups) */}
+              {platforms.facebook && (
+                <div className="mt-2 space-y-2">
+                  <Label className="text-xs font-medium">יעד פרסום בפייסבוק</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={publishTarget === 'page' ? 'default' : 'outline'}
+                      className="text-xs h-7"
+                      onClick={() => setPublishTarget('page')}
+                    >
+                      עמוד ראשי
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={publishTarget === 'groups' ? 'default' : 'outline'}
+                      className="text-xs h-7"
+                      onClick={() => setPublishTarget('groups')}
+                    >
+                      קבוצות
+                    </Button>
+                  </div>
+                  {publishTarget === 'groups' && facebookGroups && facebookGroups.length > 0 && (
+                    <div className="space-y-1.5 bg-muted/30 rounded-md p-2">
+                      {facebookGroups.map((group: any) => (
+                        <label key={group.id} className="flex items-center gap-2 text-xs cursor-pointer">
+                          <Checkbox
+                            checked={selectedGroupIds.includes(group.id)}
+                            onCheckedChange={(checked) => {
+                              setSelectedGroupIds(prev =>
+                                checked
+                                  ? [...prev, group.id]
+                                  : prev.filter(id => id !== group.id)
+                              );
+                            }}
+                          />
+                          <span>{group.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {publishTarget === 'groups' && (!facebookGroups || facebookGroups.length === 0) && (
+                    <p className="text-[10px] text-muted-foreground">לא נמצאו קבוצות. הוסף קבוצות בהגדרות.</p>
+                  )}
+                </div>
+              )}
+            </div>
             {mode === 'recurring' && (
               <div className="flex gap-3">
                 <div className="flex-1">
