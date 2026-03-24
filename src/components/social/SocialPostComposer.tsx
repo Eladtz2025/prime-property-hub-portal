@@ -311,13 +311,7 @@ export const SocialPostComposer: React.FC = () => {
               {/* Hashtags */}
               <div>
                 <Label className="text-xs font-medium">האשטגים</Label>
-                <Input
-                  value={hashtags}
-                  onChange={e => setHashtags(e.target.value)}
-                  placeholder="#נדלן #תלאביב #דירהלהשכרה"
-                  className="text-sm mt-1"
-                  dir="ltr"
-                />
+                <HashtagGroupSelector value={hashtags} onChange={setHashtags} />
               </div>
 
               {/* Images */}
