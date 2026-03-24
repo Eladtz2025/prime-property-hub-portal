@@ -255,6 +255,7 @@ export type Database = {
           created_by: string | null
           current_index: number
           frequency: string
+          frequency_days: number
           hashtags: string | null
           id: string
           is_active: boolean
@@ -272,6 +273,7 @@ export type Database = {
           created_by?: string | null
           current_index?: number
           frequency?: string
+          frequency_days?: number
           hashtags?: string | null
           id?: string
           is_active?: boolean
@@ -289,6 +291,7 @@ export type Database = {
           created_by?: string | null
           current_index?: number
           frequency?: string
+          frequency_days?: number
           hashtags?: string | null
           id?: string
           is_active?: boolean

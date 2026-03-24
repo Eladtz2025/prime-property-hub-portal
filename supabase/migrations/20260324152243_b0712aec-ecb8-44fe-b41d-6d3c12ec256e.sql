@@ -1,0 +1,1 @@
+ALTER TABLE auto_publish_queues ADD COLUMN IF NOT EXISTS frequency_days INTEGER NOT NULL DEFAULT 1;
