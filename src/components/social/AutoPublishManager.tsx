@@ -389,9 +389,9 @@ export const AutoPublishManager: React.FC = () => {
               </Button>
             </div>
 
-            {/* Recurring: Name & Type */}
+            {/* Recurring: Name & Type & Property Filter */}
             {mode === 'recurring' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <Label className="text-xs font-medium">שם התבנית</Label>
                   <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-8 text-sm mt-1" placeholder="לדוגמה: דירות יומי" />
@@ -415,6 +415,21 @@ export const AutoPublishManager: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {queueType === 'property_rotation' && (
+                  <div>
+                    <Label className="text-xs font-medium">סוג נכס</Label>
+                    <Select value={propertyFilter} onValueChange={(v) => setPropertyFilter(v as 'all' | 'rental' | 'sale')}>
+                      <SelectTrigger className="h-8 text-sm mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">הכל</SelectItem>
+                        <SelectItem value="rental">השכרה בלבד</SelectItem>
+                        <SelectItem value="sale">מכירה בלבד</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             )}
 
