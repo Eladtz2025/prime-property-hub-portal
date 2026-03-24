@@ -507,7 +507,7 @@ export const ChecksDashboard: React.FC = () => {
           status={isScanJinaRunning ? 'running' : lastScanRunJina ? 'completed' : 'idle'}
           primaryValue={0}
           primaryLabel="ממתינים לסריקה"
-          secondaryLine={`${lastScanRunJina?.properties_found ?? 0} נמצאו היום`}
+          secondaryLine={`${lastScanRunJina?.properties_found ?? 0} נמצאו`}
           insight={lastScanRunJina?.new_properties > 0 ? `${lastScanRunJina.new_properties} חדשים` : 'אין פריטים חדשים לטיפול'}
           insightType={lastScanRunJina?.new_properties > 0 ? 'ok' : 'info'}
           lastRun={formatLastRun(lastScanRunJina?.started_at, lastScanRunJina?.completed_at)}
