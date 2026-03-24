@@ -263,6 +263,7 @@ export type Database = {
           name: string
           next_publish_day: number | null
           platforms: Json
+          property_filter: string
           publish_time: string
           queue_type: string
           template_text: string
@@ -281,6 +282,7 @@ export type Database = {
           name: string
           next_publish_day?: number | null
           platforms?: Json
+          property_filter?: string
           publish_time?: string
           queue_type: string
           template_text?: string
@@ -299,6 +301,7 @@ export type Database = {
           name?: string
           next_publish_day?: number | null
           platforms?: Json
+          property_filter?: string
           publish_time?: string
           queue_type?: string
           template_text?: string

@@ -1,0 +1,1 @@
+ALTER TABLE auto_publish_queues ADD COLUMN property_filter TEXT NOT NULL DEFAULT 'all';

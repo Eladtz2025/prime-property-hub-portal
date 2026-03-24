@@ -85,6 +85,7 @@ export const AutoPublishManager: React.FC = () => {
   // Recurring fields
   const [formFrequencyDays, setFormFrequencyDays] = useState('1');
   const [formTime, setFormTime] = useState('10:00');
+  const [propertyFilter, setPropertyFilter] = useState<'all' | 'rental' | 'sale'>('all');
 
   // Confirm
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
@@ -121,6 +122,7 @@ export const AutoPublishManager: React.FC = () => {
     setFormFrequencyDays('1');
     setFormTime('10:00');
     setQueueType('property_rotation');
+    setPropertyFilter('all');
   };
 
   const openEditQueue = (queue: Record<string, unknown>) => {
@@ -134,6 +136,7 @@ export const AutoPublishManager: React.FC = () => {
     setPlatforms({ facebook: qPlatforms.includes('facebook_page'), instagram: qPlatforms.includes('instagram') });
     setFormFrequencyDays(String((queue as any).frequency_days || 1));
     setFormTime(queue.publish_time as string || '10:00');
+    setPropertyFilter(((queue as any).property_filter as 'all' | 'rental' | 'sale') || 'all');
   };
 
   // Property selection for one-time posts
@@ -242,6 +245,7 @@ export const AutoPublishManager: React.FC = () => {
       publish_time: formTime,
       frequency_days: parseInt(formFrequencyDays),
       frequency: parseInt(formFrequencyDays) >= 7 ? 'weekly' : 'daily',
+      property_filter: queueType === 'property_rotation' ? propertyFilter : undefined,
     }, {
       onSuccess: () => {
         resetForm();
@@ -385,9 +389,9 @@ export const AutoPublishManager: React.FC = () => {
               </Button>
             </div>
 
-            {/* Recurring: Name & Type */}
+            {/* Recurring: Name & Type & Property Filter */}
             {mode === 'recurring' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <Label className="text-xs font-medium">שם התבנית</Label>
                   <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-8 text-sm mt-1" placeholder="לדוגמה: דירות יומי" />
@@ -411,6 +415,21 @@ export const AutoPublishManager: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {queueType === 'property_rotation' && (
+                  <div>
+                    <Label className="text-xs font-medium">סוג נכס</Label>
+                    <Select value={propertyFilter} onValueChange={(v) => setPropertyFilter(v as 'all' | 'rental' | 'sale')}>
+                      <SelectTrigger className="h-8 text-sm mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">הכל</SelectItem>
+                        <SelectItem value="rental">השכרה בלבד</SelectItem>
+                        <SelectItem value="sale">מכירה בלבד</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             )}
 
@@ -425,7 +444,26 @@ export const AutoPublishManager: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="free">פוסט חופשי</SelectItem>
-                      {properties.map(p => (
+                      {properties.filter(p => p.property_type === 'rental').length > 0 && (
+                        <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground">להשכרה</div>
+                      )}
+                      {properties.filter(p => p.property_type === 'rental').map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.address}, {p.city} — {p.rooms} חד׳ — ₪{Number(p.monthly_rent || 0).toLocaleString()}
+                        </SelectItem>
+                      ))}
+                      {properties.filter(p => p.property_type === 'sale').length > 0 && (
+                        <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground">למכירה</div>
+                      )}
+                      {properties.filter(p => p.property_type === 'sale').map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.address}, {p.city} — {p.rooms} חד׳ — ₪{Number(p.current_market_value || 0).toLocaleString()}
+                        </SelectItem>
+                      ))}
+                      {properties.filter(p => !['rental', 'sale'].includes(p.property_type)).length > 0 && (
+                        <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground">אחר</div>
+                      )}
+                      {properties.filter(p => !['rental', 'sale'].includes(p.property_type)).map(p => (
                         <SelectItem key={p.id} value={p.id}>
                           {p.address}, {p.city} — {p.rooms} חד׳
                         </SelectItem>
@@ -595,6 +633,50 @@ export const AutoPublishManager: React.FC = () => {
                     className="w-28 text-sm"
                     dir="ltr"
                   />
+                </div>
+              </div>
+            )}
+
+            {/* Facebook Preview */}
+            {contentText.trim() && (
+              <div className="border rounded-lg bg-card shadow-sm overflow-hidden">
+                <div className="px-3 py-2 flex items-center gap-2 border-b border-border/50">
+                  <div className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center text-white font-bold text-xs">PP</div>
+                  <div>
+                    <div className="text-xs font-semibold">PrimeProperty</div>
+                    <div className="text-[10px] text-muted-foreground">עכשיו · 🌐</div>
+                  </div>
+                </div>
+                <div className="px-3 py-2 text-xs whitespace-pre-wrap leading-relaxed" dir="rtl">
+                  {mode === 'recurring' && queueType === 'property_rotation' && websiteProperties?.length
+                    ? (() => {
+                        const filteredProps = propertyFilter === 'all' 
+                          ? websiteProperties 
+                          : websiteProperties.filter(p => p.property_type === propertyFilter);
+                        const sampleProp = filteredProps[0];
+                        if (!sampleProp) return contentText;
+                        return fillPropertyPlaceholders(contentText, sampleProp);
+                      })()
+                    : contentText
+                  }
+                </div>
+                {hashtags && (
+                  <div className="px-3 pb-1 text-[10px] text-[#1877F2]">{hashtags}</div>
+                )}
+                {imageUrls.length > 0 && (
+                  <div className={cn(
+                    "grid gap-0.5",
+                    imageUrls.length === 1 ? "grid-cols-1" : imageUrls.length === 2 ? "grid-cols-2" : "grid-cols-3"
+                  )}>
+                    {imageUrls.slice(0, 3).map((url, i) => (
+                      <img key={i} src={url} alt="" className="w-full h-32 object-cover" />
+                    ))}
+                  </div>
+                )}
+                <div className="px-3 py-2 border-t border-border/50 flex items-center justify-around text-[10px] text-muted-foreground">
+                  <span>👍 לייק</span>
+                  <span>💬 תגובה</span>
+                  <span>↗️ שיתוף</span>
                 </div>
               </div>
             )}
