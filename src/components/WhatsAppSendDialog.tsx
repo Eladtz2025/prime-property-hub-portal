@@ -49,6 +49,7 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context, t
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<WhatsAppMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { toast } = useToast();
   const { sendWhatsAppMessage, isSending } = useWhatsAppSender();
