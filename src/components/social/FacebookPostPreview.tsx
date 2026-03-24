@@ -1,5 +1,4 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
 import { Globe, ThumbsUp, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
 
 interface FacebookPostPreviewProps {
@@ -8,6 +7,11 @@ interface FacebookPostPreviewProps {
   imageUrls?: string[];
   pageName?: string;
   pageAvatarUrl?: string;
+  // Link Card (OG) props
+  linkUrl?: string;
+  linkTitle?: string;
+  linkDescription?: string;
+  linkImage?: string;
 }
 
 export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
@@ -16,8 +20,18 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
   imageUrls = [],
   pageName = 'PrimeProperty',
   pageAvatarUrl,
+  linkUrl,
+  linkTitle,
+  linkDescription,
+  linkImage,
 }) => {
-  const hasImages = imageUrls.length > 0;
+  const hasLinkCard = !!linkUrl && !!linkImage;
+  const hasImages = !hasLinkCard && imageUrls.length > 0;
+
+  // Extract domain from linkUrl
+  const linkDomain = linkUrl ? (() => {
+    try { return new URL(linkUrl).hostname.replace('www.', '').toUpperCase(); } catch { return ''; }
+  })() : '';
 
   return (
     <div className="rounded-lg bg-white dark:bg-[#242526] shadow-md border border-[#dddfe2] dark:border-[#3a3b3c] overflow-hidden" dir="rtl">
@@ -61,7 +75,33 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
         )}
       </div>
 
-      {/* Image grid */}
+      {/* Link Card (OG Preview) */}
+      {hasLinkCard && (
+        <div className="border-t border-b border-[#dddfe2] dark:border-[#3a3b3c] cursor-pointer">
+          <div className="relative" style={{ aspectRatio: '1.91 / 1' }}>
+            <img 
+              src={linkImage} 
+              alt={linkTitle || ''} 
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="bg-[#f0f2f5] dark:bg-[#3a3b3c] px-3 py-2.5">
+            <div className="text-[12px] text-[#65676b] dark:text-[#b0b3b8] uppercase tracking-wide" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              {linkDomain}
+            </div>
+            <div className="text-[16px] font-semibold text-[#050505] dark:text-[#e4e6eb] leading-tight mt-0.5 line-clamp-2" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              {linkTitle}
+            </div>
+            {linkDescription && (
+              <div className="text-[14px] text-[#65676b] dark:text-[#b0b3b8] leading-tight mt-0.5 line-clamp-1" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                {linkDescription}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Image grid (fallback when no link card) */}
       {hasImages && (
         <div className="relative">
           {imageUrls.length === 1 && (
