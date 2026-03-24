@@ -63,7 +63,6 @@ export const AutoPublishManager: React.FC = () => {
   const [logOpen, setLogOpen] = useState(false);
 
   // Unified form state
-  const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [mode, setMode] = useState<PublishMode>('one_time');
   const [queueType, setQueueType] = useState<QueueType>('property_rotation');
