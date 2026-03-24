@@ -155,7 +155,6 @@ const HebrewHeader = () => {
             </div>
           </div>
         </div>
-      )}
     </>
   );
 };

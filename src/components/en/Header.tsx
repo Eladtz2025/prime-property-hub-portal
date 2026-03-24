@@ -155,7 +155,6 @@ const EnglishHeader = () => {
             </div>
           </div>
         </div>
-      )}
     </>
   );
 };
