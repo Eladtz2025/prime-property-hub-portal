@@ -318,29 +318,29 @@ export const AutoPublishManager: React.FC = () => {
       <Dialog open={editDialog} onOpenChange={setEditDialog}>
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'עריכת תור' : 'תור חדש'}</DialogTitle>
+            <DialogTitle className="text-sm">{editingId ? 'עריכת תבנית' : 'תבנית חדשה'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label className="text-xs">שם התור</Label>
-              <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-8 text-sm" />
+              <Label className="text-xs font-medium">שם התבנית</Label>
+              <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-7 text-xs mt-1" />
             </div>
 
             <div>
-              <Label className="text-xs">פלטפורמות</Label>
+              <Label className="text-xs font-medium">פלטפורמות</Label>
               <div className="flex gap-2 mt-1">
                 <Button
                   size="sm"
-                  variant={formPlatforms.includes('facebook_page') ? 'default' : 'outline'}
-                  className="h-7 text-xs gap-1"
+                  variant="outline"
+                  className={`h-7 text-[11px] gap-1.5 px-3 ${formPlatforms.includes('facebook_page') ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600 hover:text-white' : ''}`}
                   onClick={() => togglePlatform('facebook_page')}
                 >
                   <Facebook className="h-3 w-3" /> Facebook
                 </Button>
                 <Button
                   size="sm"
-                  variant={formPlatforms.includes('instagram') ? 'default' : 'outline'}
-                  className="h-7 text-xs gap-1"
+                  variant="outline"
+                  className={`h-7 text-[11px] gap-1.5 px-3 ${formPlatforms.includes('instagram') ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-500 hover:from-purple-600 hover:to-pink-600 hover:text-white' : ''}`}
                   onClick={() => togglePlatform('instagram')}
                 >
                   <Instagram className="h-3 w-3" /> Instagram
@@ -350,45 +350,46 @@ export const AutoPublishManager: React.FC = () => {
 
             <div className="flex gap-3">
               <div className="flex-1">
-                <Label className="text-xs">תדירות</Label>
+                <Label className="text-xs font-medium">תדירות</Label>
                 <Select value={formFrequencyDays} onValueChange={setFormFrequencyDays}>
-                  <SelectTrigger className="h-8 text-sm">
+                  <SelectTrigger className="h-7 text-xs mt-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {FREQUENCY_OPTIONS.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">שעת פרסום</Label>
-                <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-8 text-sm w-28" />
+                <Label className="text-xs font-medium">שעה</Label>
+                <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-7 text-xs w-24 mt-1" />
               </div>
             </div>
 
             {formType === 'property_rotation' && (
               <div>
-                <Label className="text-xs">תבנית פוסט (placeholders: {'{address}'}, {'{price}'}, {'{rooms}'}, {'{size}'}, {'{floor}'}, {'{neighborhood}'}, {'{city}'}, {'{description}'})</Label>
+                <Label className="text-xs font-medium">תבנית פוסט</Label>
+                <p className="text-[10px] text-muted-foreground mb-1">placeholders: {'{address}'}, {'{price}'}, {'{rooms}'}, {'{size}'}, {'{floor}'}, {'{neighborhood}'}, {'{city}'}, {'{description}'}</p>
                 <Textarea
                   value={formTemplate}
                   onChange={e => setFormTemplate(e.target.value)}
-                  className="text-sm min-h-[120px]"
+                  className="text-xs min-h-[140px]"
                   dir="rtl"
                 />
               </div>
             )}
 
             <div>
-              <Label className="text-xs">האשטגים</Label>
+              <Label className="text-xs font-medium">האשטגים</Label>
               <HashtagGroupSelector value={formHashtags} onChange={setFormHashtags} />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialog(false)} className="text-sm h-8">ביטול</Button>
-            <Button onClick={handleSave} disabled={saveQueue.isPending} className="text-sm h-8">
+            <Button variant="outline" onClick={() => setEditDialog(false)} className="text-xs h-7">ביטול</Button>
+            <Button onClick={handleSave} disabled={saveQueue.isPending} className="text-xs h-7">
               {saveQueue.isPending ? 'שומר...' : 'שמור'}
             </Button>
           </DialogFooter>
