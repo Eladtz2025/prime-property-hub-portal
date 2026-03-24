@@ -1,0 +1,1 @@
+ALTER TABLE auto_publish_queues ADD COLUMN publish_target JSONB NOT NULL DEFAULT '{"type":"page"}'::jsonb;
