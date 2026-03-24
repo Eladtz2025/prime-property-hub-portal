@@ -7,6 +7,7 @@ import { SocialAccountSetup } from './SocialAccountSetup';
 import { SocialPostComposer } from './SocialPostComposer';
 import { SocialPostsList } from './SocialPostsList';
 import { SocialToolsPanel } from './SocialToolsPanel';
+import { AutoPublishManager } from './AutoPublishManager';
 import { useSocialAccounts, useSocialPosts } from '@/hooks/useSocialPosts';
 
 export const SocialDashboard: React.FC = () => {
@@ -87,6 +88,7 @@ export const SocialDashboard: React.FC = () => {
 
       <SocialPostComposer />
       <SocialPostsList />
+      <AutoPublishManager />
       <SocialToolsPanel />
 
       {/* Settings Sheet */}

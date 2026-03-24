@@ -137,6 +137,172 @@ export type Database = {
           },
         ]
       }
+      auto_publish_items: {
+        Row: {
+          content_text: string
+          created_at: string
+          id: string
+          image_urls: string[] | null
+          is_published: boolean
+          link_url: string | null
+          order_index: number
+          published_at: string | null
+          queue_id: string
+          title: string
+        }
+        Insert: {
+          content_text?: string
+          created_at?: string
+          id?: string
+          image_urls?: string[] | null
+          is_published?: boolean
+          link_url?: string | null
+          order_index?: number
+          published_at?: string | null
+          queue_id: string
+          title?: string
+        }
+        Update: {
+          content_text?: string
+          created_at?: string
+          id?: string
+          image_urls?: string[] | null
+          is_published?: boolean
+          link_url?: string | null
+          order_index?: number
+          published_at?: string | null
+          queue_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_publish_items_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "auto_publish_queues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_publish_log: {
+        Row: {
+          error_message: string | null
+          id: string
+          item_id: string | null
+          platforms: Json | null
+          property_id: string | null
+          published_at: string
+          queue_id: string
+          social_post_id: string | null
+          status: string
+        }
+        Insert: {
+          error_message?: string | null
+          id?: string
+          item_id?: string | null
+          platforms?: Json | null
+          property_id?: string | null
+          published_at?: string
+          queue_id: string
+          social_post_id?: string | null
+          status?: string
+        }
+        Update: {
+          error_message?: string | null
+          id?: string
+          item_id?: string | null
+          platforms?: Json | null
+          property_id?: string | null
+          published_at?: string
+          queue_id?: string
+          social_post_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_publish_log_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "auto_publish_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auto_publish_log_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auto_publish_log_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "auto_publish_queues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auto_publish_log_social_post_id_fkey"
+            columns: ["social_post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_publish_queues: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_index: number
+          frequency: string
+          hashtags: string | null
+          id: string
+          is_active: boolean
+          last_published_at: string | null
+          name: string
+          next_publish_day: number | null
+          platforms: Json
+          publish_time: string
+          queue_type: string
+          template_text: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_index?: number
+          frequency?: string
+          hashtags?: string | null
+          id?: string
+          is_active?: boolean
+          last_published_at?: string | null
+          name: string
+          next_publish_day?: number | null
+          platforms?: Json
+          publish_time?: string
+          queue_type: string
+          template_text?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_index?: number
+          frequency?: string
+          hashtags?: string | null
+          id?: string
+          is_active?: boolean
+          last_published_at?: string | null
+          name?: string
+          next_publish_day?: number | null
+          platforms?: Json
+          publish_time?: string
+          queue_type?: string
+          template_text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       availability_check_runs: {
         Row: {
           completed_at: string | null
