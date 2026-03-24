@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
 import { formatIsraeliPhone } from '@/utils/phoneFormatter';
+import { ConfirmDialog } from '@/components/social/ConfirmDialog';
 
 interface Recipient {
   id: string;

@@ -11,6 +11,7 @@ import { formatIsraeliPhone } from '@/utils/phoneFormatter';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
+import { ConfirmDialog } from '@/components/social/ConfirmDialog';
 
 interface MessageTemplate {
   id: string;
