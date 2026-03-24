@@ -254,6 +254,9 @@ export const AutoPublishManager: React.FC = () => {
       frequency_days: parseInt(formFrequencyDays),
       frequency: parseInt(formFrequencyDays) >= 7 ? 'weekly' : 'daily',
       property_filter: queueType === 'property_rotation' ? propertyFilter : undefined,
+      publish_target: platforms.facebook 
+        ? (publishTarget === 'groups' ? { type: 'groups', group_ids: selectedGroupIds } : { type: 'page' })
+        : { type: 'page' },
     }, {
       onSuccess: () => {
         resetForm();
