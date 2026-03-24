@@ -1,46 +1,40 @@
 
 
-## שדרוג מערכת הפרסום האוטומטי — המערכת העיקרית בעמוד
+## מיזוג סגנון — AutoPublishManager בסטייל הקומפוזר
+
+### הבעיה
+ה-AutoPublishManager נראה כמו מערכת נפרדת עם כרטיסים, דיאלוגים, ומינוח "תור". המשתמש רוצה שזה ייראה ויתנהג כמו הקומפוזר (הצילום שהועלה) — אותו סגנון נקי עם dropdowns, כפתורי פלטפורמה, textarea, האשטגים — והכל באותו שפה ויזואלית.
 
 ### מה משתנה
 
-**1. מיקום — AutoPublishManager עולה למעלה**
-`SocialDashboard.tsx`: סדר חדש → AutoPublishManager ראשון, אחריו שורת סטטוס, Composer, PostsList, ToolsPanel.
+**1. מינוח — "תור" → "תבנית"**
+- כל מקום שרשום "תור" / "תורות" → "תבנית" / "תבניות פרסום"
+- "תור דירות" → "תבנית דירות"
+- "תור כתבות" → "תבנית כתבות"
+- בדיאלוג: "תור חדש" → "תבנית חדשה"
+- Empty state: "עוד אין תורות פרסום" → "עוד אין תבניות פרסום"
 
-**2. DB — הוספת שדה `frequency_days` לתורות**
-Migration: `ALTER TABLE auto_publish_queues ADD COLUMN frequency_days INTEGER NOT NULL DEFAULT 1;`
-זה מאפשר "כל יום" (1), "כל יומיים" (2), "כל 3 ימים" (3) וכו'. לכתבות שבועיות — frequency_days=7.
+**2. עיצוב — סגנון הקומפוזר**
+הדיאלוג ליצירה/עריכה ישתנה לסגנון שדומה לקומפוזר:
+- כפתורי פלטפורמה צבעוניים (כחול FB, גרדיאנט IG) במקום outline פשוט
+- Labels עם `text-xs font-medium` כמו בקומפוזר
+- HashtagGroupSelector כבר קיים — נשאר
+- Textarea לתבנית עם אותו סגנון (`min-h-[140px] text-sm`)
 
-**3. AutoPublishManager — שדרוג מלא**
+**3. כרטיסי תבניות — יותר קומפקטיים**
+במקום כרטיסים גדולים עם הרבה spacing:
+- שורה אחת עם שם + badges (פלטפורמות, תדירות, שעה) + switch + כפתורי עריכה/מחיקה
+- Progress bar ותצוגה מקדימה נשארים אבל עם padding מצומצם
+- הכל ב-`text-xs` / `text-[11px]`
 
-הממשק הנוכחי הוא Collapsible פשוט. השדרוג:
-
-- **לא Collapsible** — תמיד פתוח, עם כותרת ברורה
-- **כרטיסי תורות** — עיצוב מחודש עם progress bar ויזואלי (כמה דירות פורסמו מהסבב), הדירה הבאה בתור עם תמונה מוקטנת
-- **הגדרת תדירות** — dropdown: כל יום / כל יומיים / כל 3 ימים / פעם בשבוע / מותאם אישית
-- **בחירת שעה** — time picker (כבר קיים)
-- **תצוגה מקדימה** — "Preview" של הפוסט הבא כפי שייראה, עם התמונות, הטקסט אחרי החלפת placeholders, וההאשטגים
-- **Progress tracker** — "סבב 2, דירה 3/7", עם bar ויזואלי
-- **Log** — היסטוריה עם timeline יפה (לא רק רשימה שטוחה)
-
-**4. AutoPublishLog — שדרוג ויזואלי**
-- Timeline עם נקודות צבעוניות (ירוק=הצלחה, אדום=כישלון)
-- הצגת שם הדירה/כתבה + פלטפורמה + שעה
-- קומפקטי אבל מידע עשיר
-
-**5. Edge Function — תמיכה ב-frequency_days**
-`auto-publish/index.ts`: בתור דירות, בדיקה שעבר מספיק ימים מאז `last_published_at` לפי `frequency_days`.
+**4. כפתורי Header — סגנון אחיד**
+- "תבנית דירות +" ו-"תבנית כתבות +" עם אייקונים כמו בקומפוזר
 
 ### קבצים
 
 | קובץ | שינוי |
 |-------|-------|
-| Migration SQL | הוספת `frequency_days` |
-| `SocialDashboard.tsx` | העלאת AutoPublishManager למעלה |
-| `AutoPublishManager.tsx` | שדרוג מלא — UI עשיר, תדירות, preview, progress |
-| `AutoPublishLog.tsx` | Timeline ויזואלי |
-| `auto-publish/index.ts` | תמיכה ב-`frequency_days` |
-| `useAutoPublish.ts` | עדכון mutation לתמוך ב-`frequency_days` |
+| `AutoPublishManager.tsx` | שינוי מינוח + סגנון כפתורי פלטפורמה + עיצוב כרטיסים קומפקטי + דיאלוג בסגנון קומפוזר |
 
-~6 קבצים, שינוי עיקרי ב-AutoPublishManager.
+**קובץ אחד, שינויי UI וטקסט בלבד.**
 
