@@ -136,6 +136,7 @@ export const AutoPublishManager: React.FC = () => {
     setPlatforms({ facebook: qPlatforms.includes('facebook_page'), instagram: qPlatforms.includes('instagram') });
     setFormFrequencyDays(String((queue as any).frequency_days || 1));
     setFormTime(queue.publish_time as string || '10:00');
+    setPropertyFilter(((queue as any).property_filter as 'all' | 'rental' | 'sale') || 'all');
   };
 
   // Property selection for one-time posts
