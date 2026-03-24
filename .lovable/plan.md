@@ -1,24 +1,24 @@
 
 
-## עדכון Hero — הסרת subtitle, שינוי שנה, ואנגלית נקייה
+## יישור גובה הכותרת — עברית ואנגלית
 
-### שינויים
+### הבעיה
+שני ה-VideoHero לא תואמים:
+- עברית: `-translate-y-[5%]`, `mb-10`, `font-bold`
+- אנגלית: `-translate-y-[12.5%]`, `mb-6`, ללא `font-bold`
 
-**1. עברית — `src/components/he/VideoHero.tsx`:**
-- הסרת שורת ה-subtitle (שורה 53-55) — "מומחיות מקומית. שירות אישי. תהליך ברור."
-- שינוי "Since 2016" ל-"Since 2008" (שורה 81)
+### התיקון
 
-**2. אנגלית — `src/components/en/VideoHero.tsx`:**
-- הסרת שורת ה-subtitle (שורה 61-63) — "Local expertise. Personal service. Clear process."
-- שינוי "Since 2016" ל-"Since 2008" (שורה 81)
+לאחד את שניהם לאותם ערכים. נבחר ערך ביניים:
 
-**3. דפי Index — הסרת prop `subtitle`:**
-- `src/pages/Index.tsx` שורה 131: הסרת `subtitle="מומחיות מקומית..."` מ-VideoHero
-- `src/pages/en/Index.tsx` שורה 121: הסרת `subtitle="Local expertise..."` מ-VideoHero
-- `src/pages/TestHeroPage.tsx`: הסרת subtitle
+**`src/components/en/VideoHero.tsx` שורה 52:**
+- שינוי `-translate-y-[12.5%]` ל-`-translate-y-[5%]`
 
-**4. Interface — הפיכת subtitle לאופציונלי:**
-- בשני ה-VideoHero: `subtitle?: string` (כבר אופציונלי או שינוי קל)
+**`src/components/en/VideoHero.tsx` שורה 53:**
+- שינוי `mb-6` ל-`mb-10`
 
-**5 קבצים, שינויים קטנים בכל אחד.**
+**`src/components/en/VideoHero.tsx` שורה 54:**
+- הוספת `font-bold` ל-h1
+
+**2 קבצים (רק אנגלית משתנה), 3 שורות.**
 
