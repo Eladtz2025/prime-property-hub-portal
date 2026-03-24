@@ -1,59 +1,22 @@
 
+## הוספת אישור לפני שליחת הודעות WhatsApp
 
-## QA ודו"ח בדיקות — מערכת פרסום סושיאל
+### הבעיה
+כפתור "שלח הודעה" ב-WhatsAppSendDialog וכפתור "שלח ל-X נמענים" ב-WhatsAppBulkSendDialog שולחים ישר בלי שום אישור.
 
-### 1. בעיית אבטחה: אין אישור לפני פרסום
+### התיקון
 
-**בעיה קריטית**: כפתור "פרסם עכשיו" שולח ישר לפייסבוק/אינסטגרם בלי שום dialog אישור. בנוסף, ה-scheduler (cron כל 5 דקות) מפרסם אוטומטית כל פוסט בסטטוס "scheduled" שהזמן שלו הגיע — גם בלי אישור.
+**`src/components/WhatsAppSendDialog.tsx`**:
+- הוספת state `confirmOpen`
+- כפתור "שלח" פותח ConfirmDialog במקום לשלוח ישר
+- הודעת אישור: "האם לשלוח הודעת WhatsApp ל-{name}?"
+- רק אחרי אישור → `handleSend` נקרא
 
-**תיקון**:
-- הוספת **Confirmation Dialog** לפני כל פרסום — "האם אתה בטוח שברצונך לפרסם עכשיו?"
-- הוספת Confirmation Dialog גם למחיקת פוסטים, קבוצות ותבניות (היום מוחק ישר)
-- הוספת סטטוס חדש `pending_approval` — כשלוחצים "פרסם עכשיו" הפוסט עובר ל-pending ורק אחרי אישור מפורש נשלח ל-API
+**`src/components/WhatsAppBulkSendDialog.tsx`**:
+- אותו דבר — כפתור "שלח ל-X נמענים" פותח ConfirmDialog
+- הודעת אישור: "האם לשלוח הודעה ל-{X} נמענים?"
+- רק אחרי אישור → `handleBulkSend` נקרא
 
-### 2. באגים ובעיות שמצאתי
+שני הקבצים ישתמשו ב-`ConfirmDialog` שכבר קיים ב-`src/components/social/ConfirmDialog.tsx`.
 
-| בעיה | מיקום | חומרה |
-|------|-------|-------|
-| אין confirmation לפני פרסום | SocialPostComposer.tsx שורה 379 | קריטי |
-| אין confirmation למחיקה | SocialPostsList, FacebookGroupsManager, SocialTemplatesManager | בינוני |
-| Access Token נשמר ב-DB בטקסט גלוי | social_accounts.access_token | בינוני |
-| כפתור "פרסם עכשיו" מסטטוס "publish" הופך ל-"scheduled" ואז נשלח | SocialPostComposer שורה 194 | באג לוגי |
-| IG: אין בדיקה שיש לפחות תמונה אחת (IG חייב תמונה) | SocialPostComposer | בינוני |
-| אין הודעת הצלחה עם לינק לפוסט שפורסם | SocialPostComposer | UX |
-
-### 3. שיפור עיצוב — המערכת פונקציונלית אבל בסיסית
-
-**שינויים מוצעים:**
-
-**א. SocialDashboard — כרטיסי סטטוס בראש הדף:**
-- הוספת 3 כרטיסי סיכום: "פוסטים שפורסמו", "מתוזמנים", "טיוטות"
-- סגנון דומה לכרטיסים בלוח הבקרה הראשי
-
-**ב. SocialPostComposer — שדרוג ויזואלי:**
-- תצוגה מקדימה בצד ימין (split view) במקום מתחת
-- כפתורי פלטפורמה עם אייקונים צבעוניים במקום checkboxes
-- אזור תמונות עם drag & drop visual (grid יפה)
-
-**ג. SocialPostsList — שדרוג טבלה:**
-- עיצוב כרטיסים במקום טבלה (יותר ויזואלי)
-- תמונה מוקטנת, badge צבעוני לסטטוס
-- כפתורי פעולה ברורים יותר
-
-**ד. כללי:**
-- כותרות עם אייקונים
-- spacing ו-padding אחידים
-- הוספת empty states יפים עם אילוסטרציות
-
-### סיכום שינויים
-
-**קבצים שישתנו:**
-1. `SocialPostComposer.tsx` — confirmation dialog, בדיקת IG, עיצוב
-2. `SocialPostsList.tsx` — confirmation למחיקה, עיצוב כרטיסים
-3. `SocialDashboard.tsx` — כרטיסי סיכום, עיצוב
-4. `FacebookGroupsManager.tsx` — confirmation למחיקה
-5. `SocialTemplatesManager.tsx` — confirmation למחיקה
-6. `SocialAccountSetup.tsx` — שיפורי עיצוב
-
-**~6 קבצים, שינויים עיקריים בפרונט-אנד. ה-Edge Functions לא ישתנו.**
-
+**2 קבצים, ~15 שורות שינוי בכל אחד.**
