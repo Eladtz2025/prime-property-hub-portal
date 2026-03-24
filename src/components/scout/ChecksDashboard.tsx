@@ -141,7 +141,7 @@ export const ChecksDashboard: React.FC = () => {
       today.setHours(0, 0, 0, 0);
       const recheckCutoff = new Date();
       recheckCutoff.setDate(recheckCutoff.getDate() - 7);
-      const [pendingRes, checkedTodayRes, timeoutRes, totalActiveRes, recheckRes] = await Promise.all([
+      const [pendingRes, checkedTodayRes, timeoutRes, totalActiveRes, recheckRes, manualReviewRes] = await Promise.all([
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).is('availability_checked_at', null),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).gte('availability_checked_at', today.toISOString()),
         supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('availability_check_reason', 'per_property_timeout').eq('is_active', true),
@@ -152,8 +152,9 @@ export const ChecksDashboard: React.FC = () => {
           p_min_days_before_check: 3,
           p_fetch_limit: 10000
         }, { count: 'exact', head: true }),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).gte('availability_retry_count', 2),
       ]);
-      return { pending: pendingRes.count ?? 0, checkedToday: checkedTodayRes.count ?? 0, timeouts: timeoutRes.count ?? 0, totalActive: totalActiveRes.count ?? 0, pendingRecheck: recheckRes.count ?? 0 };
+      return { pending: pendingRes.count ?? 0, checkedToday: checkedTodayRes.count ?? 0, timeouts: timeoutRes.count ?? 0, totalActive: totalActiveRes.count ?? 0, pendingRecheck: (recheckRes.count ?? 0) + (manualReviewRes.count ?? 0) };
     },
     refetchInterval: 15000,
   });
@@ -541,9 +542,9 @@ export const ChecksDashboard: React.FC = () => {
           status={lastAvailRun?.status === 'running' ? 'running' : lastAvailRun ? 'completed' : 'idle'}
           primaryValue={stats?.pendingRecheck ?? 0}
           primaryLabel="ממתינים לבדיקה"
-          secondaryLine={`${(stats?.checkedToday ?? 0).toLocaleString('he-IL')} נבדקו היום`}
-          insight={(stats?.timeouts ?? 0) > 100 ? 'עלייה ב-timeouts' : (stats?.pendingRecheck ?? 0) === 0 ? 'המערכת נקייה' : 'קצב תקין'}
-          insightType={(stats?.timeouts ?? 0) > 100 ? 'warning' : 'ok'}
+          secondaryLine={`${(lastAvailRun?.properties_checked ?? 0).toLocaleString('he-IL')} נבדקו`}
+          insight={`${lastAvailRun?.inactive_marked ?? 0} סומנו לא פעילים`}
+          insightType={(lastAvailRun?.inactive_marked ?? 0) > 0 ? 'warning' : 'ok'}
           lastRun={formatLastRun(lastAvailRun?.started_at, lastAvailRun?.completed_at)}
           onRun={() => triggerAvailabilityJina.mutate()}
           onStop={() => stopAvailabilityJina.mutate()}
