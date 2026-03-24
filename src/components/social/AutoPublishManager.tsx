@@ -88,7 +88,8 @@ export const AutoPublishManager: React.FC = () => {
   const [formFrequencyDays, setFormFrequencyDays] = useState('1');
   const [formTime, setFormTime] = useState('10:00');
   const [propertyFilter, setPropertyFilter] = useState<'all' | 'rental' | 'sale'>('all');
-
+  const [publishTarget, setPublishTarget] = useState<'page' | 'groups'>('page');
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   // Confirm
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'publish' | 'schedule' | null>(null);
