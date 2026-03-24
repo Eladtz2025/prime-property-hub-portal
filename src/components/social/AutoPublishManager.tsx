@@ -122,6 +122,7 @@ export const AutoPublishManager: React.FC = () => {
     setFormFrequencyDays('1');
     setFormTime('10:00');
     setQueueType('property_rotation');
+    setPropertyFilter('all');
   };
 
   const openEditQueue = (queue: Record<string, unknown>) => {
