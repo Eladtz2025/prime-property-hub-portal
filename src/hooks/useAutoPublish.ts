@@ -181,7 +181,7 @@ export function useWebsiteProperties() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('properties')
-        .select('id, address, city, neighborhood, rooms, property_size, floor, monthly_rent, property_type')
+        .select('id, address, city, neighborhood, rooms, property_size, floor, monthly_rent, property_type, property_images!inner(id)')
         .eq('show_on_website', true)
         .eq('available', true)
         .order('created_at', { ascending: true });
