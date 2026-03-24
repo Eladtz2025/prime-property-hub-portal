@@ -20,10 +20,10 @@ import { HashtagGroupSelector } from './HashtagGroupSelector';
 const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
 const FREQUENCY_OPTIONS = [
-  { value: '1', label: 'כל יום' },
+  { value: '1', label: 'יומי' },
   { value: '2', label: 'כל יומיים' },
   { value: '3', label: 'כל 3 ימים' },
-  { value: '7', label: 'פעם בשבוע' },
+  { value: '7', label: 'שבועי' },
 ];
 
 const DEFAULT_PROPERTY_TEMPLATE = `🏠 דירה להשכרה!
@@ -62,7 +62,7 @@ export const AutoPublishManager: React.FC = () => {
 
   const openNewDialog = (type: 'property_rotation' | 'article_oneshot') => {
     setEditingId(null);
-    setFormName(type === 'property_rotation' ? 'פרסום דירות יומי' : 'כתבה שבועית');
+    setFormName(type === 'property_rotation' ? 'תבנית דירות' : 'תבנית כתבות');
     setFormType(type);
     setFormTemplate(type === 'property_rotation' ? DEFAULT_PROPERTY_TEMPLATE : '');
     setFormHashtags('');
@@ -146,7 +146,7 @@ export const AutoPublishManager: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">פרסום אוטומטי</span>
+          <span className="text-xs font-semibold">פרסום אוטומטי</span>
           {activeCount > 0 && (
             <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4">
               {activeCount} פעילים
@@ -154,15 +154,15 @@ export const AutoPublishManager: React.FC = () => {
           )}
         </div>
         <div className="flex gap-1.5">
-          <Button size="sm" variant="outline" className="text-[11px] h-7 gap-1" onClick={() => openNewDialog('property_rotation')}>
+          <Button size="sm" variant="outline" className="text-[11px] h-6 gap-1 px-2" onClick={() => openNewDialog('property_rotation')}>
             <Building2 className="h-3 w-3" />
-            תור דירות
-            <Plus className="h-3 w-3" />
+            תבנית דירות
+            <Plus className="h-2.5 w-2.5" />
           </Button>
-          <Button size="sm" variant="outline" className="text-[11px] h-7 gap-1" onClick={() => openNewDialog('article_oneshot')}>
+          <Button size="sm" variant="outline" className="text-[11px] h-6 gap-1 px-2" onClick={() => openNewDialog('article_oneshot')}>
             <Newspaper className="h-3 w-3" />
-            תור כתבות
-            <Plus className="h-3 w-3" />
+            תבנית כתבות
+            <Plus className="h-2.5 w-2.5" />
           </Button>
         </div>
       </div>
@@ -172,10 +172,10 @@ export const AutoPublishManager: React.FC = () => {
       
       {queues?.length === 0 && !isLoading && (
         <Card className="border-dashed">
-          <CardContent className="p-6 text-center">
-            <Bot className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">עוד אין תורות פרסום</p>
-            <p className="text-xs text-muted-foreground mt-1">צור תור חדש כדי להתחיל לפרסם אוטומטית</p>
+          <CardContent className="p-4 text-center">
+            <Bot className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
+            <p className="text-xs text-muted-foreground">עוד אין תבניות פרסום</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">צור תבנית חדשה כדי להתחיל לפרסם אוטומטית</p>
           </CardContent>
         </Card>
       )}
@@ -318,29 +318,29 @@ export const AutoPublishManager: React.FC = () => {
       <Dialog open={editDialog} onOpenChange={setEditDialog}>
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'עריכת תור' : 'תור חדש'}</DialogTitle>
+            <DialogTitle className="text-sm">{editingId ? 'עריכת תבנית' : 'תבנית חדשה'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label className="text-xs">שם התור</Label>
-              <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-8 text-sm" />
+              <Label className="text-xs font-medium">שם התבנית</Label>
+              <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-7 text-xs mt-1" />
             </div>
 
             <div>
-              <Label className="text-xs">פלטפורמות</Label>
+              <Label className="text-xs font-medium">פלטפורמות</Label>
               <div className="flex gap-2 mt-1">
                 <Button
                   size="sm"
-                  variant={formPlatforms.includes('facebook_page') ? 'default' : 'outline'}
-                  className="h-7 text-xs gap-1"
+                  variant="outline"
+                  className={`h-7 text-[11px] gap-1.5 px-3 ${formPlatforms.includes('facebook_page') ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600 hover:text-white' : ''}`}
                   onClick={() => togglePlatform('facebook_page')}
                 >
                   <Facebook className="h-3 w-3" /> Facebook
                 </Button>
                 <Button
                   size="sm"
-                  variant={formPlatforms.includes('instagram') ? 'default' : 'outline'}
-                  className="h-7 text-xs gap-1"
+                  variant="outline"
+                  className={`h-7 text-[11px] gap-1.5 px-3 ${formPlatforms.includes('instagram') ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-500 hover:from-purple-600 hover:to-pink-600 hover:text-white' : ''}`}
                   onClick={() => togglePlatform('instagram')}
                 >
                   <Instagram className="h-3 w-3" /> Instagram
@@ -350,45 +350,46 @@ export const AutoPublishManager: React.FC = () => {
 
             <div className="flex gap-3">
               <div className="flex-1">
-                <Label className="text-xs">תדירות</Label>
+                <Label className="text-xs font-medium">תדירות</Label>
                 <Select value={formFrequencyDays} onValueChange={setFormFrequencyDays}>
-                  <SelectTrigger className="h-8 text-sm">
+                  <SelectTrigger className="h-7 text-xs mt-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {FREQUENCY_OPTIONS.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">שעת פרסום</Label>
-                <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-8 text-sm w-28" />
+                <Label className="text-xs font-medium">שעה</Label>
+                <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-7 text-xs w-24 mt-1" />
               </div>
             </div>
 
             {formType === 'property_rotation' && (
               <div>
-                <Label className="text-xs">תבנית פוסט (placeholders: {'{address}'}, {'{price}'}, {'{rooms}'}, {'{size}'}, {'{floor}'}, {'{neighborhood}'}, {'{city}'}, {'{description}'})</Label>
+                <Label className="text-xs font-medium">תבנית פוסט</Label>
+                <p className="text-[10px] text-muted-foreground mb-1">placeholders: {'{address}'}, {'{price}'}, {'{rooms}'}, {'{size}'}, {'{floor}'}, {'{neighborhood}'}, {'{city}'}, {'{description}'}</p>
                 <Textarea
                   value={formTemplate}
                   onChange={e => setFormTemplate(e.target.value)}
-                  className="text-sm min-h-[120px]"
+                  className="text-xs min-h-[140px]"
                   dir="rtl"
                 />
               </div>
             )}
 
             <div>
-              <Label className="text-xs">האשטגים</Label>
+              <Label className="text-xs font-medium">האשטגים</Label>
               <HashtagGroupSelector value={formHashtags} onChange={setFormHashtags} />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialog(false)} className="text-sm h-8">ביטול</Button>
-            <Button onClick={handleSave} disabled={saveQueue.isPending} className="text-sm h-8">
+            <Button variant="outline" onClick={() => setEditDialog(false)} className="text-xs h-7">ביטול</Button>
+            <Button onClick={handleSave} disabled={saveQueue.isPending} className="text-xs h-7">
               {saveQueue.isPending ? 'שומר...' : 'שמור'}
             </Button>
           </DialogFooter>
@@ -399,8 +400,8 @@ export const AutoPublishManager: React.FC = () => {
       <ConfirmDialog
         open={!!deleteConfirm}
         onOpenChange={() => setDeleteConfirm(null)}
-        title="מחיקת תור"
-        description="האם אתה בטוח שברצונך למחוק תור זה? כל הכתבות וההיסטוריה ימחקו."
+        title="מחיקת תבנית"
+        description="האם אתה בטוח שברצונך למחוק תבנית זו? כל הכתבות וההיסטוריה ימחקו."
         onConfirm={() => {
           if (deleteConfirm) {
             deleteQueue.mutate(deleteConfirm);
