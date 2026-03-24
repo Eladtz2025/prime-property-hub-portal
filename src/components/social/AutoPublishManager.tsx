@@ -690,15 +690,41 @@ export const AutoPublishManager: React.FC = () => {
             {(() => {
               let previewText = contentText;
               let previewImages = imageUrls;
-              if (mode === 'recurring' && queueType === 'property_rotation' && websiteProperties?.length) {
+              
+              // In recurring mode, use first matching property as sample
+              if (mode === 'recurring' && queueType === 'property_rotation' && properties.length) {
                 const filteredProps = propertyFilter === 'all' 
-                  ? websiteProperties 
-                  : websiteProperties.filter(p => p.property_type === propertyFilter);
+                  ? properties 
+                  : properties.filter(p => p.property_type === propertyFilter);
                 const sampleProp = filteredProps[0];
                 if (sampleProp) {
                   previewText = fillPropertyPlaceholders(contentText, sampleProp);
+                  if (sampleProp.property_images?.length) {
+                    const sortedImages = [...sampleProp.property_images]
+                      .sort((a: any, b: any) => {
+                        if (a.is_main && !b.is_main) return -1;
+                        if (!a.is_main && b.is_main) return 1;
+                        return (a.order_index || 0) - (b.order_index || 0);
+                      });
+                    previewImages = sortedImages.map((img: any) => img.image_url).filter(Boolean);
+                  }
                 }
               }
+              
+              // In one-time mode, use selected property images
+              if (mode === 'one_time' && selectedPropertyId && properties.length) {
+                const selectedProp = properties.find(p => p.id === selectedPropertyId);
+                if (selectedProp?.property_images?.length && previewImages.length === 0) {
+                  const sortedImages = [...selectedProp.property_images]
+                    .sort((a: any, b: any) => {
+                      if (a.is_main && !b.is_main) return -1;
+                      if (!a.is_main && b.is_main) return 1;
+                      return (a.order_index || 0) - (b.order_index || 0);
+                    });
+                  previewImages = sortedImages.map((img: any) => img.image_url).filter(Boolean);
+                }
+              }
+              
               return (
                 <FacebookPostPreview
                   text={previewText}
