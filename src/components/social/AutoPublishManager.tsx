@@ -306,7 +306,6 @@ export const AutoPublishManager: React.FC = () => {
     }
     toast({ title: action === 'publish' ? '🚀 הפוסט פורסם בהצלחה!' : action === 'schedule' ? '⏰ הפוסט תוזמן בהצלחה!' : '💾 הטיוטא נשמרה' });
     resetForm();
-    setFormOpen(false);
   };
 
   // Queue helpers
