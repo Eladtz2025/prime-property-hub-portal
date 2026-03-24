@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Pencil, FileText } from 'lucide-react';
 import { useSocialTemplates, useSaveSocialTemplate, useDeleteSocialTemplate } from '@/hooks/useSocialPosts';
+import { HashtagGroupSelector } from './HashtagGroupSelector';
 import { ConfirmDialog } from './ConfirmDialog';
 
 const PLACEHOLDERS = [
@@ -216,7 +217,7 @@ export const SocialTemplatesManager: React.FC = () => {
 
             <div>
               <Label className="text-xs">האשטגים (אופציונלי)</Label>
-              <Input value={hashtags} onChange={e => setHashtags(e.target.value)} placeholder="#נדלן #דירהלהשכרה" dir="ltr" />
+              <HashtagGroupSelector value={hashtags} onChange={setHashtags} />
             </div>
 
             {templateText && (
