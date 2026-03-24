@@ -85,6 +85,7 @@ export const AutoPublishManager: React.FC = () => {
   // Recurring fields
   const [formFrequencyDays, setFormFrequencyDays] = useState('1');
   const [formTime, setFormTime] = useState('10:00');
+  const [propertyFilter, setPropertyFilter] = useState<'all' | 'rental' | 'sale'>('all');
 
   // Confirm
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
