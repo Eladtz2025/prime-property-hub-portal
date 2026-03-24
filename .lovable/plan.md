@@ -1,19 +1,48 @@
 
 
-## תיקון תצוגה מקדימה — משיכת תמונות הנכס אוטומטית
+## שינוי תצוגה מקדימה — מטקסט+תמונות לטקסט+כרטיס לינק (OG Card)
 
 ### הבעיה
-כשבוחרים "אוטומטי — דירות", הפריוויו מציג את הטקסט נכון אבל **בלי תמונות** כי:
-1. שאילתת הנכסים (שורה 103) מושכת רק `property_images!inner(id)` — רק ID לצורך סינון, בלי `image_url`
-2. בקוד הפריוויו (שורה 692) — `previewImages` נשאר כ-`imageUrls` (ריק), גם כשיש דירה לדוגמה
+הפריוויו הנוכחי מציג תמונות כאילו הן מועלות ישירות לפייסבוק. בפועל, הפוסט מכיל **טקסט + לינק לדירה באתר** (`https://citymarket.co.il/property/{id}`), ופייסבוק מייצר אוטומטית כרטיס OG (תמונה + כותרת + תיאור + URL).
 
-### התיקון
+### מה משתנה
 
-**`AutoPublishManager.tsx`:**
+**`FacebookPostPreview.tsx` — הוספת מצב "Link Card":**
 
-1. **שינוי השאילתה** (שורה 103): החלפת `property_images!inner(id)` ב-`property_images!inner(id, image_url, is_main, order_index)` — כך נקבל את ה-URLs של התמונות
-2. **שינוי לוגיקת הפריוויו** (שורות 690-708): כשיש `sampleProp` במצב recurring, למשוך את התמונות שלו מ-`sampleProp.property_images` ולהעביר אותן ל-`FacebookPostPreview`
-3. **גם במצב חד-פעמי**: כשנבחר נכס ספציפי (`selectedPropertyId`), למשוך את תמונות הנכס מה-`properties` array ולהציג אותן בפריוויו
+במקום grid של תמונות, הפריוויו יציג:
+1. **טקסט הפוסט** (כמו היום)
+2. **האשטגים** (כמו היום)
+3. **כרטיס לינק** (חדש) — מחקה את ה-OG preview של פייסבוק:
+   - תמונה ראשית (full-width, aspect ratio ~1.91:1)
+   - מתחתיה: רקע אפור בהיר עם:
+     - דומיין (`CITYMARKET.CO.IL`)
+     - כותרת הנכס (כמו `דירה להשכרה: הרצל 10, תל אביב`)
+     - תיאור קצר (חדרים, גודל, מחיר)
 
-**קובץ אחד, ~10 שורות שינוי.**
+Props חדשים: `linkUrl`, `linkTitle`, `linkDescription`, `linkImage` — כשיש `linkUrl`, מוצג כרטיס לינק במקום grid תמונות.
+
+**`AutoPublishManager.tsx` — בניית נתוני הלינק:**
+
+בפריוויו, במקום להעביר `imageUrls`, לבנות:
+- `linkUrl`: `https://citymarket.co.il/property/{property_id}`
+- `linkTitle`: `דירה להשכרה: {address}, {city}` (מהנתונים של הנכס)
+- `linkDescription`: `{rooms} חדרים | {size} מ"ר | ₪{price}` 
+- `linkImage`: התמונה הראשית של הנכס
+
+**Edge Function `social-publish` — הוספת לינק לפוסט:**
+
+כשמפרסמים פוסט עם `property_id`, להוסיף לטקסט את הלינק לנכס: `\n\nhttps://citymarket.co.il/property/{property_id}`
+
+כך פייסבוק מייצר אוטומטית את כרטיס ה-OG עם התמונה והכותרת.
+
+### קבצים
+
+| קובץ | שינוי |
+|-------|-------|
+| `FacebookPostPreview.tsx` | הוספת מצב Link Card — כרטיס OG עם תמונה, כותרת, תיאור, דומיין |
+| `AutoPublishManager.tsx` | בניית linkUrl/linkTitle/linkDescription/linkImage מנתוני הנכס |
+| `auto-publish/index.ts` | הוספת URL הנכס לסוף טקסט הפוסט |
+| `social-publish/index.ts` | (אופציונלי) הוספת `link` parameter ל-Graph API במקום רק בטקסט |
+
+**~4 קבצים, ~60 שורות שינוי.**
 
