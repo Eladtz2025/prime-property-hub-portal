@@ -243,7 +243,6 @@ export const AutoPublishManager: React.FC = () => {
       frequency: parseInt(formFrequencyDays) >= 7 ? 'weekly' : 'daily',
     }, {
       onSuccess: () => {
-        setFormOpen(false);
         resetForm();
       },
     });
