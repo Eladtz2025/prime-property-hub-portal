@@ -146,7 +146,7 @@ export const AutoPublishManager: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">פרסום אוטומטי</span>
+          <span className="text-xs font-semibold">פרסום אוטומטי</span>
           {activeCount > 0 && (
             <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4">
               {activeCount} פעילים
@@ -154,15 +154,15 @@ export const AutoPublishManager: React.FC = () => {
           )}
         </div>
         <div className="flex gap-1.5">
-          <Button size="sm" variant="outline" className="text-[11px] h-7 gap-1" onClick={() => openNewDialog('property_rotation')}>
+          <Button size="sm" variant="outline" className="text-[11px] h-6 gap-1 px-2" onClick={() => openNewDialog('property_rotation')}>
             <Building2 className="h-3 w-3" />
-            תור דירות
-            <Plus className="h-3 w-3" />
+            תבנית דירות
+            <Plus className="h-2.5 w-2.5" />
           </Button>
-          <Button size="sm" variant="outline" className="text-[11px] h-7 gap-1" onClick={() => openNewDialog('article_oneshot')}>
+          <Button size="sm" variant="outline" className="text-[11px] h-6 gap-1 px-2" onClick={() => openNewDialog('article_oneshot')}>
             <Newspaper className="h-3 w-3" />
-            תור כתבות
-            <Plus className="h-3 w-3" />
+            תבנית כתבות
+            <Plus className="h-2.5 w-2.5" />
           </Button>
         </div>
       </div>
