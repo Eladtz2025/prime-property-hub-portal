@@ -29,6 +29,7 @@ export function useSaveAutoPublishQueue() {
       hashtags?: string;
       publish_time?: string;
       frequency?: string;
+      frequency_days?: number;
       is_active?: boolean;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
