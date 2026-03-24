@@ -16,6 +16,8 @@ import { AutoPublishArticles } from './AutoPublishArticles';
 import { AutoPublishLog } from './AutoPublishLog';
 import { ConfirmDialog } from './ConfirmDialog';
 import { HashtagGroupSelector } from './HashtagGroupSelector';
+import { SocialPostComposer } from './SocialPostComposer';
+import { Separator } from '@/components/ui/separator';
 
 const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
