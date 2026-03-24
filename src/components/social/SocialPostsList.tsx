@@ -66,10 +66,7 @@ export const SocialPostsList: React.FC = () => {
                   <SelectItem value="facebook_group">קבוצות</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
           </div>
-        </CardHeader>
-        <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground text-sm">טוען...</div>
           ) : !posts || posts.length === 0 ? (

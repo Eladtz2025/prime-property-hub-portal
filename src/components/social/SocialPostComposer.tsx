@@ -226,14 +226,8 @@ export const SocialPostComposer: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Composer - Left/Main */}
         <div className="lg:col-span-3 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <PenIcon />
-                יצירת פוסט חדש
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+           <Card>
+            <CardContent className="pt-4 space-y-4">
               {/* Source & Template */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>

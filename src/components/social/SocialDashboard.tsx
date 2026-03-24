@@ -1,23 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
-import { Settings, PenSquare, CalendarDays, Users2, FileText, Send, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Settings, PenSquare, CalendarDays, Wrench, CheckCircle, Clock, FileText, Send, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { SocialAccountSetup } from './SocialAccountSetup';
 import { SocialPostComposer } from './SocialPostComposer';
 import { SocialPostsList } from './SocialPostsList';
-import { FacebookGroupsManager } from './FacebookGroupsManager';
-import { SocialTemplatesManager } from './SocialTemplatesManager';
+import { SocialToolsPanel } from './SocialToolsPanel';
 import { useSocialAccounts, useSocialPosts } from '@/hooks/useSocialPosts';
 
 export const SocialDashboard: React.FC = () => {
   const { data: accounts } = useSocialAccounts();
   const { data: allPosts } = useSocialPosts('all', 'all');
   const hasConnectedAccount = accounts && accounts.some(a => a.is_active);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const publishedCount = allPosts?.filter(p => p.status === 'published').length || 0;
   const scheduledCount = allPosts?.filter(p => p.status === 'scheduled').length || 0;
   const draftCount = allPosts?.filter(p => p.status === 'draft').length || 0;
   const failedCount = allPosts?.filter(p => p.status === 'failed').length || 0;
+  const totalCount = allPosts?.length || 0;
 
   const expiringToken = accounts?.find(a => {
     if (!a.token_expires_at) return false;
@@ -26,119 +29,101 @@ export const SocialDashboard: React.FC = () => {
   });
 
   return (
-    <div className="space-y-4" dir="rtl">
+    <div className="space-y-3" dir="rtl">
       {expiringToken && (
-        <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-3 flex items-center gap-2 text-sm">
-          <span>⚠️</span>
+        <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-2.5 flex items-center gap-2 text-xs">
+          <AlertTriangle className="h-3.5 w-3.5 text-secondary shrink-0" />
           <span>
-            הטוקן של <strong>{expiringToken.page_name}</strong> עומד לפוג תוקף. 
-            עבור להגדרות כדי לחדש אותו.
+            הטוקן של <strong>{expiringToken.page_name}</strong> עומד לפוג. 
+            <Button variant="link" size="sm" className="text-xs h-auto p-0 mr-1" onClick={() => setSettingsOpen(true)}>
+              חדש עכשיו
+            </Button>
           </span>
         </div>
       )}
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-green-500/10 flex items-center justify-center">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{publishedCount}</p>
-              <p className="text-xs text-muted-foreground">פורסמו</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
-              <Clock className="h-4 w-4 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{scheduledCount}</p>
-              <p className="text-xs text-muted-foreground">מתוזמנים</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{draftCount}</p>
-              <p className="text-xs text-muted-foreground">טיוטות</p>
-            </div>
-          </CardContent>
-        </Card>
-        {failedCount > 0 ? (
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-destructive">{failedCount}</p>
-                <p className="text-xs text-muted-foreground">נכשלו</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Send className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{(allPosts?.length) || 0}</p>
-                <p className="text-xs text-muted-foreground">סה"כ</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      {/* Compact status bar */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+          <span className="flex items-center gap-1">
+            <CheckCircle className="h-3 w-3 text-green-500" />
+            {publishedCount} פורסמו
+          </span>
+          <span className="text-border">·</span>
+          <span className="flex items-center gap-1">
+            <Clock className="h-3 w-3 text-blue-500" />
+            {scheduledCount} מתוזמנים
+          </span>
+          <span className="text-border">·</span>
+          <span className="flex items-center gap-1">
+            <FileText className="h-3 w-3" />
+            {draftCount} טיוטות
+          </span>
+          {failedCount > 0 && (
+            <>
+              <span className="text-border">·</span>
+              <span className="flex items-center gap-1 text-destructive">
+                <AlertTriangle className="h-3 w-3" />
+                {failedCount} נכשלו
+              </span>
+            </>
+          )}
+          <span className="text-border">·</span>
+          <span className="flex items-center gap-1">
+            <Send className="h-3 w-3" />
+            {totalCount} סה"כ
+          </span>
+        </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0"
+          onClick={() => setSettingsOpen(true)}
+          title="הגדרות חיבור"
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
       </div>
 
-      <Tabs defaultValue={hasConnectedAccount ? 'compose' : 'setup'} className="w-full" dir="rtl">
-        <TabsList className="grid w-full grid-cols-5 text-[10px] sm:text-xs">
-          <TabsTrigger value="setup" className="flex items-center gap-1">
-            <Settings className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">הגדרות</span>
-          </TabsTrigger>
-          <TabsTrigger value="compose" className="flex items-center gap-1">
+      <Tabs defaultValue={hasConnectedAccount ? 'compose' : 'tools'} className="w-full" dir="rtl">
+        <TabsList className="grid w-full grid-cols-3 text-xs">
+          <TabsTrigger value="compose" className="flex items-center gap-1.5">
             <PenSquare className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">פוסט חדש</span>
+            פוסט חדש
           </TabsTrigger>
-          <TabsTrigger value="posts" className="flex items-center gap-1">
+          <TabsTrigger value="posts" className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">היסטוריה</span>
+            היסטוריה
           </TabsTrigger>
-          <TabsTrigger value="groups" className="flex items-center gap-1">
-            <Users2 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">קבוצות</span>
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-1">
-            <FileText className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">תבניות</span>
+          <TabsTrigger value="tools" className="flex items-center gap-1.5">
+            <Wrench className="h-3.5 w-3.5" />
+            כלים
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="setup" className="mt-4">
-          <SocialAccountSetup />
-        </TabsContent>
-        <TabsContent value="compose" className="mt-4">
+        <TabsContent value="compose" className="mt-3">
           <SocialPostComposer />
         </TabsContent>
-        <TabsContent value="posts" className="mt-4">
+        <TabsContent value="posts" className="mt-3">
           <SocialPostsList />
         </TabsContent>
-        <TabsContent value="groups" className="mt-4">
-          <FacebookGroupsManager />
-        </TabsContent>
-        <TabsContent value="templates" className="mt-4">
-          <SocialTemplatesManager />
+        <TabsContent value="tools" className="mt-3">
+          <SocialToolsPanel />
         </TabsContent>
       </Tabs>
+
+      {/* Settings Sheet */}
+      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto" dir="rtl">
+          <SheetHeader>
+            <SheetTitle className="text-right">הגדרות חיבור</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <SocialAccountSetup />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
