@@ -17,12 +17,14 @@ import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAutoPublishQueues, useSaveAutoPublishQueue, useToggleAutoPublishQueue, useDeleteAutoPublishQueue, useWebsiteProperties } from '@/hooks/useAutoPublish';
-import { useCreateSocialPost, usePublishPost, useSocialTemplates, useSocialAccounts } from '@/hooks/useSocialPosts';
+import { useCreateSocialPost, usePublishPost, useSocialTemplates, useSocialAccounts, useFacebookGroups } from '@/hooks/useSocialPosts';
 import { useToast } from '@/hooks/use-toast';
 import { AutoPublishArticles } from './AutoPublishArticles';
 import { AutoPublishLog } from './AutoPublishLog';
 import { ConfirmDialog } from './ConfirmDialog';
 import { HashtagGroupSelector } from './HashtagGroupSelector';
+import { FacebookPostPreview } from './FacebookPostPreview';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -57,7 +59,7 @@ export const AutoPublishManager: React.FC = () => {
   const publishPost = usePublishPost();
   const { data: socialTemplates } = useSocialTemplates();
   const { data: accounts } = useSocialAccounts();
-
+  const { data: facebookGroups } = useFacebookGroups();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [previewQueueId, setPreviewQueueId] = useState<string | null>(null);
   const [logOpen, setLogOpen] = useState(false);
@@ -86,7 +88,8 @@ export const AutoPublishManager: React.FC = () => {
   const [formFrequencyDays, setFormFrequencyDays] = useState('1');
   const [formTime, setFormTime] = useState('10:00');
   const [propertyFilter, setPropertyFilter] = useState<'all' | 'rental' | 'sale'>('all');
-
+  const [publishTarget, setPublishTarget] = useState<'page' | 'groups'>('page');
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   // Confirm
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'publish' | 'schedule' | null>(null);
@@ -123,6 +126,8 @@ export const AutoPublishManager: React.FC = () => {
     setFormTime('10:00');
     setQueueType('property_rotation');
     setPropertyFilter('all');
+    setPublishTarget('page');
+    setSelectedGroupIds([]);
   };
 
   const openEditQueue = (queue: Record<string, unknown>) => {
@@ -137,6 +142,9 @@ export const AutoPublishManager: React.FC = () => {
     setFormFrequencyDays(String((queue as any).frequency_days || 1));
     setFormTime(queue.publish_time as string || '10:00');
     setPropertyFilter(((queue as any).property_filter as 'all' | 'rental' | 'sale') || 'all');
+    const target = (queue as any).publish_target as { type: string; group_ids?: string[] } | null;
+    setPublishTarget((target?.type as 'page' | 'groups') || 'page');
+    setSelectedGroupIds(target?.group_ids || []);
   };
 
   // Property selection for one-time posts
@@ -246,6 +254,9 @@ export const AutoPublishManager: React.FC = () => {
       frequency_days: parseInt(formFrequencyDays),
       frequency: parseInt(formFrequencyDays) >= 7 ? 'weekly' : 'daily',
       property_filter: queueType === 'property_rotation' ? propertyFilter : undefined,
+      publish_target: platforms.facebook 
+        ? (publishTarget === 'groups' ? { type: 'groups', group_ids: selectedGroupIds } : { type: 'page' })
+        : { type: 'page' },
     }, {
       onSuccess: () => {
         resetForm();
@@ -510,9 +521,56 @@ export const AutoPublishManager: React.FC = () => {
                   <Instagram className="h-3 w-3" /> אינסטגרם
                 </Button>
               </div>
-            </div>
 
-            {/* Recurring: Frequency & Time */}
+              {/* Publish target (page vs groups) */}
+              {platforms.facebook && (
+                <div className="mt-2 space-y-2">
+                  <Label className="text-xs font-medium">יעד פרסום בפייסבוק</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={publishTarget === 'page' ? 'default' : 'outline'}
+                      className="text-xs h-7"
+                      onClick={() => setPublishTarget('page')}
+                    >
+                      עמוד ראשי
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={publishTarget === 'groups' ? 'default' : 'outline'}
+                      className="text-xs h-7"
+                      onClick={() => setPublishTarget('groups')}
+                    >
+                      קבוצות
+                    </Button>
+                  </div>
+                  {publishTarget === 'groups' && facebookGroups && facebookGroups.length > 0 && (
+                    <div className="space-y-1.5 bg-muted/30 rounded-md p-2">
+                      {facebookGroups.map((group: any) => (
+                        <label key={group.id} className="flex items-center gap-2 text-xs cursor-pointer">
+                          <Checkbox
+                            checked={selectedGroupIds.includes(group.id)}
+                            onCheckedChange={(checked) => {
+                              setSelectedGroupIds(prev =>
+                                checked
+                                  ? [...prev, group.id]
+                                  : prev.filter(id => id !== group.id)
+                              );
+                            }}
+                          />
+                          <span>{group.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {publishTarget === 'groups' && (!facebookGroups || facebookGroups.length === 0) && (
+                    <p className="text-[10px] text-muted-foreground">לא נמצאו קבוצות. הוסף קבוצות בהגדרות.</p>
+                  )}
+                </div>
+              )}
+            </div>
             {mode === 'recurring' && (
               <div className="flex gap-3">
                 <div className="flex-1">
@@ -638,48 +696,26 @@ export const AutoPublishManager: React.FC = () => {
             )}
 
             {/* Facebook Preview */}
-            {contentText.trim() && (
-              <div className="border rounded-lg bg-card shadow-sm overflow-hidden">
-                <div className="px-3 py-2 flex items-center gap-2 border-b border-border/50">
-                  <div className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center text-white font-bold text-xs">PP</div>
-                  <div>
-                    <div className="text-xs font-semibold">PrimeProperty</div>
-                    <div className="text-[10px] text-muted-foreground">עכשיו · 🌐</div>
-                  </div>
-                </div>
-                <div className="px-3 py-2 text-xs whitespace-pre-wrap leading-relaxed" dir="rtl">
-                  {mode === 'recurring' && queueType === 'property_rotation' && websiteProperties?.length
-                    ? (() => {
-                        const filteredProps = propertyFilter === 'all' 
-                          ? websiteProperties 
-                          : websiteProperties.filter(p => p.property_type === propertyFilter);
-                        const sampleProp = filteredProps[0];
-                        if (!sampleProp) return contentText;
-                        return fillPropertyPlaceholders(contentText, sampleProp);
-                      })()
-                    : contentText
-                  }
-                </div>
-                {hashtags && (
-                  <div className="px-3 pb-1 text-[10px] text-[#1877F2]">{hashtags}</div>
-                )}
-                {imageUrls.length > 0 && (
-                  <div className={cn(
-                    "grid gap-0.5",
-                    imageUrls.length === 1 ? "grid-cols-1" : imageUrls.length === 2 ? "grid-cols-2" : "grid-cols-3"
-                  )}>
-                    {imageUrls.slice(0, 3).map((url, i) => (
-                      <img key={i} src={url} alt="" className="w-full h-32 object-cover" />
-                    ))}
-                  </div>
-                )}
-                <div className="px-3 py-2 border-t border-border/50 flex items-center justify-around text-[10px] text-muted-foreground">
-                  <span>👍 לייק</span>
-                  <span>💬 תגובה</span>
-                  <span>↗️ שיתוף</span>
-                </div>
-              </div>
-            )}
+            {(() => {
+              let previewText = contentText;
+              let previewImages = imageUrls;
+              if (mode === 'recurring' && queueType === 'property_rotation' && websiteProperties?.length) {
+                const filteredProps = propertyFilter === 'all' 
+                  ? websiteProperties 
+                  : websiteProperties.filter(p => p.property_type === propertyFilter);
+                const sampleProp = filteredProps[0];
+                if (sampleProp) {
+                  previewText = fillPropertyPlaceholders(contentText, sampleProp);
+                }
+              }
+              return (
+                <FacebookPostPreview
+                  text={previewText}
+                  hashtags={hashtags || undefined}
+                  imageUrls={previewImages.length > 0 ? previewImages : undefined}
+                />
+              );
+            })()}
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2 pt-3 border-t border-border">

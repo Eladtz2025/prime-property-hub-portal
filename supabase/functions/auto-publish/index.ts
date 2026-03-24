@@ -123,8 +123,20 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
 
   const hashtags = (queue.hashtags as string) || '';
   const platforms = (queue.platforms as string[]) || ['facebook_page'];
-
+  const publishTarget = (queue.publish_target as { type: string; group_ids?: string[] }) || { type: 'page' };
+  // Determine effective platforms — if target is groups, use facebook_group platform
+  const effectivePlatforms: { platform: string; group_id?: string }[] = [];
   for (const platform of platforms) {
+    if (platform === 'facebook_page' && publishTarget.type === 'groups' && publishTarget.group_ids?.length) {
+      for (const groupId of publishTarget.group_ids) {
+        effectivePlatforms.push({ platform: 'facebook_group', group_id: groupId });
+      }
+    } else {
+      effectivePlatforms.push({ platform });
+    }
+  }
+
+  for (const { platform, group_id } of effectivePlatforms) {
     const { data: post, error: postErr } = await supabase
       .from('social_posts')
       .insert({
@@ -136,6 +148,7 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
         status: 'scheduled',
         property_id: property.id,
         created_by: queue.created_by,
+        ...(group_id ? { target_group_id: group_id } : {}),
       })
       .select()
       .single();
