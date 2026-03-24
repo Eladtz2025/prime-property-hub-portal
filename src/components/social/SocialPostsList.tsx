@@ -36,36 +36,31 @@ export const SocialPostsList: React.FC = () => {
   return (
     <>
       <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              היסטוריית פוסטים
-            </CardTitle>
-            <div className="flex gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-28 text-xs h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">הכל</SelectItem>
-                  <SelectItem value="draft">טיוטות</SelectItem>
-                  <SelectItem value="scheduled">מתוזמנים</SelectItem>
-                  <SelectItem value="published">פורסמו</SelectItem>
-                  <SelectItem value="failed">נכשלו</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={platformFilter} onValueChange={setPlatformFilter}>
-                <SelectTrigger className="w-28 text-xs h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">הכל</SelectItem>
-                  <SelectItem value="facebook_page">פייסבוק</SelectItem>
-                  <SelectItem value="instagram">אינסטגרם</SelectItem>
-                  <SelectItem value="facebook_group">קבוצות</SelectItem>
-                </SelectContent>
-              </Select>
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-24 text-xs h-7">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">הכל</SelectItem>
+                <SelectItem value="draft">טיוטות</SelectItem>
+                <SelectItem value="scheduled">מתוזמנים</SelectItem>
+                <SelectItem value="published">פורסמו</SelectItem>
+                <SelectItem value="failed">נכשלו</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={platformFilter} onValueChange={setPlatformFilter}>
+              <SelectTrigger className="w-24 text-xs h-7">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">הכל</SelectItem>
+                <SelectItem value="facebook_page">פייסבוק</SelectItem>
+                <SelectItem value="instagram">אינסטגרם</SelectItem>
+                <SelectItem value="facebook_group">קבוצות</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground text-sm">טוען...</div>
