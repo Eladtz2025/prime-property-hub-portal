@@ -46,6 +46,7 @@ export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onCompl
   const [isBulkSending, setIsBulkSending] = useState(false);
   const [sendStatuses, setSendStatuses] = useState<Record<string, SendStatus>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { toast } = useToast();
   const { sendWhatsAppMessage } = useWhatsAppSender();
