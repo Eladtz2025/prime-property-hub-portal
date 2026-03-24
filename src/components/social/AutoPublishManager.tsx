@@ -17,12 +17,14 @@ import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAutoPublishQueues, useSaveAutoPublishQueue, useToggleAutoPublishQueue, useDeleteAutoPublishQueue, useWebsiteProperties } from '@/hooks/useAutoPublish';
-import { useCreateSocialPost, usePublishPost, useSocialTemplates, useSocialAccounts } from '@/hooks/useSocialPosts';
+import { useCreateSocialPost, usePublishPost, useSocialTemplates, useSocialAccounts, useFacebookGroups } from '@/hooks/useSocialPosts';
 import { useToast } from '@/hooks/use-toast';
 import { AutoPublishArticles } from './AutoPublishArticles';
 import { AutoPublishLog } from './AutoPublishLog';
 import { ConfirmDialog } from './ConfirmDialog';
 import { HashtagGroupSelector } from './HashtagGroupSelector';
+import { FacebookPostPreview } from './FacebookPostPreview';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
