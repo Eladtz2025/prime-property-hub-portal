@@ -128,7 +128,7 @@ const Index = () => {
       <HebrewHeader />
       
       {/* Hero Section */}
-      <VideoHero title="City Market" subtitle="מומחיות מקומית. שירות אישי. תהליך ברור." imageUrl="/images/en/hero-last-one.png" />
+      <VideoHero title="City Market" imageUrl="/images/en/hero-last-one.png" />
 
       {/* About Section */}
       <ScrollAnimated animation="slide-in-up" className="py-4 md:py-8 bg-background">

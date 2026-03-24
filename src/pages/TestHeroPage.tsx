@@ -5,10 +5,7 @@ const TestHeroPage = () => {
   return (
     <div dir="rtl">
       <HeaderTest />
-      <VideoHero
-        title="CITY MARKET"
-        subtitle="מומחיות מקומית. שירות אישי. תהליך ברור."
-      />
+      <VideoHero title="CITY MARKET" />
     </div>
   );
 };

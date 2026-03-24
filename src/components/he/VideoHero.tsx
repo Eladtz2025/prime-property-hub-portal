@@ -75,7 +75,7 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
           </button>
         </div>
         <p className="font-montserrat text-xs md:text-sm tracking-[0.3em] mt-6 animate-fade-in animation-delay-400 font-bold" style={{ color: 'hsl(38, 60%, 45%)' }}>
-          Since 2016
+          Since 2008
         </p>
       </div>
 
