@@ -16,6 +16,8 @@ import { AutoPublishArticles } from './AutoPublishArticles';
 import { AutoPublishLog } from './AutoPublishLog';
 import { ConfirmDialog } from './ConfirmDialog';
 import { HashtagGroupSelector } from './HashtagGroupSelector';
+import { SocialPostComposer } from './SocialPostComposer';
+import { Separator } from '@/components/ui/separator';
 
 const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -409,6 +411,13 @@ export const AutoPublishManager: React.FC = () => {
           }
         }}
       />
+
+      {/* Manual publishing */}
+      <Separator className="my-4" />
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-xs font-semibold">פרסום ידני</span>
+      </div>
+      <SocialPostComposer />
     </div>
   );
 };
