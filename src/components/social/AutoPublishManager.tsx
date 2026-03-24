@@ -122,12 +122,6 @@ export const AutoPublishManager: React.FC = () => {
     setQueueType('property_rotation');
   };
 
-  const openNew = () => {
-    resetForm();
-    setMode('one_time');
-    setFormOpen(true);
-  };
-
   const openEditQueue = (queue: Record<string, unknown>) => {
     setEditingId(queue.id as string);
     setMode('recurring');
@@ -139,7 +133,6 @@ export const AutoPublishManager: React.FC = () => {
     setPlatforms({ facebook: qPlatforms.includes('facebook_page'), instagram: qPlatforms.includes('instagram') });
     setFormFrequencyDays(String((queue as any).frequency_days || 1));
     setFormTime(queue.publish_time as string || '10:00');
-    setFormOpen(true);
   };
 
   // Property selection for one-time posts
