@@ -620,9 +620,25 @@ export const AutoPublishManager: React.FC = () => {
                 <span className="text-[10px] text-muted-foreground">{charCount} תווים</span>
               </div>
               {mode === 'recurring' && queueType === 'property_rotation' && (
-                <p className="text-[10px] text-muted-foreground mb-1">
-                  placeholders: {'{address}'}, {'{price}'}, {'{rooms}'}, {'{size}'}, {'{floor}'}, {'{neighborhood}'}, {'{city}'}, {'{description}'}
-                </p>
+                <div className="space-y-1 mb-1">
+                  <div className="flex gap-1.5 flex-wrap">
+                    {TEMPLATE_PRESETS.map(preset => (
+                      <Button
+                        key={preset.id}
+                        type="button"
+                        variant={contentText === preset.text ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-6 text-[11px] px-2"
+                        onClick={() => setContentText(preset.text)}
+                      >
+                        {preset.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    placeholders: {'{address}'}, {'{price}'}, {'{rooms}'}, {'{size}'}, {'{floor}'}, {'{neighborhood}'}, {'{city}'}, {'{property_type}'}
+                  </p>
+                </div>
               )}
               <Textarea
                 value={contentText}
