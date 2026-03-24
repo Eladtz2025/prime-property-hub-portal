@@ -59,7 +59,7 @@ export const AutoPublishManager: React.FC = () => {
   const publishPost = usePublishPost();
   const { data: socialTemplates } = useSocialTemplates();
   const { data: accounts } = useSocialAccounts();
-
+  const { data: facebookGroups } = useFacebookGroups();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [previewQueueId, setPreviewQueueId] = useState<string | null>(null);
   const [logOpen, setLogOpen] = useState(false);
