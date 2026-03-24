@@ -245,7 +245,13 @@ export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onCompl
               />
 
               <Button
-                onClick={handleBulkSend}
+                onClick={() => {
+                  if (!message.trim()) {
+                    toast({ title: 'נא לכתוב הודעה', variant: 'destructive' });
+                    return;
+                  }
+                  setConfirmOpen(true);
+                }}
                 disabled={!message.trim()}
                 className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
               >
@@ -256,6 +262,20 @@ export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onCompl
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirm bulk send dialog */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="שליחת הודעות WhatsApp"
+        description={`האם לשלוח הודעה ל-${recipients.length} נמענים?`}
+        confirmLabel="שלח"
+        cancelLabel="ביטול"
+        onConfirm={() => {
+          setConfirmOpen(false);
+          handleBulkSend();
+        }}
+      />
 
       {/* Template edit dialog */}
       <Dialog open={!!editingTemplate} onOpenChange={(v) => !v && setEditingTemplate(null)}>
