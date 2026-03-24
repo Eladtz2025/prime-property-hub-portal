@@ -624,7 +624,7 @@ export const AutoPublishManager: React.FC = () => {
       {/* Existing templates */}
       {isLoading && <p className="text-xs text-muted-foreground px-1">טוען...</p>}
 
-      {queues?.length === 0 && !isLoading && !formOpen && (
+      {queues?.length === 0 && !isLoading && (
         <Card className="border-dashed">
           <CardContent className="p-4 text-center">
             <Bot className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
