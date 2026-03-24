@@ -11,6 +11,7 @@ import { formatIsraeliPhone } from '@/utils/phoneFormatter';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
+import { ConfirmDialog } from '@/components/social/ConfirmDialog';
 
 interface MessageTemplate {
   id: string;
@@ -48,6 +49,7 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context, t
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<WhatsAppMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { toast } = useToast();
   const { sendWhatsAppMessage, isSending } = useWhatsAppSender();
@@ -217,7 +219,13 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context, t
 
           {/* Send button */}
           <Button
-            onClick={handleSend}
+            onClick={() => {
+              if (!message.trim()) {
+                toast({ title: 'נא לכתוב הודעה', variant: 'destructive' });
+                return;
+              }
+              setConfirmOpen(true);
+            }}
             disabled={isSending || !message.trim()}
             className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
           >
@@ -226,6 +234,20 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context, t
           </Button>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm send dialog */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="שליחת הודעת WhatsApp"
+        description={`האם לשלוח הודעת WhatsApp ל-${name}?`}
+        confirmLabel="שלח"
+        cancelLabel="ביטול"
+        onConfirm={() => {
+          setConfirmOpen(false);
+          handleSend();
+        }}
+      />
 
       {/* Template edit dialog */}
       <Dialog open={!!editingTemplate} onOpenChange={(v) => !v && setEditingTemplate(null)}>
