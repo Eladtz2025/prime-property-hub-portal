@@ -649,48 +649,26 @@ export const AutoPublishManager: React.FC = () => {
             )}
 
             {/* Facebook Preview */}
-            {contentText.trim() && (
-              <div className="border rounded-lg bg-card shadow-sm overflow-hidden">
-                <div className="px-3 py-2 flex items-center gap-2 border-b border-border/50">
-                  <div className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center text-white font-bold text-xs">PP</div>
-                  <div>
-                    <div className="text-xs font-semibold">PrimeProperty</div>
-                    <div className="text-[10px] text-muted-foreground">עכשיו · 🌐</div>
-                  </div>
-                </div>
-                <div className="px-3 py-2 text-xs whitespace-pre-wrap leading-relaxed" dir="rtl">
-                  {mode === 'recurring' && queueType === 'property_rotation' && websiteProperties?.length
-                    ? (() => {
-                        const filteredProps = propertyFilter === 'all' 
-                          ? websiteProperties 
-                          : websiteProperties.filter(p => p.property_type === propertyFilter);
-                        const sampleProp = filteredProps[0];
-                        if (!sampleProp) return contentText;
-                        return fillPropertyPlaceholders(contentText, sampleProp);
-                      })()
-                    : contentText
-                  }
-                </div>
-                {hashtags && (
-                  <div className="px-3 pb-1 text-[10px] text-[#1877F2]">{hashtags}</div>
-                )}
-                {imageUrls.length > 0 && (
-                  <div className={cn(
-                    "grid gap-0.5",
-                    imageUrls.length === 1 ? "grid-cols-1" : imageUrls.length === 2 ? "grid-cols-2" : "grid-cols-3"
-                  )}>
-                    {imageUrls.slice(0, 3).map((url, i) => (
-                      <img key={i} src={url} alt="" className="w-full h-32 object-cover" />
-                    ))}
-                  </div>
-                )}
-                <div className="px-3 py-2 border-t border-border/50 flex items-center justify-around text-[10px] text-muted-foreground">
-                  <span>👍 לייק</span>
-                  <span>💬 תגובה</span>
-                  <span>↗️ שיתוף</span>
-                </div>
-              </div>
-            )}
+            {(() => {
+              let previewText = contentText;
+              let previewImages = imageUrls;
+              if (mode === 'recurring' && queueType === 'property_rotation' && websiteProperties?.length) {
+                const filteredProps = propertyFilter === 'all' 
+                  ? websiteProperties 
+                  : websiteProperties.filter(p => p.property_type === propertyFilter);
+                const sampleProp = filteredProps[0];
+                if (sampleProp) {
+                  previewText = fillPropertyPlaceholders(contentText, sampleProp);
+                }
+              }
+              return (
+                <FacebookPostPreview
+                  text={previewText}
+                  hashtags={hashtags || undefined}
+                  imageUrls={previewImages.length > 0 ? previewImages : undefined}
+                />
+              );
+            })()}
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
