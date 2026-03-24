@@ -97,8 +97,8 @@ export const AutoPublishManager: React.FC = () => {
       const { data } = await supabase
         .from('properties')
         .select('id, address, city, rooms, property_size, floor, neighborhood, monthly_rent, current_market_value, description, property_type, property_images!inner(id)')
-        .eq('available', true)
         .eq('show_on_website', true)
+        .eq('status', 'vacant')
         .order('created_at', { ascending: false })
         .limit(100);
       setProperties(data || []);

@@ -183,7 +183,7 @@ export function useWebsiteProperties() {
         .from('properties')
         .select('id, address, city, neighborhood, rooms, property_size, floor, monthly_rent, property_type, property_images!inner(id)')
         .eq('show_on_website', true)
-        .eq('available', true)
+        .eq('status', 'vacant')
         .order('created_at', { ascending: true });
       if (error) throw error;
       return data;
