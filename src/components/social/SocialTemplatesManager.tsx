@@ -217,7 +217,7 @@ export const SocialTemplatesManager: React.FC = () => {
 
             <div>
               <Label className="text-xs">האשטגים (אופציונלי)</Label>
-              <Input value={hashtags} onChange={e => setHashtags(e.target.value)} placeholder="#נדלן #דירהלהשכרה" dir="ltr" />
+              <HashtagGroupSelector value={hashtags} onChange={setHashtags} />
             </div>
 
             {templateText && (
