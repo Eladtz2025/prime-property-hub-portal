@@ -245,6 +245,7 @@ export const AutoPublishManager: React.FC = () => {
       publish_time: formTime,
       frequency_days: parseInt(formFrequencyDays),
       frequency: parseInt(formFrequencyDays) >= 7 ? 'weekly' : 'daily',
+      property_filter: queueType === 'property_rotation' ? propertyFilter : undefined,
     }, {
       onSuccess: () => {
         resetForm();
