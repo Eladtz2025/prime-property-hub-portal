@@ -4,18 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Send, Clock, Save, Image, X, CalendarDays, Building2 } from 'lucide-react';
+import { Send, Clock, Save, Image, X, CalendarDays, Facebook, Instagram } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreateSocialPost, usePublishPost, useSocialTemplates, useSocialAccounts } from '@/hooks/useSocialPosts';
 import { useToast } from '@/hooks/use-toast';
+import { ConfirmDialog } from './ConfirmDialog';
 
 const PLACEHOLDERS: Record<string, string> = {
   '{address}': 'כתובת',
@@ -48,8 +48,9 @@ export const SocialPostComposer: React.FC = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [properties, setProperties] = useState<any[]>([]);
   const [loadingProperties, setLoadingProperties] = useState(false);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'publish' | 'schedule' | null>(null);
 
-  // Load properties for selection
   useEffect(() => {
     const load = async () => {
       setLoadingProperties(true);
@@ -69,17 +70,11 @@ export const SocialPostComposer: React.FC = () => {
     setSelectedTemplateId(templateId);
     const tmpl = templates?.find(t => t.id === templateId);
     if (!tmpl) return;
-
     let text = tmpl.template_text;
-
-    // If a property is selected, fill placeholders
     if (selectedPropertyId) {
       const prop = properties.find(p => p.id === selectedPropertyId);
-      if (prop) {
-        text = fillPropertyPlaceholders(text, prop);
-      }
+      if (prop) text = fillPropertyPlaceholders(text, prop);
     }
-
     setContentText(text);
     if (tmpl.hashtags) setHashtags(tmpl.hashtags);
   };
@@ -91,7 +86,6 @@ export const SocialPostComposer: React.FC = () => {
         ? `₪${Number(prop.current_market_value).toLocaleString()}`
         : '';
     const typeLabel = prop.property_type === 'sale' ? 'מכירה' : prop.property_type === 'rental' ? 'השכרה' : prop.property_type || '';
-
     return text
       .replace(/{address}/g, prop.address || '')
       .replace(/{price}/g, price)
@@ -108,31 +102,23 @@ export const SocialPostComposer: React.FC = () => {
     setSelectedPropertyId(propId);
     const prop = properties.find(p => p.id === propId);
     if (!prop) return;
-
-    // Auto-fill from property if no template selected
     if (!selectedTemplateId) {
       const price = prop.monthly_rent
         ? `₪${Number(prop.monthly_rent).toLocaleString()}`
         : prop.current_market_value
           ? `₪${Number(prop.current_market_value).toLocaleString()}`
           : '';
-
       const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
       setContentText(
         `🏠 דירה ${typeLabel} ב${prop.city || ''}\n\n📍 ${prop.address || ''}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר\n${prop.floor ? `🏢 קומה ${prop.floor}` : ''}\n\n${prop.description || ''}`
       );
-
-      // Auto hashtags
       const tags = ['#נדלן', '#דירה' + typeLabel.replace('ל', 'ל')];
       if (prop.city) tags.push(`#${prop.city.replace(/\s/g, '')}`);
       if (prop.neighborhood) tags.push(`#${prop.neighborhood.replace(/\s/g, '')}`);
       setHashtags(tags.join(' '));
     } else {
-      // Re-apply template with property data
       applyTemplate(selectedTemplateId);
     }
-
-    // Load property images
     const { data: images } = await supabase
       .from('property_images')
       .select('image_url')
@@ -140,7 +126,6 @@ export const SocialPostComposer: React.FC = () => {
       .eq('show_on_website', true)
       .order('is_main', { ascending: false })
       .limit(10);
-
     if (images && images.length > 0) {
       setImageUrls(images.map(i => i.image_url));
     }
@@ -157,29 +142,49 @@ export const SocialPostComposer: React.FC = () => {
     setImageUrls(imageUrls.filter((_, i) => i !== index));
   };
 
-  const handleSave = async (action: 'draft' | 'schedule' | 'publish') => {
+  const validateBeforeSave = (action: 'draft' | 'schedule' | 'publish'): boolean => {
     if (!contentText.trim()) {
       toast({ title: 'יש להזין טקסט לפוסט', variant: 'destructive' });
-      return;
+      return false;
     }
+    const selectedPlatforms: string[] = [];
+    if (platforms.facebook) selectedPlatforms.push('facebook_page');
+    if (platforms.instagram) selectedPlatforms.push('instagram');
+    if (selectedPlatforms.length === 0) {
+      toast({ title: 'יש לבחור לפחות פלטפורמה אחת', variant: 'destructive' });
+      return false;
+    }
+    // Instagram requires at least one image
+    if (platforms.instagram && imageUrls.length === 0) {
+      toast({ title: 'אינסטגרם מחייב לפחות תמונה אחת', variant: 'destructive' });
+      return false;
+    }
+    if (action === 'schedule' && !scheduleDate) {
+      toast({ title: 'יש לבחור תאריך לתזמון', variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
 
+  const handleActionClick = (action: 'draft' | 'schedule' | 'publish') => {
+    if (!validateBeforeSave(action)) return;
+    if (action === 'publish' || action === 'schedule') {
+      setPendingAction(action);
+      setPublishConfirmOpen(true);
+    } else {
+      executeSave('draft');
+    }
+  };
+
+  const executeSave = async (action: 'draft' | 'schedule' | 'publish') => {
     const selectedPlatforms: string[] = [];
     if (platforms.facebook) selectedPlatforms.push('facebook_page');
     if (platforms.instagram) selectedPlatforms.push('instagram');
 
-    if (selectedPlatforms.length === 0) {
-      toast({ title: 'יש לבחור לפחות פלטפורמה אחת', variant: 'destructive' });
-      return;
-    }
-
     let scheduledAt: string | undefined;
     if (action === 'schedule') {
-      if (!scheduleDate) {
-        toast({ title: 'יש לבחור תאריך לתזמון', variant: 'destructive' });
-        return;
-      }
       const [hours, mins] = scheduleTime.split(':').map(Number);
-      const dt = new Date(scheduleDate);
+      const dt = new Date(scheduleDate!);
       dt.setHours(hours, mins, 0, 0);
       scheduledAt = dt.toISOString();
     }
@@ -191,19 +196,19 @@ export const SocialPostComposer: React.FC = () => {
         content_text: contentText,
         image_urls: imageUrls,
         hashtags,
-        status: action === 'publish' ? 'scheduled' : action === 'schedule' ? 'scheduled' : 'draft',
+        status: action === 'draft' ? 'draft' : 'scheduled',
         scheduled_at: action === 'publish' ? new Date().toISOString() : scheduledAt,
         property_id: selectedPropertyId || undefined,
         template_id: selectedTemplateId || undefined,
       });
 
-      // Publish immediately
       if (action === 'publish' && post?.id) {
         await publishPost.mutateAsync(post.id);
       }
     }
 
-    // Reset form
+    toast({ title: action === 'publish' ? '🚀 הפוסט פורסם בהצלחה!' : action === 'schedule' ? '⏰ הפוסט תוזמן בהצלחה!' : '💾 הטיוטא נשמרה' });
+
     setContentText('');
     setHashtags('');
     setImageUrls([]);
@@ -217,201 +222,266 @@ export const SocialPostComposer: React.FC = () => {
   const fbLimit = 63206;
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">יצירת פוסט חדש</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Source & Template */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs">מקור</Label>
-              <Select value={selectedPropertyId} onValueChange={handleSelectProperty}>
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="בחר נכס (אופציונלי)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="free">פוסט חופשי</SelectItem>
-                  {properties.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.address}, {p.city} — {p.rooms} חד׳
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">תבנית</Label>
-              <Select value={selectedTemplateId} onValueChange={applyTemplate}>
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="בחר תבנית (אופציונלי)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates?.map(t => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Platforms */}
-          <div className="flex items-center gap-4">
-            <Label className="text-xs">פלטפורמה:</Label>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={platforms.facebook}
-                onCheckedChange={c => setPlatforms(p => ({ ...p, facebook: !!c }))}
-                id="fb"
-              />
-              <label htmlFor="fb" className="text-sm cursor-pointer">פייסבוק דף</label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={platforms.instagram}
-                onCheckedChange={c => setPlatforms(p => ({ ...p, instagram: !!c }))}
-                id="ig"
-              />
-              <label htmlFor="ig" className="text-sm cursor-pointer">אינסטגרם</label>
-            </div>
-          </div>
-
-          {/* Text */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <Label className="text-xs">טקסט הפוסט</Label>
-              <span className={cn(
-                "text-[10px]",
-                platforms.instagram && charCount > igLimit ? 'text-destructive' : 'text-muted-foreground'
-              )}>
-                {charCount} / {platforms.instagram ? igLimit : fbLimit}
-              </span>
-            </div>
-            <Textarea
-              value={contentText}
-              onChange={e => setContentText(e.target.value)}
-              placeholder="כתוב את תוכן הפוסט..."
-              className="min-h-[120px] text-sm"
-              dir="rtl"
-            />
-          </div>
-
-          {/* Hashtags */}
-          <div>
-            <Label className="text-xs">האשטגים</Label>
-            <Input
-              value={hashtags}
-              onChange={e => setHashtags(e.target.value)}
-              placeholder="#נדלן #תלאביב #דירהלהשכרה"
-              className="text-sm"
-              dir="ltr"
-            />
-          </div>
-
-          {/* Images */}
-          <div>
-            <Label className="text-xs">תמונות {platforms.instagram && '(עד 10 לקרוסלה)'}</Label>
-            <div className="flex gap-2 mt-1">
-              <Input
-                value={newImageUrl}
-                onChange={e => setNewImageUrl(e.target.value)}
-                placeholder="הזן URL של תמונה"
-                dir="ltr"
-                className="text-sm flex-1"
-              />
-              <Button size="sm" variant="outline" onClick={addImageUrl} disabled={!newImageUrl}>
-                <Image className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-            {imageUrls.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {imageUrls.map((url, i) => (
-                  <div key={i} className="relative group w-16 h-16 rounded-md overflow-hidden border">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => removeImage(i)}
-                      className="absolute top-0 left-0 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        {/* Composer - Left/Main */}
+        <div className="lg:col-span-3 space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <PenIcon />
+                יצירת פוסט חדש
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Source & Template */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs font-medium">מקור</Label>
+                  <Select value={selectedPropertyId} onValueChange={handleSelectProperty}>
+                    <SelectTrigger className="text-sm mt-1">
+                      <SelectValue placeholder="בחר נכס (אופציונלי)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="free">פוסט חופשי</SelectItem>
+                      {properties.map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.address}, {p.city} — {p.rooms} חד׳
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium">תבנית</Label>
+                  <Select value={selectedTemplateId} onValueChange={applyTemplate}>
+                    <SelectTrigger className="text-sm mt-1">
+                      <SelectValue placeholder="בחר תבנית (אופציונלי)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates?.map(t => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Schedule */}
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <Label className="text-xs">תזמון</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-sm">
-                    <CalendarDays className="h-3.5 w-3.5 ml-1" />
-                    {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : 'בחר תאריך'}
+              {/* Platforms */}
+              <div>
+                <Label className="text-xs font-medium mb-2 block">פלטפורמה</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={platforms.facebook ? 'default' : 'outline'}
+                    size="sm"
+                    className={cn("gap-1.5", platforms.facebook && "bg-[#1877F2] hover:bg-[#1877F2]/90")}
+                    onClick={() => setPlatforms(p => ({ ...p, facebook: !p.facebook }))}
+                  >
+                    <Facebook className="h-3.5 w-3.5" />
+                    פייסבוק
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={scheduleDate}
-                    onSelect={setScheduleDate}
-                    className="p-3 pointer-events-auto"
-                    disabled={date => date < new Date()}
+                  <Button
+                    type="button"
+                    variant={platforms.instagram ? 'default' : 'outline'}
+                    size="sm"
+                    className={cn("gap-1.5", platforms.instagram && "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90")}
+                    onClick={() => setPlatforms(p => ({ ...p, instagram: !p.instagram }))}
+                  >
+                    <Instagram className="h-3.5 w-3.5" />
+                    אינסטגרם
+                  </Button>
+                </div>
+              </div>
+
+              {/* Text */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-xs font-medium">טקסט הפוסט</Label>
+                  <span className={cn(
+                    "text-[10px]",
+                    platforms.instagram && charCount > igLimit ? 'text-destructive' : 'text-muted-foreground'
+                  )}>
+                    {charCount} / {platforms.instagram ? igLimit : fbLimit}
+                  </span>
+                </div>
+                <Textarea
+                  value={contentText}
+                  onChange={e => setContentText(e.target.value)}
+                  placeholder="כתוב את תוכן הפוסט..."
+                  className="min-h-[140px] text-sm"
+                  dir="rtl"
+                />
+              </div>
+
+              {/* Hashtags */}
+              <div>
+                <Label className="text-xs font-medium">האשטגים</Label>
+                <Input
+                  value={hashtags}
+                  onChange={e => setHashtags(e.target.value)}
+                  placeholder="#נדלן #תלאביב #דירהלהשכרה"
+                  className="text-sm mt-1"
+                  dir="ltr"
+                />
+              </div>
+
+              {/* Images */}
+              <div>
+                <Label className="text-xs font-medium">
+                  תמונות {platforms.instagram && <span className="text-muted-foreground">(חובה, עד 10 לקרוסלה)</span>}
+                </Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={newImageUrl}
+                    onChange={e => setNewImageUrl(e.target.value)}
+                    placeholder="הזן URL של תמונה"
+                    dir="ltr"
+                    className="text-sm flex-1"
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div>
-              <Input
-                type="time"
-                value={scheduleTime}
-                onChange={e => setScheduleTime(e.target.value)}
-                className="w-28 text-sm"
-                dir="ltr"
-              />
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-wrap gap-2 pt-2 border-t">
-            <Button onClick={() => handleSave('publish')} disabled={createPost.isPending || publishPost.isPending}>
-              <Send className="h-4 w-4 ml-1" />
-              פרסם עכשיו
-            </Button>
-            <Button variant="outline" onClick={() => handleSave('schedule')} disabled={createPost.isPending}>
-              <Clock className="h-4 w-4 ml-1" />
-              תזמן
-            </Button>
-            <Button variant="ghost" onClick={() => handleSave('draft')} disabled={createPost.isPending}>
-              <Save className="h-4 w-4 ml-1" />
-              שמור כטיוטא
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Preview */}
-      {contentText && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">תצוגה מקדימה</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {imageUrls.length > 0 && (
-              <div className="mb-3 rounded-lg overflow-hidden">
-                <img src={imageUrls[0]} alt="" className="w-full max-h-64 object-cover" />
-                {imageUrls.length > 1 && (
-                  <div className="text-[10px] text-muted-foreground mt-1">+{imageUrls.length - 1} תמונות נוספות</div>
+                  <Button size="sm" variant="outline" onClick={addImageUrl} disabled={!newImageUrl}>
+                    <Image className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                {imageUrls.length > 0 && (
+                  <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mt-2">
+                    {imageUrls.map((url, i) => (
+                      <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted">
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => removeImage(i)}
+                          className="absolute top-1 left-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                        {i === 0 && (
+                          <Badge className="absolute bottom-1 right-1 text-[8px] px-1 py-0">ראשית</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-            )}
-            <p className="text-sm whitespace-pre-wrap">{contentText}</p>
-            {hashtags && <p className="text-sm text-primary mt-2" dir="ltr">{hashtags}</p>}
-          </CardContent>
-        </Card>
-      )}
-    </div>
+
+              {/* Schedule */}
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <Label className="text-xs font-medium">תזמון</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-sm mt-1">
+                        <CalendarDays className="h-3.5 w-3.5 ml-1" />
+                        {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : 'בחר תאריך'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={scheduleDate}
+                        onSelect={setScheduleDate}
+                        className="p-3 pointer-events-auto"
+                        disabled={date => date < new Date()}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Input
+                    type="time"
+                    value={scheduleTime}
+                    onChange={e => setScheduleTime(e.target.value)}
+                    className="w-28 text-sm"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-2 pt-3 border-t">
+                <Button onClick={() => handleActionClick('publish')} disabled={createPost.isPending || publishPost.isPending} className="gap-1.5">
+                  <Send className="h-4 w-4" />
+                  פרסם עכשיו
+                </Button>
+                <Button variant="outline" onClick={() => handleActionClick('schedule')} disabled={createPost.isPending} className="gap-1.5">
+                  <Clock className="h-4 w-4" />
+                  תזמן
+                </Button>
+                <Button variant="ghost" onClick={() => handleActionClick('draft')} disabled={createPost.isPending} className="gap-1.5">
+                  <Save className="h-4 w-4" />
+                  שמור כטיוטא
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Preview - Right */}
+        <div className="lg:col-span-2">
+          <Card className="sticky top-4">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-muted-foreground">תצוגה מקדימה</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!contentText && !imageUrls.length ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  <Image className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  <p>התחל לכתוב כדי לראות תצוגה מקדימה</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Platform indicators */}
+                  <div className="flex gap-1.5">
+                    {platforms.facebook && (
+                      <Badge variant="secondary" className="text-[10px] gap-1">
+                        <Facebook className="h-3 w-3" /> פייסבוק
+                      </Badge>
+                    )}
+                    {platforms.instagram && (
+                      <Badge variant="secondary" className="text-[10px] gap-1">
+                        <Instagram className="h-3 w-3" /> אינסטגרם
+                      </Badge>
+                    )}
+                  </div>
+
+                  {imageUrls.length > 0 && (
+                    <div className="rounded-lg overflow-hidden border border-border">
+                      <img src={imageUrls[0]} alt="" className="w-full max-h-48 object-cover" />
+                      {imageUrls.length > 1 && (
+                        <div className="text-[10px] text-muted-foreground px-2 py-1 bg-muted">
+                          +{imageUrls.length - 1} תמונות נוספות
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{contentText}</p>
+                  {hashtags && <p className="text-sm text-primary" dir="ltr">{hashtags}</p>}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={publishConfirmOpen}
+        onOpenChange={setPublishConfirmOpen}
+        title={pendingAction === 'publish' ? 'פרסום פוסט' : 'תזמון פוסט'}
+        description={
+          pendingAction === 'publish'
+            ? 'הפוסט ישלח כעת לפייסבוק/אינסטגרם. האם אתה בטוח?'
+            : `הפוסט יתוזמן ל-${scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : ''} בשעה ${scheduleTime}. האם אתה בטוח?`
+        }
+        confirmLabel={pendingAction === 'publish' ? '🚀 פרסם' : '⏰ תזמן'}
+        onConfirm={() => {
+          setPublishConfirmOpen(false);
+          if (pendingAction) executeSave(pendingAction);
+        }}
+      />
+    </>
   );
 };
+
+const PenIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg>
+);
