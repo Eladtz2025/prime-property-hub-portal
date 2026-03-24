@@ -121,7 +121,11 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     .replace(/{price}/g, property.monthly_rent ? `₪${Number(property.monthly_rent).toLocaleString()}` : '')
     .replace(/{description}/g, property.description || '');
 
-  const hashtags = (queue.hashtags as string) || '';
+  // Append property link
+  const propertyLink = `https://citymarket.co.il/property/${property.id}`;
+  const postTextWithLink = `${postText}\n\n${propertyLink}`;
+
+    const hashtags = (queue.hashtags as string) || '';
   const platforms = (queue.platforms as string[]) || ['facebook_page'];
   const publishTarget = (queue.publish_target as { type: string; group_ids?: string[] }) || { type: 'page' };
   // Determine effective platforms — if target is groups, use facebook_group platform
@@ -142,7 +146,7 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
       .insert({
         platform,
         post_type: 'property_listing',
-        content_text: postText,
+        content_text: postTextWithLink,
         hashtags,
         image_urls: imageUrls,
         status: 'scheduled',

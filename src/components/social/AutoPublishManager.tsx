@@ -689,7 +689,36 @@ export const AutoPublishManager: React.FC = () => {
             {/* Facebook Preview */}
             {(() => {
               let previewText = contentText;
-              let previewImages = imageUrls;
+              let previewImages: string[] = imageUrls;
+              let linkUrl: string | undefined;
+              let linkTitle: string | undefined;
+              let linkDescription: string | undefined;
+              let linkImage: string | undefined;
+
+              const getMainImage = (prop: any): string | undefined => {
+                if (!prop?.property_images?.length) return undefined;
+                const sorted = [...prop.property_images].sort((a: any, b: any) => {
+                  if (a.is_main && !b.is_main) return -1;
+                  if (!a.is_main && b.is_main) return 1;
+                  return (a.order_index || 0) - (b.order_index || 0);
+                });
+                return sorted[0]?.image_url || undefined;
+              };
+
+              const buildLinkCard = (prop: any) => {
+                const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
+                const price = prop.property_type === 'sale'
+                  ? (prop.current_market_value ? `₪${Number(prop.current_market_value).toLocaleString()}` : '')
+                  : (prop.monthly_rent ? `₪${Number(prop.monthly_rent).toLocaleString()}` : '');
+                linkUrl = `https://citymarket.co.il/property/${prop.id}`;
+                linkTitle = `דירה ${typeLabel}: ${prop.address || ''}, ${prop.city || ''}`;
+                const parts = [];
+                if (prop.rooms) parts.push(`${prop.rooms} חדרים`);
+                if (prop.property_size) parts.push(`${prop.property_size} מ"ר`);
+                if (price) parts.push(price);
+                linkDescription = parts.join(' | ');
+                linkImage = getMainImage(prop);
+              };
               
               // In recurring mode, use first matching property as sample
               if (mode === 'recurring' && queueType === 'property_rotation' && properties.length) {
@@ -699,29 +728,15 @@ export const AutoPublishManager: React.FC = () => {
                 const sampleProp = filteredProps[0];
                 if (sampleProp) {
                   previewText = fillPropertyPlaceholders(contentText, sampleProp);
-                  if (sampleProp.property_images?.length) {
-                    const sortedImages = [...sampleProp.property_images]
-                      .sort((a: any, b: any) => {
-                        if (a.is_main && !b.is_main) return -1;
-                        if (!a.is_main && b.is_main) return 1;
-                        return (a.order_index || 0) - (b.order_index || 0);
-                      });
-                    previewImages = sortedImages.map((img: any) => img.image_url).filter(Boolean);
-                  }
+                  buildLinkCard(sampleProp);
                 }
               }
               
-              // In one-time mode, use selected property images
-              if (mode === 'one_time' && selectedPropertyId && properties.length) {
+              // In one-time mode, use selected property
+              if (mode === 'one_time' && selectedPropertyId && selectedPropertyId !== 'free' && properties.length) {
                 const selectedProp = properties.find(p => p.id === selectedPropertyId);
-                if (selectedProp?.property_images?.length && previewImages.length === 0) {
-                  const sortedImages = [...selectedProp.property_images]
-                    .sort((a: any, b: any) => {
-                      if (a.is_main && !b.is_main) return -1;
-                      if (!a.is_main && b.is_main) return 1;
-                      return (a.order_index || 0) - (b.order_index || 0);
-                    });
-                  previewImages = sortedImages.map((img: any) => img.image_url).filter(Boolean);
+                if (selectedProp) {
+                  buildLinkCard(selectedProp);
                 }
               }
               
@@ -729,7 +744,11 @@ export const AutoPublishManager: React.FC = () => {
                 <FacebookPostPreview
                   text={previewText}
                   hashtags={hashtags || undefined}
-                  imageUrls={previewImages.length > 0 ? previewImages : undefined}
+                  imageUrls={!linkImage && previewImages.length > 0 ? previewImages : undefined}
+                  linkUrl={linkUrl}
+                  linkTitle={linkTitle}
+                  linkDescription={linkDescription}
+                  linkImage={linkImage}
                 />
               );
             })()}
