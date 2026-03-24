@@ -1,48 +1,51 @@
 
 
-## שינוי תצוגה מקדימה — מטקסט+תמונות לטקסט+כרטיס לינק (OG Card)
+## 3 סגנונות תבנית מוכנות מראש — ללא מלל ארוך
 
 ### הבעיה
-הפריוויו הנוכחי מציג תמונות כאילו הן מועלות ישירות לפייסבוק. בפועל, הפוסט מכיל **טקסט + לינק לדירה באתר** (`https://citymarket.co.il/property/{id}`), ופייסבוק מייצר אוטומטית כרטיס OG (תמונה + כותרת + תיאור + URL).
+כרגע התבנית כוללת `{description}` שמושך את כל התיאור הארוך של הדירה, מה שיוצר פוסט עמוס מדי. המשתמש רוצה לבחור מתוך 3 סגנונות מוכנים שמייצרים טקסט קצר ואטרקטיבי אוטומטית.
 
-### מה משתנה
+### הפתרון
 
-**`FacebookPostPreview.tsx` — הוספת מצב "Link Card":**
+הוספת 3 תבניות מוכנות מראש (presets) שהמשתמש יכול לבחור מהן בלחיצה. כל תבנית קצרה וממוקדת — **ללא** `{description}`:
 
-במקום grid של תמונות, הפריוויו יציג:
-1. **טקסט הפוסט** (כמו היום)
-2. **האשטגים** (כמו היום)
-3. **כרטיס לינק** (חדש) — מחקה את ה-OG preview של פייסבוק:
-   - תמונה ראשית (full-width, aspect ratio ~1.91:1)
-   - מתחתיה: רקע אפור בהיר עם:
-     - דומיין (`CITYMARKET.CO.IL`)
-     - כותרת הנכס (כמו `דירה להשכרה: הרצל 10, תל אביב`)
-     - תיאור קצר (חדרים, גודל, מחיר)
+**תבנית 1 — "מינימלית":**
+```
+🏠 דירה {property_type}!
 
-Props חדשים: `linkUrl`, `linkTitle`, `linkDescription`, `linkImage` — כשיש `linkUrl`, מוצג כרטיס לינק במקום grid תמונות.
+📍 {address}, {city}
+🛏️ {rooms} חדרים | 📐 {size} מ"ר | 🏢 קומה {floor}
+💰 {price} לחודש
 
-**`AutoPublishManager.tsx` — בניית נתוני הלינק:**
+📞 לפרטים נוספים צרו קשר
+```
 
-בפריוויו, במקום להעביר `imageUrls`, לבנות:
-- `linkUrl`: `https://citymarket.co.il/property/{property_id}`
-- `linkTitle`: `דירה להשכרה: {address}, {city}` (מהנתונים של הנכס)
-- `linkDescription`: `{rooms} חדרים | {size} מ"ר | ₪{price}` 
-- `linkImage`: התמונה הראשית של הנכס
+**תבנית 2 — "שיווקית":**
+```
+✨ הזדמנות! דירת {rooms} חדרים {property_type}
 
-**Edge Function `social-publish` — הוספת לינק לפוסט:**
+📍 {neighborhood}, {city}
+📐 {size} מ"ר | 🏢 קומה {floor}
+💰 רק {price} לחודש
 
-כשמפרסמים פוסט עם `property_id`, להוסיף לטקסט את הלינק לנכס: `\n\nhttps://citymarket.co.il/property/{property_id}`
+⬇️ לחצו על הלינק לפרטים נוספים
+```
 
-כך פייסבוק מייצר אוטומטית את כרטיס ה-OG עם התמונה והכותרת.
+**תבנית 3 — "פשוטה":**
+```
+דירת {rooms} חדרים {property_type} ב{city}
+{address}, {neighborhood}
+{size} מ"ר, קומה {floor}
+{price} לחודש
 
-### קבצים
+לפרטים: 👇
+```
+
+### שינויים טכניים
 
 | קובץ | שינוי |
 |-------|-------|
-| `FacebookPostPreview.tsx` | הוספת מצב Link Card — כרטיס OG עם תמונה, כותרת, תיאור, דומיין |
-| `AutoPublishManager.tsx` | בניית linkUrl/linkTitle/linkDescription/linkImage מנתוני הנכס |
-| `auto-publish/index.ts` | הוספת URL הנכס לסוף טקסט הפוסט |
-| `social-publish/index.ts` | (אופציונלי) הוספת `link` parameter ל-Graph API במקום רק בטקסט |
+| `AutoPublishManager.tsx` | 1. החלפת `DEFAULT_PROPERTY_TEMPLATE` ב-3 presets עם שמות 2. הוספת שורת 3 כפתורי preset (chips) מעל ה-textarea — לחיצה ממלאת את ה-textarea בתבנית הנבחרת 3. המשתמש עדיין יכול לערוך ידנית אחרי הבחירה |
 
-**~4 קבצים, ~60 שורות שינוי.**
+**קובץ אחד, ~30 שורות שינוי.**
 
