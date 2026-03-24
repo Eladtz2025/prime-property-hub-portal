@@ -74,7 +74,7 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
             קנייה
           </button>
         </div>
-        <p className="font-montserrat text-xs md:text-sm tracking-[0.3em] mt-6 animate-fade-in animation-delay-400 font-bold" <p className="font-montserrat text-xs md:text-sm tracking-[0.3em] mt-6 animate-fade-in animation-delay-400 font-bold text-white">>
+        <p className="font-montserrat text-xs md:text-sm tracking-[0.3em] mt-6 animate-fade-in animation-delay-400 font-bold text-white">
           Since 2008
         </p>
       </div>

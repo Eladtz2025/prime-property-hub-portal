@@ -129,8 +129,6 @@ const EnglishHeader = () => {
                 className={`font-montserrat text-2xl md:text-3xl tracking-[0.15em] uppercase transition-all duration-500 hover:opacity-80 ${menuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 style={{
                   transitionDelay: menuOpen ? `${index * 60}ms` : '0ms',
-                }}
-                style={{
                   color: isActive(item.path) ? '#c9a96e' : 'rgba(255,255,255,0.85)',
                   fontWeight: isActive(item.path) ? 600 : 300,
                 }}
