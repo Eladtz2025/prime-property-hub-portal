@@ -62,7 +62,7 @@ export const AutoPublishManager: React.FC = () => {
 
   const openNewDialog = (type: 'property_rotation' | 'article_oneshot') => {
     setEditingId(null);
-    setFormName(type === 'property_rotation' ? 'פרסום דירות יומי' : 'כתבה שבועית');
+    setFormName(type === 'property_rotation' ? 'תבנית דירות' : 'תבנית כתבות');
     setFormType(type);
     setFormTemplate(type === 'property_rotation' ? DEFAULT_PROPERTY_TEMPLATE : '');
     setFormHashtags('');
