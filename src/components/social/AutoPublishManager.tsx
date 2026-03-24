@@ -409,6 +409,13 @@ export const AutoPublishManager: React.FC = () => {
           }
         }}
       />
+
+      {/* Manual publishing */}
+      <Separator className="my-4" />
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-xs font-semibold">פרסום ידני</span>
+      </div>
+      <SocialPostComposer />
     </div>
   );
 };
