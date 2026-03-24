@@ -1,24 +1,43 @@
 
 
-## יישור גובה הכותרת — עברית ואנגלית
+## המרת הניווט להמבורגר — בדסקטופ ובמובייל
 
 ### הבעיה
-שני ה-VideoHero לא תואמים:
-- עברית: `-translate-y-[5%]`, `mb-10`, `font-bold`
-- אנגלית: `-translate-y-[12.5%]`, `mb-6`, ללא `font-bold`
+כרגע בדסקטופ (lg+) מוצגים לינקים בשני צדדי הלוגו. המשתמש רוצה שבמקום הלינקים יהיו אייקוני טלפון + מייל + המבורגר (כמו בתמונות), ולחיצה על ההמבורגר תפתח תפריט full-screen כהה עם הפריטים במרכז.
 
-### התיקון
+### העיצוב (מהתמונות)
 
-לאחד את שניהם לאותם ערכים. נבחר ערך ביניים:
+**Header סגור:**
+```text
+[Logo center]                    [📞] [✉️] [☰]
+```
 
-**`src/components/en/VideoHero.tsx` שורה 52:**
-- שינוי `-translate-y-[12.5%]` ל-`-translate-y-[5%]`
+**Header פתוח — full-screen overlay:**
+```text
+[Logo]                           [📞] [✉️] [✕]
 
-**`src/components/en/VideoHero.tsx` שורה 53:**
-- שינוי `mb-6` ל-`mb-10`
+                    Home          ← active = gold
+                    Curated Listings
+                    Services
+                    About
+                    Insights
+                    Contact
 
-**`src/components/en/VideoHero.tsx` שורה 54:**
-- הוספת `font-bold` ל-h1
+          citymarketlv@gmail.com  Tali: +972...  Elad: +972...
+```
+רקע כהה (`bg-[#0a1628]`), פריטים centered, פונט גדול, active בצבע זהב.
 
-**2 קבצים (רק אנגלית משתנה), 3 שורות.**
+### שינויים
+
+**`src/components/en/Header.tsx`:**
+1. הסרת ה-nav הימני והשמאלי של דסקטופ (`hidden lg:flex`) — כל הלינקים עוברים להמבורגר
+2. בצד ימין של ה-header: אייקון Phone (`tel:+972545503055`), אייקון Mail (`mailto:citymarketlv@gmail.com`), אייקון Menu/X
+3. תפריט פתוח: `fixed inset-0` full-screen overlay כהה עם כל הפריטים במרכז בפונט גדול
+4. בתחתית: שורת קשר (email + טלפונים)
+5. הצבע משתנה לפי scroll (לבן על וידאו, כהה על רקע לבן) — כמו היום
+
+**`src/components/he/Header.tsx`:**
+אותו שינוי בדיוק — אייקוני טלפון/מייל/המבורגר, full-screen overlay כהה עם פריטים RTL.
+
+**2 קבצים, ~80 שורות שינוי בכל אחד.**
 
