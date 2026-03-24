@@ -3,7 +3,7 @@ import { useSafeAreaBottom } from "@/hooks/useSafeAreaBottom";
 
 interface VideoHeroProps {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   videoUrl?: string;
   imageUrl?: string;
 }
