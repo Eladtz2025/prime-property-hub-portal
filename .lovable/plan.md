@@ -1,41 +1,28 @@
 
 
-## תיקון כרטיס סריקות — סיכום כל ריצות היום האחרון
+## תיקון כרטיס בדיקת זמינות — מספרים נכונים
 
-### הבעיה
-שורה 264: `limit(1).maybeSingle()` מחזיר רק ריצה אחת (homeless = 294). צריך לסכום את כל הריצות מאותו יום: 1,651 נמצאו, 71 חדשים.
+### הבעיות
+1. **"99 נבדקו היום"** — נספר מהדאטאבייס (`availability_checked_at >= today`) במקום מהריצה האחרונה. המספר הנכון הוא **100** (מ-`lastAvailRun.properties_checked`).
+2. **"3 ממתינים"** — מציג רק נכסים שה-RPC מחזיר (תור אוטומטי), אבל **לא כולל** נכסים עם `availability_retry_count >= 2` שממתינים לבדיקה ידנית.
+3. חסר מידע על **15 שסומנו כלא פעילים** (`lastAvailRun.inactive_marked`).
 
 ### התיקון
-**`src/components/scout/ChecksDashboard.tsx`** — שינוי query `scan-last-run-jina` (שורות 261-268):
+**`src/components/scout/ChecksDashboard.tsx`**:
 
-1. שליפת הריצה האחרונה כדי לדעת מה התאריך האחרון
-2. שליפת כל הריצות מאותו יום (בלי limit שרירותי — מסננים לפי תאריך)
-3. סיכום `properties_found` ו-`new_properties` מכל הריצות של אותו יום
+1. **secondaryLine** (שורה 544) — במקום לספור מהדאטאבייס, להציג `lastAvailRun.properties_checked`:
+   - `${lastAvailRun?.properties_checked ?? 0} נבדקו` (בלי "היום" — כי הריצה לא בהכרח היום)
 
-**לוגיקה:**
-```javascript
-// שלב 1: מוצא את הריצה האחרונה
-const { data: lastRun } = await supabase.from('scout_runs')
-  .select('started_at').eq('scanner', 'jina')
-  .order('started_at', { ascending: false }).limit(1).maybeSingle();
+2. **insight** (שורה 545) — להציג את מספר הלא-פעילים מהריצה:
+   - `${lastAvailRun?.inactive_marked ?? 0} סומנו לא פעילים`
 
-// שלב 2: שולף את כל הריצות מאותו יום
-const dayStart = startOfDay(lastRun.started_at);
-const dayEnd = endOfDay(lastRun.started_at);
-const { data: runs } = await supabase.from('scout_runs')
-  .select('started_at, completed_at, status, properties_found, new_properties, source')
-  .eq('scanner', 'jina')
-  .gte('started_at', dayStart).lte('started_at', dayEnd);
+3. **primaryValue** (שורה 542) — להוסיף query חדש לספירת נכסים עם `availability_retry_count >= 2` ולחבר אותו ל-`pendingRecheck`:
+   - `pendingRecheck + manualReviewCount` = סה"כ ממתינים (אוטומטי + ידני)
 
-// שלב 3: סיכום
-totalFound = runs.reduce(sum of properties_found)
-totalNew = runs.reduce(sum of new_properties)
-```
+4. **primaryLabel** — לעדכן ל-"ממתינים לבדיקה" (נשאר אותו דבר)
 
-**עדכון ה-ProcessCard (שורות 471-502):**
-- `secondaryLine` → `${totalFound} נמצאו`
-- `insight` → `${totalNew} חדשים`
-- `lastRun` → זמן הריצה האחרונה
-
-שינוי בקובץ אחד, ~20 שורות.
+### שינויים טכניים
+- הוספת query לספירת `availability_retry_count >= 2` ו-`is_active = true`
+- שינוי 3 props ב-ProcessCard של זמינות
+- קובץ אחד, ~10 שורות שינוי
 
