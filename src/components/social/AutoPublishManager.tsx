@@ -35,15 +35,42 @@ const FREQUENCY_OPTIONS = [
   { value: '7', label: 'שבועי' },
 ];
 
-const DEFAULT_PROPERTY_TEMPLATE = `🏠 דירה להשכרה!
+const TEMPLATE_PRESETS = [
+  {
+    id: 'minimal',
+    label: '🎯 מינימלית',
+    text: `🏠 דירה {property_type}!
 
-📍 {address}, {neighborhood}, {city}
+📍 {address}, {city}
 🛏️ {rooms} חדרים | 📐 {size} מ"ר | 🏢 קומה {floor}
-💰 {price} לחודש
+💰 {price}
 
-{description}
+📞 לפרטים נוספים צרו קשר`,
+  },
+  {
+    id: 'marketing',
+    label: '✨ שיווקית',
+    text: `✨ הזדמנות! דירת {rooms} חדרים {property_type}
 
-📞 לפרטים נוספים צרו קשר`;
+📍 {neighborhood}, {city}
+📐 {size} מ"ר | 🏢 קומה {floor}
+💰 רק {price}
+
+⬇️ לחצו על הלינק לפרטים נוספים`,
+  },
+  {
+    id: 'simple',
+    label: '📝 פשוטה',
+    text: `דירת {rooms} חדרים {property_type} ב{city}
+{address}, {neighborhood}
+{size} מ"ר, קומה {floor}
+{price}
+
+לפרטים: 👇`,
+  },
+];
+
+const DEFAULT_PROPERTY_TEMPLATE = TEMPLATE_PRESETS[0].text;
 
 type PublishMode = 'one_time' | 'recurring';
 type QueueType = 'property_rotation' | 'article_oneshot';
