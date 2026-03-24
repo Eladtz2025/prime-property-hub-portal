@@ -257,12 +257,45 @@ export const ChecksDashboard: React.FC = () => {
   });
 
 
-  // Last scan run (Jina)
+  // Last scan run (Jina) — aggregate all runs from the last active day
   const { data: lastScanRunJina } = useQuery({
     queryKey: ['scan-last-run-jina'],
     queryFn: async () => {
-      const { data } = await (supabase.from('scout_runs').select('started_at, completed_at, status, properties_found, new_properties, source') as any).eq('scanner', 'jina').order('started_at', { ascending: false }).limit(1).maybeSingle();
-      return data;
+      // Step 1: find the most recent run to get the date
+      const { data: latestRun } = await (supabase.from('scout_runs')
+        .select('started_at') as any)
+        .eq('scanner', 'jina')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!latestRun) return null;
+
+      // Step 2: get all runs from that same day
+      const lastDate = new Date(latestRun.started_at);
+      const dayStart = new Date(lastDate);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(lastDate);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const { data: runs } = await (supabase.from('scout_runs')
+        .select('started_at, completed_at, status, properties_found, new_properties, source') as any)
+        .eq('scanner', 'jina')
+        .gte('started_at', dayStart.toISOString())
+        .lte('started_at', dayEnd.toISOString())
+        .order('started_at', { ascending: false });
+
+      if (!runs || runs.length === 0) return null;
+
+      // Step 3: aggregate
+      const totalFound = runs.reduce((sum: number, r: any) => sum + (r.properties_found ?? 0), 0);
+      const totalNew = runs.reduce((sum: number, r: any) => sum + (r.new_properties ?? 0), 0);
+      const latestFullRun = runs[0]; // most recent run for status/timing
+
+      return {
+        ...latestFullRun,
+        properties_found: totalFound,
+        new_properties: totalNew,
+      };
     },
     refetchInterval: 10000,
   });
