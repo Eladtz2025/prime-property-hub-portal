@@ -3,7 +3,7 @@ import { useSafeAreaBottom } from "@/hooks/useSafeAreaBottom";
 
 interface VideoHeroProps {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   videoUrl?: string;
   imageUrl?: string;
 }
@@ -58,9 +58,6 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
             Properties
           </p>
         </div>
-        <p className="reliz-subtitle text-white mb-12 max-w-2xl animate-fade-in animation-delay-200">
-          {subtitle}
-        </p>
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400">
@@ -78,7 +75,7 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
           </button>
         </div>
         <p className="font-montserrat text-[10px] md:text-xs text-white/70 tracking-[0.3em] mt-4 animate-fade-in animation-delay-400">
-          Since 2016
+          Since 2008
         </p>
       </div>
 
