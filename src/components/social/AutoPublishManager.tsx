@@ -617,13 +617,9 @@ export const AutoPublishManager: React.FC = () => {
                   <Save className="h-3.5 w-3.5" /> {saveQueue.isPending ? 'שומר...' : editingId ? 'עדכן תבנית' : 'שמור תבנית'}
                 </Button>
               )}
-              <Button size="sm" variant="ghost" onClick={() => { setFormOpen(false); resetForm(); }} className="gap-1.5 h-8 mr-auto">
-                ביטול
-              </Button>
             </div>
           </CardContent>
         </Card>
-      )}
 
       {/* Existing templates */}
       {isLoading && <p className="text-xs text-muted-foreground px-1">טוען...</p>}
