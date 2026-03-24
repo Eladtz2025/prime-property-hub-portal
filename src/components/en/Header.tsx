@@ -116,18 +116,20 @@ const EnglishHeader = () => {
       </header>
 
       {/* Full-screen overlay menu */}
-      {menuOpen && (
-        <div className="fixed inset-0 z-40 bg-[#0a1628] flex flex-col items-center justify-center">
+      <div className={`fixed inset-0 z-40 bg-[#0a1628] flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${menuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           {/* Nav items */}
           <nav className="flex flex-col items-center gap-6 md:gap-8">
-            {navItems.map((item) => (
+            {navItems.map((item, index) => (
               <button
                 key={item.path}
                 onClick={() => {
                   navigate(item.path);
                   setMenuOpen(false);
                 }}
-                className="font-montserrat text-2xl md:text-3xl tracking-[0.15em] uppercase transition-all duration-300 hover:opacity-80"
+                className={`font-montserrat text-2xl md:text-3xl tracking-[0.15em] uppercase transition-all duration-500 hover:opacity-80 ${menuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                style={{
+                  transitionDelay: menuOpen ? `${index * 60}ms` : '0ms',
+                }}
                 style={{
                   color: isActive(item.path) ? '#c9a96e' : 'rgba(255,255,255,0.85)',
                   fontWeight: isActive(item.path) ? 600 : 300,
