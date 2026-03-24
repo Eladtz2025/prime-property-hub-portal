@@ -126,6 +126,8 @@ export const AutoPublishManager: React.FC = () => {
     setFormTime('10:00');
     setQueueType('property_rotation');
     setPropertyFilter('all');
+    setPublishTarget('page');
+    setSelectedGroupIds([]);
   };
 
   const openEditQueue = (queue: Record<string, unknown>) => {
