@@ -16,7 +16,6 @@ Deno.serve(async (req) => {
   );
 
   try {
-    // Get all active queues
     const { data: queues, error: qErr } = await supabase
       .from('auto_publish_queues')
       .select('*')
@@ -33,6 +32,17 @@ Deno.serve(async (req) => {
 
     for (const queue of queues) {
       try {
+        // Check frequency_days — skip if not enough days passed
+        const freqDays = queue.frequency_days || 1;
+        if (queue.last_published_at && freqDays > 1) {
+          const lastPub = new Date(queue.last_published_at);
+          const daysSince = (Date.now() - lastPub.getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSince < freqDays - 0.5) {
+            results.push({ queue: queue.name, skipped: true, reason: `Only ${daysSince.toFixed(1)} days since last publish, need ${freqDays}` });
+            continue;
+          }
+        }
+
         if (queue.queue_type === 'property_rotation') {
           const result = await handlePropertyRotation(supabase, queue);
           results.push({ queue: queue.name, ...result });
@@ -45,7 +55,6 @@ Deno.serve(async (req) => {
         console.error(`Queue ${queue.name} error:`, errMsg);
         results.push({ queue: queue.name, error: errMsg });
 
-        // Log error
         await supabase.from('auto_publish_log').insert({
           queue_id: queue.id,
           status: 'failed',
@@ -68,7 +77,6 @@ Deno.serve(async (req) => {
 });
 
 async function handlePropertyRotation(supabase: ReturnType<typeof createClient>, queue: Record<string, unknown>) {
-  // Get active properties shown on website
   const { data: properties, error: pErr } = await supabase
     .from('properties')
     .select('id, address, city, neighborhood, rooms, property_size, floor, property_type, monthly_rent, description')
@@ -81,13 +89,11 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     return { skipped: true, reason: 'No active properties' };
   }
 
-  // Determine current index (wrap around)
   let currentIndex = (queue.current_index as number) || 0;
   if (currentIndex >= properties.length) currentIndex = 0;
 
   const property = properties[currentIndex];
 
-  // Fetch property images
   const { data: images } = await supabase
     .from('property_images')
     .select('image_url')
@@ -98,7 +104,6 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
 
   const imageUrls = images?.map((img: { image_url: string }) => img.image_url) || [];
 
-  // Build post text from template
   const templateText = (queue.template_text as string) || '{address} - {price}';
   const postText = templateText
     .replace(/{address}/g, property.address || '')
@@ -114,9 +119,7 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
   const hashtags = (queue.hashtags as string) || '';
   const platforms = (queue.platforms as string[]) || ['facebook_page'];
 
-  // Create social_posts and publish for each platform
   for (const platform of platforms) {
-    // Create social post
     const { data: post, error: postErr } = await supabase
       .from('social_posts')
       .insert({
@@ -134,12 +137,10 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
 
     if (postErr) throw postErr;
 
-    // Call social-publish
     const { data: publishResult, error: publishErr } = await supabase.functions.invoke('social-publish', {
       body: { post_id: post.id },
     });
 
-    // Log
     await supabase.from('auto_publish_log').insert({
       queue_id: queue.id,
       property_id: property.id,
@@ -150,7 +151,6 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     });
   }
 
-  // Update queue index
   const nextIndex = (currentIndex + 1) >= properties.length ? 0 : currentIndex + 1;
   await supabase
     .from('auto_publish_queues')
@@ -170,16 +170,14 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
 }
 
 async function handleArticleOneshot(supabase: ReturnType<typeof createClient>, queue: Record<string, unknown>) {
-  // Weekly queue — check if today is the publish day
   const now = new Date();
   const israelDay = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
-  const todayDow = israelDay.getDay(); // 0=Sun..6=Sat
+  const todayDow = israelDay.getDay();
 
   const nextPublishDay = queue.next_publish_day as number | null;
 
-  // If no day set yet, pick a random day this week and save it
   if (nextPublishDay === null || nextPublishDay === undefined) {
-    const randomDay = Math.floor(Math.random() * 5) + 1; // Mon-Fri (1-5)
+    const randomDay = Math.floor(Math.random() * 5) + 1;
     await supabase
       .from('auto_publish_queues')
       .update({ next_publish_day: randomDay })
@@ -187,12 +185,10 @@ async function handleArticleOneshot(supabase: ReturnType<typeof createClient>, q
     return { skipped: true, reason: `Random day set to ${randomDay}, waiting` };
   }
 
-  // Not today
   if (todayDow !== nextPublishDay) {
     return { skipped: true, reason: `Today is ${todayDow}, publish day is ${nextPublishDay}` };
   }
 
-  // Already published today
   if (queue.last_published_at) {
     const lastPublished = new Date(queue.last_published_at as string);
     const lastPubIsrael = new Date(lastPublished.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
@@ -205,7 +201,6 @@ async function handleArticleOneshot(supabase: ReturnType<typeof createClient>, q
     }
   }
 
-  // Get next unpublished article
   const { data: items, error: iErr } = await supabase
     .from('auto_publish_items')
     .select('*')
@@ -216,7 +211,6 @@ async function handleArticleOneshot(supabase: ReturnType<typeof createClient>, q
 
   if (iErr) throw iErr;
   if (!items || items.length === 0) {
-    // All articles published — deactivate
     await supabase
       .from('auto_publish_queues')
       .update({ is_active: false })
@@ -259,13 +253,11 @@ async function handleArticleOneshot(supabase: ReturnType<typeof createClient>, q
     });
   }
 
-  // Mark article as published
   await supabase
     .from('auto_publish_items')
     .update({ is_published: true, published_at: new Date().toISOString() })
     .eq('id', article.id);
 
-  // Pick new random day for next week and update queue
   const nextRandomDay = Math.floor(Math.random() * 5) + 1;
   await supabase
     .from('auto_publish_queues')
