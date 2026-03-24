@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { HashtagGroupSelector } from './HashtagGroupSelector';
 import { useCreateSocialPost, usePublishPost, useSocialTemplates, useSocialAccounts } from '@/hooks/useSocialPosts';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from './ConfirmDialog';

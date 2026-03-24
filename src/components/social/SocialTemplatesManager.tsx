@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Pencil, FileText } from 'lucide-react';
 import { useSocialTemplates, useSaveSocialTemplate, useDeleteSocialTemplate } from '@/hooks/useSocialPosts';
+import { HashtagGroupSelector } from './HashtagGroupSelector';
 import { ConfirmDialog } from './ConfirmDialog';
 
 const PLACEHOLDERS = [
