@@ -542,9 +542,9 @@ export const ChecksDashboard: React.FC = () => {
           status={lastAvailRun?.status === 'running' ? 'running' : lastAvailRun ? 'completed' : 'idle'}
           primaryValue={stats?.pendingRecheck ?? 0}
           primaryLabel="ממתינים לבדיקה"
-          secondaryLine={`${(stats?.checkedToday ?? 0).toLocaleString('he-IL')} נבדקו היום`}
-          insight={(stats?.timeouts ?? 0) > 100 ? 'עלייה ב-timeouts' : (stats?.pendingRecheck ?? 0) === 0 ? 'המערכת נקייה' : 'קצב תקין'}
-          insightType={(stats?.timeouts ?? 0) > 100 ? 'warning' : 'ok'}
+          secondaryLine={`${(lastAvailRun?.properties_checked ?? 0).toLocaleString('he-IL')} נבדקו`}
+          insight={`${lastAvailRun?.inactive_marked ?? 0} סומנו לא פעילים`}
+          insightType={(lastAvailRun?.inactive_marked ?? 0) > 0 ? 'warning' : 'ok'}
           lastRun={formatLastRun(lastAvailRun?.started_at, lastAvailRun?.completed_at)}
           onRun={() => triggerAvailabilityJina.mutate()}
           onStop={() => stopAvailabilityJina.mutate()}
