@@ -146,7 +146,7 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
       .insert({
         platform,
         post_type: 'property_listing',
-        content_text: postText,
+        content_text: postTextWithLink,
         hashtags,
         image_urls: imageUrls,
         status: 'scheduled',
