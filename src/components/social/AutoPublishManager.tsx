@@ -63,7 +63,6 @@ export const AutoPublishManager: React.FC = () => {
   const [logOpen, setLogOpen] = useState(false);
 
   // Unified form state
-  const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [mode, setMode] = useState<PublishMode>('one_time');
   const [queueType, setQueueType] = useState<QueueType>('property_rotation');
@@ -123,12 +122,6 @@ export const AutoPublishManager: React.FC = () => {
     setQueueType('property_rotation');
   };
 
-  const openNew = () => {
-    resetForm();
-    setMode('one_time');
-    setFormOpen(true);
-  };
-
   const openEditQueue = (queue: Record<string, unknown>) => {
     setEditingId(queue.id as string);
     setMode('recurring');
@@ -140,7 +133,6 @@ export const AutoPublishManager: React.FC = () => {
     setPlatforms({ facebook: qPlatforms.includes('facebook_page'), instagram: qPlatforms.includes('instagram') });
     setFormFrequencyDays(String((queue as any).frequency_days || 1));
     setFormTime(queue.publish_time as string || '10:00');
-    setFormOpen(true);
   };
 
   // Property selection for one-time posts
@@ -251,7 +243,6 @@ export const AutoPublishManager: React.FC = () => {
       frequency: parseInt(formFrequencyDays) >= 7 ? 'weekly' : 'daily',
     }, {
       onSuccess: () => {
-        setFormOpen(false);
         resetForm();
       },
     });
@@ -315,7 +306,6 @@ export const AutoPublishManager: React.FC = () => {
     }
     toast({ title: action === 'publish' ? '🚀 הפוסט פורסם בהצלחה!' : action === 'schedule' ? '⏰ הפוסט תוזמן בהצלחה!' : '💾 הטיוטא נשמרה' });
     resetForm();
-    setFormOpen(false);
   };
 
   // Queue helpers
@@ -367,17 +357,10 @@ export const AutoPublishManager: React.FC = () => {
             </Badge>
           )}
         </div>
-        {!formOpen && (
-          <Button size="sm" variant="default" className="text-[11px] h-7 gap-1.5 px-3" onClick={openNew}>
-            <Plus className="h-3 w-3" />
-            פוסט / תבנית חדשה
-          </Button>
-        )}
       </div>
 
-      {/* Inline Form */}
-      {formOpen && (
-        <Card className="border-primary/20">
+      {/* Inline Form — always visible */}
+      <Card className="border-primary/20">
           <CardContent className="pt-4 space-y-4">
             {/* Mode Toggle */}
             <div className="flex gap-2">
@@ -634,18 +617,14 @@ export const AutoPublishManager: React.FC = () => {
                   <Save className="h-3.5 w-3.5" /> {saveQueue.isPending ? 'שומר...' : editingId ? 'עדכן תבנית' : 'שמור תבנית'}
                 </Button>
               )}
-              <Button size="sm" variant="ghost" onClick={() => { setFormOpen(false); resetForm(); }} className="gap-1.5 h-8 mr-auto">
-                ביטול
-              </Button>
             </div>
           </CardContent>
         </Card>
-      )}
 
       {/* Existing templates */}
       {isLoading && <p className="text-xs text-muted-foreground px-1">טוען...</p>}
 
-      {queues?.length === 0 && !isLoading && !formOpen && (
+      {queues?.length === 0 && !isLoading && (
         <Card className="border-dashed">
           <CardContent className="p-4 text-center">
             <Bot className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
