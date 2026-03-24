@@ -1,51 +1,24 @@
 
 
-## 3 סגנונות תבנית מוכנות מראש — ללא מלל ארוך
+## עדכון Hero — הסרת subtitle, שינוי שנה, ואנגלית נקייה
 
-### הבעיה
-כרגע התבנית כוללת `{description}` שמושך את כל התיאור הארוך של הדירה, מה שיוצר פוסט עמוס מדי. המשתמש רוצה לבחור מתוך 3 סגנונות מוכנים שמייצרים טקסט קצר ואטרקטיבי אוטומטית.
+### שינויים
 
-### הפתרון
+**1. עברית — `src/components/he/VideoHero.tsx`:**
+- הסרת שורת ה-subtitle (שורה 53-55) — "מומחיות מקומית. שירות אישי. תהליך ברור."
+- שינוי "Since 2016" ל-"Since 2008" (שורה 81)
 
-הוספת 3 תבניות מוכנות מראש (presets) שהמשתמש יכול לבחור מהן בלחיצה. כל תבנית קצרה וממוקדת — **ללא** `{description}`:
+**2. אנגלית — `src/components/en/VideoHero.tsx`:**
+- הסרת שורת ה-subtitle (שורה 61-63) — "Local expertise. Personal service. Clear process."
+- שינוי "Since 2016" ל-"Since 2008" (שורה 81)
 
-**תבנית 1 — "מינימלית":**
-```
-🏠 דירה {property_type}!
+**3. דפי Index — הסרת prop `subtitle`:**
+- `src/pages/Index.tsx` שורה 131: הסרת `subtitle="מומחיות מקומית..."` מ-VideoHero
+- `src/pages/en/Index.tsx` שורה 121: הסרת `subtitle="Local expertise..."` מ-VideoHero
+- `src/pages/TestHeroPage.tsx`: הסרת subtitle
 
-📍 {address}, {city}
-🛏️ {rooms} חדרים | 📐 {size} מ"ר | 🏢 קומה {floor}
-💰 {price} לחודש
+**4. Interface — הפיכת subtitle לאופציונלי:**
+- בשני ה-VideoHero: `subtitle?: string` (כבר אופציונלי או שינוי קל)
 
-📞 לפרטים נוספים צרו קשר
-```
-
-**תבנית 2 — "שיווקית":**
-```
-✨ הזדמנות! דירת {rooms} חדרים {property_type}
-
-📍 {neighborhood}, {city}
-📐 {size} מ"ר | 🏢 קומה {floor}
-💰 רק {price} לחודש
-
-⬇️ לחצו על הלינק לפרטים נוספים
-```
-
-**תבנית 3 — "פשוטה":**
-```
-דירת {rooms} חדרים {property_type} ב{city}
-{address}, {neighborhood}
-{size} מ"ר, קומה {floor}
-{price} לחודש
-
-לפרטים: 👇
-```
-
-### שינויים טכניים
-
-| קובץ | שינוי |
-|-------|-------|
-| `AutoPublishManager.tsx` | 1. החלפת `DEFAULT_PROPERTY_TEMPLATE` ב-3 presets עם שמות 2. הוספת שורת 3 כפתורי preset (chips) מעל ה-textarea — לחיצה ממלאת את ה-textarea בתבנית הנבחרת 3. המשתמש עדיין יכול לערוך ידנית אחרי הבחירה |
-
-**קובץ אחד, ~30 שורות שינוי.**
+**5 קבצים, שינויים קטנים בכל אחד.**
 
