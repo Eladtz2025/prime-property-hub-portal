@@ -1,21 +1,29 @@
 
 
-## סינון נכסים — רק נכסים עם תמונות (כמו באתר הציבורי)
+## תיקון סינון נכסים — רק נכסים פנויים (vacant)
 
 ### הבעיה
-הקוד כבר מסנן לפי `available=true` ו-`show_on_website=true`, אבל בדאטאבייס יש **375 נכסים** שעומדים בתנאי הסינון האלה — רובם נכסים ריקים/טסט (כתובת "רחוב" בלבד, ללא תמונות).
+השאילתה מסננת לפי `available = true`, אבל שדה זה הוא `true` גם לנכסים מושכרים (occupied). בפועל:
+- השכרה: 2 פנויים + 6 מושכרים (כולם `available=true`) → מציג 8 במקום 2
+- מכירה: 7 פנויים → תקין
 
-האתר הציבורי (`usePublicProperties`) משתמש ב-`property_images!inner` — כלומר מציג רק נכסים **שיש להם תמונות**. כך מוצגים רק **21 נכסים אקטואליים**.
-
-הפרסום שואב מ-query פשוט בלי join על תמונות — ולכן מציג את כל ה-375.
+נכס "אקטואלי" לפרסום = `status = 'vacant'` (פנוי), לא סתם `available`.
 
 ### התיקון
 
-**`AutoPublishManager.tsx`** — שינוי השאילתה בשורות 97-103:
-- הוספת `property_images!inner(id)` ל-select כדי לכלול רק נכסים שיש להם תמונה אחת לפחות
-- זה יסנן אוטומטית את כל הנכסים ה"ריקים"
+**`AutoPublishManager.tsx` שורה 100:**
+```
+.eq('available', true)        // ← להסיר
+.eq('show_on_website', true)
+```
+להחליף ב:
+```
+.eq('show_on_website', true)
+.eq('status', 'vacant')
+```
 
-**`useAutoPublish.ts`** — אותו שינוי ב-`useWebsiteProperties` (שמשמשת לתצוגת progress בתבניות אוטומטיות)
+**`useAutoPublish.ts` — `useWebsiteProperties`:**
+אותו שינוי — החלפת `available = true` ב-`status = 'vacant'`.
 
-**2 קבצים, שינוי query בלבד.**
+**2 קבצים, שינוי שורה אחת בכל אחד.**
 
