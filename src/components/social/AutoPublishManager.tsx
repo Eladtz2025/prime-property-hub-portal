@@ -357,17 +357,10 @@ export const AutoPublishManager: React.FC = () => {
             </Badge>
           )}
         </div>
-        {!formOpen && (
-          <Button size="sm" variant="default" className="text-[11px] h-7 gap-1.5 px-3" onClick={openNew}>
-            <Plus className="h-3 w-3" />
-            פוסט / תבנית חדשה
-          </Button>
-        )}
       </div>
 
-      {/* Inline Form */}
-      {formOpen && (
-        <Card className="border-primary/20">
+      {/* Inline Form — always visible */}
+      <Card className="border-primary/20">
           <CardContent className="pt-4 space-y-4">
             {/* Mode Toggle */}
             <div className="flex gap-2">
