@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, PenSquare, CalendarDays, Wrench, CheckCircle, Clock, FileText, Send, AlertTriangle } from 'lucide-react';
+import { Settings, CheckCircle, Clock, FileText, Send, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
