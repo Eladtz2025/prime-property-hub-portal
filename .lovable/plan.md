@@ -1,43 +1,22 @@
 
 
-## המרת הניווט להמבורגר — בדסקטופ ובמובייל
+## שינוי צבע "Since 2008" + אנימציית תפריט עדינה
 
-### הבעיה
-כרגע בדסקטופ (lg+) מוצגים לינקים בשני צדדי הלוגו. המשתמש רוצה שבמקום הלינקים יהיו אייקוני טלפון + מייל + המבורגר (כמו בתמונות), ולחיצה על ההמבורגר תפתח תפריט full-screen כהה עם הפריטים במרכז.
+### שינוי 1 — צבע "Since 2008" בעברית
 
-### העיצוב (מהתמונות)
+**`src/components/he/VideoHero.tsx` שורה 77:**
+- שינוי `color: 'hsl(38, 60%, 45%)'` ל-`color: '#ffffff'`
 
-**Header סגור:**
-```text
-[Logo center]                    [📞] [✉️] [☰]
-```
+### שינוי 2 — אנימציית פתיחה עדינה לתפריט (שתי השפות)
 
-**Header פתוח — full-screen overlay:**
-```text
-[Logo]                           [📞] [✉️] [✕]
+כרגע התפריט מופיע/נעלם בצורה חדה (`{menuOpen && ...}`). נוסיף transition עדין:
+- במקום render מותנה, ה-overlay תמיד מרונדר אבל עם `opacity-0 pointer-events-none` כשסגור ו-`opacity-100` כשפתוח
+- הוספת `transition-opacity duration-500 ease-in-out`
+- פריטי הניווט יקבלו `translate-y` קטן שמתאפס בפתיחה (slide-up עדין)
 
-                    Home          ← active = gold
-                    Curated Listings
-                    Services
-                    About
-                    Insights
-                    Contact
+**`src/components/en/Header.tsx`** + **`src/components/he/Header.tsx`:**
+- שינוי ה-overlay מ-conditional render ל-always-render עם classes דינמיים
+- הוספת transition classes
 
-          citymarketlv@gmail.com  Tali: +972...  Elad: +972...
-```
-רקע כהה (`bg-[#0a1628]`), פריטים centered, פונט גדול, active בצבע זהב.
-
-### שינויים
-
-**`src/components/en/Header.tsx`:**
-1. הסרת ה-nav הימני והשמאלי של דסקטופ (`hidden lg:flex`) — כל הלינקים עוברים להמבורגר
-2. בצד ימין של ה-header: אייקון Phone (`tel:+972545503055`), אייקון Mail (`mailto:citymarketlv@gmail.com`), אייקון Menu/X
-3. תפריט פתוח: `fixed inset-0` full-screen overlay כהה עם כל הפריטים במרכז בפונט גדול
-4. בתחתית: שורת קשר (email + טלפונים)
-5. הצבע משתנה לפי scroll (לבן על וידאו, כהה על רקע לבן) — כמו היום
-
-**`src/components/he/Header.tsx`:**
-אותו שינוי בדיוק — אייקוני טלפון/מייל/המבורגר, full-screen overlay כהה עם פריטים RTL.
-
-**2 קבצים, ~80 שורות שינוי בכל אחד.**
+**3 קבצים, ~10 שורות שינוי.**
 
