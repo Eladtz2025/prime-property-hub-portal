@@ -172,10 +172,10 @@ export const AutoPublishManager: React.FC = () => {
       
       {queues?.length === 0 && !isLoading && (
         <Card className="border-dashed">
-          <CardContent className="p-6 text-center">
-            <Bot className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">עוד אין תורות פרסום</p>
-            <p className="text-xs text-muted-foreground mt-1">צור תור חדש כדי להתחיל לפרסם אוטומטית</p>
+          <CardContent className="p-4 text-center">
+            <Bot className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
+            <p className="text-xs text-muted-foreground">עוד אין תבניות פרסום</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">צור תבנית חדשה כדי להתחיל לפרסם אוטומטית</p>
           </CardContent>
         </Card>
       )}
