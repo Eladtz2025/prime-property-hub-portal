@@ -142,6 +142,9 @@ export const AutoPublishManager: React.FC = () => {
     setFormFrequencyDays(String((queue as any).frequency_days || 1));
     setFormTime(queue.publish_time as string || '10:00');
     setPropertyFilter(((queue as any).property_filter as 'all' | 'rental' | 'sale') || 'all');
+    const target = (queue as any).publish_target as { type: string; group_ids?: string[] } | null;
+    setPublishTarget((target?.type as 'page' | 'groups') || 'page');
+    setSelectedGroupIds(target?.group_ids || []);
   };
 
   // Property selection for one-time posts
