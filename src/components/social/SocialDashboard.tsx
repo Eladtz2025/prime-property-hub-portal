@@ -85,32 +85,9 @@ export const SocialDashboard: React.FC = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue={hasConnectedAccount ? 'compose' : 'tools'} className="w-full" dir="rtl">
-        <TabsList className="grid w-full grid-cols-3 text-xs">
-          <TabsTrigger value="compose" className="flex items-center gap-1.5">
-            <PenSquare className="h-3.5 w-3.5" />
-            פוסט חדש
-          </TabsTrigger>
-          <TabsTrigger value="posts" className="flex items-center gap-1.5">
-            <CalendarDays className="h-3.5 w-3.5" />
-            היסטוריה
-          </TabsTrigger>
-          <TabsTrigger value="tools" className="flex items-center gap-1.5">
-            <Wrench className="h-3.5 w-3.5" />
-            כלים
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="compose" className="mt-3">
-          <SocialPostComposer />
-        </TabsContent>
-        <TabsContent value="posts" className="mt-3">
-          <SocialPostsList />
-        </TabsContent>
-        <TabsContent value="tools" className="mt-3">
-          <SocialToolsPanel />
-        </TabsContent>
-      </Tabs>
+      <SocialPostComposer />
+      <SocialPostsList />
+      <SocialToolsPanel />
 
       {/* Settings Sheet */}
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
