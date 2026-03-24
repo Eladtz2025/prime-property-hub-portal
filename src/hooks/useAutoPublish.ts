@@ -31,6 +31,7 @@ export function useSaveAutoPublishQueue() {
       frequency?: string;
       frequency_days?: number;
       is_active?: boolean;
+      property_filter?: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');

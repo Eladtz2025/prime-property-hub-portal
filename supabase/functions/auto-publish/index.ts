@@ -77,12 +77,17 @@ Deno.serve(async (req) => {
 });
 
 async function handlePropertyRotation(supabase: ReturnType<typeof createClient>, queue: Record<string, unknown>) {
-  const { data: properties, error: pErr } = await supabase
+  const propertyFilter = (queue.property_filter as string) || 'all';
+  let q = supabase
     .from('properties')
     .select('id, address, city, neighborhood, rooms, property_size, floor, property_type, monthly_rent, description')
     .eq('show_on_website', true)
-    .eq('available', true)
-    .order('created_at', { ascending: true });
+    .eq('status', 'vacant');
+  
+  if (propertyFilter === 'rental') q = q.eq('property_type', 'rental');
+  else if (propertyFilter === 'sale') q = q.eq('property_type', 'sale');
+
+  const { data: properties, error: pErr } = await q.order('created_at', { ascending: true });
 
   if (pErr) throw pErr;
   if (!properties || properties.length === 0) {
