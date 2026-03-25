@@ -153,11 +153,12 @@ const Rentals = () => {
   ];
 
   return (
-    <div className="min-h-screen english-luxury" dir="rtl">
+    <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
         <html lang="he" dir="rtl" />
         <title>דירות להשכרה בתל אביב | CITY MARKET Properties - נדל"ן בשכונות המובחרות</title>
         <meta name="description" content="מחפשים דירה להשכרה בתל אביב? מגוון דירות להשכרה ברוטשילד, נווה צדק, פלורנטין והצפון הישן. ליווי מקצועי ושירות אישי." />
+        <meta property="og:image" content="https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/rentals" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/rentals" />

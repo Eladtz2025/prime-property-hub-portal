@@ -58,11 +58,12 @@ const Management = () => {
   ];
 
   return (
-    <div className="min-h-screen english-luxury" dir="rtl">
+    <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
         <html lang="he" dir="rtl" />
         <title>ניהול נכסים בתל אביב | CITY MARKET Properties - ניהול דירות מקצועי ואמין</title>
         <meta name="description" content="שירותי ניהול נכסים מקצועי בתל אביב. גביה, תחזוקה, בדיקת דיירים וניהול שוטף. שקט נפשי לבעלי נכסים עם תשואות עקביות." />
+        <meta property="og:image" content="https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/management" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/management" />

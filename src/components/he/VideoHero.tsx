@@ -61,13 +61,13 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400" dir="rtl">
           <button
-            onClick={() => navigate("/rentals")}
+            onClick={() => navigate("/he/rentals")}
             className="px-14 py-5 bg-white/10 backdrop-blur-sm border border-white/80 text-white font-montserrat text-base tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
           >
             השכרה
           </button>
           <button
-            onClick={() => navigate("/sales")}
+            onClick={() => navigate("/he/sales")}
             className="px-14 py-5 bg-white/10 backdrop-blur-sm border border-white/80 text-white font-montserrat text-base tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-foreground"
           >
             קנייה

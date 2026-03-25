@@ -106,6 +106,7 @@ const EnglishIndex = () => {
         <meta property="og:title" content="CITY MARKET Properties - Real Estate in Tel Aviv" />
         <meta property="og:description" content="Experts in real estate brokerage, rentals, sales and property management in Tel Aviv" />
         <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en" />
       </Helmet>
       <HreflangMeta currentLang="en" currentPath="/en" />

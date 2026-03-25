@@ -69,6 +69,7 @@ const Contact = () => {
         <meta name="description" content="צרו קשר עם CITY MARKET Properties. מומחים בתיווך נדל&quot;ן, השכרות, מכירות וניהול נכסים בתל אביב. טלפון: 054-228-4477" />
         <meta property="og:title" content="צור קשר - CITY MARKET Properties" />
         <meta property="og:description" content="צרו קשר עם מומחי הנדל&quot;ן שלנו בתל אביב" />
+        <meta property="og:image" content="https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/contact" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/contact" />
