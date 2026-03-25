@@ -84,7 +84,7 @@ const HebrewInsights = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <Helmet>
         <title>Insights | תובנות נדל"ן - City Market Properties</title>
-        <meta name="description" content="כתבות, מדריכים וטיפים מעולם הנדל"ן בתל אביב. תובנות מקצועיות מצוות City Market Properties." />
+        <meta name="description" content='כתבות, מדריכים וטיפים מעולם הנדל"ן בתל אביב. תובנות מקצועיות מצוות City Market Properties.' />
         <meta property="og:title" content="Insights | תובנות נדל״ן - City Market Properties" />
         <meta property="og:image" content="/images/city-market-icon.png" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/insights" />
