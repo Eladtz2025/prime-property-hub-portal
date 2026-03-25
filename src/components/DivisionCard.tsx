@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Building, TrendingUp, Users2, ArrowLeft } from 'lucide-react';
+import { Building, TrendingUp, Users2 } from 'lucide-react';
 
 interface DivisionCardProps {
   title: string;
