@@ -1,27 +1,15 @@
 
 
-## הסרת overlay מהתמונה ב-Hero
-
-### מה קיים
-בשני הקבצים (`src/components/en/VideoHero.tsx` ו-`src/components/he/VideoHero.tsx`) יש שורה:
-```html
-<div className="absolute inset-0 bg-black/30" />
-```
-זו שכבה שחורה עם 30% אטימות שמכהה את התמונה.
-
-### אפשרויות
-
-1. **הסרה מלאה** — התמונה תיראה בדיוק כמו המקור, אבל הטקסט הלבן עלול להיות פחות קריא
-2. **הפחתה ל-10-15%** — כמעט שקוף, שומר קריאות מינימלית
-3. **החלפה ב-gradient** — רק בתחתית/מרכז שבו הטקסט, שאר התמונה נקייה
-
-### המלצה
-אם רוצים לראות את התמונה המקורית בדיוק — הסרה מלאה של השורה בשני הקבצים. אם הטקסט ייראה לא קריא, אפשר להוסיף `text-shadow` לכותרת במקום.
+## שינוי צבע הכוכבים לצהוב ב-GoogleReviews
 
 ### שינוי
-**`src/components/en/VideoHero.tsx`** + **`src/components/he/VideoHero.tsx`:**
-- הסרת שורה 49: `<div className="absolute inset-0 bg-black/30" />`
-- הוספת `style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}` ל-div של התוכן — כדי שהטקסט עדיין ייקרא
 
-**2 קבצים, שורה אחת שינוי בכל אחד.**
+**`src/components/GoogleReviews.tsx`:**
+
+כרגע הכוכבים משתמשים ב-`fill-secondary text-secondary`. צריך להחליף לצהוב:
+
+1. **שורה 80** (כוכבי הכותרת): `fill-secondary text-secondary` → `fill-yellow-400 text-yellow-400`
+2. **שורה 111** (כוכבים בכרטיסים): `fill-secondary text-secondary` → `fill-yellow-400 text-yellow-400`
+
+**קובץ אחד, 2 שורות.**
 
