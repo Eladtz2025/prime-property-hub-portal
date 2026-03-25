@@ -1421,6 +1421,63 @@ export type Database = {
         }
         Relationships: []
       }
+      insights: {
+        Row: {
+          category: string | null
+          content_en: string | null
+          content_he: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          image_url: string | null
+          is_published: boolean | null
+          published_at: string | null
+          sort_order: number | null
+          summary_en: string | null
+          summary_he: string | null
+          title_en: string | null
+          title_he: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          content_en?: string | null
+          content_he?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean | null
+          published_at?: string | null
+          sort_order?: number | null
+          summary_en?: string | null
+          summary_he?: string | null
+          title_en?: string | null
+          title_he?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          content_en?: string | null
+          content_he?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean | null
+          published_at?: string | null
+          sort_order?: number | null
+          summary_en?: string | null
+          summary_he?: string | null
+          title_en?: string | null
+          title_he?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       lease_expiry_alerts: {
         Row: {
           created_at: string
