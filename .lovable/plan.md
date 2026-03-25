@@ -1,12 +1,22 @@
 
 
-## הקטנת גודל הכותרת בכרטיסי החטיבות
+## הסרת תת-כותרת חטיבות + הוספת פס זהב לכרטיסי שכונות
 
-### שינוי
+### שינויים
 
-**`src/components/DivisionCard.tsx` + `src/components/en/DivisionCard.tsx`:**
+**1. `src/pages/Index.tsx` (עברית) — שורות 161-165:**
+הסרת ה-`<p>` עם "מכירות • השכרות • ניהול נכסים / הכול במקום אחד"
 
-כותרת: `text-4xl md:text-5xl` → `text-2xl md:text-3xl` + `tracking-[0.15em]` (letter-spacing רחב יותר לתחושה פרימיום)
+**2. `src/pages/en/Index.tsx` (אנגלית):**
+בדיקה אם יש תת-כותרת דומה תחת "Our Divisions" — אם כן, הסרה גם שם.
 
-**2 קבצים, שורה אחת בכל אחד.**
+**3. כרטיסי שכונות — הוספת פס זהב (שני הקבצים):**
+
+בשני הדפים (`Index.tsx` HE + EN), כרטיסי השכונות (שורות ~193-196) כרגע מציגים רק כותרת. נוסיף מתחת לכותרת את אותו קו זהב שקיים בכרטיסי החטיבות:
+
+```html
+<div className="w-12 h-px bg-secondary/50 mt-4 transition-all duration-500 group-hover:w-20 group-hover:bg-secondary/80" />
+```
+
+**4 נקודות שינוי ב-2 קבצים.**
 
