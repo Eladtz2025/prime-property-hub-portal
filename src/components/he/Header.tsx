@@ -38,6 +38,7 @@ const HebrewHeader = () => {
     { label: "ניהול נכסים", path: "/he/management" },
     { label: "בניינים חדשים", path: "/he/new-developments" },
     { label: "שכונות", path: "/he/neighborhoods" },
+    { label: "Insights", path: "/he/insights" },
     { label: "קצת עלינו", path: "/he/about" },
     { label: "צור קשר", path: "/he/contact" },
   ];
