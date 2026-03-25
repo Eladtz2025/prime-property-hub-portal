@@ -183,10 +183,10 @@ Come explore with us the colorful mosaic of Tel Aviv.
               navigate(`/en/neighborhoods/${neighborhood.id}`);
             }
           }}>
-                <img src={neighborhood.image} alt={`${neighborhood.name} neighborhood - Tel Aviv neighborhoods guide`} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" decoding="async" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                <div className="absolute inset-0 flex flex-col items-center justify-end p-8">
-                  <h3 className="font-playfair text-3xl font-normal text-white tracking-wide">
+                <img src={neighborhood.image} alt={`${neighborhood.name} neighborhood - Tel Aviv neighborhoods guide`} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" decoding="async" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent transition-all duration-500 group-hover:from-black/60" />
+                <div className="absolute inset-0 flex flex-col items-center justify-end pb-12 px-6">
+                  <h3 className="font-playfair text-2xl md:text-3xl font-normal text-white tracking-[0.15em] transition-transform duration-500 group-hover:-translate-y-1">
                     {neighborhood.name}
                   </h3>
                   <div className="w-12 h-px bg-secondary/50 mt-4 transition-all duration-500 group-hover:w-20 group-hover:bg-secondary/80" />
