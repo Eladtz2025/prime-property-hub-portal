@@ -28,9 +28,9 @@ export const AuthTestHelper: React.FC = () => {
               profile.role === 'property_owner' ? 'secondary' :
               'outline'
             }>
-              {profile.role === 'super_admin' && 'מנהל על'}
+              {profile.role === 'super_admin' && 'מנהל עליון'}
               {profile.role === 'admin' && 'מנהל'}
-              {profile.role === 'manager' && 'מנהל נכסים'}
+              {profile.role === 'manager' && 'מנהל תיקים'}
               {profile.role === 'property_owner' && 'בעל נכס'}
               {profile.role === 'viewer' && 'צופה'}
             </Badge>

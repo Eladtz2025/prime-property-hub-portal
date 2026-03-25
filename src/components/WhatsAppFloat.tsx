@@ -50,14 +50,16 @@ const WhatsAppFloat = () => {
     }, 0);
   };
 
-  // Hide on property detail pages, admin pages, brokerage form pages, and pitch deck pages
-  const isPropertyDetailPage = location.pathname.includes('/property/');
-  const isAdminPage = location.pathname.startsWith('/admin-dashboard');
-  const isBrokerageFormPage = location.pathname.startsWith('/brokerage-form');
-  const isOfferLuxuryPage = location.pathname.startsWith('/offer-luxury');
-  const isOfferPage = location.pathname.startsWith('/offer/');
-  const isProfessionalsPage = location.pathname.startsWith('/professionals/shared');
-  if (isPropertyDetailPage || isAdminPage || isBrokerageFormPage || isOfferLuxuryPage || isOfferPage || isProfessionalsPage) return null;
+  // Hide on property detail pages, admin pages, form pages, and pitch deck pages
+  const hiddenPrefixes = [
+    '/property/', '/admin-dashboard', '/brokerage-form', '/offer-luxury',
+    '/offer/', '/professionals/shared', '/login', '/memorandum-form',
+    '/exclusivity-form', '/broker-sharing-form', '/sale-memorandum-form',
+    '/client-intake', '/owner-invitation',
+  ];
+  const shouldHide = location.pathname.includes('/property/') || 
+    hiddenPrefixes.some(prefix => location.pathname.startsWith(prefix));
+  if (shouldHide) return null;
 
   return (
     <button

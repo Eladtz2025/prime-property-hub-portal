@@ -86,6 +86,7 @@ const DynamicPresentationExclusivityForm = React.lazy(() => import('./pages/Dyna
 const PitchDeckBuilder = React.lazy(() => import('./pages/PitchDeckBuilder'));
 const DynamicPitchDeckView = React.lazy(() => import('./pages/DynamicPitchDeckView'));
 const TestHeroPage = React.lazy(() => import('./pages/TestHeroPage'));
+const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // Loading fallback component
@@ -106,6 +107,7 @@ const AppContent: React.FC = () => {
         <Routes>
           {/* Auth callback route - needs to be outside authentication check */}
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/login" element={<LoginScreen />} />
           {/* Owner invitation route - accessible without authentication */}
           <Route path="/owner-invitation" element={<OwnerInvitationPage />} />
@@ -164,7 +166,7 @@ const AppContent: React.FC = () => {
           <Route path="/neighborhoods/dizengoff" element={<Navigate to="/he/neighborhoods/dizengoff" replace />} />
           <Route path="/neighborhoods/old-north" element={<Navigate to="/he/neighborhoods/old-north" replace />} />
           <Route path="/new-developments" element={<Navigate to="/he/new-developments" replace />} />
-          <Route path="/property/:id" element={<Navigate to="/he/property/:id" replace />} />
+          <Route path="/property/:id" element={<RedirectWithParams to="/he/property/:id" />} />
           
           {/* Hebrew Routes with /he/ prefix */}
           <Route path="/he" element={<Index />} />
@@ -249,8 +251,10 @@ const AppContent: React.FC = () => {
               <Route 
                 path="/admin-dashboard/settings" 
                 element={
-                  <Layout onLogout={signOut}>
-                    <Settings />
+              <Layout onLogout={signOut}>
+                    <ProtectedRoute requiredRole="viewer">
+                      <Settings />
+                    </ProtectedRoute>
                   </Layout>
                 } 
               />
@@ -416,8 +420,8 @@ const AppContent: React.FC = () => {
                   </Layout>
                 } 
               />
-              
-              
+
+
               
               {/* Owner Portal - Separate from Admin */}
               <Route 
