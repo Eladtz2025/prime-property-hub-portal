@@ -164,7 +164,7 @@ const AppContent: React.FC = () => {
           <Route path="/neighborhoods/dizengoff" element={<Navigate to="/he/neighborhoods/dizengoff" replace />} />
           <Route path="/neighborhoods/old-north" element={<Navigate to="/he/neighborhoods/old-north" replace />} />
           <Route path="/new-developments" element={<Navigate to="/he/new-developments" replace />} />
-          <Route path="/property/:id" element={<Navigate to="/he/property/:id" replace />} />
+          <Route path="/property/:id" element={<RedirectWithParams to="/he/property/:id" />} />
           
           {/* Hebrew Routes with /he/ prefix */}
           <Route path="/he" element={<Index />} />
@@ -249,8 +249,10 @@ const AppContent: React.FC = () => {
               <Route 
                 path="/admin-dashboard/settings" 
                 element={
-                  <Layout onLogout={signOut}>
-                    <Settings />
+              <Layout onLogout={signOut}>
+                    <ProtectedRoute requiredRole="viewer">
+                      <Settings />
+                    </ProtectedRoute>
                   </Layout>
                 } 
               />

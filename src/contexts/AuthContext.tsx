@@ -1,5 +1,5 @@
 // Auth context for managing user authentication state
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode, FC } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,15 +41,15 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshProfile = async () => {
-    if (!user) return;
+  const refreshProfile = useCallback(async () => {
+    const currentUser = user;
+    if (!currentUser) return;
     
     try {
-      // Fetch from view that includes role
       const { data: userProfile, error } = await supabase
         .from('user_profiles_with_roles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', currentUser.id)
         .single();
       
       if (error) {
@@ -71,9 +71,9 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       logger.error('Error refreshing profile:', error);
     }
-  };
+  }, [user]);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
@@ -84,11 +84,11 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       logger.error('Sign out error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const hasPermissionCheck = (resource: string, action: string): boolean => {
+  const hasPermissionCheck = useCallback((resource: string, action: string): boolean => {
     return permissions.some(p => p.resource === resource && p.action === action);
-  };
+  }, [permissions]);
 
   useEffect(() => {
     // Get initial session
@@ -107,9 +107,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user) {
-        await refreshProfile();
-      } else {
+      if (!session?.user) {
         setProfile(null);
         setPermissions([]);
       }
@@ -125,9 +123,9 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     if (user && !profile) {
       refreshProfile();
     }
-  }, [user]);
+  }, [user, profile, refreshProfile]);
 
-  const value: AuthContextType = {
+  const value = useMemo<AuthContextType>(() => ({
     user,
     profile,
     permissions,
@@ -138,7 +136,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     hasPermission: hasPermissionCheck,
     signOut: handleSignOut,
     refreshProfile,
-  };
+  }), [user, profile, permissions, session, loading, hasPermissionCheck, handleSignOut, refreshProfile]);
 
   return (
     <AuthContext.Provider value={value}>
