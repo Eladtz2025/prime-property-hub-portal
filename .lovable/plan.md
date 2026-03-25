@@ -1,22 +1,18 @@
 
 
-## שינוי צבע "Since 2008" + אנימציית תפריט עדינה
+## הדגשת "Since 2008" באנגלית כמו בעברית
 
-### שינוי 1 — צבע "Since 2008" בעברית
+### הבעיה
+בעברית: `text-xs md:text-sm tracking-[0.3em] font-bold text-white`
+באנגלית: `text-[10px] md:text-xs text-white/70 tracking-[0.3em]` — קטן יותר, חיוור, ללא bold
 
-**`src/components/he/VideoHero.tsx` שורה 77:**
-- שינוי `color: 'hsl(38, 60%, 45%)'` ל-`color: '#ffffff'`
+### התיקון
 
-### שינוי 2 — אנימציית פתיחה עדינה לתפריט (שתי השפות)
+**`src/components/en/VideoHero.tsx` שורה 77:**
+החלפת הכיתות לזהות לעברית:
+```
+text-xs md:text-sm tracking-[0.3em] mt-6 font-bold text-white
+```
 
-כרגע התפריט מופיע/נעלם בצורה חדה (`{menuOpen && ...}`). נוסיף transition עדין:
-- במקום render מותנה, ה-overlay תמיד מרונדר אבל עם `opacity-0 pointer-events-none` כשסגור ו-`opacity-100` כשפתוח
-- הוספת `transition-opacity duration-500 ease-in-out`
-- פריטי הניווט יקבלו `translate-y` קטן שמתאפס בפתיחה (slide-up עדין)
-
-**`src/components/en/Header.tsx`** + **`src/components/he/Header.tsx`:**
-- שינוי ה-overlay מ-conditional render ל-always-render עם classes דינמיים
-- הוספת transition classes
-
-**3 קבצים, ~10 שורות שינוי.**
+**קובץ אחד, שורה אחת.**
 
