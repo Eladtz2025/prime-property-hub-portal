@@ -7,12 +7,29 @@ import HebrewHeader from "@/components/he/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { Helmet } from "react-helmet";
+import HreflangMeta from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 
 const DizengoffNeighborhood = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
+      <Helmet>
+        <html lang="he" dir="rtl" />
+        <title>דיזנגוף - נכסים במרכז המסחרי של תל אביב | CITY MARKET Properties</title>
+        <meta name="description" content="נכסים למכירה ולהשכרה ברחוב דיזנגוף תל אביב. קניות, בתי קפה, בידור ודופק העיר. מומחים בנדל״ן יוקרה בדיזנגוף." />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/he/neighborhoods/dizengoff" />
+      </Helmet>
+      <HreflangMeta currentLang="he" currentPath="/he/neighborhoods/dizengoff" />
+      <OrganizationSchema language="he" />
+      <WebSiteSchema language="he" />
+      <BreadcrumbSchema items={[
+        { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
+        { name: "שכונות", url: "https://www.ctmarketproperties.com/he/neighborhoods" },
+        { name: "דיזנגוף", url: "https://www.ctmarketproperties.com/he/neighborhoods/dizengoff" }
+      ]} />
       <HebrewHeader />
 
       <FullScreenHero

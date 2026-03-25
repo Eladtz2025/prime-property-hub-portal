@@ -81,7 +81,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({ properties, sta
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => navigate('/admin/leads')}
+                onClick={() => navigate('/admin-dashboard/leads')}
                 className="gap-1"
               >
                 ראה הכל

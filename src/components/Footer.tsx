@@ -42,17 +42,17 @@ const Footer = () => {
             <h3 className="text-base md:text-lg font-bold mb-3 md:mb-4">קישורים מהירים</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/rentals" className="text-sm text-luxury-foreground/80 hover:text-secondary transition-colors">
+                <Link to="/he/rentals" className="text-sm text-luxury-foreground/80 hover:text-secondary transition-colors">
                   השכרות
                 </Link>
               </li>
               <li>
-                <Link to="/sales" className="text-sm text-luxury-foreground/80 hover:text-secondary transition-colors">
+                <Link to="/he/sales" className="text-sm text-luxury-foreground/80 hover:text-secondary transition-colors">
                   מכירות
                 </Link>
               </li>
               <li>
-                <Link to="/management" className="text-sm text-luxury-foreground/80 hover:text-secondary transition-colors">
+                <Link to="/he/management" className="text-sm text-luxury-foreground/80 hover:text-secondary transition-colors">
                   ניהול נכסים
                 </Link>
               </li>
