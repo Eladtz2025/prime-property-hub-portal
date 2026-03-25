@@ -1,18 +1,27 @@
 
 
-## הדגשת "Since 2008" באנגלית כמו בעברית
+## הסרת overlay מהתמונה ב-Hero
 
-### הבעיה
-בעברית: `text-xs md:text-sm tracking-[0.3em] font-bold text-white`
-באנגלית: `text-[10px] md:text-xs text-white/70 tracking-[0.3em]` — קטן יותר, חיוור, ללא bold
-
-### התיקון
-
-**`src/components/en/VideoHero.tsx` שורה 77:**
-החלפת הכיתות לזהות לעברית:
+### מה קיים
+בשני הקבצים (`src/components/en/VideoHero.tsx` ו-`src/components/he/VideoHero.tsx`) יש שורה:
+```html
+<div className="absolute inset-0 bg-black/30" />
 ```
-text-xs md:text-sm tracking-[0.3em] mt-6 font-bold text-white
-```
+זו שכבה שחורה עם 30% אטימות שמכהה את התמונה.
 
-**קובץ אחד, שורה אחת.**
+### אפשרויות
+
+1. **הסרה מלאה** — התמונה תיראה בדיוק כמו המקור, אבל הטקסט הלבן עלול להיות פחות קריא
+2. **הפחתה ל-10-15%** — כמעט שקוף, שומר קריאות מינימלית
+3. **החלפה ב-gradient** — רק בתחתית/מרכז שבו הטקסט, שאר התמונה נקייה
+
+### המלצה
+אם רוצים לראות את התמונה המקורית בדיוק — הסרה מלאה של השורה בשני הקבצים. אם הטקסט ייראה לא קריא, אפשר להוסיף `text-shadow` לכותרת במקום.
+
+### שינוי
+**`src/components/en/VideoHero.tsx`** + **`src/components/he/VideoHero.tsx`:**
+- הסרת שורה 49: `<div className="absolute inset-0 bg-black/30" />`
+- הוספת `style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}` ל-div של התוכן — כדי שהטקסט עדיין ייקרא
+
+**2 קבצים, שורה אחת שינוי בכל אחד.**
 
