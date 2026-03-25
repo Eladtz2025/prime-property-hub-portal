@@ -1,15 +1,14 @@
 
 
-## שינוי צבע הכוכבים לצהוב ב-GoogleReviews
+## הסרת שורת הכוכבים + "5.0" בלבד
 
 ### שינוי
 
 **`src/components/GoogleReviews.tsx`:**
 
-כרגע הכוכבים משתמשים ב-`fill-secondary text-secondary`. צריך להחליף לצהוב:
+הסרת רק את ה-div שמכיל את 5 הכוכבים + "5.0" (שורות ~80-85) — השורה שמסומנת בעיגול אדום.
 
-1. **שורה 80** (כוכבי הכותרת): `fill-secondary text-secondary` → `fill-yellow-400 text-yellow-400`
-2. **שורה 111** (כוכבים בכרטיסים): `fill-secondary text-secondary` → `fill-yellow-400 text-yellow-400`
+לוגו Google, הטקסט "Google", ו-"מבוסס על 150 ביקורות" — נשארים.
 
-**קובץ אחד, 2 שורות.**
+**קובץ אחד, ~5 שורות להסרה.**
 
