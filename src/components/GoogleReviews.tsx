@@ -78,7 +78,7 @@ const GoogleReviews = () => {
           </div>
           <div className="flex items-center justify-center gap-1 sm:gap-2 mb-2">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 fill-secondary text-secondary" />
+              <Star key={i} className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 fill-yellow-400 text-yellow-400" />
             ))}
             <span className="text-2xl sm:text-3xl md:text-4xl font-bold mr-1 sm:mr-2">5.0</span>
           </div>
@@ -114,7 +114,7 @@ const GoogleReviews = () => {
                     </div>
                     <div className="flex items-center gap-1 mb-3">
                       {[...Array(review.rating)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-secondary text-secondary" />
+                        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                       ))}
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
