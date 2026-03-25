@@ -73,7 +73,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
   };
 
-  const getRoleLabelFn = (role: string) => {
+  const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
       'super_admin': 'מנהל עליון',
       'admin': 'מנהל',
