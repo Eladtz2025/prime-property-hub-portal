@@ -1,96 +1,69 @@
 
 
-## ביקורת QA מעמיקה — ממצאים
+## ביקורת QA שנייה — ממצאים חדשים
 
-### 1. באגים קריטיים
+### 1. SEO חסר — חמור
 
-**1.1 הפנייה שבורה — `/property/:id` (שורה 167 ב-App.tsx)**
-```
-<Navigate to="/he/property/:id" replace />
-```
-הפרמטר `:id` לא מוחלף — המשתמש מגיע ל-`/he/property/:id` כטקסט literal. הפתרון: להשתמש ב-`RedirectWithParams` כמו בשורות 203-205.
-
-**1.2 חסר דף Reset Password**
-`src/lib/auth.ts` מפנה ל-`/auth/reset-password` אבל אין Route ואין Page לזה. משתמשים שילחצו "שכחתי סיסמה" לא יוכלו לאפס אותה.
-
-**1.3 `profile.role` — Type mismatch ב-ProtectedRoute (שורה 69)**
-```typescript
-const userLevel = roleHierarchy[profile.role]; // profile.role is string | undefined
-```
-`profile.role` מוגדר כ-`string?` ב-`UserProfile`, אבל `roleHierarchy` מצפה ל-`UserRole`. אם `role` הוא `undefined`, ה-`userLevel` יהיה `undefined` וההשוואה `userLevel < requiredLevel` תחזיר `false` — **כל משתמש ללא role יקבל גישה**.
+**1.1 דף דיזנגוף (עברית + אנגלית) ללא Helmet/SEO**
+`src/pages/he/neighborhoods/Dizengoff.tsx` ו-`src/pages/en/neighborhoods/Dizengoff.tsx` — אין `<Helmet>`, אין `<HreflangMeta>`, אין Schema.org.
+כל שאר דפי השכונות (רוטשילד, נווה צדק, פלורנטין, צפון ישן) כוללים SEO מלא. דיזנגוף חשוף ב-Google ללא title/description/canonical.
 
 ---
 
-### 2. בעיות אבטחה
+### 2. לינקים שבורים
 
-**2.1 Settings page ללא ProtectedRoute (שורה 250 ב-App.tsx)**
-```tsx
-<Layout onLogout={signOut}>
-  <Settings />  // ← אין ProtectedRoute!
-</Layout>
-```
-כל משתמש מאומת, גם ללא אישור, יכול לגשת להגדרות.
+**2.1 `Dashboard.tsx` — לינק `/admin/leads` לא קיים**
+שורה 84: `navigate('/admin/leads')` — אין Route כזה. הנתיב הנכון הוא `/admin-dashboard/leads`.
 
-**2.2 WhatsApp Float מופיע בדפים שלא צריך**
-הכפתור לא מוסתר ב:
-- `/login`
-- `/memorandum-form/*`
-- `/exclusivity-form/*`
-- `/broker-sharing-form/*`
-- `/sale-memorandum-form/*`
-- `/client-intake`
-- `/owner-invitation`
+**2.2 `BrokerageFormsList.tsx` + `BrokerageFormsListCompact.tsx` — `/brokerage-form/view/:id`**
+אין Route ל-`/brokerage-form/view/:id` ב-App.tsx. קיימים רק `/brokerage-form/new` ו-`/brokerage-form/:token`. לחיצה על "צפה" בטופס תיווך תוביל ל-404 או ל-LoginScreen.
+
+**2.3 `Footer.tsx` (הישן) — לינקים ל-`/rentals`, `/sales`, `/management`**
+`src/components/Footer.tsx` (שורות 45-57) משתמש ב-`<Link to="/rentals">` וכו' — אלה כבר redirects ולא נתיבים ישירים. עדיף לעדכן ל-`/he/rentals` ישירות כדי לחסוך redirect מיותר. (הפוטרים החדשים `he/Footer.tsx` ו-`en/Footer.tsx` כבר נכונים.)
 
 ---
 
-### 3. קוד מת / Orphan files
+### 3. אבטחה — הרשאות
 
-**3.1 `ExclusiveListingPage.tsx`** — 1092 שורות, אין שום Route ב-App.tsx. קובץ מת.
+**3.1 כל ה-admin routes משתמשים ב-`requiredRole="viewer"`**
+כל דף admin (כולל import-data, devops, property-scout, settings, admin-control) דורש רק `viewer`. משמעות: כל משתמש מאושר עם role "viewer" יכול לגשת ל-import data, devops, property scout, price offers, ו-marketing hub.
 
-**3.2 `src/lib/database.sql`** — מכיל סכמה ישנה עם `role` בתוך `profiles` (כבר הועבר ל-`user_roles`). עלול לבלבל.
+`AdminControl.tsx` כן מוסיף שכבת הגנה פנימית (`requiredRole="admin"`) אבל כל שאר הדפים חשופים לגמרי.
 
----
-
-### 4. ביצועים — AuthContext
-
-**4.1 `refreshProfile` לא עטוף ב-`useCallback`**
-הפונקציה נוצרת מחדש בכל render, מה שגורם לרכיבים שתלויים בה להתרנדר מחדש.
-
-**4.2 `hasPermissionCheck` לא עטוף ב-`useCallback`**
-אותה בעיה — כל ה-children של AuthProvider מתרנדרים מחדש.
-
-**4.3 `value` object ב-AuthContext נוצר מחדש בכל render**
-צריך `useMemo` על ה-value object.
+**דפים רגישים שצריכים הרשאה גבוהה יותר:**
+- `/admin-dashboard/import-data` → `manager`+
+- `/admin-dashboard/devops` → `admin`+
+- `/admin-dashboard/property-scout` → `manager`+
+- `/admin-dashboard/settings` → `manager`+
 
 ---
 
-### 5. חוסר עקביות
+### 4. קוד מת
 
-**5.1 תרגום תפקידים לא עקבי:**
-- `AuthTestHelper.tsx`: `super_admin` = "מנהל על"
-- `UserSettings.tsx`: `super_admin` = "מנהל ראשי"
-- `LoginScreen.tsx`: `super_admin` = "מנהל עליון"
+**4.1 תיקיית `src/_to_delete/`** — 3 קבצים: `AvailabilityActions.tsx`, `BackfillStatus.tsx`, `useBackfillProgress.ts`. לא מיובאים מאף מקום ב-App. קוד מת.
 
-**5.2 `database.sql` ישן** — מגדיר `role` ב-profiles כ-`TEXT` עם `CHECK`, אבל המערכת בפועל משתמשת ב-`user_roles` table עם `app_role` enum.
+**4.2 `src/components/Footer.tsx`** — הפוטר הישן. בדוק אם הוא עדיין בשימוש מאיזשהו דף.
 
 ---
 
-### 6. Edge Functions
+### 5. UX — property_owner ב-ProtectedRoute
 
-**6.1 `assign-properties-to-agents`** — מכיל hardcoded UUIDs עם הערה "one-time assignment". עדיין פעיל ונגיש.
+**5.1 `property_owner` level = 1 = `viewer` level**
+ב-`ProtectedRoute`, `property_owner` ו-`viewer` שניהם ברמה 1. זה אומר ש-property_owner עובר את הבדיקה `requiredRole="viewer"` ויכול לגשת לכל דפי ה-admin. כנראה לא מכוון.
 
 ---
 
-### תוכנית תיקון (לפי עדיפות)
+### תוכנית תיקון
 
 | # | תיקון | קבצים | חומרה |
 |---|--------|--------|--------|
-| 1 | Fix `/property/:id` redirect → `RedirectWithParams` | `App.tsx` | קריטי |
-| 2 | Fix `profile.role` undefined check ב-`ProtectedRoute` | `ProtectedRoute.tsx` | קריטי |
-| 3 | הוסף `ProtectedRoute` ל-Settings | `App.tsx` | אבטחה |
-| 4 | הוסף דף `/auth/reset-password` | חדש + `App.tsx` | פונקציונלי |
-| 5 | הסתר WhatsApp Float מדפי טפסים ולוגין | `WhatsAppFloat.tsx` | UX |
-| 6 | עטוף AuthContext ב-`useCallback`/`useMemo` | `AuthContext.tsx` | ביצועים |
-| 7 | אחד תרגום תפקידים לקובץ משותף | constants + 3 קבצים | עקביות |
-| 8 | מחק `ExclusiveListingPage.tsx` + עדכן `database.sql` | 2 קבצים | ניקיון |
+| 1 | הוסף SEO מלא לדיזנגוף (HE + EN) | `he/neighborhoods/Dizengoff.tsx`, `en/neighborhoods/Dizengoff.tsx` | SEO קריטי |
+| 2 | תקן `/admin/leads` → `/admin-dashboard/leads` | `Dashboard.tsx` | לינק שבור |
+| 3 | תקן `/brokerage-form/view/:id` — הוסף Route או שנה ללינק תקין | `App.tsx` או `BrokerageFormsList.tsx` | לינק שבור |
+| 4 | העלה הרשאות לדפים רגישים (devops→admin, import/scout/settings→manager) | `App.tsx` | אבטחה |
+| 5 | הפרד `property_owner` מהיררכיית הרשאות admin (בדיקה ייעודית) | `ProtectedRoute.tsx` | אבטחה |
+| 6 | עדכן `Footer.tsx` הישן ללינקים `/he/` | `Footer.tsx` | ביצועים |
+| 7 | מחק תיקיית `_to_delete` | 3 קבצים | ניקיון |
+
+**7 תיקונים, ~10 קבצים**
 
