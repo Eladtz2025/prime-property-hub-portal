@@ -86,6 +86,7 @@ const DynamicPresentationExclusivityForm = React.lazy(() => import('./pages/Dyna
 const PitchDeckBuilder = React.lazy(() => import('./pages/PitchDeckBuilder'));
 const DynamicPitchDeckView = React.lazy(() => import('./pages/DynamicPitchDeckView'));
 const TestHeroPage = React.lazy(() => import('./pages/TestHeroPage'));
+const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 // Loading fallback component
