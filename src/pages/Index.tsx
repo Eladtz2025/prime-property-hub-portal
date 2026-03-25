@@ -185,7 +185,7 @@ const Index = () => {
           }}>
                 <img src={neighborhood.image} alt={`שכונת ${neighborhood.name} - תמונת מדריך שכונות תל אביב`} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" decoding="async" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                <div className="absolute inset-0 flex items-end justify-center p-4 md:p-8">
+                <div className="absolute inset-0 flex flex-col items-center justify-end p-4 md:p-8">
                   <h3 className="font-playfair text-2xl md:text-3xl font-normal text-white tracking-wide">
                     {neighborhood.name}
                   </h3>
