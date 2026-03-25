@@ -73,16 +73,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
   };
 
-  const getRoleLabel = (role: string) => {
-    const labels: Record<string, string> = {
-      'super_admin': 'מנהל עליון',
-      'admin': 'מנהל',
-      'manager': 'מנהל תיקים',
-      'viewer': 'צופה',
-      'property_owner': 'בעל נכס'
-    };
-    return labels[role] || role;
-  };
+  const getRoleLabel = (await import('@/constants/roleLabels')).getRoleLabel;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

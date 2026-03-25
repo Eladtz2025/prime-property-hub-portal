@@ -158,9 +158,10 @@ export const UserSettings: React.FC = () => {
             {profile?.role && (
               <Badge variant="outline" className="gap-1">
                 <Shield className="h-3 w-3" />
-                {profile.role === 'super_admin' ? 'מנהל ראשי' : 
+                {profile.role === 'super_admin' ? 'מנהל עליון' : 
                  profile.role === 'admin' ? 'מנהל' : 
-                 profile.role === 'manager' ? 'מנהל נכסים' : 'צופה'}
+                 profile.role === 'manager' ? 'מנהל תיקים' : 
+                 profile.role === 'property_owner' ? 'בעל נכס' : 'צופה'}
               </Badge>
             )}
           </div>
