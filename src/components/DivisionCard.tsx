@@ -32,16 +32,12 @@ const DivisionCard = ({ title, description, image, features, link, icon = 'build
             </div>
           </div>
 
-          <h3 className="font-playfair text-2xl md:text-3xl font-normal tracking-wide mb-4 md:mb-5">{title}</h3>
-          
-          <p className="font-montserrat text-sm md:text-base text-white/60 mb-5 md:mb-7 leading-relaxed">
-            {description}
-          </p>
+          <h3 className="font-playfair text-3xl md:text-4xl font-normal tracking-wide mb-5 md:mb-7">{title}</h3>
 
           <ul className="space-y-3 mb-0">
             {features.map((feature, index) => (
               <li key={index} className="text-xs md:text-sm">
-                <span className="font-montserrat text-white/50 leading-relaxed tracking-wide">{feature}</span>
+                <span className="font-montserrat text-white/70 leading-relaxed tracking-wide">{feature}</span>
               </li>
             ))}
           </ul>
