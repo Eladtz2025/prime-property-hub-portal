@@ -107,7 +107,7 @@ export const BrokerageFormsListCompact: React.FC<BrokerageFormsListCompactProps>
               variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => navigate(`/brokerage-form/view/${form.id}`)}
+              onClick={() => navigate(`/brokerage-form/${form.id}`)}
             >
               <Eye className="h-4 w-4" />
             </Button>
