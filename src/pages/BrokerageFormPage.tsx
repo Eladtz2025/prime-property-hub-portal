@@ -878,8 +878,8 @@ const BrokerageFormPage = () => {
             <Button 
               onClick={() => {
                 window.close();
-                window.location.href = 'https://primepropertyai.lovable.app';
-              }} 
+                window.location.href = 'https://www.ctmarketproperties.com/he';
+              }}
               variant="ghost"
               className="w-full"
             >
