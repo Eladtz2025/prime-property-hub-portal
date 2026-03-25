@@ -1,55 +1,81 @@
 
 
-## ביקורת QA שנייה — ממצאים חדשים
+## ביקורת QA סיבוב 3 — ממצאים חדשים
 
-### 1. SEO חסר — חמור
+### 1. CSS Class שגוי — דפים עבריים עם `english-luxury`
 
-**1.1 דף דיזנגוף (עברית + אנגלית) ללא Helmet/SEO**
-`src/pages/he/neighborhoods/Dizengoff.tsx` ו-`src/pages/en/neighborhoods/Dizengoff.tsx` — אין `<Helmet>`, אין `<HreflangMeta>`, אין Schema.org.
-כל שאר דפי השכונות (רוטשילד, נווה צדק, פלורנטין, צפון ישן) כוללים SEO מלא. דיזנגוף חשוף ב-Google ללא title/description/canonical.
+**חומרה: בינונית (UX/סגנון)**
 
----
+4 דפים עבריים משתמשים ב-class `english-luxury` במקום `hebrew-luxury`:
+- `src/pages/Rentals.tsx` — שורה 156
+- `src/pages/Sales.tsx` — שורה 130
+- `src/pages/Management.tsx` — שורה 61
+- `src/pages/PropertyDetailPage.tsx` — שורה 154
 
-### 2. לינקים שבורים
-
-**2.1 `Dashboard.tsx` — לינק `/admin/leads` לא קיים**
-שורה 84: `navigate('/admin/leads')` — אין Route כזה. הנתיב הנכון הוא `/admin-dashboard/leads`.
-
-**2.2 `BrokerageFormsList.tsx` + `BrokerageFormsListCompact.tsx` — `/brokerage-form/view/:id`**
-אין Route ל-`/brokerage-form/view/:id` ב-App.tsx. קיימים רק `/brokerage-form/new` ו-`/brokerage-form/:token`. לחיצה על "צפה" בטופס תיווך תוביל ל-404 או ל-LoginScreen.
-
-**2.3 `Footer.tsx` (הישן) — לינקים ל-`/rentals`, `/sales`, `/management`**
-`src/components/Footer.tsx` (שורות 45-57) משתמש ב-`<Link to="/rentals">` וכו' — אלה כבר redirects ולא נתיבים ישירים. עדיף לעדכן ל-`/he/rentals` ישירות כדי לחסוך redirect מיותר. (הפוטרים החדשים `he/Footer.tsx` ו-`en/Footer.tsx` כבר נכונים.)
+כל שאר הדפים העבריים (Index, About, Contact, Neighborhoods, כל השכונות) משתמשים ב-`hebrew-luxury`. ייתכן שזה גורם להבדלי סגנון עדינים.
 
 ---
 
-### 3. אבטחה — הרשאות
+### 2. VideoHero עברי — לינקים ללא prefix `/he/`
 
-**3.1 כל ה-admin routes משתמשים ב-`requiredRole="viewer"`**
-כל דף admin (כולל import-data, devops, property-scout, settings, admin-control) דורש רק `viewer`. משמעות: כל משתמש מאושר עם role "viewer" יכול לגשת ל-import data, devops, property scout, price offers, ו-marketing hub.
+**חומרה: נמוכה (עובד דרך redirect אבל מיותר)**
 
-`AdminControl.tsx` כן מוסיף שכבת הגנה פנימית (`requiredRole="admin"`) אבל כל שאר הדפים חשופים לגמרי.
-
-**דפים רגישים שצריכים הרשאה גבוהה יותר:**
-- `/admin-dashboard/import-data` → `manager`+
-- `/admin-dashboard/devops` → `admin`+
-- `/admin-dashboard/property-scout` → `manager`+
-- `/admin-dashboard/settings` → `manager`+
+`src/components/he/VideoHero.tsx` שורות 64, 70:
+```tsx
+navigate("/rentals")  // → redirect ל-/he/rentals
+navigate("/sales")    // → redirect ל-/he/sales
+```
+עובד כי יש redirects ב-App.tsx, אבל גורם ל-redirect מיותר. צריך להיות `/he/rentals` ו-`/he/sales` ישירות.
 
 ---
 
-### 4. קוד מת
+### 3. NotFound.tsx — לינק שגוי לדף הבית
 
-**4.1 תיקיית `src/_to_delete/`** — 3 קבצים: `AvailabilityActions.tsx`, `BackfillStatus.tsx`, `useBackfillProgress.ts`. לא מיובאים מאף מקום ב-App. קוד מת.
+**חומרה: בינונית (UX)**
 
-**4.2 `src/components/Footer.tsx`** — הפוטר הישן. בדוק אם הוא עדיין בשימוש מאיזשהו דף.
+`src/pages/NotFound.tsx` שורה 48:
+```tsx
+<Link to="/en">חזרה לדף הבית</Link>
+```
+דף ה-404 הוא בעברית (dir="rtl", כל הטקסטים בעברית) אבל הכפתור "חזרה לדף הבית" מפנה ל-`/en` במקום `/he`. משתמש עברי שמגיע ל-404 מועבר לאתר האנגלי.
 
 ---
 
-### 5. UX — property_owner ב-ProtectedRoute
+### 4. קוד מת — TestHeroPage + HeaderTest
 
-**5.1 `property_owner` level = 1 = `viewer` level**
-ב-`ProtectedRoute`, `property_owner` ו-`viewer` שניהם ברמה 1. זה אומר ש-property_owner עובר את הבדיקה `requiredRole="viewer"` ויכול לגשת לכל דפי ה-admin. כנראה לא מכוון.
+**חומרה: נמוכה (ניקיון)**
+
+- `src/pages/TestHeroPage.tsx` — דף טסט בלבד, חשוף ב-production (`/he/herotest`)
+- `src/components/he/HeaderTest.tsx` — קומפוננטה לא בשימוש מחוץ ל-TestHeroPage
+
+שניהם קוד פיתוח שנשאר ב-production.
+
+---
+
+### 5. `admin-control` — כפל ProtectedRoute
+
+**חומרה: נמוכה (ניקיון)**
+
+`App.tsx` שורה 265: `requiredRole="viewer"` 
+`AdminControl.tsx` שורה 7: `requiredRole="admin"` (פנימי)
+
+ה-ProtectedRoute החיצוני מיותר — AdminControl כבר מגן על עצמו. עדיף להעלות ל-`admin` ב-App.tsx (כמו שנעשה ל-devops) ולהסיר את הכפילות הפנימית.
+
+---
+
+### 6. `import-from-storage` — הרשאת `viewer` בלבד
+
+**חומרה: בינונית (אבטחה)**
+
+`App.tsx` שורה 285: `/admin-dashboard/import-from-storage` דורש רק `viewer`. זהו דף ייבוא נתונים (כמו import-data שכבר הועלה ל-`manager`). צריך להיות `manager` גם כאן.
+
+---
+
+### 7. SEO — חסר `og:image` ברוב הדפים
+
+**חומרה: בינונית (SEO)**
+
+רק דפי PropertyDetail כוללים `og:image`. כל שאר הדפים (Index, Rentals, Sales, Management, Neighborhoods, About, Contact) חסרים `og:image` — מה שאומר ששיתוף בפייסבוק/ווטסאפ לא יציג תמונה.
 
 ---
 
@@ -57,13 +83,13 @@
 
 | # | תיקון | קבצים | חומרה |
 |---|--------|--------|--------|
-| 1 | הוסף SEO מלא לדיזנגוף (HE + EN) | `he/neighborhoods/Dizengoff.tsx`, `en/neighborhoods/Dizengoff.tsx` | SEO קריטי |
-| 2 | תקן `/admin/leads` → `/admin-dashboard/leads` | `Dashboard.tsx` | לינק שבור |
-| 3 | תקן `/brokerage-form/view/:id` — הוסף Route או שנה ללינק תקין | `App.tsx` או `BrokerageFormsList.tsx` | לינק שבור |
-| 4 | העלה הרשאות לדפים רגישים (devops→admin, import/scout/settings→manager) | `App.tsx` | אבטחה |
-| 5 | הפרד `property_owner` מהיררכיית הרשאות admin (בדיקה ייעודית) | `ProtectedRoute.tsx` | אבטחה |
-| 6 | עדכן `Footer.tsx` הישן ללינקים `/he/` | `Footer.tsx` | ביצועים |
-| 7 | מחק תיקיית `_to_delete` | 3 קבצים | ניקיון |
+| 1 | שנה `english-luxury` → `hebrew-luxury` ב-4 דפים עבריים | `Rentals.tsx`, `Sales.tsx`, `Management.tsx`, `PropertyDetailPage.tsx` | סגנון |
+| 2 | תקן VideoHero: `/rentals` → `/he/rentals`, `/sales` → `/he/sales` | `he/VideoHero.tsx` | ביצועים |
+| 3 | תקן NotFound: `/en` → `/he` | `NotFound.tsx` | UX |
+| 4 | הסר TestHeroPage + HeaderTest + Route | `App.tsx`, `TestHeroPage.tsx`, `HeaderTest.tsx` | ניקיון |
+| 5 | העלה admin-control ל-`admin` + הסר ProtectedRoute פנימי | `App.tsx`, `AdminControl.tsx` | ניקיון |
+| 6 | העלה import-from-storage ל-`manager` | `App.tsx` | אבטחה |
+| 7 | הוסף `og:image` לכל הדפים הציבוריים (HE + EN) | ~15 קבצים | SEO |
 
-**7 תיקונים, ~10 קבצים**
+**7 תיקונים, ~20 קבצים**
 
