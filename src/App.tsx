@@ -44,6 +44,10 @@ const HebrewFlorentin = React.lazy(() => import('./pages/he/neighborhoods/Floren
 const HebrewDizengoff = React.lazy(() => import('./pages/he/neighborhoods/Dizengoff'));
 const HebrewOldNorth = React.lazy(() => import('./pages/he/neighborhoods/OldNorth'));
 const Properties = React.lazy(() => import('./pages/Properties').then(m => ({ default: m.Properties })));
+const HebrewInsights = React.lazy(() => import('./pages/he/Insights'));
+const HebrewInsightDetail = React.lazy(() => import('./pages/he/InsightDetail'));
+const EnglishInsights = React.lazy(() => import('./pages/en/Insights'));
+const EnglishInsightDetail = React.lazy(() => import('./pages/en/InsightDetail'));
 const AdminControl = React.lazy(() => import('./pages/AdminControl').then(m => ({ default: m.AdminControl })));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
 const OwnerPortal = React.lazy(() => import('./pages/OwnerPortal').then(m => ({ default: m.OwnerPortal })));
@@ -166,6 +170,7 @@ const AppContent: React.FC = () => {
           <Route path="/neighborhoods/dizengoff" element={<Navigate to="/he/neighborhoods/dizengoff" replace />} />
           <Route path="/neighborhoods/old-north" element={<Navigate to="/he/neighborhoods/old-north" replace />} />
           <Route path="/new-developments" element={<Navigate to="/he/new-developments" replace />} />
+          <Route path="/insights" element={<Navigate to="/he/insights" replace />} />
           <Route path="/property/:id" element={<RedirectWithParams to="/he/property/:id" />} />
           
           {/* Hebrew Routes with /he/ prefix */}
@@ -183,7 +188,8 @@ const AppContent: React.FC = () => {
           <Route path="/he/neighborhoods/old-north" element={<HebrewOldNorth />} />
           <Route path="/he/new-developments" element={<HebrewNewDevelopments />} />
           <Route path="/he/property/:id" element={<PropertyDetailPage />} />
-          
+          <Route path="/he/insights" element={<HebrewInsights />} />
+          <Route path="/he/insights/:id" element={<HebrewInsightDetail />} />
           
           {/* English Public Routes */}
             <Route path="/en" element={<EnglishIndex />} />
@@ -200,6 +206,8 @@ const AppContent: React.FC = () => {
             <Route path="/en/about" element={<EnglishAbout />} />
             <Route path="/en/contact" element={<EnglishContact />} />
             <Route path="/en/new-developments" element={<EnglishNewDevelopments />} />
+            <Route path="/en/insights" element={<EnglishInsights />} />
+            <Route path="/en/insights/:id" element={<EnglishInsightDetail />} />
           
           {/* Old property routes - redirect to /he/property */}
           <Route path="/rentals/property/:id" element={<RedirectWithParams to="/he/property/:id" />} />

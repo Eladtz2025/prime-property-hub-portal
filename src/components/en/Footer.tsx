@@ -75,6 +75,12 @@ const EnglishFooter = () => {
               >
                 New Developments
               </p>
+              <p 
+                className="cursor-pointer hover:text-background transition-colors"
+                onClick={() => navigate('/en/insights')}
+              >
+                Insights
+              </p>
             </div>
           </div>
 
