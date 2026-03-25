@@ -58,12 +58,30 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (requiredRole) {
+    // property_owner is a separate track — they should NOT pass admin role checks
+    if (profile.role === 'property_owner') {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-2 text-red-600 dark:text-red-400">
+                אין הרשאה
+              </h2>
+              <p className="text-muted-foreground">
+                אין לך הרשאה לגשת לעמוד זה. פנה למנהל המערכת.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     const roleHierarchy: Record<UserRole, number> = {
       'viewer': 1,
       'manager': 2,
       'admin': 3,
       'super_admin': 4,
-      'property_owner': 1
+      'property_owner': 0
     };
 
     const userLevel = roleHierarchy[profile.role as UserRole] ?? 0;

@@ -251,8 +251,8 @@ const AppContent: React.FC = () => {
               <Route 
                 path="/admin-dashboard/settings" 
                 element={
-              <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="viewer">
+                  <Layout onLogout={signOut}>
+                    <ProtectedRoute requiredRole="manager">
                       <Settings />
                     </ProtectedRoute>
                   </Layout>
@@ -272,7 +272,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/import-data"
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="viewer">
+                    <ProtectedRoute requiredRole="manager">
                       <ImportData />
                     </ProtectedRoute>
                   </Layout>
@@ -404,7 +404,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/devops" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="viewer">
+                    <ProtectedRoute requiredRole="admin">
                       <AdminDevOps />
                     </ProtectedRoute>
                   </Layout>
@@ -414,7 +414,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/property-scout" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="viewer">
+                    <ProtectedRoute requiredRole="manager">
                       <AdminPropertyScout />
                     </ProtectedRoute>
                   </Layout>

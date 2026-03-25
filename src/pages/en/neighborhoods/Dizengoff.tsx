@@ -6,12 +6,29 @@ import EnglishFooter from "@/components/en/Footer";
 import EnglishHeader from "@/components/en/Header";
 import FullScreenHero from "@/components/FullScreenHero";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet";
+import HreflangMeta from "@/components/seo/HreflangMeta";
+import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from "@/components/seo/SchemaOrg";
 
 const DizengoffNeighborhood = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen english-luxury" dir="ltr">
+      <Helmet>
+        <html lang="en" dir="ltr" />
+        <title>Dizengoff - Properties in Tel Aviv's Commercial Heart | CITY MARKET</title>
+        <meta name="description" content="Properties for sale and rent on Dizengoff Street, Tel Aviv. Shopping, cafés, entertainment and city pulse. Luxury real estate experts in Dizengoff." />
+        <link rel="canonical" href="https://www.ctmarketproperties.com/en/neighborhoods/dizengoff" />
+      </Helmet>
+      <HreflangMeta currentLang="en" currentPath="/en/neighborhoods/dizengoff" />
+      <OrganizationSchema language="en" />
+      <WebSiteSchema language="en" />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "https://www.ctmarketproperties.com/en" },
+        { name: "Neighborhoods", url: "https://www.ctmarketproperties.com/en/neighborhoods" },
+        { name: "Dizengoff", url: "https://www.ctmarketproperties.com/en/neighborhoods/dizengoff" }
+      ]} />
       <EnglishHeader />
 
       {/* Hero Section */}
