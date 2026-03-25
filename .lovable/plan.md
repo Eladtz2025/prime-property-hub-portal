@@ -1,77 +1,65 @@
 
 
-## ביקורת QA סיבוב 4 — ממצאים חדשים
+## ביקורת QA סיבוב 5 — אדמין פאנל (שמרני)
 
-### 1. Hardcoded URL ישן — `primepropertyai.lovable.app`
-
-**חומרה: בינונית (UX/מיתוג)**
-
-`src/pages/BrokerageFormPage.tsx` שורה 881:
-```tsx
-window.location.href = 'https://primepropertyai.lovable.app';
-```
-אחרי חתימה על טופס תיווך, המשתמש מנותב ל-URL הישן של Lovable במקום לדומיין הייצור `https://www.ctmarketproperties.com/he`. זה גם חושף את הדומיין הפנימי של Lovable ללקוחות.
+גישה: **תיקוני באגים והרשאות בלבד** — לא נוגעים בלוגיקה עסקית, לא משנים עיצוב, לא מפרקים קומפוננטות עובדות.
 
 ---
 
-### 2. Hardcoded UUIDs + PII — סקריפטי one-time שנשארו
+### 1. באג קריטי — ProtectedRoute חוסם property_owners מהפורטל שלהם
 
-**חומרה: בינונית (אבטחה/ניקיון)**
+**חומרה: קריטי (שובר פיצ'ר)**
 
-**2.1 `src/utils/assignPropertiesToAgents.ts`** — Hardcoded UUIDs:
-- `30300ca7-...` (טלי)
-- `bfd1625c-...` (אלעד)
+`ProtectedRoute.tsx` שורה 62: כשיש `requiredRole`, הקוד בודק אם המשתמש הוא `property_owner` ומחזיר "אין הרשאה" — **לפני** שהוא בודק אם ה-`requiredRole` הוא בדיוק `property_owner`.
 
-הקובץ **לא מיובא מאף מקום** — קוד מת לחלוטין.
+המשמעות: `OwnerPortal` (שורה 12: `requiredRole="property_owner"`) ו-`OwnerFinancials` (שורה 7: `requiredRole="property_owner"`) חוסמים property_owners מהדפים שלהם עצמם.
 
-**2.2 `src/utils/updateManagementProperties.ts`** — Hardcoded PII:
-```ts
-owner_name: 'אלעד צברי'
-owner_phone: '0545503055'
-```
-הקובץ **מיובא ומופעל אוטומטית** בכל טעינה של `Properties.tsx` שורה 124. כלומר בכל כניסה לדף נכסים, מתבצע update ל-Supabase שמוסיף שם וטלפון אישי לכל נכסי הניהול ללא owner.
+**תיקון:** הוסף תנאי — אם `requiredRole === 'property_owner'` ו-`profile.role === 'property_owner'`, תעביר. אחרת חסום כרגיל.
 
 ---
 
-### 3. `migrateBenYehuda110.ts` — סקריפט חד-פעמי בקוד
+### 2. ניווט מציג דפים שאין למשתמש הרשאה אליהם
 
-**חומרה: נמוכה (ניקיון)**
+**חומרה: בינונית (UX/אבטחה)**
 
-298 שורות של נתוני migration hardcoded. מיובא ב-`PitchDeckBuilder.tsx` בלבד, ככפתור "Migrate Ben Yehuda 110". לאחר שהמיגרציה בוצעה — זה קוד מת.
+**2.1 `EnhancedTopNavigation.tsx`** — כל פריטי הניווט מוצגים לכל המשתמשים:
+- "סקאוט נדל"ן" דורש `manager` ב-route אבל מוצג לכולם
+- "QA & DevOps" בתפריט המשתמש דורש `admin` אבל מוצג לכולם
+- "הגדרות" דורש `manager` אבל מוצג לכולם
 
----
+**2.2 `MobileBottomNavigation.tsx`** — "סקאוט" מוצג לכל המשתמשים.
 
-### 4. `console.log` בקוד production
-
-**חומרה: נמוכה (ביצועים/ניקיון)**
-
-268 מופעים ב-19 קבצים. רובם debug logs שנשארו:
-- `PropertyGallery.tsx` — 8 console.logs (upload debugging)
-- `SlideEditor.tsx` — slide loading debug
-- `DynamicPitchDeckView.tsx` — rendering debug
-- `useUnifiedPropertyData.ts` — placeholder logs
-
-לא בהכרח צריך לטפל בכולם, אבל הקריטיים הם אלה שמדפיסים מידע רגיש או נתוני DB.
+**תיקון:** הוסף role filtering ב-`EnhancedTopNavigation` ו-`MobileBottomNavigation` בהתאם ל-role hierarchy (כפי שנעשה כבר ב-`TopNavigation.tsx` הישן).
 
 ---
 
-### 5. Properties.tsx — Edge Function call בכל טעינה
-
-**חומרה: בינונית (ביצועים)**
-
-`src/pages/Properties.tsx` שורות 120-151: בכל טעינה של דף הנכסים, מתבצעים:
-1. `updateManagementPropertiesToElad()` — DB update
-2. `fetch(...assign-management-properties)` — Edge Function call
-
-שניהם צריכים לרוץ רק פעם אחת, לא בכל כניסה לדף. זה יוצר עומס מיותר וגם ה-update עם PII בעייתי.
-
----
-
-### 6. `window.close()` — לא עובד בדפדפנים מודרניים
+### 3. תפריט המשתמש מציג role באנגלית
 
 **חומרה: נמוכה (UX)**
 
-`BrokerageFormPage.tsx` שורה 880: `window.close()` לא עובד אלא אם הטאב נפתח ע"י `window.open()`. ברוב המקרים הלחיצה לא תסגור את הטאב, והמשתמש יישאר בדף ההפנייה.
+`EnhancedTopNavigation.tsx` שורה 82: `{profile?.role}` מציג "super_admin" במקום "מנהל עליון". קיימת פונקציה `getRoleLabel` ב-`roleLabels.ts` שלא מנוצלת.
+
+**תיקון:** `getRoleLabel(profile?.role)` במקום `profile?.role`.
+
+---
+
+### 4. כפל ProtectedRoute — AdminPropertyScout
+
+**חומרה: נמוכה (ניקיון)**
+
+`AdminPropertyScout.tsx` עוטף את עצמו ב-`<ProtectedRoute>` פנימי (שורה 286), בזמן ש-App.tsx כבר עוטף אותו ב-`requiredRole="manager"`. כפילות מיותרת (כמו שתיקנו ב-AdminControl בסיבוב 3).
+
+**תיקון:** הסר את ה-ProtectedRoute הפנימי מ-AdminPropertyScout.
+
+---
+
+### 5. קוד מת
+
+**חומרה: נמוכה (ניקיון)**
+
+**5.1 `TopNavigation.tsx`** — לא מיובא מאף מקום (הוחלף ב-`EnhancedTopNavigation`).
+
+**5.2 `src/components/_archived/personal-scout/`** — 2 קבצים ארכיוניים לא מיובאים.
 
 ---
 
@@ -79,13 +67,11 @@ owner_phone: '0545503055'
 
 | # | תיקון | קבצים | חומרה |
 |---|--------|--------|--------|
-| 1 | שנה `primepropertyai.lovable.app` → `ctmarketproperties.com/he` | `BrokerageFormPage.tsx` | מיתוג |
-| 2 | מחק `assignPropertiesToAgents.ts` (קוד מת) | `assignPropertiesToAgents.ts` | ניקיון |
-| 3 | מחק `updateManagementProperties.ts` + הסר קריאה מ-Properties.tsx | `updateManagementProperties.ts`, `Properties.tsx` | אבטחה/ביצועים |
-| 4 | הסר auto-call ל-`assign-management-properties` מ-Properties.tsx | `Properties.tsx` | ביצועים |
-| 5 | תקן `window.close()` fallback → navigate ל-homepage | `BrokerageFormPage.tsx` | UX |
-| 6 | נקה console.logs קריטיים (PropertyGallery, SlideEditor, useUnifiedPropertyData) | 3 קבצים | ניקיון |
-| 7 | מחק `migrateBenYehuda110.ts` + הסר ייבוא מ-PitchDeckBuilder | `migrateBenYehuda110.ts`, `PitchDeckBuilder.tsx` | ניקיון |
+| 1 | תקן ProtectedRoute — אפשר property_owner לגשת לדפי property_owner | `ProtectedRoute.tsx` | קריטי |
+| 2 | הוסף role filtering לניווט (desktop + mobile + dropdown) | `EnhancedTopNavigation.tsx`, `MobileBottomNavigation.tsx` | בינונית |
+| 3 | הצג role בעברית בתפריט המשתמש | `EnhancedTopNavigation.tsx` | נמוכה |
+| 4 | הסר ProtectedRoute כפול מ-AdminPropertyScout | `AdminPropertyScout.tsx` | נמוכה |
+| 5 | מחק קוד מת (TopNavigation + _archived) | 3 קבצים | נמוכה |
 
-**7 תיקונים, ~8 קבצים**
+**5 תיקונים, ~6 קבצים. אפס שינויים בלוגיקה עסקית.**
 
