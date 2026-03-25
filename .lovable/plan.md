@@ -1,65 +1,46 @@
 
 
-## ביקורת QA סיבוב 5 — אדמין פאנל (שמרני)
+## ביקורת QA סיבוב 6 — ממצאים חדשים
 
-גישה: **תיקוני באגים והרשאות בלבד** — לא נוגעים בלוגיקה עסקית, לא משנים עיצוב, לא מפרקים קומפוננטות עובדות.
-
----
-
-### 1. באג קריטי — ProtectedRoute חוסם property_owners מהפורטל שלהם
-
-**חומרה: קריטי (שובר פיצ'ר)**
-
-`ProtectedRoute.tsx` שורה 62: כשיש `requiredRole`, הקוד בודק אם המשתמש הוא `property_owner` ומחזיר "אין הרשאה" — **לפני** שהוא בודק אם ה-`requiredRole` הוא בדיוק `property_owner`.
-
-המשמעות: `OwnerPortal` (שורה 12: `requiredRole="property_owner"`) ו-`OwnerFinancials` (שורה 7: `requiredRole="property_owner"`) חוסמים property_owners מהדפים שלהם עצמם.
-
-**תיקון:** הוסף תנאי — אם `requiredRole === 'property_owner'` ו-`profile.role === 'property_owner'`, תעביר. אחרת חסום כרגיל.
+גישה זהה: **תיקוני באגים וניקיון בלבד** — לא נוגעים בלוגיקה עסקית.
 
 ---
 
-### 2. ניווט מציג דפים שאין למשתמש הרשאה אליהם
+### 1. חשיפת אימייל אדמין ב-production
 
-**חומרה: בינונית (UX/אבטחה)**
+**חומרה: בינונית (אבטחה)**
 
-**2.1 `EnhancedTopNavigation.tsx`** — כל פריטי הניווט מוצגים לכל המשתמשים:
-- "סקאוט נדל"ן" דורש `manager` ב-route אבל מוצג לכולם
-- "QA & DevOps" בתפריט המשתמש דורש `admin` אבל מוצג לכולם
-- "הגדרות" דורש `manager` אבל מוצג לכולם
+**1.1 `AdminDashboard.tsx`** שורה 124: מציג `eladtz@gmail.com` בדף ההתחברות כ"מידע לבדיקה". זה נגיש לכל מי שנכנס ל-`/admin-dashboard` בלי לוגין.
 
-**2.2 `MobileBottomNavigation.tsx`** — "סקאוט" מוצג לכל המשתמשים.
+**1.2 `AuthTestHelper.tsx`** — קומפוננטה שלמה שמציגה מידע debug (אימייל, תפקיד, הרשאות) + הוראות בדיקה עם `eladtz@gmail.com`. הקובץ **לא מיובא מאף מקום** — קוד מת.
 
-**תיקון:** הוסף role filtering ב-`EnhancedTopNavigation` ו-`MobileBottomNavigation` בהתאם ל-role hierarchy (כפי שנעשה כבר ב-`TopNavigation.tsx` הישן).
+**תיקון:** הסר את ה-div עם האימייל מ-AdminDashboard. מחק את AuthTestHelper.
 
 ---
 
-### 3. תפריט המשתמש מציג role באנגלית
+### 2. console.log — 193 מופעים שנשארו
 
-**חומרה: נמוכה (UX)**
+**חומרה: נמוכה-בינונית (ניקיון/ביצועים)**
 
-`EnhancedTopNavigation.tsx` שורה 82: `{profile?.role}` מציג "super_admin" במקום "מנהל עליון". קיימת פונקציה `getRoleLabel` ב-`roleLabels.ts` שלא מנוצלת.
+הקבצים העיקריים:
+- `ExcelImporter.tsx` — 10 console.logs (upload flow debug)
+- `PropertyEditModal.tsx` — 4 console.logs (image loading debug)
+- `useUnifiedPropertyData.ts` — 2 placeholder logs
+- `OwnerPropertyCard.tsx` — `onDelete={(id) => console.log(...)}` (handler ריק)
 
-**תיקון:** `getRoleLabel(profile?.role)` במקום `profile?.role`.
+`pwa.ts`, `sentry.ts`, `notifyNewLead.ts` — אלה לגיטימיים (infrastructure logging), לא נוגעים.
 
----
-
-### 4. כפל ProtectedRoute — AdminPropertyScout
-
-**חומרה: נמוכה (ניקיון)**
-
-`AdminPropertyScout.tsx` עוטף את עצמו ב-`<ProtectedRoute>` פנימי (שורה 286), בזמן ש-App.tsx כבר עוטף אותו ב-`requiredRole="manager"`. כפילות מיותרת (כמו שתיקנו ב-AdminControl בסיבוב 3).
-
-**תיקון:** הסר את ה-ProtectedRoute הפנימי מ-AdminPropertyScout.
+**תיקון:** נקה console.logs מ-ExcelImporter, PropertyEditModal, useUnifiedPropertyData. תקן handler ריק ב-OwnerPropertyCard.
 
 ---
 
-### 5. קוד מת
+### 3. AdminDashboard — בלוק login מיותר
 
-**חומרה: נמוכה (ניקיון)**
+**חומרה: נמוכה (קוד מת)**
 
-**5.1 `TopNavigation.tsx`** — לא מיובא מאף מקום (הוחלף ב-`EnhancedTopNavigation`).
+`AdminDashboard.tsx` שורות 104-129: כולל בלוק `if (!isAuthenticated)` שמציג כרטיס התחברות. אבל הדף כבר עטוף ב-`ProtectedRoute` ב-App.tsx — משתמש לא מאומת לעולם לא יגיע לקוד הזה. זה קוד מת שגם חושף PII.
 
-**5.2 `src/components/_archived/personal-scout/`** — 2 קבצים ארכיוניים לא מיובאים.
+**תיקון:** הסר את כל הבלוק `if (!isAuthenticated)`.
 
 ---
 
@@ -67,11 +48,9 @@
 
 | # | תיקון | קבצים | חומרה |
 |---|--------|--------|--------|
-| 1 | תקן ProtectedRoute — אפשר property_owner לגשת לדפי property_owner | `ProtectedRoute.tsx` | קריטי |
-| 2 | הוסף role filtering לניווט (desktop + mobile + dropdown) | `EnhancedTopNavigation.tsx`, `MobileBottomNavigation.tsx` | בינונית |
-| 3 | הצג role בעברית בתפריט המשתמש | `EnhancedTopNavigation.tsx` | נמוכה |
-| 4 | הסר ProtectedRoute כפול מ-AdminPropertyScout | `AdminPropertyScout.tsx` | נמוכה |
-| 5 | מחק קוד מת (TopNavigation + _archived) | 3 קבצים | נמוכה |
+| 1 | הסר בלוק login מיותר (כולל אימייל חשוף) מ-AdminDashboard | `AdminDashboard.tsx` | אבטחה |
+| 2 | מחק AuthTestHelper (קוד מת + PII) | `AuthTestHelper.tsx` | אבטחה |
+| 3 | נקה console.logs מ-4 קבצים | `ExcelImporter.tsx`, `PropertyEditModal.tsx`, `useUnifiedPropertyData.ts`, `OwnerPropertyCard.tsx` | ניקיון |
 
-**5 תיקונים, ~6 קבצים. אפס שינויים בלוגיקה עסקית.**
+**3 תיקונים, ~5 קבצים. אפס שינויים בלוגיקה עסקית.**
 
