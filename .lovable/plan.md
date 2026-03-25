@@ -1,56 +1,92 @@
 
 
-## ביקורת QA סיבוב 6 — ממצאים חדשים
+## עמוד Insights — כתבות, בעלי מקצוע ומדריכים (HE + EN)
 
-גישה זהה: **תיקוני באגים וניקיון בלבד** — לא נוגעים בלוגיקה עסקית.
-
----
-
-### 1. חשיפת אימייל אדמין ב-production
-
-**חומרה: בינונית (אבטחה)**
-
-**1.1 `AdminDashboard.tsx`** שורה 124: מציג `eladtz@gmail.com` בדף ההתחברות כ"מידע לבדיקה". זה נגיש לכל מי שנכנס ל-`/admin-dashboard` בלי לוגין.
-
-**1.2 `AuthTestHelper.tsx`** — קומפוננטה שלמה שמציגה מידע debug (אימייל, תפקיד, הרשאות) + הוראות בדיקה עם `eladtz@gmail.com`. הקובץ **לא מיובא מאף מקום** — קוד מת.
-
-**תיקון:** הסר את ה-div עם האימייל מ-AdminDashboard. מחק את AuthTestHelper.
+### מה נבנה
+עמוד ציבורי חדש בשם **"Insights"** (עברית: "תובנות") שמרכז 3 סוגי תוכן: כתבות/בלוג, קישור לבעלי מקצוע, ומדריכים מעשיים. העמוד יהיה זמין בשתי השפות (`/he/insights` ו-`/en/insights`) ויתאים לעיצוב הלוקסורי הקיים.
 
 ---
 
-### 2. console.log — 193 מופעים שנשארו
+### מבנה טכני
 
-**חומרה: נמוכה-בינונית (ניקיון/ביצועים)**
+**1. טבלת Supabase חדשה: `insights`**
 
-הקבצים העיקריים:
-- `ExcelImporter.tsx` — 10 console.logs (upload flow debug)
-- `PropertyEditModal.tsx` — 4 console.logs (image loading debug)
-- `useUnifiedPropertyData.ts` — 2 placeholder logs
-- `OwnerPropertyCard.tsx` — `onDelete={(id) => console.log(...)}` (handler ריק)
+| עמודה | סוג | תיאור |
+|-------|------|--------|
+| id | uuid PK | |
+| type | text | `article` / `guide` |
+| title_he | text | כותרת בעברית |
+| title_en | text | כותרת באנגלית |
+| summary_he | text | תקציר בעברית |
+| summary_en | text | תקציר באנגלית |
+| content_he | text | תוכן מלא בעברית |
+| content_en | text | תוכן מלא באנגלית |
+| image_url | text | תמונה ראשית |
+| category | text | קטגוריה (נדל"ן, השקעות, טיפים...) |
+| is_published | boolean | מפורסם או טיוטה |
+| published_at | timestamptz | תאריך פרסום |
+| sort_order | int | סדר תצוגה |
+| created_by | uuid | FK to auth.users |
+| created_at / updated_at | timestamptz | |
 
-`pwa.ts`, `sentry.ts`, `notifyNewLead.ts` — אלה לגיטימיים (infrastructure logging), לא נוגעים.
+RLS: קריאה ציבורית (ללא אימות) עבור `is_published = true`. כתיבה רק ל-admin/manager.
 
-**תיקון:** נקה console.logs מ-ExcelImporter, PropertyEditModal, useUnifiedPropertyData. תקן handler ריק ב-OwnerPropertyCard.
+**2. קבצים חדשים**
+
+| קובץ | תיאור |
+|-------|--------|
+| `src/pages/he/Insights.tsx` | עמוד עברי — Hero + 3 סקשנים (כתבות, מדריכים, בעלי מקצוע) |
+| `src/pages/en/Insights.tsx` | עמוד אנגלי — אותו מבנה, שפה אנגלית |
+| `src/pages/he/InsightDetail.tsx` | עמוד כתבה/מדריך בודד (עברית) |
+| `src/pages/en/InsightDetail.tsx` | עמוד כתבה/מדריך בודד (אנגלית) |
+
+**3. עדכון ניתוב (`App.tsx`)**
+- `/he/insights` → HebrewInsights
+- `/he/insights/:id` → HebrewInsightDetail
+- `/en/insights` → EnglishInsights
+- `/en/insights/:id` → EnglishInsightDetail
+- Redirect `/insights` → `/he/insights`
+
+**4. עדכון ניווט**
+- `src/components/he/Header.tsx` — הוסף "Insights" לתפריט (בין "שכונות" ל"קצת עלינו")
+- `src/components/en/Header.tsx` — הוסף "Insights" לתפריט
+- `src/components/he/Footer.tsx` — הוסף קישור לסקשן "שירותים"
+- `src/components/en/Footer.tsx` — אותו דבר
+
+**5. מבנה העמוד**
+
+```text
+┌─────────────────────────────────┐
+│         Hero Section            │
+│   "Insights" / "תובנות"        │
+│   תיאור קצר                    │
+├─────────────────────────────────┤
+│  📰 כתבות אחרונות              │
+│  [Card] [Card] [Card]           │
+├─────────────────────────────────┤
+│  📖 מדריכים                    │
+│  [Card] [Card] [Card]           │
+├─────────────────────────────────┤
+│  👷 בעלי מקצוע מומלצים         │
+│  CTA → /professionals/shared    │
+├─────────────────────────────────┤
+│         Footer                  │
+└─────────────────────────────────┘
+```
+
+- סקשן בעלי מקצוע יהיה CTA עם עיצוב יוקרתי שמפנה לעמוד הקיים (`/professionals/shared` או `/professionals/shared/en`)
+- כרטיסי כתבות/מדריכים יציגו תמונה, כותרת, תקציר וקטגוריה
+- לחיצה על כרטיס תוביל לעמוד הפרטי (`/he/insights/:id`)
+
+**6. SEO**
+- Helmet עם title/description
+- HreflangMeta (he ↔ en)
+- BreadcrumbSchema + OrganizationSchema
 
 ---
 
-### 3. AdminDashboard — בלוק login מיותר
-
-**חומרה: נמוכה (קוד מת)**
-
-`AdminDashboard.tsx` שורות 104-129: כולל בלוק `if (!isAuthenticated)` שמציג כרטיס התחברות. אבל הדף כבר עטוף ב-`ProtectedRoute` ב-App.tsx — משתמש לא מאומת לעולם לא יגיע לקוד הזה. זה קוד מת שגם חושף PII.
-
-**תיקון:** הסר את כל הבלוק `if (!isAuthenticated)`.
-
----
-
-### תוכנית תיקון
-
-| # | תיקון | קבצים | חומרה |
-|---|--------|--------|--------|
-| 1 | הסר בלוק login מיותר (כולל אימייל חשוף) מ-AdminDashboard | `AdminDashboard.tsx` | אבטחה |
-| 2 | מחק AuthTestHelper (קוד מת + PII) | `AuthTestHelper.tsx` | אבטחה |
-| 3 | נקה console.logs מ-4 קבצים | `ExcelImporter.tsx`, `PropertyEditModal.tsx`, `useUnifiedPropertyData.ts`, `OwnerPropertyCard.tsx` | ניקיון |
-
-**3 תיקונים, ~5 קבצים. אפס שינויים בלוגיקה עסקית.**
+### מה לא נוגעים בו
+- עמוד בעלי מקצוע הקיים — רק מקשרים אליו
+- אדמין CRUD לכתבות — שלב עתידי (בשלב הראשון נוסיף תוכן דרך Supabase ישירות)
+- לוגיקה עסקית קיימת
 
