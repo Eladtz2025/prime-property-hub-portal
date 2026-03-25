@@ -86,6 +86,7 @@ const NewDevelopments = () => {
         <meta property="og:title" content="פרויקטים חדשים - נכסים חדשים בתל אביב | CITY MARKET Properties" />
         <meta property="og:description" content='פרויקטי נדל"ן חדשים ויוקרתיים בתל אביב. גלו דירות חדשות, פנטהאוזים ונכסי בוטיק.' />
         <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/new-developments" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/new-developments" />

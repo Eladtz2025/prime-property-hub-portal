@@ -63,6 +63,7 @@ const HebrewNeighborhoods = () => {
         <meta property="og:title" content="שכונות תל אביב - מדריך לשכונות היוקרתיות | CITY MARKET Properties" />
         <meta property="og:description" content="גלו את השכונות המובחרות של תל אביב: רוטשילד, נווה צדק, פלורנטין והצפון הישן. מחירים, מאפיינים ונכסים למכירה ולהשכרה." />
         <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/neighborhoods" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/neighborhoods" />
