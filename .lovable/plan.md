@@ -1,81 +1,77 @@
 
 
-## ביקורת QA סיבוב 3 — ממצאים חדשים
+## ביקורת QA סיבוב 4 — ממצאים חדשים
 
-### 1. CSS Class שגוי — דפים עבריים עם `english-luxury`
+### 1. Hardcoded URL ישן — `primepropertyai.lovable.app`
 
-**חומרה: בינונית (UX/סגנון)**
+**חומרה: בינונית (UX/מיתוג)**
 
-4 דפים עבריים משתמשים ב-class `english-luxury` במקום `hebrew-luxury`:
-- `src/pages/Rentals.tsx` — שורה 156
-- `src/pages/Sales.tsx` — שורה 130
-- `src/pages/Management.tsx` — שורה 61
-- `src/pages/PropertyDetailPage.tsx` — שורה 154
-
-כל שאר הדפים העבריים (Index, About, Contact, Neighborhoods, כל השכונות) משתמשים ב-`hebrew-luxury`. ייתכן שזה גורם להבדלי סגנון עדינים.
-
----
-
-### 2. VideoHero עברי — לינקים ללא prefix `/he/`
-
-**חומרה: נמוכה (עובד דרך redirect אבל מיותר)**
-
-`src/components/he/VideoHero.tsx` שורות 64, 70:
+`src/pages/BrokerageFormPage.tsx` שורה 881:
 ```tsx
-navigate("/rentals")  // → redirect ל-/he/rentals
-navigate("/sales")    // → redirect ל-/he/sales
+window.location.href = 'https://primepropertyai.lovable.app';
 ```
-עובד כי יש redirects ב-App.tsx, אבל גורם ל-redirect מיותר. צריך להיות `/he/rentals` ו-`/he/sales` ישירות.
+אחרי חתימה על טופס תיווך, המשתמש מנותב ל-URL הישן של Lovable במקום לדומיין הייצור `https://www.ctmarketproperties.com/he`. זה גם חושף את הדומיין הפנימי של Lovable ללקוחות.
 
 ---
 
-### 3. NotFound.tsx — לינק שגוי לדף הבית
+### 2. Hardcoded UUIDs + PII — סקריפטי one-time שנשארו
 
-**חומרה: בינונית (UX)**
+**חומרה: בינונית (אבטחה/ניקיון)**
 
-`src/pages/NotFound.tsx` שורה 48:
-```tsx
-<Link to="/en">חזרה לדף הבית</Link>
+**2.1 `src/utils/assignPropertiesToAgents.ts`** — Hardcoded UUIDs:
+- `30300ca7-...` (טלי)
+- `bfd1625c-...` (אלעד)
+
+הקובץ **לא מיובא מאף מקום** — קוד מת לחלוטין.
+
+**2.2 `src/utils/updateManagementProperties.ts`** — Hardcoded PII:
+```ts
+owner_name: 'אלעד צברי'
+owner_phone: '0545503055'
 ```
-דף ה-404 הוא בעברית (dir="rtl", כל הטקסטים בעברית) אבל הכפתור "חזרה לדף הבית" מפנה ל-`/en` במקום `/he`. משתמש עברי שמגיע ל-404 מועבר לאתר האנגלי.
+הקובץ **מיובא ומופעל אוטומטית** בכל טעינה של `Properties.tsx` שורה 124. כלומר בכל כניסה לדף נכסים, מתבצע update ל-Supabase שמוסיף שם וטלפון אישי לכל נכסי הניהול ללא owner.
 
 ---
 
-### 4. קוד מת — TestHeroPage + HeaderTest
+### 3. `migrateBenYehuda110.ts` — סקריפט חד-פעמי בקוד
 
 **חומרה: נמוכה (ניקיון)**
 
-- `src/pages/TestHeroPage.tsx` — דף טסט בלבד, חשוף ב-production (`/he/herotest`)
-- `src/components/he/HeaderTest.tsx` — קומפוננטה לא בשימוש מחוץ ל-TestHeroPage
-
-שניהם קוד פיתוח שנשאר ב-production.
+298 שורות של נתוני migration hardcoded. מיובא ב-`PitchDeckBuilder.tsx` בלבד, ככפתור "Migrate Ben Yehuda 110". לאחר שהמיגרציה בוצעה — זה קוד מת.
 
 ---
 
-### 5. `admin-control` — כפל ProtectedRoute
+### 4. `console.log` בקוד production
 
-**חומרה: נמוכה (ניקיון)**
+**חומרה: נמוכה (ביצועים/ניקיון)**
 
-`App.tsx` שורה 265: `requiredRole="viewer"` 
-`AdminControl.tsx` שורה 7: `requiredRole="admin"` (פנימי)
+268 מופעים ב-19 קבצים. רובם debug logs שנשארו:
+- `PropertyGallery.tsx` — 8 console.logs (upload debugging)
+- `SlideEditor.tsx` — slide loading debug
+- `DynamicPitchDeckView.tsx` — rendering debug
+- `useUnifiedPropertyData.ts` — placeholder logs
 
-ה-ProtectedRoute החיצוני מיותר — AdminControl כבר מגן על עצמו. עדיף להעלות ל-`admin` ב-App.tsx (כמו שנעשה ל-devops) ולהסיר את הכפילות הפנימית.
-
----
-
-### 6. `import-from-storage` — הרשאת `viewer` בלבד
-
-**חומרה: בינונית (אבטחה)**
-
-`App.tsx` שורה 285: `/admin-dashboard/import-from-storage` דורש רק `viewer`. זהו דף ייבוא נתונים (כמו import-data שכבר הועלה ל-`manager`). צריך להיות `manager` גם כאן.
+לא בהכרח צריך לטפל בכולם, אבל הקריטיים הם אלה שמדפיסים מידע רגיש או נתוני DB.
 
 ---
 
-### 7. SEO — חסר `og:image` ברוב הדפים
+### 5. Properties.tsx — Edge Function call בכל טעינה
 
-**חומרה: בינונית (SEO)**
+**חומרה: בינונית (ביצועים)**
 
-רק דפי PropertyDetail כוללים `og:image`. כל שאר הדפים (Index, Rentals, Sales, Management, Neighborhoods, About, Contact) חסרים `og:image` — מה שאומר ששיתוף בפייסבוק/ווטסאפ לא יציג תמונה.
+`src/pages/Properties.tsx` שורות 120-151: בכל טעינה של דף הנכסים, מתבצעים:
+1. `updateManagementPropertiesToElad()` — DB update
+2. `fetch(...assign-management-properties)` — Edge Function call
+
+שניהם צריכים לרוץ רק פעם אחת, לא בכל כניסה לדף. זה יוצר עומס מיותר וגם ה-update עם PII בעייתי.
+
+---
+
+### 6. `window.close()` — לא עובד בדפדפנים מודרניים
+
+**חומרה: נמוכה (UX)**
+
+`BrokerageFormPage.tsx` שורה 880: `window.close()` לא עובד אלא אם הטאב נפתח ע"י `window.open()`. ברוב המקרים הלחיצה לא תסגור את הטאב, והמשתמש יישאר בדף ההפנייה.
 
 ---
 
@@ -83,13 +79,13 @@ navigate("/sales")    // → redirect ל-/he/sales
 
 | # | תיקון | קבצים | חומרה |
 |---|--------|--------|--------|
-| 1 | שנה `english-luxury` → `hebrew-luxury` ב-4 דפים עבריים | `Rentals.tsx`, `Sales.tsx`, `Management.tsx`, `PropertyDetailPage.tsx` | סגנון |
-| 2 | תקן VideoHero: `/rentals` → `/he/rentals`, `/sales` → `/he/sales` | `he/VideoHero.tsx` | ביצועים |
-| 3 | תקן NotFound: `/en` → `/he` | `NotFound.tsx` | UX |
-| 4 | הסר TestHeroPage + HeaderTest + Route | `App.tsx`, `TestHeroPage.tsx`, `HeaderTest.tsx` | ניקיון |
-| 5 | העלה admin-control ל-`admin` + הסר ProtectedRoute פנימי | `App.tsx`, `AdminControl.tsx` | ניקיון |
-| 6 | העלה import-from-storage ל-`manager` | `App.tsx` | אבטחה |
-| 7 | הוסף `og:image` לכל הדפים הציבוריים (HE + EN) | ~15 קבצים | SEO |
+| 1 | שנה `primepropertyai.lovable.app` → `ctmarketproperties.com/he` | `BrokerageFormPage.tsx` | מיתוג |
+| 2 | מחק `assignPropertiesToAgents.ts` (קוד מת) | `assignPropertiesToAgents.ts` | ניקיון |
+| 3 | מחק `updateManagementProperties.ts` + הסר קריאה מ-Properties.tsx | `updateManagementProperties.ts`, `Properties.tsx` | אבטחה/ביצועים |
+| 4 | הסר auto-call ל-`assign-management-properties` מ-Properties.tsx | `Properties.tsx` | ביצועים |
+| 5 | תקן `window.close()` fallback → navigate ל-homepage | `BrokerageFormPage.tsx` | UX |
+| 6 | נקה console.logs קריטיים (PropertyGallery, SlideEditor, useUnifiedPropertyData) | 3 קבצים | ניקיון |
+| 7 | מחק `migrateBenYehuda110.ts` + הסר ייבוא מ-PitchDeckBuilder | `migrateBenYehuda110.ts`, `PitchDeckBuilder.tsx` | ניקיון |
 
-**7 תיקונים, ~20 קבצים**
+**7 תיקונים, ~8 קבצים**
 
