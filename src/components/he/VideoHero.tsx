@@ -45,11 +45,10 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         </picture>
       )}
 
-      {/* Overlay - subtle uniform darkening */}
-      <div className="absolute inset-0 bg-black/30" />
+      {/* No overlay — original image */}
 
       {/* Content */}
-      <div className="relative h-full flex flex-col items-center justify-center text-center px-4 -translate-y-[5%]">
+      <div className="relative h-full flex flex-col items-center justify-center text-center px-4 -translate-y-[5%]" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
         <div className="mb-10 animate-fade-in">
           <h1 className="reliz-hero-title text-white font-bold">
             {title}
