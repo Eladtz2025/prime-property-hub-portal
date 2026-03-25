@@ -158,11 +158,6 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-8 md:mb-12">
             <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide text-foreground mb-3 md:mb-4">החטיבות שלנו</h2>
-            <p className="font-montserrat text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-              מכירות • השכרות • ניהול נכסים
-              <br />
-              הכול במקום אחד
-            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
@@ -194,6 +189,7 @@ const Index = () => {
                   <h3 className="font-playfair text-2xl md:text-3xl font-normal text-white tracking-wide">
                     {neighborhood.name}
                   </h3>
+                  <div className="w-12 h-px bg-secondary/50 mt-4 transition-all duration-500 group-hover:w-20 group-hover:bg-secondary/80" />
                 </div>
               </div>)}
           </div>

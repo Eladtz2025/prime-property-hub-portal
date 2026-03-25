@@ -153,11 +153,6 @@ const EnglishIndex = () => {
             <h2 className="font-playfair text-4xl md:text-5xl font-normal tracking-wide text-foreground mb-4">
               Our Divisions
             </h2>
-            <p className="font-montserrat text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-              Sales • Rentals • Property Management
-              <br />
-              All in One Place
-            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
@@ -194,6 +189,7 @@ Come explore with us the colorful mosaic of Tel Aviv.
                   <h3 className="font-playfair text-3xl font-normal text-white tracking-wide">
                     {neighborhood.name}
                   </h3>
+                  <div className="w-12 h-px bg-secondary/50 mt-4 transition-all duration-500 group-hover:w-20 group-hover:bg-secondary/80" />
                 </div>
               </div>)}
           </div>
