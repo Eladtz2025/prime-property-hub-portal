@@ -419,7 +419,7 @@ const AppContent: React.FC = () => {
                   </Layout>
                 } 
               />
-const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
+
 
               
               {/* Owner Portal - Separate from Admin */}
