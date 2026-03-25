@@ -65,15 +65,16 @@ const EnglishInsights = () => {
   useEffect(() => {
     const fetchInsights = async () => {
       const { data } = await supabase
-        .from("insights")
+        .from("insights" as any)
         .select("id, type, title_en, summary_en, image_url, category, published_at")
         .eq("is_published", true)
         .order("sort_order", { ascending: true })
         .order("published_at", { ascending: false });
 
       if (data) {
-        setArticles(data.filter((i) => i.type === "article"));
-        setGuides(data.filter((i) => i.type === "guide"));
+        const items = data as unknown as Insight[];
+        setArticles(items.filter((i) => i.type === "article"));
+        setGuides(items.filter((i) => i.type === "guide"));
       }
       setLoading(false);
     };

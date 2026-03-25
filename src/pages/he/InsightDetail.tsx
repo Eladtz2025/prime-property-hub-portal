@@ -29,12 +29,12 @@ const HebrewInsightDetail = () => {
     const fetch = async () => {
       if (!id) return;
       const { data } = await supabase
-        .from("insights")
+        .from("insights" as any)
         .select("*")
         .eq("id", id)
         .eq("is_published", true)
         .single();
-      setInsight(data);
+      setInsight(data as unknown as InsightFull);
       setLoading(false);
     };
     fetch();
