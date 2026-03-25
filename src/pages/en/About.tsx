@@ -33,6 +33,7 @@ const About = () => {
         <meta property="og:title" content="About Us - City Market Properties" />
         <meta property="og:description" content="Tel Aviv's leading real estate experts with 15+ years of experience in luxury properties." />
         <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/en/about" />
       </Helmet>
       <HreflangMeta currentLang="en" currentPath="/en/about" />

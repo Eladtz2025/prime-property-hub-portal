@@ -33,6 +33,7 @@ const About = () => {
         <meta property="og:title" content="אודות City Market Properties - מומחי נדל&quot;ן יוקרה בתל אביב" />
         <meta property="og:description" content="למעלה מ-15 שנות ניסיון בשוק הנדל&quot;ן של תל אביב. מומחיות במכירות, השכרות וניהול נכסי יוקרה בשכונות המובחרות." />
         <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png" />
         <link rel="canonical" href="https://www.ctmarketproperties.com/he/about" />
       </Helmet>
       <HreflangMeta currentLang="he" currentPath="/he/about" />

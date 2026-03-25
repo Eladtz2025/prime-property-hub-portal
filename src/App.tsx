@@ -85,7 +85,7 @@ const DynamicPresentationPricingPage = React.lazy(() => import('./pages/DynamicP
 const DynamicPresentationExclusivityForm = React.lazy(() => import('./pages/DynamicPresentationExclusivityForm'));
 const PitchDeckBuilder = React.lazy(() => import('./pages/PitchDeckBuilder'));
 const DynamicPitchDeckView = React.lazy(() => import('./pages/DynamicPitchDeckView'));
-const TestHeroPage = React.lazy(() => import('./pages/TestHeroPage'));
+
 const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
@@ -183,7 +183,7 @@ const AppContent: React.FC = () => {
           <Route path="/he/neighborhoods/old-north" element={<HebrewOldNorth />} />
           <Route path="/he/new-developments" element={<HebrewNewDevelopments />} />
           <Route path="/he/property/:id" element={<PropertyDetailPage />} />
-          <Route path="/he/herotest" element={<TestHeroPage />} />
+          
           
           {/* English Public Routes */}
             <Route path="/en" element={<EnglishIndex />} />
@@ -262,7 +262,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/admin-control"
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="viewer">
+                    <ProtectedRoute requiredRole="admin">
                       <AdminControl />
                     </ProtectedRoute>
                   </Layout>
@@ -282,7 +282,7 @@ const AppContent: React.FC = () => {
                 path="/admin-dashboard/import-from-storage" 
                 element={
                   <Layout onLogout={signOut}>
-                    <ProtectedRoute requiredRole="viewer">
+                    <ProtectedRoute requiredRole="manager">
                       <ImportFromStorage />
                     </ProtectedRoute>
                   </Layout>

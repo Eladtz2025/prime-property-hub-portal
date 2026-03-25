@@ -151,7 +151,7 @@ const PropertyDetailPage = () => {
   const ogDescription = property.description || `${property.rooms} חדרים ב${property.address}, ${property.city}`;
   
   return (
-    <div className="min-h-screen english-luxury" dir="rtl">
+    <div className="min-h-screen hebrew-luxury" dir="rtl">
       <HebrewHeader />
       <Helmet>
         <title>{property.title} - City Market Properties</title>
