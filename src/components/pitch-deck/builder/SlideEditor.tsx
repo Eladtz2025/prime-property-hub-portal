@@ -45,12 +45,6 @@ const SlideEditor = ({ slide, language, propertyId, onUpdate, onClose }: SlideEd
   // Sync state when slide prop changes
   useEffect(() => {
     const data = slide.slide_data as Record<string, unknown>;
-    console.log('[SlideEditor] Loading slide:', {
-      id: slide.id,
-      type: slide.slide_type,
-      dataKeys: data ? Object.keys(data) : 'null',
-      data: data
-    });
     setSlideData(data || {});
     setBackgroundImage(slide.background_image || '');
     setHasUnsavedChanges(false);

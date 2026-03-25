@@ -62,7 +62,6 @@ import { usePagination } from '../hooks/usePagination';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
-import { updateManagementPropertiesToElad } from '@/utils/updateManagementProperties';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -116,43 +115,6 @@ export const Properties: React.FC = memo(() => {
     });
   };
 
-  // Auto-assign management properties and update owner info on first load
-  useEffect(() => {
-    const setupManagementProperties = async () => {
-      try {
-        // Update owner info for management properties
-        const updateResult = await updateManagementPropertiesToElad();
-        if (updateResult.success && updateResult.updated && updateResult.updated > 0) {
-          console.log(`Updated ${updateResult.updated} management properties`);
-        }
-
-        // Assign management properties to current user
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          const response = await fetch(
-            `https://jswumsdymlooeobrxict.supabase.co/functions/v1/assign-management-properties`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${session.access_token}`,
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-          
-          const result = await response.json();
-          if (result.success && result.assigned > 0) {
-            console.log(`Assigned ${result.assigned} management properties`);
-            await refetch();
-          }
-        }
-      } catch (error) {
-        console.error('Error setting up management properties:', error);
-      }
-    };
-    
-    setupManagementProperties();
-  }, []);
 
   const getOwnerPropertyCount = (property: Property) => {
     const ownerKey = `${property.ownerName}-${property.ownerPhone || ''}`;

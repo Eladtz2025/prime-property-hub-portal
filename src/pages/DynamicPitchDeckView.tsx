@@ -138,7 +138,7 @@ const DynamicPitchDeckView = () => {
         ? (slide as any).slide_data_he 
         : slide.slide_data;
 
-      console.log('Rendering slide:', slide.slide_type, slide.id, 'language:', language);
+      
 
       switch (slide.slide_type as SlideType) {
         case 'title':

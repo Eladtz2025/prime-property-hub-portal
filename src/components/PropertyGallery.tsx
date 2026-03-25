@@ -59,14 +59,14 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
     
     setLoading(true);
     try {
-      console.log('Loading images for property:', selectedProperty);
+      
       const { data, error } = await supabase
         .from('property_images')
         .select('*')
         .eq('property_id', selectedProperty)
         .order('order_index', { ascending: true });
 
-      console.log('Images loaded:', data, 'Error:', error);
+      
       if (error) throw error;
       setImages(data || []);
     } catch (error) {
@@ -92,11 +92,9 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
 
     setUploading(true);
     try {
-      console.log('🔵 Starting upload for', files.length, 'files');
-      console.log('🔵 Selected property:', selectedProperty);
       
       for (const file of Array.from(files)) {
-        console.log('📤 Processing file:', file.name);
+        
         const isVideo = isVideoFile(file);
         
         // Check file size limits (100MB for videos, 20MB for images)
@@ -114,7 +112,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
         const fileExt = file.name.split('.').pop();
         const fileName = `${selectedProperty}/${Date.now()}.${fileExt}`;
         
-        console.log('📤 Storage path:', fileName);
+        
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('property-images')
           .upload(fileName, file);
@@ -123,14 +121,14 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
           console.error('❌ Storage upload error:', uploadError);
           throw uploadError;
         }
-        console.log('✅ Storage upload success:', uploadData);
+        
 
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('property-images')
           .getPublicUrl(fileName);
         
-        console.log('🔗 Public URL:', publicUrl);
+        
 
         // Save to property_images table
         const insertData = {
@@ -142,7 +140,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
           media_type: isVideo ? 'video' : 'image',
         };
         
-        console.log('💾 Inserting to DB:', insertData);
+        
         const { data: dbData, error: dbError } = await supabase
           .from('property_images')
           .insert(insertData)
@@ -152,7 +150,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
           console.error('❌ Database insert error:', dbError);
           throw dbError;
         }
-        console.log('✅ Database insert success:', dbData);
+        
       }
 
       toast({
