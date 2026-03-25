@@ -182,7 +182,7 @@ export const OwnerPropertyCard: React.FC<OwnerPropertyCardProps> = ({
           </DialogHeader>
           <DocumentManager 
             documents={[]} 
-            onDelete={(id) => console.log('Delete document:', id)}
+            onDelete={() => {}}
           />
         </DialogContent>
       </Dialog>

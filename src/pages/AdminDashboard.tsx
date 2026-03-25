@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 
 const AdminDashboard = memo(() => {
-  const { isAuthenticated } = useAuth();
+  const { } = useAuth();
   const [showAddPropertyModal, setShowAddPropertyModal] = useState(false);
   const { 
     properties, 
@@ -102,32 +102,6 @@ const AdminDashboard = memo(() => {
     });
   }, [properties]);
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">מערכת ניהול נכסים</CardTitle>
-            <CardDescription>
-              התחבר למערכת כדי לגשת לנכסים שלך
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">משתמש קיים:</p>
-              <Button asChild className="w-full">
-                <Link to="/login">התחברות</Link>
-              </Button>
-            </div>
-            <div className="text-center text-xs text-muted-foreground">
-              <p>לבדיקת המערכת:</p>
-              <p>מנהל על: eladtz@gmail.com</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
