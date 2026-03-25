@@ -65,7 +65,6 @@ export const useUnifiedPropertyData = () => {
 
   const updateProperty = async (updatedProperty: Property) => {
     // For now, this will just log - in future can integrate with Supabase
-    console.log('Property update requested:', updatedProperty);
     return updatedProperty;
   };
 
@@ -75,7 +74,6 @@ export const useUnifiedPropertyData = () => {
       ...newProperty,
       id: `property-${Date.now()}`
     };
-    console.log('Property addition requested:', property);
     return property;
   };
 
