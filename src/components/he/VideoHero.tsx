@@ -45,8 +45,7 @@ const VideoHero = ({ title, subtitle, videoUrl, imageUrl }: VideoHeroProps) => {
         </picture>
       )}
 
-      {/* Overlay - subtle uniform darkening */}
-      <div className="absolute inset-0 bg-black/30" />
+      {/* No overlay — original image */}
 
       {/* Content */}
       <div className="relative h-full flex flex-col items-center justify-center text-center px-4 -translate-y-[5%]">
