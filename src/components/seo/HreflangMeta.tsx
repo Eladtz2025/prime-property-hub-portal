@@ -12,6 +12,7 @@ const PATH_MAPPING: Record<string, string> = {
   '/he/management': '/en/management',
   '/he/neighborhoods': '/en/neighborhoods',
   '/he/new-developments': '/en/new-developments',
+  '/he/insights': '/en/insights',
   '/he/properties': '/en/properties',
   // Neighborhood pages
   '/he/neighborhoods/rothschild': '/en/neighborhoods/rothschild',
