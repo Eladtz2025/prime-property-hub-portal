@@ -186,7 +186,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
 
   const loadPropertyImages = async () => {
     try {
-      console.log('🔍 Loading images for property:', property.id);
+      
       const { data, error } = await supabase
         .from('property_images')
         .select('*')
@@ -198,7 +198,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
         return;
       }
 
-      console.log('✅ Loaded', data?.length || 0, 'images from DB');
+      
       
       if (data && data.length > 0) {
         const images: PropertyImage[] = data.map(img => ({
@@ -347,7 +347,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
 
       // Save images to property_images table and storage
       if (formData.images && formData.images.length > 0) {
-        console.log('💾 Saving', formData.images.length, 'images to property_images');
+        
         
         // Delete existing images for this property
         const { error: deleteError } = await supabase
@@ -366,7 +366,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           
           // If base64, upload to storage first
           if (image.url.startsWith('data:')) {
-            console.log('📤 Uploading base64 image to storage:', image.name);
+            
             
             try {
               // Convert base64 to blob
@@ -392,7 +392,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 .getPublicUrl(fileName);
               
               imageUrl = publicUrl;
-              console.log('✅ Uploaded to storage:', publicUrl);
+              
             } catch (uploadError) {
               console.error('❌ Error uploading image:', uploadError);
               continue;
@@ -408,7 +408,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
             is_furnished: image.isFurnished || false,
           };
 
-          console.log('💾 Inserting image to DB:', imageData);
+          
           const { error: imageError } = await supabase
             .from('property_images')
             .insert(imageData);
@@ -416,7 +416,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           if (imageError) {
             console.error('❌ Error saving image to DB:', imageError);
           } else {
-            console.log('✅ Image saved successfully');
+            
           }
         }
       }

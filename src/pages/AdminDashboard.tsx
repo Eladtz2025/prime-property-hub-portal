@@ -1,9 +1,7 @@
 import React, { useState, memo, useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { Dashboard } from '../components/Dashboard';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 
 import { AddPropertyModal } from '../components/AddPropertyModal';
 import { Alert } from '../types/property';
