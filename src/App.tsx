@@ -106,6 +106,7 @@ const AppContent: React.FC = () => {
         <Routes>
           {/* Auth callback route - needs to be outside authentication check */}
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/login" element={<LoginScreen />} />
           {/* Owner invitation route - accessible without authentication */}
           <Route path="/owner-invitation" element={<OwnerInvitationPage />} />
@@ -418,8 +419,8 @@ const AppContent: React.FC = () => {
                   </Layout>
                 } 
               />
-              
-              
+const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
+
               
               {/* Owner Portal - Separate from Admin */}
               <Route 
