@@ -214,7 +214,16 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  const { getRoleLabel } = await import('@/constants/roleLabels');
+  const getRoleLabel = (role?: string) => {
+    const labels: Record<string, string> = {
+      'super_admin': 'מנהל עליון',
+      'admin': 'מנהל',
+      'manager': 'מנהל תיקים',
+      'viewer': 'צופה',
+      'property_owner': 'בעל נכס'
+    };
+    return labels[role || 'viewer'] || role || 'צופה';
+  };
 
   const handleEditUser = (user: UserProfile) => {
     setEditingUser(user);
