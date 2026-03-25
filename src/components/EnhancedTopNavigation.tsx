@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserAvatar } from './UserAvatar';
+import { getRoleLabel } from '@/constants/roleLabels';
+import { UserRole } from '@/types/auth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,11 +31,14 @@ const navigationItems = [
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
   { title: "פרסום", url: "/admin-dashboard/marketing", icon: Megaphone },
   { title: "לקוחות", url: "/admin-dashboard/customers", icon: Users },
-  
-  
-  { title: "סקאוט נדל\"ן", url: "/admin-dashboard/property-scout", icon: Search },
+  { title: "סקאוט נדל\"ן", url: "/admin-dashboard/property-scout", icon: Search, minRole: 'manager' as UserRole },
   { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
 ];
+
+const roleLevel = (role?: string): number => {
+  const levels: Record<string, number> = { property_owner: 0, viewer: 1, manager: 2, admin: 3, super_admin: 4 };
+  return levels[role ?? ''] ?? 0;
+};
 
 interface EnhancedTopNavigationProps {
   onLogout?: () => void;
@@ -48,8 +53,16 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
 }) => {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const userLevel = roleLevel(profile?.role);
 
   const firstName = profile?.full_name?.split(' ')[0] || profile?.email?.split('@')[0] || '';
+
+  const filteredNavItems = navigationItems.filter(item => {
+    if (item.minRole) {
+      return userLevel >= roleLevel(item.minRole);
+    }
+    return true;
+  });
 
   return (
     <div className={cn(
@@ -79,7 +92,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
             <div dir="rtl">
               <DropdownMenuLabel className="text-right">
                 <div className="text-sm font-medium">{profile?.full_name || profile?.email}</div>
-                <div className="text-xs text-muted-foreground">{profile?.role}</div>
+                <div className="text-xs text-muted-foreground">{getRoleLabel(profile?.role)}</div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
@@ -89,22 +102,30 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
                 <LayoutDashboard className="h-4 w-4" />
                 <span>פורטל בעלים</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="flex items-center gap-2 cursor-pointer flex-row-reverse justify-end"
-                onClick={() => navigate('/admin-dashboard/devops')}
-              >
-                <Wrench className="h-4 w-4" />
-                <span>QA & DevOps</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="flex items-center gap-2 cursor-pointer flex-row-reverse justify-end"
-                onClick={() => navigate('/admin-dashboard/settings')}
-              >
-                <Settings className="h-4 w-4" />
-                <span>הגדרות</span>
-              </DropdownMenuItem>
+              {userLevel >= roleLevel('admin') && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 cursor-pointer flex-row-reverse justify-end"
+                    onClick={() => navigate('/admin-dashboard/devops')}
+                  >
+                    <Wrench className="h-4 w-4" />
+                    <span>QA & DevOps</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+              {userLevel >= roleLevel('manager') && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 cursor-pointer flex-row-reverse justify-end"
+                    onClick={() => navigate('/admin-dashboard/settings')}
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>הגדרות</span>
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               {onLogout && (
                 <DropdownMenuItem 
@@ -124,7 +145,7 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
       {!isMobile && (
         <div className="flex-1 flex justify-center">
           <nav className="flex items-center gap-2 flex-row-reverse" dir="rtl">
-            {navigationItems.map((item) => (
+            {filteredNavItems.map((item) => (
               <NavLink
                 key={item.url}
                 to={item.url}

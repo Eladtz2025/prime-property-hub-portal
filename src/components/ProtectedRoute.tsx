@@ -58,6 +58,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (requiredRole) {
+    // Allow property_owner to access their own pages
+    if (requiredRole === 'property_owner' && profile.role === 'property_owner') {
+      return <>{children}</>;
+    }
+
     // property_owner is a separate track — they should NOT pass admin role checks
     if (profile.role === 'property_owner') {
       return (

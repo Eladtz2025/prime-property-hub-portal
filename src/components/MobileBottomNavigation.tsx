@@ -8,14 +8,21 @@ import {
   Megaphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { UserRole } from '@/types/auth';
 
 const mainNavItems = [
   { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
   { title: "פרסום", url: "/admin-dashboard/marketing", icon: Megaphone },
   { title: "לקוחות", url: "/admin-dashboard/customers", icon: Users },
-  { title: "סקאוט", url: "/admin-dashboard/property-scout", icon: Search },
+  { title: "סקאוט", url: "/admin-dashboard/property-scout", icon: Search, minRole: 'manager' as UserRole },
 ];
+
+const roleLevel = (role?: string): number => {
+  const levels: Record<string, number> = { property_owner: 0, viewer: 1, manager: 2, admin: 3, super_admin: 4 };
+  return levels[role ?? ''] ?? 0;
+};
 
 interface MobileBottomNavigationProps {
   notificationCount?: number;
@@ -25,12 +32,21 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   notificationCount = 0 
 }) => {
   const location = useLocation();
+  const { profile } = useAuth();
+  const userLevel = roleLevel(profile?.role);
+
+  const filteredItems = mainNavItems.filter(item => {
+    if (item.minRole) {
+      return userLevel >= roleLevel(item.minRole);
+    }
+    return true;
+  });
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
       <div className="bg-card/95 backdrop-blur-sm border-t border-border shadow-lg">
         <div className="flex items-center justify-around px-2 py-2 safe-area-padding-bottom" dir="rtl">
-          {mainNavItems.map((item) => {
+          {filteredItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.url;
             

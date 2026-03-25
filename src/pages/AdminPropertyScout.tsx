@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Activity, Hourglass, CheckCircle, Database } from 'lucide-react';
 import { ScoutedPropertiesTable } from '@/components/scout/ScoutedPropertiesTable';
@@ -209,7 +209,6 @@ const AdminPropertyScout: React.FC = () => {
     : [];
 
   return (
-    <ProtectedRoute requiredRole="manager">
       <div className="container mx-auto px-4 py-6 space-y-4" dir="rtl">
         {/* Metric Tiles */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -283,7 +282,6 @@ const AdminPropertyScout: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </ProtectedRoute>
   );
 };
 
