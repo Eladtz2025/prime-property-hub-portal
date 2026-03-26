@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { EnhancedTopNavigation } from './EnhancedTopNavigation';
 import { MobileBottomNavigation } from './MobileBottomNavigation';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
@@ -31,9 +32,9 @@ export const Layout: React.FC<LayoutProps> = ({
         <header className="border-b bg-primary sticky top-0 z-50 shadow-md" dir="rtl">
           <div className="flex items-center justify-between px-4 h-14">
             <EnhancedTopNavigation onLogout={onLogout} isMobile={true} today={today} />
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <Link to="/he" className="flex items-center gap-2 flex-shrink-0">
               <img src="/images/city-market-icon.png" alt="City Market" className="w-9 h-9 object-contain" />
-            </div>
+            </Link>
           </div>
         </header>
         <main className="flex-1 flex flex-col">
@@ -52,9 +53,9 @@ export const Layout: React.FC<LayoutProps> = ({
         <div className="flex items-center justify-between px-6 h-16 max-w-screen-2xl mx-auto gap-4">
           <EnhancedTopNavigation onLogout={onLogout} today={today} />
           
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <Link to="/he" className="flex items-center gap-3 flex-shrink-0">
             <img src="/images/city-market-icon.png" alt="City Market" className="w-12 h-12 object-contain" />
-          </div>
+          </Link>
         </div>
       </header>
       
