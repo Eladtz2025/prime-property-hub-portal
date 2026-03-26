@@ -6,7 +6,7 @@ import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Calendar } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import LuxuryArticleRenderer from "@/components/insights/LuxuryArticleRenderer";
 
 interface InsightFull {
   id: string;
@@ -80,45 +80,63 @@ const EnglishInsightDetail = () => {
 
       <EnglishHeader />
 
-      {/* Hero image */}
+      {/* Hero */}
       {insight.image_url && (
-        <div className="w-full h-[40vh] md:h-[50vh] relative">
-          <img src={insight.image_url} alt={insight.title_en || ""} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <div className="w-full h-[50vh] md:h-[60vh] relative flex items-end">
+          <img src={insight.image_url} alt={insight.title_en || ""} className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          <div className="relative z-10 container mx-auto px-4 pb-10 md:pb-14 max-w-3xl">
+            {insight.category && (
+              <span className="inline-block text-xs font-semibold text-secondary tracking-widest uppercase font-montserrat mb-3">
+                {insight.category}
+              </span>
+            )}
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-normal text-white font-playfair tracking-wide leading-tight">
+              {insight.title_en}
+            </h1>
+            {insight.summary_en && (
+              <p className="text-white/80 font-montserrat mt-4 text-base md:text-lg leading-relaxed max-w-2xl">
+                {insight.summary_en}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
-      <article className="container mx-auto px-4 py-12 max-w-3xl">
-        {/* Back link */}
-        <button
-          onClick={() => navigate("/en/insights")}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-secondary transition-colors mb-8 font-montserrat"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Insights
-        </button>
-
-        {insight.category && (
-          <span className="text-xs font-semibold text-secondary tracking-widest uppercase font-montserrat">{insight.category}</span>
-        )}
-        <h1 className="text-3xl md:text-4xl font-normal text-foreground font-playfair mt-2 mb-4 tracking-wide">{insight.title_en}</h1>
-
-        {formattedDate && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8 font-montserrat">
-            <Calendar className="w-4 h-4" />
-            <span>{formattedDate}</span>
-          </div>
-        )}
-
-        {insight.summary_en && (
-          <p className="text-lg text-muted-foreground mb-8 leading-relaxed border-l-4 border-secondary pl-4 font-montserrat">
-            {insight.summary_en}
-          </p>
-        )}
-
-        <div className="prose prose-lg max-w-none text-foreground">
-          <ReactMarkdown>{insight.content_en || ""}</ReactMarkdown>
+      <article className="container mx-auto px-4 py-12 md:py-16 max-w-2xl">
+        {/* Back + date */}
+        <div className="flex items-center justify-between mb-10">
+          <button
+            onClick={() => navigate("/en/insights")}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-secondary transition-colors font-montserrat"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Insights
+          </button>
+          {formattedDate && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground font-montserrat">
+              <Calendar className="w-4 h-4" />
+              <span>{formattedDate}</span>
+            </div>
+          )}
         </div>
+
+        {/* No hero fallback */}
+        {!insight.image_url && (
+          <>
+            {insight.category && (
+              <span className="text-xs font-semibold text-secondary tracking-widest uppercase font-montserrat">{insight.category}</span>
+            )}
+            <h1 className="text-3xl md:text-4xl font-normal text-foreground font-playfair mt-2 mb-4 tracking-wide">{insight.title_en}</h1>
+            {insight.summary_en && (
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed border-l-4 border-secondary pl-4 font-montserrat">
+                {insight.summary_en}
+              </p>
+            )}
+          </>
+        )}
+
+        <LuxuryArticleRenderer content={insight.content_en || ""} lang="en" />
       </article>
 
       <EnglishFooter />
