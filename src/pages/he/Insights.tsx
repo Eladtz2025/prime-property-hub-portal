@@ -65,7 +65,7 @@ const InsightCardHorizontal = ({ item, onClick }: { item: Insight; onClick: () =
     className="group text-right w-full bg-card overflow-hidden shadow-md hover:shadow-2xl transition-all duration-700 grid grid-cols-1 md:grid-cols-2"
   >
     {item.image_url && (
-      <div className="aspect-[4/3] md:aspect-auto md:h-full overflow-hidden relative">
+      <div className="aspect-[4/3] md:aspect-auto md:max-h-[350px] overflow-hidden relative">
         <img
           src={item.image_url}
           alt={item.title_he || ""}
@@ -75,13 +75,13 @@ const InsightCardHorizontal = ({ item, onClick }: { item: Insight; onClick: () =
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
       </div>
     )}
-    <div className="p-8 md:p-12 flex flex-col justify-center">
+    <div className="p-6 md:p-8 flex flex-col justify-center">
       {item.category && (
         <span className="text-xs font-semibold text-secondary tracking-widest uppercase font-montserrat">
           {item.category}
         </span>
       )}
-      <h3 className="text-2xl md:text-3xl font-normal text-foreground mt-3 mb-5 group-hover:text-secondary transition-colors duration-500 font-playfair tracking-wide">
+      <h3 className="text-xl md:text-2xl font-normal text-foreground mt-3 mb-5 group-hover:text-secondary transition-colors duration-500 font-playfair tracking-wide">
         {item.title_he}
       </h3>
       {item.summary_he && (
@@ -147,14 +147,14 @@ const HebrewInsights = () => {
         subtitle="כתבות, מדריכים ותובנות מעולם הנדל״ן"
         backgroundImage="https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920&q=80"
         backgroundAlt="תובנות נדל״ן תל אביב"
-        minHeight="50vh"
+        minHeight="35vh"
       />
 
       {/* Articles Section */}
-      <section className="py-12 md:py-16 lg:py-24">
+      <section className="py-10 md:py-14 lg:py-16">
         <div className="max-w-6xl mx-auto px-4">
           <ScrollAnimated>
-            <div className="text-center mb-14">
+            <div className="text-center mb-10">
               <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-3">מאמרים ועדכונים</p>
               <h2 className="font-playfair text-3xl sm:text-4xl font-normal tracking-wide text-foreground">כתבות אחרונות</h2>
               <div className="w-16 h-px bg-secondary mx-auto mt-5" />
@@ -193,10 +193,10 @@ const HebrewInsights = () => {
 
       {/* Guides Section — only show if there are guides */}
       {!loading && guides.length > 0 && (
-        <section className="py-12 md:py-16 lg:py-24 bg-muted/30">
+        <section className="py-10 md:py-14 lg:py-16 bg-muted/30">
           <div className="max-w-6xl mx-auto px-4">
             <ScrollAnimated>
-              <div className="text-center mb-14">
+              <div className="text-center mb-10">
                 <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-3">ידע מעשי</p>
                 <h2 className="font-playfair text-3xl sm:text-4xl font-normal tracking-wide text-foreground">מדריכים</h2>
                 <div className="w-16 h-px bg-secondary mx-auto mt-5" />
