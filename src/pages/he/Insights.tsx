@@ -20,13 +20,13 @@ interface Insight {
   published_at: string | null;
 }
 
-const InsightCard = ({ item, onClick }: { item: Insight; onClick: () => void }) => (
+const InsightCardVertical = ({ item, onClick }: { item: Insight; onClick: () => void }) => (
   <button
     onClick={onClick}
     className="group text-right w-full bg-card overflow-hidden shadow-md hover:shadow-2xl transition-all duration-700"
   >
     {item.image_url && (
-      <div className="aspect-[3/4] overflow-hidden relative">
+      <div className="aspect-[4/5] overflow-hidden relative">
         <img
           src={item.image_url}
           alt={item.title_he || ""}
@@ -59,6 +59,45 @@ const InsightCard = ({ item, onClick }: { item: Insight; onClick: () => void }) 
   </button>
 );
 
+const InsightCardHorizontal = ({ item, onClick }: { item: Insight; onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className="group text-right w-full bg-card overflow-hidden shadow-md hover:shadow-2xl transition-all duration-700 grid grid-cols-1 md:grid-cols-2"
+  >
+    {item.image_url && (
+      <div className="aspect-[4/3] md:aspect-auto md:h-full overflow-hidden relative">
+        <img
+          src={item.image_url}
+          alt={item.title_he || ""}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+      </div>
+    )}
+    <div className="p-8 md:p-12 flex flex-col justify-center">
+      {item.category && (
+        <span className="text-xs font-semibold text-secondary tracking-widest uppercase font-montserrat">
+          {item.category}
+        </span>
+      )}
+      <h3 className="text-2xl md:text-3xl font-normal text-foreground mt-3 mb-5 group-hover:text-secondary transition-colors duration-500 font-playfair tracking-wide">
+        {item.title_he}
+      </h3>
+      {item.summary_he && (
+        <p className="text-base text-muted-foreground leading-relaxed">
+          {item.summary_he}
+        </p>
+      )}
+      <div className="w-8 h-px bg-secondary/40 mt-8 transition-all duration-500 group-hover:w-16 group-hover:bg-secondary" />
+      <div className="flex items-center gap-1 mt-6 text-secondary text-sm font-medium font-montserrat tracking-wide">
+        <span>קרא עוד</span>
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+      </div>
+    </div>
+  </button>
+);
+
 const HebrewInsights = () => {
   const navigate = useNavigate();
   const [articles, setArticles] = useState<Insight[]>([]);
@@ -83,12 +122,6 @@ const HebrewInsights = () => {
     };
     fetchInsights();
   }, []);
-
-  const getGridClass = (count: number) => {
-    if (count === 1) return "grid md:grid-cols-2 gap-8";
-    if (count === 2) return "grid md:grid-cols-2 gap-8";
-    return "grid md:grid-cols-3 gap-8";
-  };
 
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
@@ -133,11 +166,15 @@ const HebrewInsights = () => {
                 <div key={i} className="bg-muted/30 animate-pulse h-96" />
               ))}
             </div>
-          ) : articles.length > 0 ? (
-            <div className={getGridClass(articles.length)}>
+          ) : articles.length === 1 ? (
+            <ScrollAnimated>
+              <InsightCardHorizontal item={articles[0]} onClick={() => navigate(`/he/insights/${articles[0].id}`)} />
+            </ScrollAnimated>
+          ) : articles.length > 1 ? (
+            <div className={articles.length === 2 ? "grid md:grid-cols-2 gap-8" : "grid md:grid-cols-3 gap-8"}>
               {articles.map((item, index) => (
                 <ScrollAnimated key={item.id} delay={index * 150}>
-                  <InsightCard item={item} onClick={() => navigate(`/he/insights/${item.id}`)} />
+                  <InsightCardVertical item={item} onClick={() => navigate(`/he/insights/${item.id}`)} />
                 </ScrollAnimated>
               ))}
             </div>
@@ -154,45 +191,36 @@ const HebrewInsights = () => {
         </div>
       </section>
 
-      {/* Guides Section */}
-      <section className="py-12 md:py-16 lg:py-24 bg-muted/30">
-        <div className="max-w-6xl mx-auto px-4">
-          <ScrollAnimated>
-            <div className="text-center mb-14">
-              <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-3">ידע מעשי</p>
-              <h2 className="font-playfair text-3xl sm:text-4xl font-normal tracking-wide text-foreground">מדריכים</h2>
-              <div className="w-16 h-px bg-secondary mx-auto mt-5" />
-            </div>
-          </ScrollAnimated>
-          {loading ? (
-            <div className="grid md:grid-cols-3 gap-8">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-muted/30 animate-pulse h-96" />
-              ))}
-            </div>
-          ) : guides.length > 0 ? (
-            <div className={getGridClass(guides.length)}>
-              {guides.map((item, index) => (
-                <ScrollAnimated key={item.id} delay={index * 150}>
-                  <InsightCard item={item} onClick={() => navigate(`/he/insights/${item.id}`)} />
-                </ScrollAnimated>
-              ))}
-            </div>
-          ) : (
+      {/* Guides Section — only show if there are guides */}
+      {!loading && guides.length > 0 && (
+        <section className="py-12 md:py-16 lg:py-24 bg-muted/30">
+          <div className="max-w-6xl mx-auto px-4">
             <ScrollAnimated>
-              <div className="text-center py-20">
-                <div className="w-16 h-px bg-secondary/30 mx-auto mb-8" />
-                <p className="font-playfair text-2xl text-muted-foreground/70 italic tracking-wide">מדריכים חדשים יפורסמו בקרוב</p>
-                <p className="font-montserrat text-sm text-muted-foreground/50 mt-3">תוכן מעשי שיעזור לכם לנהל את הנכס</p>
-                <div className="w-16 h-px bg-secondary/30 mx-auto mt-8" />
+              <div className="text-center mb-14">
+                <p className="font-montserrat text-sm tracking-widest uppercase text-muted-foreground mb-3">ידע מעשי</p>
+                <h2 className="font-playfair text-3xl sm:text-4xl font-normal tracking-wide text-foreground">מדריכים</h2>
+                <div className="w-16 h-px bg-secondary mx-auto mt-5" />
               </div>
             </ScrollAnimated>
-          )}
-        </div>
-      </section>
+            {guides.length === 1 ? (
+              <ScrollAnimated>
+                <InsightCardHorizontal item={guides[0]} onClick={() => navigate(`/he/insights/${guides[0].id}`)} />
+              </ScrollAnimated>
+            ) : (
+              <div className={guides.length === 2 ? "grid md:grid-cols-2 gap-8" : "grid md:grid-cols-3 gap-8"}>
+                {guides.map((item, index) => (
+                  <ScrollAnimated key={item.id} delay={index * 150}>
+                    <InsightCardVertical item={item} onClick={() => navigate(`/he/insights/${item.id}`)} />
+                  </ScrollAnimated>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Professionals CTA */}
-      <section className="py-16 md:py-20 lg:py-28 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+      <section className="py-12 md:py-16 lg:py-20 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
         <div className="max-w-2xl mx-auto px-4 text-center">
           <ScrollAnimated>
             <p className="font-montserrat text-sm tracking-widest uppercase text-secondary mb-3">שירותי פרימיום</p>
