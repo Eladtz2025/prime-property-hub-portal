@@ -1,22 +1,16 @@
 
 
-## תיקון עמוד Insights — תמונת Hero חסרה
+## הסרת טאב Insights מהתפריטים
 
-### הבעיה
-קובץ `/images/tel-aviv-aerial.jpg` לא קיים בתיקיית `public/images/`. לכן ה-Hero מציג רקע אפור ריק.
+הסרה זמנית של הלינק לעמוד Insights מכל התפריטים. הנתיבים והעמודים עצמם יישארו קיימים (לא נמחק קוד) — רק נסיר את הלינקים מהניווט.
 
-### פתרון
-החלף את תמונת הרקע בתמונה קיימת שכבר נמצאת בפרויקט. האפשרויות:
-- `hero-building.jpg` — בניין יוקרתי (מתאים לנדל"ן)
-- `hero-neighborhoods.jpg` — שכונות
-- `hero-about.jpg` — רקע דף אודות
-
-### שינויים
+### שינויים (3 קבצים)
 
 | קובץ | שינוי |
 |-------|--------|
-| `src/pages/he/Insights.tsx` | שנה `backgroundImage` מ-`tel-aviv-aerial.jpg` לתמונה קיימת |
-| `src/pages/en/Insights.tsx` | אותו שינוי |
+| `src/components/he/Header.tsx` | הסר שורה 41: `{ label: "תובנות", path: "/he/insights" }` |
+| `src/components/en/Header.tsx` | הסר שורה 41: `{ label: "Insights", path: "/en/insights" }` |
+| `src/components/EnhancedTopNavigation.tsx` | הסר שורה 35: `{ title: "תובנות", ... }` |
 
-**2 קבצים, שורה אחת בכל קובץ.**
+**הנתיבים, העמודים, והאדמין CRUD יישארו — רק הלינקים בתפריט יוסרו.**
 
