@@ -42,7 +42,7 @@ const HebrewInsightDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen hebrew-luxury flex items-center justify-center" dir="rtl">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
@@ -50,11 +50,11 @@ const HebrewInsightDetail = () => {
 
   if (!insight) {
     return (
-      <div className="min-h-screen bg-background" dir="rtl">
+      <div className="min-h-screen hebrew-luxury" dir="rtl">
         <HebrewHeader />
         <div className="container mx-auto px-4 pt-32 pb-16 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">הכתבה לא נמצאה</h1>
-          <button onClick={() => navigate("/he/insights")} className="text-secondary hover:underline">
+          <h1 className="text-2xl font-playfair text-foreground mb-4">הכתבה לא נמצאה</h1>
+          <button onClick={() => navigate("/he/insights")} className="text-secondary hover:underline font-montserrat">
             חזרה לתובנות
           </button>
         </div>
@@ -68,11 +68,12 @@ const HebrewInsightDetail = () => {
     : null;
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen hebrew-luxury" dir="rtl">
       <Helmet>
-        <title>{insight.title_he || "Insights"} | City Market Properties</title>
+        <html lang="he" dir="rtl" />
+        <title>{insight.title_he || "תובנות"} | City Market Properties</title>
         <meta name="description" content={insight.summary_he || ""} />
-        <meta property="og:title" content={insight.title_he || "Insights"} />
+        <meta property="og:title" content={insight.title_he || "תובנות"} />
         {insight.image_url && <meta property="og:image" content={insight.image_url} />}
       </Helmet>
       <HreflangMeta currentLang="he" currentPath={`/he/insights/${id}`} />
@@ -91,26 +92,26 @@ const HebrewInsightDetail = () => {
         {/* Back link */}
         <button
           onClick={() => navigate("/he/insights")}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-secondary transition-colors mb-8"
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-secondary transition-colors mb-8 font-montserrat"
         >
           <ArrowRight className="w-4 h-4" />
           חזרה לתובנות
         </button>
 
         {insight.category && (
-          <span className="text-xs font-semibold text-secondary tracking-wide uppercase">{insight.category}</span>
+          <span className="text-xs font-semibold text-secondary tracking-widest uppercase font-montserrat">{insight.category}</span>
         )}
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground font-playfair mt-2 mb-4">{insight.title_he}</h1>
+        <h1 className="text-3xl md:text-4xl font-normal text-foreground font-playfair mt-2 mb-4 tracking-wide">{insight.title_he}</h1>
 
         {formattedDate && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8 font-montserrat">
             <Calendar className="w-4 h-4" />
             <span>{formattedDate}</span>
           </div>
         )}
 
         {insight.summary_he && (
-          <p className="text-lg text-muted-foreground mb-8 leading-relaxed border-r-4 border-secondary pr-4">
+          <p className="text-lg text-muted-foreground mb-8 leading-relaxed border-r-4 border-secondary pr-4 font-montserrat">
             {insight.summary_he}
           </p>
         )}
