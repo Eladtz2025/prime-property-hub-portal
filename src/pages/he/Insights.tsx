@@ -103,7 +103,7 @@ const HebrewInsights = () => {
       <FullScreenHero
         title="תובנות"
         subtitle="כתבות, מדריכים ותובנות מעולם הנדל״ן"
-        backgroundImage="/images/tel-aviv-aerial.jpg"
+        backgroundImage="/images/hero-building.jpg"
         backgroundAlt="תובנות נדל״ן תל אביב"
         minHeight="50vh"
       />
