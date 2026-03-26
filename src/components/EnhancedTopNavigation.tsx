@@ -4,6 +4,7 @@ import {
   Home, 
   Building,
   Megaphone,
+  Newspaper,
   LogOut, 
   Settings,
   ChevronDown,
@@ -31,6 +32,7 @@ const navigationItems = [
   { title: "נכסים", url: "/admin-dashboard/properties", icon: Building },
   { title: "פרסום", url: "/admin-dashboard/marketing", icon: Megaphone },
   { title: "לקוחות", url: "/admin-dashboard/customers", icon: Users },
+  { title: "תובנות", url: "/admin-dashboard/insights", icon: Newspaper, minRole: 'manager' as UserRole },
   { title: "סקאוט נדל\"ן", url: "/admin-dashboard/property-scout", icon: Search, minRole: 'manager' as UserRole },
   { title: "לוח בקרה", url: "/admin-dashboard", icon: Home },
 ];
