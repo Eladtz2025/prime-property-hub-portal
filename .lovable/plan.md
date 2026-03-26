@@ -1,26 +1,33 @@
 
 
-## תיקון תמונה שבורה בכתבה
+## שדרוג עמוד Insights לרמה פרימיום — עיצוב מחדש
 
-### הבעיה
-ה-`image_url` של הכתבה בטבלת `insights` מצביע על URL של Unsplash שמחזיר 404:
-`https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1200&q=80`
+### הבעיות הנוכחיות
+1. **אין אנימציות כניסה** — כל הסקשנים מופיעים בבת אחת, בניגוד לעמוד About שמשתמש ב-`ScrollAnimated`
+2. **כרטיסי כתבות שטוחים** — `bg-card/50 border border-border/30` נראה זול. חסר עומק, hover מרשים, ומעבר צבע עדין
+3. **Empty state בסיסי מדי** — שורה אחת של טקסט במקום אלמנט ויזואלי מזמין
+4. **סקשן בעלי מקצוע (CTA)** — גרדיאנט `from-foreground to-primary` כבד מדי, לא תואם לשפה העיצובית של שאר האתר
+5. **חסר מבנה ויזואלי** — אין שימוש ב-`max-w-6xl`, אין ריווח פרופורציונלי, אין מפרידים דקורטיביים
 
-### פתרון
+### שינויים
 
-שתי אפשרויות:
+**`src/pages/he/Insights.tsx` + `src/pages/en/Insights.tsx`:**
 
-**אפשרות א — תמונה מקומית (מומלץ, אמין 100%):**
-עדכון ה-`image_url` בטבלה ל-`/images/rental-interior.jpg` או `/images/management-lobby.jpg` — תמונות שכבר קיימות בפרויקט ומתאימות לנושא תחזוקת נכס.
+1. **הוספת ScrollAnimated** לכל סקשן — אנימציות כניסה בגלילה כמו בעמוד About
+2. **שדרוג InsightCard** — עיצוב פרימיום:
+   - הסרת border, הוספת `shadow-md hover:shadow-2xl`
+   - Overlay gradient עדין על התמונה
+   - קו תחתון דקורטיבי (gold line) שמתרחב ב-hover
+   - Padding גדול יותר, ריווח בין אלמנטים
+   - Aspect ratio `3:4` (כמו division cards) במקום `16:10`
+3. **שדרוג empty state** — אלמנט ויזואלי עם קו דקורטיבי, אייקון עדין, וטקסט Playfair מזמין
+4. **שדרוג סקשן CTA בעלי מקצוע** — החלפת הגרדיאנט הכבד ב-`bg-gradient-to-br from-primary/10 via-primary/5 to-background` (כמו CTA בעמוד About), כפתור מותאם
+5. **ריווח ומבנה** — `max-w-6xl mx-auto` לגריד, padding מתאים למובייל (`py-12 md:py-16 lg:py-24`)
+6. **גריד רספונסיבי** — כשיש כתבה אחת בלבד, היא תוצג ברוחב מלא / 2 עמודות במקום כרטיס קטן בצד
 
-**אפשרות ב — Unsplash תקין:**
-החלפה ב-URL עובד מ-Unsplash (אאמת לפני שאכניס).
-
-### שינוי
-
-| # | מה | פרטים |
-|---|-----|--------|
-| 1 | עדכון DB | `UPDATE insights SET image_url = '/images/rental-interior.jpg' WHERE id = 'db1ec8e7-...'` (דרך migration) |
-
-**קובץ migration חדש אחד בלבד.**
+### פרטים טכניים
+- Import של `ScrollAnimated` מ-`@/components/about/ScrollAnimated`
+- InsightCard ישאר inline component בכל קובץ (לא קובץ נפרד)
+- אפס שינויים בלוגיקה, DB, או ניתוב
+- **2 קבצים לעריכה** (HE + EN)
 
