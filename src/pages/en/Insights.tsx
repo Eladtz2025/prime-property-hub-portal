@@ -103,7 +103,7 @@ const EnglishInsights = () => {
       <FullScreenHero
         title="Insights"
         subtitle="Articles, guides & real estate expertise"
-        backgroundImage="/images/hero-building.jpg"
+        backgroundImage="https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920&q=80"
         backgroundAlt="Tel Aviv real estate insights"
         minHeight="50vh"
       />
