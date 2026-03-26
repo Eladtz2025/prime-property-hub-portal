@@ -1,34 +1,31 @@
 
 
-## תיקון עמוד Insights + בניית ממשק ניהול באדמין
+## שדרוג עיצוב עמודי Insights לרמת היוקרה של האתר
 
-### ממצאים
+### הבעיות הנוכחיות
+1. **Class שגוי** — `bg-background` במקום `hebrew-luxury` / `english-luxury` (כל שאר הדפים באתר משתמשים בו)
+2. **חסר `<html lang="he" dir="rtl" />`** ב-Helmet
+3. **כותרות סקשנים עם אייקוני Lucide** — נראה זול. שאר האתר משתמש בפורמט אלגנטי: subtitle קטן uppercase + כותרת Playfair גדולה
+4. **Empty state בנאלי** — טקסט אפור פשוט, לא תואם את העיצוב היוקרתי
+5. **סקשן בעלי מקצוע** — `rounded-2xl` לא תואם את שאר האתר, צריך full-width עם גרדיאנט מתוחכם יותר
+6. **חסרים `font-playfair` / `font-montserrat`** בכרטיסים העבריים
+7. **Detail pages** — אותן בעיות: `bg-background` במקום luxury class
 
-**1. טקסטים באנגלית בדפים העבריים:**
-- `he/Header.tsx` שורה 41: `"Insights"` → `"תובנות"`
-- `he/Insights.tsx` שורה 97 (breadcrumb): `"Insights"` → `"תובנות"`
-- `he/InsightDetail.tsx` שורה 58: `"חזרה ל-Insights"` → `"חזרה לתובנות"`
-- `he/InsightDetail.tsx` שורה 97: `"חזרה ל-Insights"` → `"חזרה לתובנות"`
-- `he/Footer.tsx`: לבדוק אם גם שם כתוב באנגלית
+### שינויים (4 קבצים)
 
-**2. אין ממשק ניהול באדמין** — כרגע אין שום דרך להוסיף/לערוך כתבות מהמערכת.
+**`src/pages/he/Insights.tsx` + `src/pages/en/Insights.tsx`:**
+1. שנה `bg-background` → `hebrew-luxury` / `english-luxury`
+2. הוסף `<html lang="he" dir="rtl" />` ב-Helmet
+3. החלף כותרות סקשנים מפורמט אייקון+כותרת → פורמט About page:
+   - subtitle קטן: `font-montserrat text-sm tracking-widest uppercase text-muted-foreground`
+   - כותרת: `font-playfair text-3xl sm:text-4xl font-normal tracking-wide`
+4. שדרג empty state — הוסף אייקון דקורטיבי וטקסט מעוצב יותר
+5. שדרג סקשן בעלי מקצוע — full-width section עם רקע `bg-muted/30` ועיצוב תואם About page
+6. עטוף סקשנים ב-`bg-muted/30` מתחלף לעומק ויזואלי
 
----
+**`src/pages/he/InsightDetail.tsx` + `src/pages/en/InsightDetail.tsx`:**
+1. שנה `bg-background` → `hebrew-luxury` / `english-luxury`
+2. הוסף `<html lang>` ב-Helmet
 
-### תוכנית תיקון
-
-| # | תיקון | קבצים |
-|---|--------|--------|
-| 1 | תרגם את כל ה-"Insights" לעברית ("תובנות") בדפים העבריים | `he/Header.tsx`, `he/Insights.tsx`, `he/InsightDetail.tsx`, `he/Footer.tsx` |
-| 2 | בנה עמוד ניהול Insights באדמין — CRUD מלא (רשימה + טופס יצירה/עריכה) | קובץ חדש: `src/pages/admin/AdminInsights.tsx` |
-| 3 | הוסף Route + לינק בניווט האדמין | `App.tsx`, `EnhancedTopNavigation.tsx`, `MobileBottomNavigation.tsx` |
-
-**ממשק האדמין יכלול:**
-- טבלת רשימה עם כל הכתבות/מדריכים (סטטוס, סוג, תאריך)
-- כפתור "כתבה חדשה" / "מדריך חדש"
-- דיאלוג עריכה עם שדות: סוג, כותרות (HE/EN), תקצירים, תוכן (Markdown), תמונה, קטגוריה, סדר, מפורסם
-- מחיקה עם אישור
-- הרשאה: `manager` ומעלה
-
-**5 קבצים לעריכה, 1 קובץ חדש**
+**אפס שינויים בלוגיקה, DB או ניתוב.**
 
