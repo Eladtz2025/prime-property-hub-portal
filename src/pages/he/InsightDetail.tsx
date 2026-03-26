@@ -55,7 +55,7 @@ const HebrewInsightDetail = () => {
         <div className="container mx-auto px-4 pt-32 pb-16 text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">הכתבה לא נמצאה</h1>
           <button onClick={() => navigate("/he/insights")} className="text-secondary hover:underline">
-            חזרה ל-Insights
+            חזרה לתובנות
           </button>
         </div>
         <HebrewFooter />
@@ -94,7 +94,7 @@ const HebrewInsightDetail = () => {
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-secondary transition-colors mb-8"
         >
           <ArrowRight className="w-4 h-4" />
-          חזרה ל-Insights
+          חזרה לתובנות
         </button>
 
         {insight.category && (

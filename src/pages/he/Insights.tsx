@@ -94,13 +94,13 @@ const HebrewInsights = () => {
       <OrganizationSchema language="he" />
       <BreadcrumbSchema items={[
         { name: "דף הבית", url: "https://www.ctmarketproperties.com/he" },
-        { name: "Insights", url: "https://www.ctmarketproperties.com/he/insights" },
+        { name: "תובנות", url: "https://www.ctmarketproperties.com/he/insights" },
       ]} />
 
       <HebrewHeader />
 
       <FullScreenHero
-        title="Insights"
+        title="תובנות"
         subtitle="כתבות, מדריכים ותובנות מעולם הנדל״ן"
         backgroundImage="/images/tel-aviv-aerial.jpg"
         backgroundAlt="תובנות נדל״ן תל אביב"
