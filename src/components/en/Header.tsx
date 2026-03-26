@@ -38,7 +38,7 @@ const EnglishHeader = () => {
     { label: "Property Management", path: "/en/management" },
     { label: "New Projects", path: "/en/new-developments" },
     { label: "Neighborhoods", path: "/en/neighborhoods" },
-    
+    { label: "Insights", path: "/en/insights" },
     { label: "About Us", path: "/en/about" },
     { label: "Contact", path: "/en/contact" },
   ];
