@@ -1,0 +1,1 @@
+UPDATE insights SET image_url = '/images/rental-interior.jpg' WHERE id = 'db1ec8e7-0499-4310-84aa-6596884b4ec9';
