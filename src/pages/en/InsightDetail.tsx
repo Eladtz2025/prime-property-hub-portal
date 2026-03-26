@@ -42,7 +42,7 @@ const EnglishInsightDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen english-luxury flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
@@ -50,11 +50,11 @@ const EnglishInsightDetail = () => {
 
   if (!insight) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen english-luxury">
         <EnglishHeader />
         <div className="container mx-auto px-4 pt-32 pb-16 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Article not found</h1>
-          <button onClick={() => navigate("/en/insights")} className="text-secondary hover:underline">
+          <h1 className="text-2xl font-playfair text-foreground mb-4">Article not found</h1>
+          <button onClick={() => navigate("/en/insights")} className="text-secondary hover:underline font-montserrat">
             Back to Insights
           </button>
         </div>
@@ -68,8 +68,9 @@ const EnglishInsightDetail = () => {
     : null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen english-luxury">
       <Helmet>
+        <html lang="en" />
         <title>{insight.title_en || "Insights"} | City Market Properties</title>
         <meta name="description" content={insight.summary_en || ""} />
         <meta property="og:title" content={insight.title_en || "Insights"} />
@@ -91,19 +92,19 @@ const EnglishInsightDetail = () => {
         {/* Back link */}
         <button
           onClick={() => navigate("/en/insights")}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-secondary transition-colors mb-8"
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-secondary transition-colors mb-8 font-montserrat"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Insights
         </button>
 
         {insight.category && (
-          <span className="text-xs font-semibold text-secondary tracking-wide uppercase font-montserrat">{insight.category}</span>
+          <span className="text-xs font-semibold text-secondary tracking-widest uppercase font-montserrat">{insight.category}</span>
         )}
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground font-playfair mt-2 mb-4">{insight.title_en}</h1>
+        <h1 className="text-3xl md:text-4xl font-normal text-foreground font-playfair mt-2 mb-4 tracking-wide">{insight.title_en}</h1>
 
         {formattedDate && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8 font-montserrat">
             <Calendar className="w-4 h-4" />
             <span>{formattedDate}</span>
           </div>
