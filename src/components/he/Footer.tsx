@@ -51,7 +51,7 @@ const HebrewFooter = () => {
                 פרויקטים חדשים
               </p>
               <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/insights')}>
-                Insights
+                תובנות
               </p>
             </div>
           </div>
