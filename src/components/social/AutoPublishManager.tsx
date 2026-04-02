@@ -459,11 +459,9 @@ export const AutoPublishManager: React.FC = () => {
       {/* Inline Form — always visible */}
       <Card className="border-primary/20">
           <CardContent className="pt-3 pb-3 space-y-2">
-            {/* Publication Type + Name + Filters — single row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <Label className="text-xs font-medium">סוג פרסום</Label>
-                <Select value={mode === 'one_time' ? 'one_time' : queueType === 'article_oneshot' ? 'auto_articles' : 'auto_properties'} onValueChange={(v) => {
+            {/* Row 1: All controls in one line */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={mode === 'one_time' ? 'one_time' : queueType === 'article_oneshot' ? 'auto_articles' : 'auto_properties'} onValueChange={(v) => {
                   if (v === 'one_time') {
                     setMode('one_time');
                   } else if (v === 'auto_properties') {
@@ -475,46 +473,38 @@ export const AutoPublishManager: React.FC = () => {
                     setQueueType('article_oneshot');
                   }
                 }}>
-                  <SelectTrigger className="h-8 text-sm mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="one_time">
-                      <span className="flex items-center gap-1.5"><Send className="h-3 w-3" /> חד-פעמי</span>
-                    </SelectItem>
-                    <SelectItem value="auto_properties">
-                      <span className="flex items-center gap-1.5"><Building2 className="h-3 w-3" /> אוטומטי — דירות</span>
-                    </SelectItem>
-                    <SelectItem value="auto_articles">
-                      <span className="flex items-center gap-1.5"><Newspaper className="h-3 w-3" /> אוטומטי — כתבות</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <SelectTrigger className="h-8 text-xs w-[130px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="one_time">
+                    <span className="flex items-center gap-1.5"><Send className="h-3 w-3" /> חד-פעמי</span>
+                  </SelectItem>
+                  <SelectItem value="auto_properties">
+                    <span className="flex items-center gap-1.5"><Building2 className="h-3 w-3" /> אוטו — דירות</span>
+                  </SelectItem>
+                  <SelectItem value="auto_articles">
+                    <span className="flex items-center gap-1.5"><Newspaper className="h-3 w-3" /> אוטו — כתבות</span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
 
               {mode === 'recurring' && (
-                <div>
-                  <Label className="text-xs font-medium">שם התבנית</Label>
-                  <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-8 text-sm mt-1" placeholder="לדוגמה: דירות יומי" />
-                </div>
+                <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-8 text-xs w-[140px]" placeholder="שם התבנית" />
               )}
 
               {mode === 'recurring' && queueType === 'property_rotation' && (
-                <div>
-                  <Label className="text-xs font-medium">סוג נכס</Label>
-                  <Select value={propertyFilter} onValueChange={(v) => setPropertyFilter(v as 'all' | 'rental' | 'sale')}>
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">הכל</SelectItem>
-                      <SelectItem value="rental">השכרה בלבד</SelectItem>
-                      <SelectItem value="sale">מכירה בלבד</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={propertyFilter} onValueChange={(v) => setPropertyFilter(v as 'all' | 'rental' | 'sale')}>
+                  <SelectTrigger className="h-8 text-xs w-[110px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">הכל</SelectItem>
+                    <SelectItem value="rental">השכרה</SelectItem>
+                    <SelectItem value="sale">מכירה</SelectItem>
+                  </SelectContent>
+                </Select>
               )}
-            </div>
 
             {/* One-time: Property & Template selection */}
             {mode === 'one_time' && (
