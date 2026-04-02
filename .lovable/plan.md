@@ -1,46 +1,30 @@
 
 
-## בחירת תמונות לפוסט פייסבוק — תמונה ראשית + מולטי-תמונות
+## תיקון שני באגים: כתובת בפוסט + אפשרות פרסום Private בפייסבוק
 
-### מצב נוכחי
-כשבוחרים נכס, הפוסט מציג **Link Card** (פייסבוק שולף OG מהאתר) עם התמונה הראשית בלבד. אין אפשרות לבחור תמונה אחרת או להציג כמה תמונות.
+### בעיה 1 — כתובת הרחוב עדיין מופיעה
+הצילום מפייסבוק מראה "בן יהודה 110" בפוסט. מקור הבעיה: בפונקציה `buildPreviewText` (שורה 395), ה-default template הוא `'{address}'` ו-`{address}` עדיין מוחלף ב-`prop.address`. בנוסף ה-hashtags מציגים `#{neighborhood} #{city}` כטקסט לא מפוענח.
 
-### מה ישתנה
+**תיקון:**
+- `buildPreviewText`: שנה default template ל-`'{neighborhood}, {city}'` במקום `'{address}'`
+- `fillPropertyPlaceholders`: שנה `{address}` ל-fallback לשכונה (`prop.neighborhood || prop.city`) במקום `prop.address`
+- בדיקת ה-hashtags — ודא שהם מפוענחים נכון לפני שליחה
 
-**1. בורר תמונות מהנכס:**
-כשבוחרים נכס — מוצגת רשימת thumbnails של כל תמונות הנכס (מתוך `property_images`). לחיצה על תמונה בוחרת אותה כראשית.
+### בעיה 2 — אפשרות Private בפייסבוק
+Facebook Graph API תומך בפרמטר `privacy` לפוסטים בדף:
+```json
+{ "privacy": { "value": "SELF" } }
+```
+`SELF` = רק אתה רואה (דרפט לבדיקה), `EVERYONE` = ציבורי.
 
-**2. מצב פרסום — Link Card או Photo Post:**
-toggle חדש מאפשר לבחור:
-- **Link Card** (ברירת מחדל) — תמונה אחת + קישור לאתר. פייסבוק בונה OG card
-- **Photo Post** — תמונות מרובות בלי Link Card. המשתמש מסמן אילו תמונות לכלול (checkbox על כל thumbnail)
-
-### שינויים
+**שינויים:**
 
 | # | קובץ | שינוי |
 |---|-------|--------|
-| 1 | `src/components/social/AutoPublishManager.tsx` | הוסף state: `postStyle` (link/photos), `selectedImageIndex`, `selectedImageUrls[]`. הצג gallery thumbnails מתמונות הנכס כשנבחר נכס. ב-link mode — בחירת תמונה ראשית. ב-photos mode — multi-select. עדכן `executeSave` לשלוח `image_urls` כשב-photo mode |
-| 2 | `src/components/social/FacebookPostPreview.tsx` | ה-preview כבר תומך בשני המצבים (linkCard או imageUrls grid) — אין שינוי |
-| 3 | `supabase/functions/social-publish/index.ts` | כבר תומך בשני הנתיבים (link post vs photo post) — אין שינוי |
+| 1 | `src/components/social/AutoPublishManager.tsx` | הוסף toggle "פרסום פרטי (לבדיקה)" → שולח `is_private: true` לפוסט. תקן `buildPreviewText` default, תקן `fillPropertyPlaceholders` להשתמש בשכונה במקום כתובת |
+| 2 | `supabase/functions/social-publish/index.ts` | קבל `is_private` מה-post, העבר `privacy: { value: "SELF" }` לכל קריאות Facebook API כש-`is_private=true` |
 
-**קובץ אחד לעריכה בלבד. ה-preview וה-edge function כבר מוכנים.**
+**שימוש:** מסמנים "פרסום פרטי" → הפוסט עולה לפייסבוק אבל רק אתה רואה אותו → בודקים שהכל נראה טוב → מוחקים ומפרסמים שוב כ-Public.
 
-### UX
-
-```text
-┌─────────────────────────────┐
-│ סוג פרסום:                  │
-│ [◉ Link Card] [○ תמונות]   │
-│                             │
-│ בחר תמונות:                 │
-│ ┌────┐ ┌────┐ ┌────┐ ┌────┐│
-│ │ ✓  │ │    │ │    │ │    ││
-│ │img1│ │img2│ │img3│ │img4││
-│ └────┘ └────┘ └────┘ └────┘│
-│                             │
-│ במצב Link Card — בחירה     │
-│ יחידה (תמונה ראשית)        │
-│ במצב תמונות — multi-select │
-└─────────────────────────────┘
-```
+**2 קבצים + deploy של edge function.**
 
