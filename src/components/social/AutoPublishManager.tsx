@@ -218,9 +218,9 @@ export const AutoPublishManager: React.FC = () => {
       setContentText(
         `🏠 דירה ${typeLabel} ב${prop.city || ''}\n\n📍 ${prop.neighborhood || prop.city || ''}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר${prop.floor ? `\n🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
       );
-      const tags = ['#נדלן', '#דירה' + typeLabel.replace('ל', 'ל')];
-      if (prop.city) tags.push(`#${prop.city.replace(/\s/g, '')}`);
-      if (prop.neighborhood) tags.push(`#${prop.neighborhood.replace(/\s/g, '')}`);
+      const tags = ['#נדלן', `#דירה${typeLabel.replace('ל', 'ל')}`];
+      if (prop.city) tags.push(`#${prop.city.replace(/[-\s]/g, '_')}`);
+      if (prop.neighborhood) tags.push(`#${prop.neighborhood.replace(/[-\s]/g, '_')}`);
       setHashtags(tags.join(' '));
     } else {
       applyTemplate(selectedTemplateId);
