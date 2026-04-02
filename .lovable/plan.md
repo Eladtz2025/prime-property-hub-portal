@@ -1,30 +1,54 @@
 
 
-## שיפור תצוגת Facebook Preview — קומפקטית ומדויקת יותר
+## תיקון תצוגת Facebook — התאמה למציאות
 
-### הבעיות שזיהית
-
-1. **כפילות מידע** — פרטי הנכס (חדרים, מ"ר, מחיר) מופיעים גם בטקסט הפוסט וגם ב-Link Card למטה
-2. **יותר מדי טקסט** — תיאור ארוך של הדירה בגוף הפוסט, מספיק 2 משפטים
-3. **התצוגה ענקית** — תופסת את כל רוחב העמוד. בפייסבוק אמיתי פוסט הוא ~500px רוחב
+### הבעיות
+1. **ה-URL לא נשלח לפייסבוק** — `linkUrl` (`citymarket.co.il/property/{id}`) משמש רק בתצוגה מקדימה אבל לא מצורף ל-`content_text` שנשלח ל-API. לכן ה-Link Card לא יופיע בפוסט האמיתי.
+2. **פוסט תמונה vs פוסט קישור** — כשמעלים תמונה דרך `/photos` API, פייסבוק מציג פוסט תמונה (תמונה גדולה + טקסט מתחת). כשרוצים Link Card, צריך לשלוח דרך `/feed` API עם `link` parameter — בלי להעלות תמונה בנפרד.
+3. **קיצוץ טקסט** — פייסבוק חותך אחרי ~5 שורות. התצוגה המקדימה לא מדמה את זה.
 
 ### פתרון
 
-**FacebookPostPreview.tsx:**
-- הגבלת רוחב מקסימלי: `max-w-[500px]` כדי לדמות את הגודל האמיתי בפייסבוק
-- הקטנת aspect ratio של תמונת ה-Link Card (מ-`1.91/1` ל-`max-h-[260px]`) כדי שלא תשתלט על המסך
+**שני מסלולים לפי סוג פוסט:**
 
-**AutoPublishManager.tsx:**
-- עטיפת ה-preview ב-container ממורכז עם `mx-auto`
+**א. פוסט עם Link Card (כשיש נכס מקושר):**
+- שלח דרך `/feed` API עם parameter `link` שמצביע ל-`https://citymarket.co.il/property/{id}`
+- פייסבוק ישלוף את ה-OG tags מהדף ויבנה את ה-Link Card אוטומטית (תמונה, כותרת, תיאור, דומיין)
+- **לא** מעלים תמונות בנפרד — פייסבוק מציג או תמונה או Link Card, לא שניהם
 
-**לגבי כפילות המידע והטקסט הארוך** — זה תלוי ב-preset/תוכן שהמשתמש בוחר. ה-Link Card (כותרת + תיאור) נבנה אוטומטית מהנכס וזה מה שבאמת יופיע בפייסבוק. הטקסט למעלה הוא מה שאתה כותב בתבנית. אם התבנית כוללת פרטים שכבר מופיעים ב-Link Card — יש כפילות.
+**ב. פוסט תמונה רגיל (בלי נכס / free text):**
+- נשאר כמו היום — `/photos` API
 
 ### שינויים
 
 | # | קובץ | שינוי |
 |---|-------|--------|
-| 1 | `src/components/social/FacebookPostPreview.tsx` | `max-w-[500px] mx-auto` על ה-container הראשי, הקטנת תמונה |
-| 2 | `src/components/social/AutoPublishManager.tsx` | עטיפת preview ב-div ממורכז |
+| 1 | `src/components/social/AutoPublishManager.tsx` | שמור `propertyUrl` (מ-`buildLinkCard`) ושלח אותו כ-`link_url` לטבלת `social_posts` |
+| 2 | `supabase/functions/social-publish/index.ts` | כשיש `link_url` בפוסט, שלח דרך `/feed` עם `link` parameter במקום `/photos`. פייסבוק יבנה את ה-Card אוטומטית |
+| 3 | `src/components/social/FacebookPostPreview.tsx` | הוסף "See more" truncation כשהטקסט ארוך מ-5 שורות, כמו בפייסבוק אמיתי |
 
-**2 קבצים, שינויים קוסמטיים בלבד.**
+### פרטים טכניים
+
+**Edge Function — לוגיקת publish חדשה:**
+```
+if (post.link_url && !imageUrls.length) {
+  // Link post — Facebook generates OG card automatically
+  POST /{pageId}/feed { message, link, access_token }
+} else if (imageUrls.length) {
+  // Photo post — existing logic
+  POST /{pageId}/photos { url, message, access_token }
+} else {
+  // Text only
+  POST /{pageId}/feed { message, access_token }
+}
+```
+
+**AutoPublishManager — שליחת URL:**
+- ב-`executeSave`: הוסף `link_url: propertyUrl` ל-post object כשנבחר נכס
+- `propertyUrl` = `https://citymarket.co.il/property/${selectedPropertyId}`
+
+**Preview — טקסט קצוץ:**
+- אחרי 5 שורות או 300 תווים — הצג "...קרא עוד" עם אפשרות פתיחה
+
+**3 קבצים. אפס שינויים ב-DB schema (הטבלה `social_posts` כבר מכילה `link_url`).**
 
