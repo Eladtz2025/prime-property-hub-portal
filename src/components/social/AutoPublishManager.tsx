@@ -373,10 +373,15 @@ export const AutoPublishManager: React.FC = () => {
         ? selectedPhotoIndexes.map(i => imageUrls[i]).filter(Boolean)
         : [];
 
+      // In photos mode, append property URL to text so users can still click through
+      const finalContentText = (isPhotosMode && propertyUrl)
+        ? `${contentText}\n\n🔗 ${propertyUrl}`
+        : contentText;
+
       const post = await createPost.mutateAsync({
         platform,
         post_type: 'property_listing',
-        content_text: contentText,
+        content_text: finalContentText,
         image_urls: isPhotosMode ? photosToSend : (propertyUrl ? [] : imageUrls),
         hashtags,
         status: action === 'draft' ? 'draft' : 'scheduled',
