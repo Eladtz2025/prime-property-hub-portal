@@ -614,24 +614,18 @@ export const AutoPublishManager: React.FC = () => {
               </>
             )}
             {mode === 'recurring' && (
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <Label className="text-xs font-medium">תדירות</Label>
-                  <Select value={formFrequencyDays} onValueChange={setFormFrequencyDays}>
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FREQUENCY_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs font-medium">שעת פרסום</Label>
-                  <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-8 text-sm w-28 mt-1" />
-                </div>
+              <div className="flex items-center gap-2">
+                <Select value={formFrequencyDays} onValueChange={setFormFrequencyDays}>
+                  <SelectTrigger className="h-8 text-xs w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FREQUENCY_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-8 text-xs w-24" />
               </div>
             )}
 
