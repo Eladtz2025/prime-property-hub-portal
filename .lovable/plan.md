@@ -1,23 +1,30 @@
 
 
-## ביטול מנגנון "בדיקה ידנית" — ניסיונות חוזרים ללא הגבלה
+## שיפור תצוגת Facebook Preview — קומפקטית ומדויקת יותר
 
-### מה קורה היום
-כשנכס נכשל בבדיקת זמינות 2 פעמים (`availability_retry_count >= 2`), הוא מסומן כ"בדיקה ידנית" ומוצג באדום בדיאלוג. ב-160 נכסים — אף אחד לא נבדק ידנית בפועל.
+### הבעיות שזיהית
 
-### מה ישתנה
-1. **הסרת הסף** — נכסים לא ייפלטו מהתור אחרי 2 ניסיונות. הם ימשיכו לחזור לבדיקה אוטומטית עד שהבדיקה מצליחה או שהנכס נמצא לא פעיל.
-2. **איפוס ה-160 הנוכחיים** — migration שמאפסת `availability_retry_count = 0` לכל הנכסים עם retry >= 2, כך שייכנסו חזרה לתור.
-3. **הסרת טאב "בדיקה ידנית" מהדיאלוג** — כבר לא רלוונטי.
+1. **כפילות מידע** — פרטי הנכס (חדרים, מ"ר, מחיר) מופיעים גם בטקסט הפוסט וגם ב-Link Card למטה
+2. **יותר מדי טקסט** — תיאור ארוך של הדירה בגוף הפוסט, מספיק 2 משפטים
+3. **התצוגה ענקית** — תופסת את כל רוחב העמוד. בפייסבוק אמיתי פוסט הוא ~500px רוחב
+
+### פתרון
+
+**FacebookPostPreview.tsx:**
+- הגבלת רוחב מקסימלי: `max-w-[500px]` כדי לדמות את הגודל האמיתי בפייסבוק
+- הקטנת aspect ratio של תמונת ה-Link Card (מ-`1.91/1` ל-`max-h-[260px]`) כדי שלא תשתלט על המסך
+
+**AutoPublishManager.tsx:**
+- עטיפת ה-preview ב-container ממורכז עם `mx-auto`
+
+**לגבי כפילות המידע והטקסט הארוך** — זה תלוי ב-preset/תוכן שהמשתמש בוחר. ה-Link Card (כותרת + תיאור) נבנה אוטומטית מהנכס וזה מה שבאמת יופיע בפייסבוק. הטקסט למעלה הוא מה שאתה כותב בתבנית. אם התבנית כוללת פרטים שכבר מופיעים ב-Link Card — יש כפילות.
 
 ### שינויים
 
-| # | קובץ / מיגרציה | שינוי |
-|---|----------------|--------|
-| 1 | Migration חדשה | `UPDATE scouted_properties SET availability_retry_count = 0 WHERE availability_retry_count >= 2 AND is_active = true` |
-| 2 | `supabase/functions/check-property-availability-jina/index.ts` | הסר את הלוגיקה שמגדילה `availability_retry_count` על שגיאות retryable. פשוט תשאיר את הנכס בתור בלי לספור |
-| 3 | `src/components/scout/checks/PendingPropertiesDialog.tsx` | הסר את ה-query של `manual-check-properties`, את הטאב "בדיקה ידנית", ואת הרקע האדום |
-| 4 | `src/components/scout/ChecksDashboard.tsx` | הסר את ה-query ל-`availability_retry_count >= 2` מספירת ה-pending |
+| # | קובץ | שינוי |
+|---|-------|--------|
+| 1 | `src/components/social/FacebookPostPreview.tsx` | `max-w-[500px] mx-auto` על ה-container הראשי, הקטנת תמונה |
+| 2 | `src/components/social/AutoPublishManager.tsx` | עטיפת preview ב-div ממורכז |
 
-**4 שינויים. הנכסים ימשיכו להיבדק אוטומטית עד שנקבל תוצאה ברורה.**
+**2 קבצים, שינויים קוסמטיים בלבד.**
 
