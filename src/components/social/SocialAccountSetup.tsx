@@ -82,7 +82,7 @@ export const SocialAccountSetup: React.FC = () => {
           page_name: data.name + ' (Instagram)',
           access_token: accessToken,
           ig_user_id: igUserId,
-          token_expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+          token_expires_at: realExpiry,
         });
       }
 
