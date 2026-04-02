@@ -1,63 +1,24 @@
 
 
-## תיקון: אימות טוקן אמיתי + עדכון סטטוס על כשלון
+## תיקון: מילוי אוטומטי של Page ID ו-IG User ID מהחשבון הקיים
 
-### הבעיה הכפולה
+### הבעיה
+כשיש כבר חשבון מחובר, השדות Page ID ו-Instagram ID ריקים ומציגים את הערכים הקיימים רק כ-placeholder באפור. המשתמש צריך למלא רק טוקן חדש.
 
-1. **סטטוס מטעה** — `token_expires_at` נקבע כ-`now()+60d` בלי לשאול את Facebook מתי הטוקן באמת פג
-2. **אין עדכון על כשלון** — כשה-edge function מקבלת "token expired" מפייסבוק, היא לא מעדכנת את `is_active = false` בטבלת `social_accounts`
+### פתרון
 
-### שינויים
+**קובץ: `SocialAccountSetup.tsx`**
 
-| # | קובץ | מה |
-|---|-------|----|
-| 1 | `SocialAccountSetup.tsx` | אחרי אימות שם הדף, לקרוא ל-`/debug_token` API של פייסבוק כדי לקבל את `expires_at` האמיתי. אם הטוקן short-lived — להציג אזהרה ולא לשמור |
-| 2 | `SocialAccountSetup.tsx` | להשתמש ב-`data_access_expires_at` מ-Facebook במקום חישוב מקומי |
-| 3 | `social-publish/index.ts` | כשפייסבוק מחזיר שגיאת "expired token" — לעדכן `social_accounts.is_active = false` כדי שהסטטוס ישקף מציאות |
+1. **אתחול שדות מהנתונים הקיימים** — כש-`accounts` נטען, למלא את `pageId` ו-`igUserId` עם הערכים מ-DB באמצעות `useEffect`
+2. **validation** — בפונקציית `handleVerifyAndSave`, להשתמש ב-`pageId || fbAccount?.page_id` כ-fallback כדי שגם בלי שינוי בשדה הערך ילקח מהחשבון הקיים
 
-### פירוט טכני
-
-**אימות טוקן אמיתי (SocialAccountSetup.tsx):**
 ```typescript
-// אחרי בדיקת שם הדף, בדוק את הטוקן עצמו
-const tokenRes = await fetch(
-  `https://graph.facebook.com/v21.0/debug_token?input_token=${accessToken}&access_token=${accessToken}`
-);
-const tokenData = await tokenRes.json();
-
-if (tokenData.data?.error) {
-  toast({ title: 'טוקן לא תקין', description: tokenData.data.error.message });
-  return;
-}
-
-// תאריך תפוגה אמיתי מפייסבוק
-const realExpiry = tokenData.data?.data_access_expires_at 
-  ? new Date(tokenData.data.data_access_expires_at * 1000).toISOString()
-  : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
-
-// אזהרה אם הטוקן short-lived (פג תוך פחות מיום)
-const expiresAt = tokenData.data?.expires_at;
-if (expiresAt && expiresAt > 0 && (expiresAt * 1000 - Date.now()) < 24 * 60 * 60 * 1000) {
-  toast({ title: 'טוקן Short-Lived', description: 'יש ליצור Long-Lived Token', variant: 'destructive' });
-  return;
-}
+// הוסף useEffect שממלא את השדות כשהנתונים נטענים
+useEffect(() => {
+  if (fbAccount?.page_id && !pageId) setPageId(fbAccount.page_id);
+  if (igAccount?.ig_user_id && !igUserId) setIgUserId(igAccount.ig_user_id);
+}, [fbAccount, igAccount]);
 ```
 
-**עדכון סטטוס בכשלון (social-publish/index.ts):**
-```typescript
-// כשפייסבוק מחזיר token expired
-if (result.error?.includes('expired') || result.error?.includes('validating access token')) {
-  await supabase.from('social_accounts')
-    .update({ is_active: false })
-    .eq('id', account.id);
-}
-```
-
-### מה זה נותן
-
-- **סטטוס אמיתי** — אם הטוקן פג, הסטטוס יראה X אדום
-- **אי אפשר לשמור טוקן פג** — המערכת תזהה ותתריע
-- **אי אפשר לשמור short-lived token** — המערכת תדרוש long-lived
-
-**2 קבצים + deploy של edge function.**
+**קובץ אחד, שינוי קטן.**
 
