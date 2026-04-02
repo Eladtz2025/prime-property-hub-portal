@@ -78,7 +78,7 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
       {/* Link Card (OG Preview) */}
       {hasLinkCard && (
         <div className="border-t border-b border-[#dddfe2] dark:border-[#3a3b3c] cursor-pointer">
-          <div className="relative" style={{ aspectRatio: '1.91 / 1' }}>
+          <div className="relative max-h-[260px] overflow-hidden" style={{ aspectRatio: '1.91 / 1' }}>
             <img 
               src={linkImage} 
               alt={linkTitle || ''} 
