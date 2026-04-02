@@ -111,6 +111,11 @@ export const AutoPublishManager: React.FC = () => {
   const [scheduleTime, setScheduleTime] = useState('10:00');
   const [properties, setProperties] = useState<any[]>([]);
 
+  // Post style & image selection
+  const [postStyle, setPostStyle] = useState<'link' | 'photos'>('link');
+  const [selectedPrimaryImageIndex, setSelectedPrimaryImageIndex] = useState(0);
+  const [selectedPhotoIndexes, setSelectedPhotoIndexes] = useState<number[]>([]);
+
   // Recurring fields
   const [formFrequencyDays, setFormFrequencyDays] = useState('1');
   const [formTime, setFormTime] = useState('10:00');
