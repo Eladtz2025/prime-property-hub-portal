@@ -506,14 +506,12 @@ export const AutoPublishManager: React.FC = () => {
                 </Select>
               )}
 
-            {/* One-time: Property & Template selection */}
-            {mode === 'one_time' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs font-medium">מקור</Label>
+              {/* One-time: Property & Template inline */}
+              {mode === 'one_time' && (
+                <>
                   <Select value={selectedPropertyId} onValueChange={handleSelectProperty}>
-                    <SelectTrigger className="text-sm mt-1">
-                      <SelectValue placeholder="בחר נכס (אופציונלי)" />
+                    <SelectTrigger className="h-8 text-xs w-[180px]">
+                      <SelectValue placeholder="בחר נכס" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="free">פוסט חופשי</SelectItem>
@@ -543,12 +541,9 @@ export const AutoPublishManager: React.FC = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div>
-                  <Label className="text-xs font-medium">תבנית</Label>
                   <Select value={selectedTemplateId} onValueChange={applyTemplate}>
-                    <SelectTrigger className="text-sm mt-1">
-                      <SelectValue placeholder="בחר תבנית (אופציונלי)" />
+                    <SelectTrigger className="h-8 text-xs w-[140px]">
+                      <SelectValue placeholder="תבנית" />
                     </SelectTrigger>
                     <SelectContent>
                       {socialTemplates?.map(t => (
@@ -556,83 +551,68 @@ export const AutoPublishManager: React.FC = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-              </div>
-            )}
+                </>
+              )}
 
-            {/* Platforms */}
-            <div>
-              <Label className="text-xs font-medium mb-2 block">פלטפורמה</Label>
-              <div className="flex gap-2">
+              {/* Platform buttons inline */}
+              <div className="flex gap-1.5 items-center border-r border-border pr-2 mr-1">
                 <Button
                   type="button"
                   variant={platforms.facebook ? 'default' : 'outline'}
                   size="sm"
-                  className={cn("gap-1.5 h-7 text-xs", platforms.facebook && "bg-[#1877F2] hover:bg-[#1877F2]/90")}
+                  className={cn("gap-1 h-7 text-xs px-2", platforms.facebook && "bg-[#1877F2] hover:bg-[#1877F2]/90")}
                   onClick={() => setPlatforms(p => ({ ...p, facebook: !p.facebook }))}
                 >
-                  <Facebook className="h-3 w-3" /> פייסבוק
+                  <Facebook className="h-3 w-3" /> FB
                 </Button>
                 <Button
                   type="button"
                   variant={platforms.instagram ? 'default' : 'outline'}
                   size="sm"
-                  className={cn("gap-1.5 h-7 text-xs", platforms.instagram && "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90")}
+                  className={cn("gap-1 h-7 text-xs px-2", platforms.instagram && "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90")}
                   onClick={() => setPlatforms(p => ({ ...p, instagram: !p.instagram }))}
                 >
-                  <Instagram className="h-3 w-3" /> אינסטגרם
+                  <Instagram className="h-3 w-3" /> IG
                 </Button>
               </div>
 
-              {/* Publish target (page vs groups) */}
+              {/* Publish target inline */}
               {platforms.facebook && (
-                <div className="mt-2 space-y-2">
-                  <Label className="text-xs font-medium">יעד פרסום בפייסבוק</Label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={publishTarget === 'page' ? 'default' : 'outline'}
-                      className="text-xs h-7"
-                      onClick={() => setPublishTarget('page')}
-                    >
-                      עמוד ראשי
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={publishTarget === 'groups' ? 'default' : 'outline'}
-                      className="text-xs h-7"
-                      onClick={() => setPublishTarget('groups')}
-                    >
-                      קבוצות
-                    </Button>
-                  </div>
-                  {publishTarget === 'groups' && facebookGroups && facebookGroups.length > 0 && (
-                    <div className="space-y-1.5 bg-muted/30 rounded-md p-2">
-                      {facebookGroups.map((group: any) => (
-                        <label key={group.id} className="flex items-center gap-2 text-xs cursor-pointer">
-                          <Checkbox
-                            checked={selectedGroupIds.includes(group.id)}
-                            onCheckedChange={(checked) => {
-                              setSelectedGroupIds(prev =>
-                                checked
-                                  ? [...prev, group.id]
-                                  : prev.filter(id => id !== group.id)
-                              );
-                            }}
-                          />
-                          <span>{group.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                  {publishTarget === 'groups' && (!facebookGroups || facebookGroups.length === 0) && (
-                    <p className="text-[10px] text-muted-foreground">לא נמצאו קבוצות. הוסף קבוצות בהגדרות.</p>
-                  )}
+                <div className="flex gap-1.5 items-center">
+                  <Button type="button" size="sm" variant={publishTarget === 'page' ? 'default' : 'outline'} className="text-xs h-7 px-2" onClick={() => setPublishTarget('page')}>
+                    עמוד
+                  </Button>
+                  <Button type="button" size="sm" variant={publishTarget === 'groups' ? 'default' : 'outline'} className="text-xs h-7 px-2" onClick={() => setPublishTarget('groups')}>
+                    קבוצות
+                  </Button>
                 </div>
               )}
             </div>
+
+            {/* Groups selection if needed */}
+            {platforms.facebook && publishTarget === 'groups' && (
+              <>
+                {facebookGroups && facebookGroups.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 bg-muted/30 rounded-md p-2">
+                    {facebookGroups.map((group: any) => (
+                      <label key={group.id} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={selectedGroupIds.includes(group.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedGroupIds(prev =>
+                              checked ? [...prev, group.id] : prev.filter(id => id !== group.id)
+                            );
+                          }}
+                        />
+                        <span>{group.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">לא נמצאו קבוצות. הוסף קבוצות בהגדרות.</p>
+                )}
+              </>
+            )}
             {mode === 'recurring' && (
               <div className="flex gap-3">
                 <div className="flex-1">
