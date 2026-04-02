@@ -1,54 +1,45 @@
 
 
-## תיקון תצוגת Facebook — התאמה למציאות
+## הסרת כתובת ותיאור ארוך מפוסט נכס
 
 ### הבעיות
-1. **ה-URL לא נשלח לפייסבוק** — `linkUrl` (`citymarket.co.il/property/{id}`) משמש רק בתצוגה מקדימה אבל לא מצורף ל-`content_text` שנשלח ל-API. לכן ה-Link Card לא יופיע בפוסט האמיתי.
-2. **פוסט תמונה vs פוסט קישור** — כשמעלים תמונה דרך `/photos` API, פייסבוק מציג פוסט תמונה (תמונה גדולה + טקסט מתחת). כשרוצים Link Card, צריך לשלוח דרך `/feed` API עם `link` parameter — בלי להעלות תמונה בנפרד.
-3. **קיצוץ טקסט** — פייסבוק חותך אחרי ~5 שורות. התצוגה המקדימה לא מדמה את זה.
-
-### פתרון
-
-**שני מסלולים לפי סוג פוסט:**
-
-**א. פוסט עם Link Card (כשיש נכס מקושר):**
-- שלח דרך `/feed` API עם parameter `link` שמצביע ל-`https://citymarket.co.il/property/{id}`
-- פייסבוק ישלוף את ה-OG tags מהדף ויבנה את ה-Link Card אוטומטית (תמונה, כותרת, תיאור, דומיין)
-- **לא** מעלים תמונות בנפרד — פייסבוק מציג או תמונה או Link Card, לא שניהם
-
-**ב. פוסט תמונה רגיל (בלי נכס / free text):**
-- נשאר כמו היום — `/photos` API
+1. כשבוחרים דירה, הטקסט כולל את **כל התיאור** (`prop.description`) — טקסט ארוך מיותר
+2. **שם הרחוב** מופיע בטקסט הפוסט — מידע שלא רוצים לחשוף
 
 ### שינויים
 
-| # | קובץ | שינוי |
-|---|-------|--------|
-| 1 | `src/components/social/AutoPublishManager.tsx` | שמור `propertyUrl` (מ-`buildLinkCard`) ושלח אותו כ-`link_url` לטבלת `social_posts` |
-| 2 | `supabase/functions/social-publish/index.ts` | כשיש `link_url` בפוסט, שלח דרך `/feed` עם `link` parameter במקום `/photos`. פייסבוק יבנה את ה-Card אוטומטית |
-| 3 | `src/components/social/FacebookPostPreview.tsx` | הוסף "See more" truncation כשהטקסט ארוך מ-5 שורות, כמו בפייסבוק אמיתי |
+| # | מה | פרטים |
+|---|-----|--------|
+| 1 | Default text (שורה 210) | הסר את `prop.address` ואת `prop.description` מהטקסט שנבנה אוטומטית כשאין תבנית |
+| 2 | Preset "מינימלית" | החלף `{address}, {city}` ב-`{neighborhood}, {city}` (בלי כתובת) |
+| 3 | Preset "פשוטה" | הסר `{address}` מהשורה |
+| 4 | Link Card title (שורה 763) | החלף `prop.address` ב-`prop.neighborhood` — כי ה-Link Card שפייסבוק מציג כולל כותרת |
 
-### פרטים טכניים
+**קובץ אחד: `AutoPublishManager.tsx`**
 
-**Edge Function — לוגיקת publish חדשה:**
+### דוגמה — לפני ואחרי
+
+**לפני:**
 ```
-if (post.link_url && !imageUrls.length) {
-  // Link post — Facebook generates OG card automatically
-  POST /{pageId}/feed { message, link, access_token }
-} else if (imageUrls.length) {
-  // Photo post — existing logic
-  POST /{pageId}/photos { url, message, access_token }
-} else {
-  // Text only
-  POST /{pageId}/feed { message, access_token }
-}
+🏠 דירה להשכרה בתל אביב
+📍 דיזנגוף 50
+💰 ₪5,000
+🛏️ 3 חדרים
+📐 80 מ"ר
+🏢 קומה 4
+
+תיאור ארוך של הדירה עם כל הפרטים...
 ```
 
-**AutoPublishManager — שליחת URL:**
-- ב-`executeSave`: הוסף `link_url: propertyUrl` ל-post object כשנבחר נכס
-- `propertyUrl` = `https://citymarket.co.il/property/${selectedPropertyId}`
+**אחרי:**
+```
+🏠 דירה להשכרה בתל אביב
+📍 הצפון הישן
+💰 ₪5,000
+🛏️ 3 חדרים
+📐 80 מ"ר
+🏢 קומה 4
 
-**Preview — טקסט קצוץ:**
-- אחרי 5 שורות או 300 תווים — הצג "...קרא עוד" עם אפשרות פתיחה
-
-**3 קבצים. אפס שינויים ב-DB schema (הטבלה `social_posts` כבר מכילה `link_url`).**
+📞 לפרטים נוספים צרו קשר
+```
 
