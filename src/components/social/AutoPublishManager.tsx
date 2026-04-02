@@ -391,7 +391,12 @@ export const AutoPublishManager: React.FC = () => {
         link_url: isPhotosMode ? undefined : propertyUrl,
       });
       if (action === 'publish' && post?.id) {
-        await publishPost.mutateAsync({ postId: post.id, isPrivate: isPrivatePost });
+        const result = await publishPost.mutateAsync({ postId: post.id, isPrivate: isPrivatePost });
+        if (!result?.success) {
+          // Toast already shown by usePublishPost.onSuccess
+          resetForm();
+          return;
+        }
       }
     }
     toast({ title: action === 'publish' ? '🚀 הפוסט פורסם בהצלחה!' : action === 'schedule' ? '⏰ הפוסט תוזמן בהצלחה!' : '💾 הטיוטא נשמרה' });
