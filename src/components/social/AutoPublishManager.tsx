@@ -870,37 +870,32 @@ export const AutoPublishManager: React.FC = () => {
               );
             })()}
 
-            {/* Private post toggle + Actions */}
-            <div className="space-y-3 pt-3 border-t border-border">
+            {/* Actions — inline */}
+            <div className="flex flex-wrap items-center gap-2 pt-2">
               {mode === 'one_time' && platforms.facebook && (
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox
-                    checked={isPrivatePost}
-                    onCheckedChange={(checked) => setIsPrivatePost(!!checked)}
-                  />
-                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs">פרסום פרטי (לבדיקה — רק אתה תראה)</span>
+                <label className="flex items-center gap-1.5 cursor-pointer mr-2">
+                  <Checkbox checked={isPrivatePost} onCheckedChange={(checked) => setIsPrivatePost(!!checked)} />
+                  <Lock className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-[11px]">פרטי</span>
                 </label>
               )}
-              <div className="flex flex-wrap gap-2">
-                {mode === 'one_time' ? (
-                  <>
-                    <Button size="sm" onClick={() => handleActionClick('publish')} disabled={createPost.isPending || publishPost.isPending} className="gap-1.5 h-8">
-                      <Send className="h-3.5 w-3.5" /> {isPrivatePost ? 'פרסם פרטי (טסט)' : 'פרסם עכשיו'}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleActionClick('schedule')} disabled={createPost.isPending} className="gap-1.5 h-8">
-                      <Clock className="h-3.5 w-3.5" /> תזמן
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleActionClick('draft')} disabled={createPost.isPending} className="gap-1.5 h-8">
-                      <Save className="h-3.5 w-3.5" /> טיוטא
-                    </Button>
-                  </>
-                ) : (
-                  <Button size="sm" onClick={handleSaveTemplate} disabled={saveQueue.isPending} className="gap-1.5 h-8">
-                    <Save className="h-3.5 w-3.5" /> {saveQueue.isPending ? 'שומר...' : editingId ? 'עדכן תבנית' : 'שמור תבנית'}
+              {mode === 'one_time' ? (
+                <>
+                  <Button size="sm" onClick={() => handleActionClick('publish')} disabled={createPost.isPending || publishPost.isPending} className="gap-1 h-7 text-xs">
+                    <Send className="h-3 w-3" /> {isPrivatePost ? 'פרסם פרטי' : 'פרסם'}
                   </Button>
-                )}
-              </div>
+                  <Button size="sm" variant="outline" onClick={() => handleActionClick('schedule')} disabled={createPost.isPending} className="gap-1 h-7 text-xs">
+                    <Clock className="h-3 w-3" /> תזמן
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleActionClick('draft')} disabled={createPost.isPending} className="gap-1 h-7 text-xs">
+                    <Save className="h-3 w-3" /> טיוטא
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" onClick={handleSaveTemplate} disabled={saveQueue.isPending} className="gap-1 h-7 text-xs">
+                  <Save className="h-3 w-3" /> {saveQueue.isPending ? 'שומר...' : editingId ? 'עדכן תבנית' : 'שמור תבנית'}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
