@@ -166,7 +166,7 @@ serve(async (req) => {
       ? `${baseUrl}/en/property/${propertyId}`
       : `${baseUrl}/property/${propertyId}`;
 
-    const fullTitle = `${propertyTypePrefix}: ${title}`;
+    const fullTitle = `\u200F${propertyTypePrefix}: ${title}`;
 
     // Use the main property image directly (Facebook doesn't support SVG)
     const ogImageUrl = mainImage;
