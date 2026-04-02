@@ -332,16 +332,22 @@ export const AutoPublishManager: React.FC = () => {
       scheduledAt = dt.toISOString();
     }
     for (const platform of selectedPlatforms) {
+      // Build property URL for link posts
+      const propertyUrl = selectedPropertyId && selectedPropertyId !== 'free'
+        ? `https://citymarket.co.il/property/${selectedPropertyId}`
+        : undefined;
+
       const post = await createPost.mutateAsync({
         platform,
         post_type: 'property_listing',
         content_text: contentText,
-        image_urls: imageUrls,
+        image_urls: propertyUrl ? [] : imageUrls, // Link posts don't need images — Facebook generates OG card
         hashtags,
         status: action === 'draft' ? 'draft' : 'scheduled',
         scheduled_at: action === 'publish' ? new Date().toISOString() : scheduledAt,
         property_id: selectedPropertyId || undefined,
         template_id: selectedTemplateId || undefined,
+        link_url: propertyUrl,
       });
       if (action === 'publish' && post?.id) {
         await publishPost.mutateAsync(post.id);

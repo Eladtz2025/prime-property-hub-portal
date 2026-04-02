@@ -19,7 +19,8 @@ async function publishToFacebookPage(
   accessToken: string,
   text: string,
   imageUrls: string[],
-  videoUrl?: string
+  videoUrl?: string,
+  linkUrl?: string
 ): Promise<PublishResult> {
   try {
     // Video post
