@@ -3659,6 +3659,7 @@ export type Database = {
           hashtags: string | null
           id: string
           image_urls: Json | null
+          link_url: string | null
           platform: string
           post_type: string
           property_id: string | null
@@ -3681,6 +3682,7 @@ export type Database = {
           hashtags?: string | null
           id?: string
           image_urls?: Json | null
+          link_url?: string | null
           platform: string
           post_type?: string
           property_id?: string | null
@@ -3703,6 +3705,7 @@ export type Database = {
           hashtags?: string | null
           id?: string
           image_urls?: Json | null
+          link_url?: string | null
           platform?: string
           post_type?: string
           property_id?: string | null
