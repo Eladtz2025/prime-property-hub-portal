@@ -34,7 +34,7 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
   })() : '';
 
   return (
-    <div className="rounded-lg bg-white dark:bg-[#242526] shadow-md border border-[#dddfe2] dark:border-[#3a3b3c] overflow-hidden" dir="rtl">
+    <div className="max-w-[500px] mx-auto rounded-lg bg-white dark:bg-[#242526] shadow-md border border-[#dddfe2] dark:border-[#3a3b3c] overflow-hidden" dir="rtl">
       {/* Header */}
       <div className="px-4 pt-3 pb-2 flex items-start gap-2.5">
         {pageAvatarUrl ? (
@@ -78,7 +78,7 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
       {/* Link Card (OG Preview) */}
       {hasLinkCard && (
         <div className="border-t border-b border-[#dddfe2] dark:border-[#3a3b3c] cursor-pointer">
-          <div className="relative" style={{ aspectRatio: '1.91 / 1' }}>
+          <div className="relative max-h-[260px] overflow-hidden" style={{ aspectRatio: '1.91 / 1' }}>
             <img 
               src={linkImage} 
               alt={linkTitle || ''} 
