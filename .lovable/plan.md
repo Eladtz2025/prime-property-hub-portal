@@ -1,51 +1,63 @@
 
 
-## הפוסט לא באמת פורסם — הטוקן של פייסבוק פג תוקף
+## תיקון: אימות טוקן אמיתי + עדכון סטטוס על כשלון
 
-### מה קרה
+### הבעיה הכפולה
 
-בדקתי את בסיס הנתונים והנה מה שמצאתי:
+1. **סטטוס מטעה** — `token_expires_at` נקבע כ-`now()+60d` בלי לשאול את Facebook מתי הטוקן באמת פג
+2. **אין עדכון על כשלון** — כשה-edge function מקבלת "token expired" מפייסבוק, היא לא מעדכנת את `is_active = false` בטבלת `social_accounts`
 
-```
-status: scheduled
-retry_count: 1
-error_message: "Error validating access token: Session has expired 
-on Tuesday, 24-Mar-26 06:00:00 PDT"
-```
+### שינויים
 
-**הטוקן של פייסבוק פג תוקף ב-24 במרץ.** הפוסט נכשל ולכן חזר לסטטוס `scheduled` לניסיון חוזר — אבל הניסיון החוזר גם ייכשל כי הטוקן עדיין לא תקף.
+| # | קובץ | מה |
+|---|-------|----|
+| 1 | `SocialAccountSetup.tsx` | אחרי אימות שם הדף, לקרוא ל-`/debug_token` API של פייסבוק כדי לקבל את `expires_at` האמיתי. אם הטוקן short-lived — להציג אזהרה ולא לשמור |
+| 2 | `SocialAccountSetup.tsx` | להשתמש ב-`data_access_expires_at` מ-Facebook במקום חישוב מקומי |
+| 3 | `social-publish/index.ts` | כשפייסבוק מחזיר שגיאת "expired token" — לעדכן `social_accounts.is_active = false` כדי שהסטטוס ישקף מציאות |
 
-### למה ההודעה אמרה "פורסם בהצלחה"?
+### פירוט טכני
 
-יש באג — הקוד מציג הודעת הצלחה **לפני** שבודק אם פייסבוק באמת קיבל את הפוסט. הוא מציג "פורסם!" ברגע שה-Edge Function מחזירה תשובה, בלי לבדוק אם `success: true` או `false`.
-
-### מה שצריך לעשות
-
-| # | שינוי | פרטים |
-|---|-------|--------|
-| 1 | **חידוש טוקן פייסבוק** | צריך להיכנס להגדרות חשבון סושיאל ולחדש את הטוקן מ-Meta |
-| 2 | **תיקון הודעת הצלחה שגויה** | ב-`AutoPublishManager.tsx` — לבדוק את תוצאת `publishMutation.mutateAsync()` לפני הצגת הודעת הצלחה. אם `success: false`, להציג הודעת שגיאה עם הפירוט מפייסבוק |
-| 3 | **הסרת כפילות הודעות** | ב-`usePublishPost` כבר יש toast על הצלחה/כשלון. ב-`AutoPublishManager` יש toast נוסף. צריך להשאיר רק אחד |
-
-### איפה הפוסט?
-
-הפוסט נמצא ברשימת הפוסטים **מתחת** לטופס הפרסום (קומפוננטת `SocialPostsList`). הוא מוצג עם סטטוס "מתוזמן" כי המערכת ניסתה שוב אוטומטית.
-
-### שינויים טכניים
-
-**`AutoPublishManager.tsx` — `executeSave`:**
+**אימות טוקן אמיתי (SocialAccountSetup.tsx):**
 ```typescript
-// לפני (באגי):
-await publishMutation.mutateAsync({ postId: newPost.id, isPrivate });
-toast({ title: '🚀 הפוסט פורסם בהצלחה!' }); // תמיד מוצג!
+// אחרי בדיקת שם הדף, בדוק את הטוקן עצמו
+const tokenRes = await fetch(
+  `https://graph.facebook.com/v21.0/debug_token?input_token=${accessToken}&access_token=${accessToken}`
+);
+const tokenData = await tokenRes.json();
 
-// אחרי (מתוקן):
-const result = await publishMutation.mutateAsync({ postId: newPost.id, isPrivate });
-// Toast מוצג כבר ב-usePublishPost.onSuccess על בסיס result.success
+if (tokenData.data?.error) {
+  toast({ title: 'טוקן לא תקין', description: tokenData.data.error.message });
+  return;
+}
+
+// תאריך תפוגה אמיתי מפייסבוק
+const realExpiry = tokenData.data?.data_access_expires_at 
+  ? new Date(tokenData.data.data_access_expires_at * 1000).toISOString()
+  : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+
+// אזהרה אם הטוקן short-lived (פג תוך פחות מיום)
+const expiresAt = tokenData.data?.expires_at;
+if (expiresAt && expiresAt > 0 && (expiresAt * 1000 - Date.now()) < 24 * 60 * 60 * 1000) {
+  toast({ title: 'טוקן Short-Lived', description: 'יש ליצור Long-Lived Token', variant: 'destructive' });
+  return;
+}
 ```
 
-**`useSocialPosts.ts` — `usePublishPost`:**
-- להוסיף `throw` כש-`success: false` כדי שה-caller ידע שנכשל
+**עדכון סטטוס בכשלון (social-publish/index.ts):**
+```typescript
+// כשפייסבוק מחזיר token expired
+if (result.error?.includes('expired') || result.error?.includes('validating access token')) {
+  await supabase.from('social_accounts')
+    .update({ is_active: false })
+    .eq('id', account.id);
+}
+```
 
-**קובץ אחד לתיקון קוד + חידוש טוקן ידני מצידך.**
+### מה זה נותן
+
+- **סטטוס אמיתי** — אם הטוקן פג, הסטטוס יראה X אדום
+- **אי אפשר לשמור טוקן פג** — המערכת תזהה ותתריע
+- **אי אפשר לשמור short-lived token** — המערכת תדרוש long-lived
+
+**2 קבצים + deploy של edge function.**
 
