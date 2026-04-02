@@ -302,7 +302,8 @@ Deno.serve(async (req) => {
         account.access_token,
         fullText,
         imageUrls,
-        post.video_url
+        post.video_url,
+        post.link_url
       );
     } else {
       // Instagram
