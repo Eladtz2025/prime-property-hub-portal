@@ -1,27 +1,23 @@
 
 
-## תיקון פרופורציות עמוד Insights
+## ביטול מנגנון "בדיקה ידנית" — ניסיונות חוזרים ללא הגבלה
 
-### הבעיות
-1. **Hero גדול מדי** — `minHeight="50vh"` = חצי מסך רק לכותרת קצרה. צריך להיות קומפקטי יותר כמו banner
-2. **כרטיס כתבה אופקי ענק** — ה-`InsightCardHorizontal` תופס רוחב מלא של `max-w-6xl` עם תמונה גדולה. חסר הגבלת גובה
-3. **ריווח מוגזם** — `py-24` ו-`mb-14` יוצרים הרבה רווח לבן
+### מה קורה היום
+כשנכס נכשל בבדיקת זמינות 2 פעמים (`availability_retry_count >= 2`), הוא מסומן כ"בדיקה ידנית" ומוצג באדום בדיאלוג. ב-160 נכסים — אף אחד לא נבדק ידנית בפועל.
 
-### פתרון — השראה מאתרי חדשות/מגזין (כמו mako)
-
-**Hero:** הקטנה ל-`minHeight="35vh"` — banner קומפקטי שלא שולט בעמוד
-
-**כרטיס כתבה אופקי:** הגבלת גובה התמונה ל-`max-h-[350px]` + הקטנת הטקסט והריווח הפנימי
-
-**ריווח כללי:** הקטנת padding סקשנים ל-`py-10 md:py-14 lg:py-16` ו-section headers ל-`mb-10`
+### מה ישתנה
+1. **הסרת הסף** — נכסים לא ייפלטו מהתור אחרי 2 ניסיונות. הם ימשיכו לחזור לבדיקה אוטומטית עד שהבדיקה מצליחה או שהנכס נמצא לא פעיל.
+2. **איפוס ה-160 הנוכחיים** — migration שמאפסת `availability_retry_count = 0` לכל הנכסים עם retry >= 2, כך שייכנסו חזרה לתור.
+3. **הסרת טאב "בדיקה ידנית" מהדיאלוג** — כבר לא רלוונטי.
 
 ### שינויים
 
-| # | קובץ | שינוי |
-|---|-------|--------|
-| 1 | `src/pages/he/Insights.tsx` | Hero 35vh, הקטנת כרטיס אופקי, צמצום ריווחים |
-| 2 | `src/pages/en/Insights.tsx` | אותם שינויים |
-| 3 | `src/components/FullScreenHero.tsx` | תמיכה ב-`minHeight` קטן יותר (כבר קיים, רק נעביר ערך שונה) |
+| # | קובץ / מיגרציה | שינוי |
+|---|----------------|--------|
+| 1 | Migration חדשה | `UPDATE scouted_properties SET availability_retry_count = 0 WHERE availability_retry_count >= 2 AND is_active = true` |
+| 2 | `supabase/functions/check-property-availability-jina/index.ts` | הסר את הלוגיקה שמגדילה `availability_retry_count` על שגיאות retryable. פשוט תשאיר את הנכס בתור בלי לספור |
+| 3 | `src/components/scout/checks/PendingPropertiesDialog.tsx` | הסר את ה-query של `manual-check-properties`, את הטאב "בדיקה ידנית", ואת הרקע האדום |
+| 4 | `src/components/scout/ChecksDashboard.tsx` | הסר את ה-query ל-`availability_retry_count >= 2` מספירת ה-pending |
 
-**2 קבצים לעריכה בלבד. אפס שינויים בלוגיקה או DB.**
+**4 שינויים. הנכסים ימשיכו להיבדק אוטומטית עד שנקבל תוצאה ברורה.**
 
