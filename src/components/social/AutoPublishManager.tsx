@@ -907,9 +907,9 @@ export const AutoPublishManager: React.FC = () => {
                 linkUrl = `https://www.ctmarketproperties.com/property/${prop.id}`;
                 const neighborhood = prop.neighborhood;
                 const city = prop.city || '';
-                linkTitle = neighborhood && neighborhood !== city
+                linkTitle = prop.title || (neighborhood && neighborhood !== city
                   ? `דירה ${typeLabel}: ${neighborhood}, ${city}`
-                  : `דירה ${typeLabel} ב${city}`;
+                  : `דירה ${typeLabel} ב${city}`);
                 const parts = [];
                 if (prop.rooms) parts.push(`${prop.rooms} חדרים`);
                 if (prop.property_size) parts.push(`${prop.property_size} מ"ר`);

@@ -148,7 +148,8 @@ const PropertyDetailPage = () => {
   };
 
   const ogImage = property.images[0]?.image_url || 'https://www.ctmarketproperties.com/city-market-logo.png';
-  const ogDescription = property.description || `${property.rooms} חדרים ב${property.address}, ${property.city}`;
+  const locationLabel = property.neighborhood || property.city;
+  const ogDescription = property.description || `${property.rooms} חדרים ב${locationLabel}, ${property.city}`;
   
   return (
     <div className="min-h-screen hebrew-luxury" dir="rtl">
