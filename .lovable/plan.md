@@ -1,24 +1,43 @@
 
 
-## תיקון: מילוי אוטומטי של Page ID ו-IG User ID מהחשבון הקיים
+## תיקון: המרה אוטומטית של User Token ל-Page Access Token
 
 ### הבעיה
-כשיש כבר חשבון מחובר, השדות Page ID ו-Instagram ID ריקים ומציגים את הערכים הקיימים רק כ-placeholder באפור. המשתמש צריך למלא רק טוקן חדש.
+
+אתה מכניס **User Access Token** מ-Graph API Explorer. הטוקן הזה מסוג `USER` ופג תוקף תוך שעות בודדות. הקוד מזהה אותו כ-Short-Lived וחוסם. 
+
+מה שצריך זה **Page Access Token** — שלא פג תוקף. אבל במקום לדרוש ממך ליצור אותו ידנית, **המערכת תמיר אוטומטית** את ה-User Token ל-Page Token.
 
 ### פתרון
 
 **קובץ: `SocialAccountSetup.tsx`**
 
-1. **אתחול שדות מהנתונים הקיימים** — כש-`accounts` נטען, למלא את `pageId` ו-`igUserId` עם הערכים מ-DB באמצעות `useEffect`
-2. **validation** — בפונקציית `handleVerifyAndSave`, להשתמש ב-`pageId || fbAccount?.page_id` כ-fallback כדי שגם בלי שינוי בשדה הערך ילקח מהחשבון הקיים
+אחרי אימות שהטוקן עובד (שורה 43), לפני בדיקת debug_token:
 
-```typescript
-// הוסף useEffect שממלא את השדות כשהנתונים נטענים
-useEffect(() => {
-  if (fbAccount?.page_id && !pageId) setPageId(fbAccount.page_id);
-  if (igAccount?.ig_user_id && !igUserId) setIgUserId(igAccount.ig_user_id);
-}, [fbAccount, igAccount]);
+1. בדוק אם הטוקן הוא מסוג `USER` (דרך debug_token)
+2. אם כן — קרא ל-Facebook API להמיר אותו ל-Page Token:
+   ```
+   GET /{pageId}?fields=access_token&access_token={userToken}
+   ```
+   זה מחזיר Page Access Token שלא פג תוקף
+3. השתמש ב-Page Token מכאן והלאה (לשמירה ול-debug)
+4. אם הטוקן כבר מסוג `PAGE` — המשך כרגיל בלי המרה
+
+### סדר פעולות חדש
+
+```text
+1. בדוק שהטוקן עובד (GET /{pageId}?fields=name,id)
+2. Debug token → בדוק type
+3. אם type=USER → המר ל-Page Token
+4. Debug את ה-Page Token החדש → קבל expiry אמיתי
+5. שמור את ה-Page Token (לא את ה-User Token)
 ```
 
-**קובץ אחד, שינוי קטן.**
+### מה זה נותן
+
+- אתה ממשיך להכניס את הטוקן מ-Graph API Explorer כרגיל
+- המערכת ממירה אותו אוטומטית ל-Page Token שלא פג
+- אין יותר שגיאת "Short-Lived"
+
+**קובץ אחד: `SocialAccountSetup.tsx`**
 
