@@ -230,8 +230,14 @@ export const AutoPublishManager: React.FC = () => {
       const locationLine = neighborhood
         ? `\n📍 ${neighborhood}, ${prop.city}`
         : '';
+      const details = [
+        price ? `💰 ${price}` : '',
+        prop.rooms ? `🛏️ ${prop.rooms} חד'` : '',
+        prop.property_size ? `📐 ${prop.property_size} מ"ר` : '',
+        prop.floor ? `🏢 קומה ${prop.floor}` : '',
+      ].filter(Boolean).join(' | ');
       setContentText(
-        `🏠 דירה ${typeLabel} ב${prop.city || ''}${locationLine}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר${prop.floor ? `\n🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
+        `🏠 דירה ${typeLabel} ב${prop.city || ''}${neighborhood ? ` - ${neighborhood}` : ''}\n${details}\n📞 לפרטים נוספים צרו קשר`
       );
       const tags = ['#נדלן', `#דירה${typeLabel.replace('ל', 'ל')}`];
       if (prop.city) tags.push(`#${prop.city.replace(/[-\s]/g, '_')}`);
