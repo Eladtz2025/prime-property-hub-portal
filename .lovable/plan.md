@@ -1,37 +1,46 @@
 
 
-## תיקון דומיין ושכפול עיר בפוסט פייסבוק
+## בחירת תמונות לפוסט פייסבוק — תמונה ראשית + מולטי-תמונות
 
-### הבעיות
+### מצב נוכחי
+כשבוחרים נכס, הפוסט מציג **Link Card** (פייסבוק שולף OG מהאתר) עם התמונה הראשית בלבד. אין אפשרות לבחור תמונה אחרת או להציג כמה תמונות.
 
-1. **דומיין שגוי** — הקוד משתמש ב-`citymarket.co.il` בכל מקום, אבל הדומיין האמיתי הוא `ctmarketproperties.com`. פייסבוק יציג `CTMARKETPROPERTIES.COM` בתחתית ה-Link Card — לא `CITYMARKET.CO.IL` כמו שמוצג בתצוגה המקדימה
-2. **כפילות עיר** — כש-`neighborhood` ריק, ה-`linkTitle` מייצר `דירה למכירה: תל אביב-יפו, תל אביב-יפו` כי שני ה-fallbacks מחזירים את אותו ערך
-3. **OG Edge Function** — גם `og-property/index.ts` משתמש ב-`citymarket.co.il`
+### מה ישתנה
 
-### מה באמת יראה בפייסבוק?
-פייסבוק שולף את ה-OG tags מהדומיין. הדומיין שיוצג תמיד הוא הדומיין האמיתי של ה-URL שנשלח. לכן:
-- אם נשלח `https://www.ctmarketproperties.com/property/123` → פייסבוק יציג `CTMARKETPROPERTIES.COM`
-- הכותרת והתיאור יבואו מה-OG tags של הדף (מה שה-`og-property` function מחזיר)
+**1. בורר תמונות מהנכס:**
+כשבוחרים נכס — מוצגת רשימת thumbnails של כל תמונות הנכס (מתוך `property_images`). לחיצה על תמונה בוחרת אותה כראשית.
+
+**2. מצב פרסום — Link Card או Photo Post:**
+toggle חדש מאפשר לבחור:
+- **Link Card** (ברירת מחדל) — תמונה אחת + קישור לאתר. פייסבוק בונה OG card
+- **Photo Post** — תמונות מרובות בלי Link Card. המשתמש מסמן אילו תמונות לכלול (checkbox על כל thumbnail)
 
 ### שינויים
 
 | # | קובץ | שינוי |
 |---|-------|--------|
-| 1 | `src/components/social/AutoPublishManager.tsx` | החלף `citymarket.co.il` → `www.ctmarketproperties.com` (2 מקומות). תקן linkTitle — כשאין neighborhood, הצג רק עיר פעם אחת |
-| 2 | `supabase/functions/og-property/index.ts` | החלף `citymarket.co.il` → `www.ctmarketproperties.com` |
-| 3 | `supabase/functions/auto-publish/index.ts` | החלף `citymarket.co.il` → `www.ctmarketproperties.com` |
-| 4 | `src/components/social/FacebookPostPreview.tsx` | ה-preview כבר מציג domain מה-URL, אז יתעדכן אוטומטית |
+| 1 | `src/components/social/AutoPublishManager.tsx` | הוסף state: `postStyle` (link/photos), `selectedImageIndex`, `selectedImageUrls[]`. הצג gallery thumbnails מתמונות הנכס כשנבחר נכס. ב-link mode — בחירת תמונה ראשית. ב-photos mode — multi-select. עדכן `executeSave` לשלוח `image_urls` כשב-photo mode |
+| 2 | `src/components/social/FacebookPostPreview.tsx` | ה-preview כבר תומך בשני המצבים (linkCard או imageUrls grid) — אין שינוי |
+| 3 | `supabase/functions/social-publish/index.ts` | כבר תומך בשני הנתיבים (link post vs photo post) — אין שינוי |
 
-### תיקון linkTitle
+**קובץ אחד לעריכה בלבד. ה-preview וה-edge function כבר מוכנים.**
 
+### UX
+
+```text
+┌─────────────────────────────┐
+│ סוג פרסום:                  │
+│ [◉ Link Card] [○ תמונות]   │
+│                             │
+│ בחר תמונות:                 │
+│ ┌────┐ ┌────┐ ┌────┐ ┌────┐│
+│ │ ✓  │ │    │ │    │ │    ││
+│ │img1│ │img2│ │img3│ │img4││
+│ └────┘ └────┘ └────┘ └────┘│
+│                             │
+│ במצב Link Card — בחירה     │
+│ יחידה (תמונה ראשית)        │
+│ במצב תמונות — multi-select │
+└─────────────────────────────┘
 ```
-// לפני — כפילות
-`דירה למכירה: תל אביב-יפו, תל אביב-יפו`
-
-// אחרי
-`דירה למכירה: הצפון הישן, תל אביב-יפו`  // כשיש שכונה
-`דירה למכירה בתל אביב-יפו`                // כשאין שכונה
-```
-
-**4 קבצים (3 קבצי קוד + deploy של 2 edge functions).**
 
