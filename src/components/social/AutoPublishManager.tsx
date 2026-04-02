@@ -681,14 +681,9 @@ export const AutoPublishManager: React.FC = () => {
                   </div>
                 )}
 
-                {/* Image gallery — property selected */}
                 {selectedPropertyId && selectedPropertyId !== 'free' && imageUrls.length > 0 && (
                   <div>
-                    <Label className="text-xs font-medium mb-1.5 block">
-                      {postStyle === 'link' ? 'בחר תמונה ראשית' : 'בחר תמונות לפוסט'}
-                      {platforms.instagram && <span className="text-muted-foreground mr-1">(חובה באינסטגרם)</span>}
-                    </Label>
-                    <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
+                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5">
                       {imageUrls.map((url, i) => {
                         const isSelected = postStyle === 'link' 
                           ? i === selectedPrimaryImageIndex
