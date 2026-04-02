@@ -22,6 +22,12 @@ export const SocialAccountSetup: React.FC = () => {
   const fbAccount = accounts?.find(a => a.platform === 'facebook');
   const igAccount = accounts?.find(a => a.platform === 'instagram');
 
+  // Auto-fill from existing accounts
+  React.useEffect(() => {
+    if (fbAccount?.page_id && !pageId) setPageId(fbAccount.page_id);
+    if (igAccount?.ig_user_id && !igUserId) setIgUserId(igAccount.ig_user_id);
+  }, [fbAccount, igAccount]);
+
   const handleVerifyAndSave = async () => {
     if (!accessToken || !pageId) {
       toast({ title: 'יש להזין Page ID ו-Access Token', variant: 'destructive' });
