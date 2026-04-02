@@ -95,7 +95,7 @@ async function publishToFacebookPage(
       attachedMedia[`attached_media[${i}]`] = JSON.stringify({ media_fbid: id });
     });
 
-    const params = new URLSearchParams({ message: text, access_token: accessToken });
+    const params = new URLSearchParams({ message: text, access_token: accessToken, ...(isPrivate ? { privacy: JSON.stringify({ value: 'SELF' }) } : {}) });
     photoIds.forEach((id, i) => {
       params.append(`attached_media[${i}]`, JSON.stringify({ media_fbid: id }));
     });
