@@ -216,7 +216,7 @@ export const AutoPublishManager: React.FC = () => {
           : '';
       const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
       setContentText(
-        `🏠 דירה ${typeLabel} ב${prop.city || ''}\n\n📍 ${prop.neighborhood || prop.city || ''}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר\n${prop.floor ? `🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
+        `🏠 דירה ${typeLabel} ב${prop.city || ''}\n\n📍 ${prop.neighborhood || prop.city || ''}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר${prop.floor ? `\n🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
       );
       const tags = ['#נדלן', '#דירה' + typeLabel.replace('ל', 'ל')];
       if (prop.city) tags.push(`#${prop.city.replace(/\s/g, '')}`);
