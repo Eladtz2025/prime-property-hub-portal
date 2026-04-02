@@ -94,9 +94,10 @@ export const SocialAccountSetup: React.FC = () => {
         }
       }
 
-      // Use real expiry from Facebook, fallback to 60 days
-      const realExpiry = tokenData.data?.data_access_expires_at
-        ? new Date(tokenData.data.data_access_expires_at * 1000).toISOString()
+      // Use real expiry from debug data, fallback to 60 days (Page tokens are permanent)
+      const debugData = tokenData.data?.type === 'USER' ? (await (await fetch(`https://graph.facebook.com/v21.0/debug_token?input_token=${finalToken}&access_token=${finalToken}`)).json()).data : tokenData.data;
+      const realExpiry = debugData?.data_access_expires_at
+        ? new Date(debugData.data_access_expires_at * 1000).toISOString()
         : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
 
       // Save Facebook account
