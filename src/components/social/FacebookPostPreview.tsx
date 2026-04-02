@@ -115,19 +115,20 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
 
       {/* Link Card (OG Preview) */}
       {hasLinkCard && (
-        <div className="border-t border-b border-[#dddfe2] dark:border-[#3a3b3c] cursor-pointer">
-          <div className="relative max-h-[260px] overflow-hidden" style={{ aspectRatio: '1.91 / 1' }}>
+        <div className="border-b border-[#dddfe2] dark:border-[#3a3b3c] cursor-pointer">
+          <div className="relative overflow-hidden">
             <img 
               src={linkImage} 
               alt={linkTitle || ''} 
-              className="w-full h-full object-cover"
+              className="w-full object-cover"
+              style={{ maxHeight: '260px' }}
             />
           </div>
-          <div className="bg-[#f0f2f5] dark:bg-[#3a3b3c] px-3 py-2.5">
+          <div className="bg-[#f0f2f5] dark:bg-[#3a3b3c] px-3 py-2">
             <div className="text-[12px] text-[#65676b] dark:text-[#b0b3b8] uppercase tracking-wide" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
               {linkDomain}
             </div>
-            <div className="text-[16px] font-semibold text-[#050505] dark:text-[#e4e6eb] leading-tight mt-0.5 line-clamp-2" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+            <div className="text-[15px] font-semibold text-[#050505] dark:text-[#e4e6eb] leading-tight mt-0.5 line-clamp-2" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
               {linkTitle}
             </div>
             {linkDescription && (
