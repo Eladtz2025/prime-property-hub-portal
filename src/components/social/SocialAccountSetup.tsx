@@ -41,6 +41,29 @@ export const SocialAccountSetup: React.FC = () => {
         return;
       }
 
+      // Debug token to get real expiry from Facebook
+      const tokenRes = await fetch(
+        `https://graph.facebook.com/v21.0/debug_token?input_token=${accessToken}&access_token=${accessToken}`
+      );
+      const tokenData = await tokenRes.json();
+
+      if (tokenData.data?.error) {
+        toast({ title: 'טוקן לא תקין', description: tokenData.data.error.message, variant: 'destructive' });
+        return;
+      }
+
+      // Warn if short-lived token (expires in less than 24 hours)
+      const tokenExpiresAt = tokenData.data?.expires_at;
+      if (tokenExpiresAt && tokenExpiresAt > 0 && (tokenExpiresAt * 1000 - Date.now()) < 24 * 60 * 60 * 1000) {
+        toast({ title: 'טוקן Short-Lived', description: 'יש ליצור Long-Lived Token דרך Graph API Explorer', variant: 'destructive' });
+        return;
+      }
+
+      // Use real expiry from Facebook, fallback to 60 days
+      const realExpiry = tokenData.data?.data_access_expires_at
+        ? new Date(tokenData.data.data_access_expires_at * 1000).toISOString()
+        : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+
       // Save Facebook account
       await saveMutation.mutateAsync({
         platform: 'facebook',
@@ -48,8 +71,7 @@ export const SocialAccountSetup: React.FC = () => {
         page_name: data.name,
         access_token: accessToken,
         ig_user_id: igUserId || undefined,
-        // Long-lived tokens last ~60 days
-        token_expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        token_expires_at: realExpiry,
       });
 
       // If IG user ID provided, save Instagram account too
