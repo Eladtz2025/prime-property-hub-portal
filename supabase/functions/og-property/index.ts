@@ -161,7 +161,7 @@ serve(async (req) => {
     const siteName = isEnglish ? 'City Market Real Estate' : 'סיטי מרקט נדל"ן';
     
     // Build the actual page URL for redirect
-    const baseUrl = 'https://citymarket.co.il';
+    const baseUrl = 'https://www.ctmarketproperties.com';
     const propertyUrl = isEnglish 
       ? `${baseUrl}/en/property/${propertyId}`
       : `${baseUrl}/property/${propertyId}`;

@@ -122,7 +122,7 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     .replace(/{description}/g, property.description || '');
 
   // Append property link
-  const propertyLink = `https://citymarket.co.il/property/${property.id}`;
+  const propertyLink = `https://www.ctmarketproperties.com/property/${property.id}`;
   const postTextWithLink = `${postText}\n\n${propertyLink}`;
 
     const hashtags = (queue.hashtags as string) || '';
