@@ -160,6 +160,9 @@ export const AutoPublishManager: React.FC = () => {
     setPropertyFilter('all');
     setPublishTarget('page');
     setSelectedGroupIds([]);
+    setPostStyle('link');
+    setSelectedPrimaryImageIndex(0);
+    setSelectedPhotoIndexes([]);
   };
 
   const openEditQueue = (queue: Record<string, unknown>) => {
