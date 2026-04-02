@@ -726,11 +726,6 @@ export const AutoPublishManager: React.FC = () => {
                         );
                       })}
                     </div>
-                    {postStyle === 'photos' && (
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        {selectedPhotoIndexes.length} תמונות נבחרו (לחץ לבחירה/ביטול)
-                      </p>
-                    )}
                   </div>
                 )}
 
