@@ -105,7 +105,7 @@ export const SocialAccountSetup: React.FC = () => {
         platform: 'facebook',
         page_id: pageId,
         page_name: data.name,
-        access_token: accessToken,
+        access_token: finalToken,
         ig_user_id: igUserId || undefined,
         token_expires_at: realExpiry,
       });
@@ -116,7 +116,7 @@ export const SocialAccountSetup: React.FC = () => {
           platform: 'instagram',
           page_id: pageId,
           page_name: data.name + ' (Instagram)',
-          access_token: accessToken,
+          access_token: finalToken,
           ig_user_id: igUserId,
           token_expires_at: realExpiry,
         });
