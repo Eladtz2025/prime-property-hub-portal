@@ -20,9 +20,11 @@ async function publishToFacebookPage(
   text: string,
   imageUrls: string[],
   videoUrl?: string,
-  linkUrl?: string
+  linkUrl?: string,
+  isPrivate?: boolean
 ): Promise<PublishResult> {
   try {
+    const privacyParam = isPrivate ? { privacy: JSON.stringify({ value: 'SELF' }) } : {};
     // Video post
     if (videoUrl) {
       const res = await fetch(`${GRAPH_API}/${pageId}/videos`, {
@@ -44,7 +46,7 @@ async function publishToFacebookPage(
       const res = await fetch(`${GRAPH_API}/${pageId}/feed`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, link: linkUrl, access_token: accessToken }),
+        body: JSON.stringify({ message: text, link: linkUrl, access_token: accessToken, ...privacyParam }),
       });
       const data = await res.json();
       if (data.error) return { success: false, error: data.error.message };
@@ -56,7 +58,7 @@ async function publishToFacebookPage(
       const res = await fetch(`${GRAPH_API}/${pageId}/feed`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, access_token: accessToken }),
+        body: JSON.stringify({ message: text, access_token: accessToken, ...privacyParam }),
       });
       const data = await res.json();
       if (data.error) return { success: false, error: data.error.message };
@@ -93,7 +95,7 @@ async function publishToFacebookPage(
       attachedMedia[`attached_media[${i}]`] = JSON.stringify({ media_fbid: id });
     });
 
-    const params = new URLSearchParams({ message: text, access_token: accessToken });
+    const params = new URLSearchParams({ message: text, access_token: accessToken, ...(isPrivate ? { privacy: JSON.stringify({ value: 'SELF' }) } : {}) });
     photoIds.forEach((id, i) => {
       params.append(`attached_media[${i}]`, JSON.stringify({ media_fbid: id }));
     });
@@ -219,7 +221,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { post_id } = await req.json();
+    const { post_id, is_private } = await req.json();
     if (!post_id) {
       return new Response(JSON.stringify({ error: 'post_id required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -303,7 +305,8 @@ Deno.serve(async (req) => {
         fullText,
         imageUrls,
         post.video_url,
-        post.link_url
+        post.link_url,
+        is_private
       );
     } else {
       // Instagram

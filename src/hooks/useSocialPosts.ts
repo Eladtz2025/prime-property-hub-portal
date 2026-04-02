@@ -149,9 +149,11 @@ export function usePublishPost() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async (postId: string) => {
+    mutationFn: async (params: string | { postId: string; isPrivate?: boolean }) => {
+      const postId = typeof params === 'string' ? params : params.postId;
+      const isPrivate = typeof params === 'string' ? false : params.isPrivate;
       const { data, error } = await supabase.functions.invoke('social-publish', {
-        body: { post_id: postId },
+        body: { post_id: postId, is_private: isPrivate },
       });
       if (error) throw error;
       return data;

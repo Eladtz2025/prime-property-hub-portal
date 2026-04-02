@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bot, ChevronDown, Trash2, Edit2, Building2, Newspaper, Clock, Facebook, Instagram, Eye, RotateCcw, Send, Save, Image, X, CalendarDays } from 'lucide-react';
+import { Bot, ChevronDown, Trash2, Edit2, Building2, Newspaper, Clock, Facebook, Instagram, Eye, RotateCcw, Send, Save, Image, X, CalendarDays, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -125,6 +125,7 @@ export const AutoPublishManager: React.FC = () => {
   // Confirm
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'publish' | 'schedule' | null>(null);
+  const [isPrivatePost, setIsPrivatePost] = useState(false);
 
   const activeCount = queues?.filter(q => q.is_active).length || 0;
 
@@ -191,14 +192,14 @@ export const AutoPublishManager: React.FC = () => {
         : '';
     const typeLabel = prop.property_type === 'sale' ? 'מכירה' : prop.property_type === 'rental' ? 'השכרה' : prop.property_type || '';
     return text
-      .replace(/{address}/g, prop.address || '')
+      .replace(/{address}/g, prop.neighborhood || prop.city || '')
       .replace(/{price}/g, price)
       .replace(/{rooms}/g, prop.rooms?.toString() || '')
       .replace(/{size}/g, prop.property_size?.toString() || '')
       .replace(/{floor}/g, prop.floor?.toString() || '')
       .replace(/{neighborhood}/g, prop.neighborhood || '')
       .replace(/{city}/g, prop.city || '')
-      .replace(/{description}/g, prop.description || '')
+      .replace(/{description}/g, '')
       .replace(/{property_type}/g, typeLabel);
   };
 
@@ -215,11 +216,11 @@ export const AutoPublishManager: React.FC = () => {
           : '';
       const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
       setContentText(
-        `🏠 דירה ${typeLabel} ב${prop.city || ''}\n\n📍 ${prop.neighborhood || prop.city || ''}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר\n${prop.floor ? `🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
+        `🏠 דירה ${typeLabel} ב${prop.city || ''}\n\n📍 ${prop.neighborhood || prop.city || ''}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר${prop.floor ? `\n🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
       );
-      const tags = ['#נדלן', '#דירה' + typeLabel.replace('ל', 'ל')];
-      if (prop.city) tags.push(`#${prop.city.replace(/\s/g, '')}`);
-      if (prop.neighborhood) tags.push(`#${prop.neighborhood.replace(/\s/g, '')}`);
+      const tags = ['#נדלן', `#דירה${typeLabel.replace('ל', 'ל')}`];
+      if (prop.city) tags.push(`#${prop.city.replace(/[-\s]/g, '_')}`);
+      if (prop.neighborhood) tags.push(`#${prop.neighborhood.replace(/[-\s]/g, '_')}`);
       setHashtags(tags.join(' '));
     } else {
       applyTemplate(selectedTemplateId);
@@ -366,7 +367,7 @@ export const AutoPublishManager: React.FC = () => {
         link_url: isPhotosMode ? undefined : propertyUrl,
       });
       if (action === 'publish' && post?.id) {
-        await publishPost.mutateAsync(post.id);
+        await publishPost.mutateAsync({ postId: post.id, isPrivate: isPrivatePost });
       }
     }
     toast({ title: action === 'publish' ? '🚀 הפוסט פורסם בהצלחה!' : action === 'schedule' ? '⏰ הפוסט תוזמן בהצלחה!' : '💾 הטיוטא נשמרה' });
@@ -392,15 +393,17 @@ export const AutoPublishManager: React.FC = () => {
   const buildPreviewText = (queue: Record<string, unknown>) => {
     const nextProp = getNextProperty(queue);
     if (!nextProp) return 'אין דירות זמינות';
-    const template = (queue.template_text as string) || '{address}';
+    const template = (queue.template_text as string) || '{neighborhood}, {city}';
     return template
-      .replace(/{address}/g, nextProp.address || '')
+      .replace(/{address}/g, nextProp.neighborhood || nextProp.city || '')
       .replace(/{city}/g, nextProp.city || '')
       .replace(/{neighborhood}/g, nextProp.neighborhood || '')
       .replace(/{rooms}/g, nextProp.rooms?.toString() || '')
       .replace(/{size}/g, nextProp.property_size?.toString() || '')
       .replace(/{floor}/g, nextProp.floor?.toString() || '')
-      .replace(/{price}/g, nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : '');
+      .replace(/{price}/g, nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : '')
+      .replace(/{description}/g, '')
+      .replace(/{property_type}/g, nextProp.property_type === 'sale' ? 'מכירה' : 'השכרה');
   };
 
   const getFrequencyLabel = (days: number) => {
@@ -928,25 +931,37 @@ export const AutoPublishManager: React.FC = () => {
               );
             })()}
 
-            {/* Actions */}
-            <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
-              {mode === 'one_time' ? (
-                <>
-                  <Button size="sm" onClick={() => handleActionClick('publish')} disabled={createPost.isPending || publishPost.isPending} className="gap-1.5 h-8">
-                    <Send className="h-3.5 w-3.5" /> פרסם עכשיו
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleActionClick('schedule')} disabled={createPost.isPending} className="gap-1.5 h-8">
-                    <Clock className="h-3.5 w-3.5" /> תזמן
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleActionClick('draft')} disabled={createPost.isPending} className="gap-1.5 h-8">
-                    <Save className="h-3.5 w-3.5" /> טיוטא
-                  </Button>
-                </>
-              ) : (
-                <Button size="sm" onClick={handleSaveTemplate} disabled={saveQueue.isPending} className="gap-1.5 h-8">
-                  <Save className="h-3.5 w-3.5" /> {saveQueue.isPending ? 'שומר...' : editingId ? 'עדכן תבנית' : 'שמור תבנית'}
-                </Button>
+            {/* Private post toggle + Actions */}
+            <div className="space-y-3 pt-3 border-t border-border">
+              {mode === 'one_time' && platforms.facebook && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={isPrivatePost}
+                    onCheckedChange={(checked) => setIsPrivatePost(!!checked)}
+                  />
+                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs">פרסום פרטי (לבדיקה — רק אתה תראה)</span>
+                </label>
               )}
+              <div className="flex flex-wrap gap-2">
+                {mode === 'one_time' ? (
+                  <>
+                    <Button size="sm" onClick={() => handleActionClick('publish')} disabled={createPost.isPending || publishPost.isPending} className="gap-1.5 h-8">
+                      <Send className="h-3.5 w-3.5" /> {isPrivatePost ? 'פרסם פרטי (טסט)' : 'פרסם עכשיו'}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleActionClick('schedule')} disabled={createPost.isPending} className="gap-1.5 h-8">
+                      <Clock className="h-3.5 w-3.5" /> תזמן
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleActionClick('draft')} disabled={createPost.isPending} className="gap-1.5 h-8">
+                      <Save className="h-3.5 w-3.5" /> טיוטא
+                    </Button>
+                  </>
+                ) : (
+                  <Button size="sm" onClick={handleSaveTemplate} disabled={saveQueue.isPending} className="gap-1.5 h-8">
+                    <Save className="h-3.5 w-3.5" /> {saveQueue.isPending ? 'שומר...' : editingId ? 'עדכן תבנית' : 'שמור תבנית'}
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
