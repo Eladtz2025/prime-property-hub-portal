@@ -41,7 +41,7 @@ const TEMPLATE_PRESETS = [
     label: '🎯 מינימלית',
     text: `🏠 דירה {property_type}!
 
-📍 {address}, {city}
+📍 {neighborhood}, {city}
 🛏️ {rooms} חדרים | 📐 {size} מ"ר | 🏢 קומה {floor}
 💰 {price}
 
