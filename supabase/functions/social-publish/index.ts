@@ -221,7 +221,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { post_id } = await req.json();
+    const { post_id, is_private } = await req.json();
     if (!post_id) {
       return new Response(JSON.stringify({ error: 'post_id required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
