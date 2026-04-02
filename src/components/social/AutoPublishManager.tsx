@@ -233,6 +233,8 @@ export const AutoPublishManager: React.FC = () => {
       .limit(10);
     if (images && images.length > 0) {
       setImageUrls(images.map(i => i.image_url));
+      setSelectedPrimaryImageIndex(0);
+      setSelectedPhotoIndexes([0]); // default first image selected in photos mode
     }
   };
 
