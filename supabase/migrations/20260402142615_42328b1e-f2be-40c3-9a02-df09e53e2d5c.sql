@@ -1,0 +1,1 @@
+ALTER TABLE public.social_posts ADD COLUMN link_url TEXT;
