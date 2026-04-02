@@ -347,17 +347,23 @@ export const AutoPublishManager: React.FC = () => {
         ? `https://www.ctmarketproperties.com/property/${selectedPropertyId}`
         : undefined;
 
+      // In photos mode, send selected images; in link mode, Facebook generates OG card
+      const isPhotosMode = postStyle === 'photos';
+      const photosToSend = isPhotosMode
+        ? selectedPhotoIndexes.map(i => imageUrls[i]).filter(Boolean)
+        : [];
+
       const post = await createPost.mutateAsync({
         platform,
         post_type: 'property_listing',
         content_text: contentText,
-        image_urls: propertyUrl ? [] : imageUrls, // Link posts don't need images — Facebook generates OG card
+        image_urls: isPhotosMode ? photosToSend : (propertyUrl ? [] : imageUrls),
         hashtags,
         status: action === 'draft' ? 'draft' : 'scheduled',
         scheduled_at: action === 'publish' ? new Date().toISOString() : scheduledAt,
         property_id: selectedPropertyId || undefined,
         template_id: selectedTemplateId || undefined,
-        link_url: propertyUrl,
+        link_url: isPhotosMode ? undefined : propertyUrl,
       });
       if (action === 'publish' && post?.id) {
         await publishPost.mutateAsync(post.id);
