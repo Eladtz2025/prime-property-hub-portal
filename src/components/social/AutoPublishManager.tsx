@@ -192,14 +192,14 @@ export const AutoPublishManager: React.FC = () => {
         : '';
     const typeLabel = prop.property_type === 'sale' ? 'מכירה' : prop.property_type === 'rental' ? 'השכרה' : prop.property_type || '';
     return text
-      .replace(/{address}/g, prop.address || '')
+      .replace(/{address}/g, prop.neighborhood || prop.city || '')
       .replace(/{price}/g, price)
       .replace(/{rooms}/g, prop.rooms?.toString() || '')
       .replace(/{size}/g, prop.property_size?.toString() || '')
       .replace(/{floor}/g, prop.floor?.toString() || '')
       .replace(/{neighborhood}/g, prop.neighborhood || '')
       .replace(/{city}/g, prop.city || '')
-      .replace(/{description}/g, prop.description || '')
+      .replace(/{description}/g, '')
       .replace(/{property_type}/g, typeLabel);
   };
 
