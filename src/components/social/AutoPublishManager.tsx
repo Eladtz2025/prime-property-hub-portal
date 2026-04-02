@@ -334,7 +334,7 @@ export const AutoPublishManager: React.FC = () => {
     for (const platform of selectedPlatforms) {
       // Build property URL for link posts
       const propertyUrl = selectedPropertyId && selectedPropertyId !== 'free'
-        ? `https://citymarket.co.il/property/${selectedPropertyId}`
+        ? `https://www.ctmarketproperties.com/property/${selectedPropertyId}`
         : undefined;
 
       const post = await createPost.mutateAsync({
@@ -759,8 +759,12 @@ export const AutoPublishManager: React.FC = () => {
                 const price = prop.property_type === 'sale'
                   ? (prop.current_market_value ? `₪${Number(prop.current_market_value).toLocaleString()}` : '')
                   : (prop.monthly_rent ? `₪${Number(prop.monthly_rent).toLocaleString()}` : '');
-                linkUrl = `https://citymarket.co.il/property/${prop.id}`;
-                linkTitle = `דירה ${typeLabel}: ${prop.neighborhood || prop.city || ''}, ${prop.city || ''}`;
+                linkUrl = `https://www.ctmarketproperties.com/property/${prop.id}`;
+                const neighborhood = prop.neighborhood;
+                const city = prop.city || '';
+                linkTitle = neighborhood && neighborhood !== city
+                  ? `דירה ${typeLabel}: ${neighborhood}, ${city}`
+                  : `דירה ${typeLabel} ב${city}`;
                 const parts = [];
                 if (prop.rooms) parts.push(`${prop.rooms} חדרים`);
                 if (prop.property_size) parts.push(`${prop.property_size} מ"ר`);
