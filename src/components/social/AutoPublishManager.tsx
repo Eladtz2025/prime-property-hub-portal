@@ -125,6 +125,7 @@ export const AutoPublishManager: React.FC = () => {
   // Confirm
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'publish' | 'schedule' | null>(null);
+  const [isPrivatePost, setIsPrivatePost] = useState(false);
 
   const activeCount = queues?.filter(q => q.is_active).length || 0;
 
