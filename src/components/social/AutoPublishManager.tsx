@@ -334,7 +334,7 @@ export const AutoPublishManager: React.FC = () => {
     for (const platform of selectedPlatforms) {
       // Build property URL for link posts
       const propertyUrl = selectedPropertyId && selectedPropertyId !== 'free'
-        ? `https://citymarket.co.il/property/${selectedPropertyId}`
+        ? `https://www.ctmarketproperties.com/property/${selectedPropertyId}`
         : undefined;
 
       const post = await createPost.mutateAsync({
