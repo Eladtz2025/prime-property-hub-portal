@@ -365,10 +365,9 @@ export const AutoPublishManager: React.FC = () => {
         property_id: selectedPropertyId || undefined,
         template_id: selectedTemplateId || undefined,
         link_url: isPhotosMode ? undefined : propertyUrl,
-        is_private: isPrivatePost || undefined,
       });
       if (action === 'publish' && post?.id) {
-        await publishPost.mutateAsync(post.id);
+        await publishPost.mutateAsync({ postId: post.id, isPrivate: isPrivatePost });
       }
     }
     toast({ title: action === 'publish' ? '🚀 הפוסט פורסם בהצלחה!' : action === 'schedule' ? '⏰ הפוסט תוזמן בהצלחה!' : '💾 הטיוטא נשמרה' });

@@ -306,7 +306,7 @@ Deno.serve(async (req) => {
         imageUrls,
         post.video_url,
         post.link_url,
-        post.is_private
+        is_private
       );
     } else {
       // Instagram
