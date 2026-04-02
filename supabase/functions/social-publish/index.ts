@@ -338,6 +338,15 @@ Deno.serve(async (req) => {
         error_message: null,
       }).eq('id', post_id);
     } else {
+      // If token expired, deactivate the account so status reflects reality
+      const errorMsg = result.error || '';
+      if (errorMsg.includes('expired') || errorMsg.includes('validating access token') || errorMsg.includes('Session has expired')) {
+        await supabase.from('social_accounts')
+          .update({ is_active: false })
+          .eq('id', account.id);
+        console.log(`Deactivated account ${account.id} due to expired token`);
+      }
+
       const newRetry = (post.retry_count || 0) + 1;
       await supabase.from('social_posts').update({
         status: newRetry >= 3 ? 'failed' : 'scheduled',
