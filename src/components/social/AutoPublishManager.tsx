@@ -631,46 +631,36 @@ export const AutoPublishManager: React.FC = () => {
 
             {/* Text */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <Label className="text-xs font-medium">
-                  {mode === 'recurring' && queueType === 'property_rotation' ? 'תבנית פוסט' : 'טקסט הפוסט'}
-                </Label>
-                <span className="text-[10px] text-muted-foreground">{charCount} תווים</span>
-              </div>
               {mode === 'recurring' && queueType === 'property_rotation' && (
-                <div className="space-y-1 mb-1">
-                  <div className="flex gap-1.5 flex-wrap">
-                    {TEMPLATE_PRESETS.map(preset => (
-                      <Button
-                        key={preset.id}
-                        type="button"
-                        variant={contentText === preset.text ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-6 text-[11px] px-2"
-                        onClick={() => setContentText(preset.text)}
-                      >
-                        {preset.label}
-                      </Button>
-                    ))}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    placeholders: {'{address}'}, {'{price}'}, {'{rooms}'}, {'{size}'}, {'{floor}'}, {'{neighborhood}'}, {'{city}'}, {'{property_type}'}
-                  </p>
+                <div className="flex gap-1.5 flex-wrap mb-1">
+                  {TEMPLATE_PRESETS.map(preset => (
+                    <Button
+                      key={preset.id}
+                      type="button"
+                      variant={contentText === preset.text ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-6 text-[11px] px-2"
+                      onClick={() => setContentText(preset.text)}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                  <span className="text-[10px] text-muted-foreground self-center">
+                    {'{address}'} {'{price}'} {'{rooms}'} {'{neighborhood}'} {'{city}'}
+                  </span>
                 </div>
               )}
               <Textarea
                 value={contentText}
                 onChange={e => setContentText(e.target.value)}
                 placeholder={mode === 'recurring' ? 'תבנית הפוסט שתפורסם אוטומטית...' : 'כתוב את תוכן הפוסט...'}
-                className="min-h-[120px] text-sm"
+                className="min-h-[80px] text-sm"
                 dir="rtl"
               />
-            </div>
-
-            {/* Hashtags */}
-            <div>
-              <Label className="text-xs font-medium">האשטגים</Label>
-              <HashtagGroupSelector value={hashtags} onChange={setHashtags} />
+              <div className="flex items-center justify-between mt-1">
+                <HashtagGroupSelector value={hashtags} onChange={setHashtags} />
+                <span className="text-[10px] text-muted-foreground">{charCount} תווים</span>
+              </div>
             </div>
 
             {/* Images & Post Style (one-time) */}
