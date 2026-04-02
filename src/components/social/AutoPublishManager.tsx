@@ -259,12 +259,16 @@ export const AutoPublishManager: React.FC = () => {
     const tmpl = socialTemplates?.find(t => t.id === templateId);
     if (!tmpl) return;
     let text = tmpl.template_text;
+    let tags = tmpl.hashtags || '';
     if (selectedPropertyId && selectedPropertyId !== 'free') {
       const prop = properties.find(p => p.id === selectedPropertyId);
-      if (prop) text = fillPropertyPlaceholders(text, prop);
+      if (prop) {
+        text = fillPropertyPlaceholders(text, prop);
+        if (tags) tags = fillHashtagPlaceholders(tags, prop);
+      }
     }
     setContentText(text);
-    if (tmpl.hashtags) setHashtags(tmpl.hashtags);
+    if (tags) setHashtags(tags);
   };
 
   const addImageUrl = () => {
