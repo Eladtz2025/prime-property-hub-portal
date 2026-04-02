@@ -35,10 +35,11 @@ export const SocialAccountSetup: React.FC = () => {
     }
 
     setVerifying(true);
+    let finalToken = accessToken;
     try {
       // Verify token by fetching page info
       const res = await fetch(
-        `https://graph.facebook.com/v21.0/${pageId}?fields=name,id&access_token=${accessToken}`
+        `https://graph.facebook.com/v21.0/${pageId}?fields=name,id&access_token=${finalToken}`
       );
       const data = await res.json();
 
@@ -47,9 +48,9 @@ export const SocialAccountSetup: React.FC = () => {
         return;
       }
 
-      // Debug token to get real expiry from Facebook
+      // Debug token to check type
       const tokenRes = await fetch(
-        `https://graph.facebook.com/v21.0/debug_token?input_token=${accessToken}&access_token=${accessToken}`
+        `https://graph.facebook.com/v21.0/debug_token?input_token=${finalToken}&access_token=${finalToken}`
       );
       const tokenData = await tokenRes.json();
 
@@ -58,11 +59,39 @@ export const SocialAccountSetup: React.FC = () => {
         return;
       }
 
-      // Warn if short-lived token (expires in less than 24 hours)
-      const tokenExpiresAt = tokenData.data?.expires_at;
-      if (tokenExpiresAt && tokenExpiresAt > 0 && (tokenExpiresAt * 1000 - Date.now()) < 24 * 60 * 60 * 1000) {
-        toast({ title: 'טוקן Short-Lived', description: 'יש ליצור Long-Lived Token דרך Graph API Explorer', variant: 'destructive' });
-        return;
+      // If it's a User token, auto-convert to Page Access Token
+      if (tokenData.data?.type === 'USER') {
+        toast({ title: 'ממיר לטוקן דף...', description: 'הטוקן שהוזן הוא User Token, ממיר אוטומטית ל-Page Token' });
+        
+        const pageTokenRes = await fetch(
+          `https://graph.facebook.com/v21.0/${pageId}?fields=access_token&access_token=${finalToken}`
+        );
+        const pageTokenData = await pageTokenRes.json();
+
+        if (pageTokenData.error || !pageTokenData.access_token) {
+          toast({ title: 'שגיאה בהמרת טוקן', description: pageTokenData.error?.message || 'לא התקבל Page Token. ודא שיש לך הרשאת pages_manage_posts', variant: 'destructive' });
+          return;
+        }
+
+        finalToken = pageTokenData.access_token;
+
+        // Re-debug the new Page Token to get real expiry
+        const pageDebugRes = await fetch(
+          `https://graph.facebook.com/v21.0/debug_token?input_token=${finalToken}&access_token=${finalToken}`
+        );
+        const pageDebugData = await pageDebugRes.json();
+
+        if (pageDebugData.data?.error) {
+          toast({ title: 'שגיאה באימות Page Token', description: pageDebugData.data.error.message, variant: 'destructive' });
+          return;
+        }
+      } else {
+        // For PAGE tokens, warn if short-lived
+        const tokenExpiresAt = tokenData.data?.expires_at;
+        if (tokenExpiresAt && tokenExpiresAt > 0 && (tokenExpiresAt * 1000 - Date.now()) < 24 * 60 * 60 * 1000) {
+          toast({ title: 'טוקן Short-Lived', description: 'יש ליצור Long-Lived Token דרך Graph API Explorer', variant: 'destructive' });
+          return;
+        }
       }
 
       // Use real expiry from Facebook, fallback to 60 days
