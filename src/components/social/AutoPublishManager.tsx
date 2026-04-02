@@ -41,7 +41,7 @@ const TEMPLATE_PRESETS = [
     label: '🎯 מינימלית',
     text: `🏠 דירה {property_type}!
 
-📍 {address}, {city}
+📍 {neighborhood}, {city}
 🛏️ {rooms} חדרים | 📐 {size} מ"ר | 🏢 קומה {floor}
 💰 {price}
 
@@ -62,7 +62,7 @@ const TEMPLATE_PRESETS = [
     id: 'simple',
     label: '📝 פשוטה',
     text: `דירת {rooms} חדרים {property_type} ב{city}
-{address}, {neighborhood}
+{neighborhood}
 {size} מ"ר, קומה {floor}
 {price}
 
@@ -207,7 +207,7 @@ export const AutoPublishManager: React.FC = () => {
           : '';
       const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
       setContentText(
-        `🏠 דירה ${typeLabel} ב${prop.city || ''}\n\n📍 ${prop.address || ''}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר\n${prop.floor ? `🏢 קומה ${prop.floor}` : ''}\n\n${prop.description || ''}`
+        `🏠 דירה ${typeLabel} ב${prop.city || ''}\n\n📍 ${prop.neighborhood || prop.city || ''}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר\n${prop.floor ? `🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
       );
       const tags = ['#נדלן', '#דירה' + typeLabel.replace('ל', 'ל')];
       if (prop.city) tags.push(`#${prop.city.replace(/\s/g, '')}`);
@@ -760,7 +760,7 @@ export const AutoPublishManager: React.FC = () => {
                   ? (prop.current_market_value ? `₪${Number(prop.current_market_value).toLocaleString()}` : '')
                   : (prop.monthly_rent ? `₪${Number(prop.monthly_rent).toLocaleString()}` : '');
                 linkUrl = `https://citymarket.co.il/property/${prop.id}`;
-                linkTitle = `דירה ${typeLabel}: ${prop.address || ''}, ${prop.city || ''}`;
+                linkTitle = `דירה ${typeLabel}: ${prop.neighborhood || prop.city || ''}, ${prop.city || ''}`;
                 const parts = [];
                 if (prop.rooms) parts.push(`${prop.rooms} חדרים`);
                 if (prop.property_size) parts.push(`${prop.property_size} מ"ר`);
