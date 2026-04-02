@@ -665,41 +665,19 @@ export const AutoPublishManager: React.FC = () => {
 
             {/* Images & Post Style (one-time) */}
             {mode === 'one_time' && (
-              <div className="space-y-3">
-                {/* Post style toggle — only when a property is selected */}
+              <div className="space-y-2">
+                {/* Post style + image gallery inline */}
                 {selectedPropertyId && selectedPropertyId !== 'free' && imageUrls.length > 0 && (
-                  <div>
-                    <Label className="text-xs font-medium mb-2 block">סגנון פרסום</Label>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={postStyle === 'link' ? 'default' : 'outline'}
-                        className="text-xs h-7 gap-1.5"
-                        onClick={() => setPostStyle('link')}
-                      >
-                        🔗 Link Card
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={postStyle === 'photos' ? 'default' : 'outline'}
-                        className="text-xs h-7 gap-1.5"
-                        onClick={() => {
-                          setPostStyle('photos');
-                          if (selectedPhotoIndexes.length === 0 && imageUrls.length > 0) {
-                            setSelectedPhotoIndexes([0]);
-                          }
-                        }}
-                      >
-                        🖼️ תמונות
-                      </Button>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      {postStyle === 'link' 
-                        ? 'פייסבוק יציג כרטיס קישור עם תמונה אחת ולינק לאתר'
-                        : 'פוסט עם תמונות בלבד — בחר את התמונות שיופיעו'}
-                    </p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Button type="button" size="sm" variant={postStyle === 'link' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => setPostStyle('link')}>
+                      🔗 Link
+                    </Button>
+                    <Button type="button" size="sm" variant={postStyle === 'photos' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => { setPostStyle('photos'); if (selectedPhotoIndexes.length === 0 && imageUrls.length > 0) setSelectedPhotoIndexes([0]); }}>
+                      🖼️ תמונות
+                    </Button>
+                    <span className="text-[10px] text-muted-foreground">
+                      {postStyle === 'link' ? 'בחר תמונה ראשית' : `${selectedPhotoIndexes.length} נבחרו`}
+                    </span>
                   </div>
                 )}
 
