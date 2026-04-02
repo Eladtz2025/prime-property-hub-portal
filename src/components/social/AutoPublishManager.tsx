@@ -393,15 +393,17 @@ export const AutoPublishManager: React.FC = () => {
   const buildPreviewText = (queue: Record<string, unknown>) => {
     const nextProp = getNextProperty(queue);
     if (!nextProp) return 'אין דירות זמינות';
-    const template = (queue.template_text as string) || '{address}';
+    const template = (queue.template_text as string) || '{neighborhood}, {city}';
     return template
-      .replace(/{address}/g, nextProp.address || '')
+      .replace(/{address}/g, nextProp.neighborhood || nextProp.city || '')
       .replace(/{city}/g, nextProp.city || '')
       .replace(/{neighborhood}/g, nextProp.neighborhood || '')
       .replace(/{rooms}/g, nextProp.rooms?.toString() || '')
       .replace(/{size}/g, nextProp.property_size?.toString() || '')
       .replace(/{floor}/g, nextProp.floor?.toString() || '')
-      .replace(/{price}/g, nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : '');
+      .replace(/{price}/g, nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : '')
+      .replace(/{description}/g, '')
+      .replace(/{property_type}/g, nextProp.property_type === 'sale' ? 'מכירה' : 'השכרה');
   };
 
   const getFrequencyLabel = (days: number) => {
