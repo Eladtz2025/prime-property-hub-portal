@@ -677,40 +677,137 @@ export const AutoPublishManager: React.FC = () => {
               <HashtagGroupSelector value={hashtags} onChange={setHashtags} />
             </div>
 
-            {/* Images (one-time) */}
+            {/* Images & Post Style (one-time) */}
             {mode === 'one_time' && (
-              <div>
-                <Label className="text-xs font-medium">
-                  תמונות {platforms.instagram && <span className="text-muted-foreground">(חובה באינסטגרם)</span>}
-                </Label>
-                <div className="flex gap-2 mt-1">
-                  <Input
-                    value={newImageUrl}
-                    onChange={e => setNewImageUrl(e.target.value)}
-                    placeholder="הזן URL של תמונה"
-                    dir="ltr"
-                    className="text-sm flex-1"
-                  />
-                  <Button size="sm" variant="outline" onClick={addImageUrl} disabled={!newImageUrl}>
-                    <Image className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-                {imageUrls.length > 0 && (
-                  <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mt-2">
-                    {imageUrls.map((url, i) => (
-                      <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted">
-                        <img src={url} alt="" className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => removeImage(i)}
-                          className="absolute top-1 left-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                        {i === 0 && (
-                          <Badge className="absolute bottom-1 right-1 text-[8px] px-1 py-0">ראשית</Badge>
-                        )}
+              <div className="space-y-3">
+                {/* Post style toggle — only when a property is selected */}
+                {selectedPropertyId && selectedPropertyId !== 'free' && imageUrls.length > 0 && (
+                  <div>
+                    <Label className="text-xs font-medium mb-2 block">סגנון פרסום</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={postStyle === 'link' ? 'default' : 'outline'}
+                        className="text-xs h-7 gap-1.5"
+                        onClick={() => setPostStyle('link')}
+                      >
+                        🔗 Link Card
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={postStyle === 'photos' ? 'default' : 'outline'}
+                        className="text-xs h-7 gap-1.5"
+                        onClick={() => {
+                          setPostStyle('photos');
+                          if (selectedPhotoIndexes.length === 0 && imageUrls.length > 0) {
+                            setSelectedPhotoIndexes([0]);
+                          }
+                        }}
+                      >
+                        🖼️ תמונות
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {postStyle === 'link' 
+                        ? 'פייסבוק יציג כרטיס קישור עם תמונה אחת ולינק לאתר'
+                        : 'פוסט עם תמונות בלבד — בחר את התמונות שיופיעו'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Image gallery — property selected */}
+                {selectedPropertyId && selectedPropertyId !== 'free' && imageUrls.length > 0 && (
+                  <div>
+                    <Label className="text-xs font-medium mb-1.5 block">
+                      {postStyle === 'link' ? 'בחר תמונה ראשית' : 'בחר תמונות לפוסט'}
+                      {platforms.instagram && <span className="text-muted-foreground mr-1">(חובה באינסטגרם)</span>}
+                    </Label>
+                    <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
+                      {imageUrls.map((url, i) => {
+                        const isSelected = postStyle === 'link' 
+                          ? i === selectedPrimaryImageIndex
+                          : selectedPhotoIndexes.includes(i);
+                        return (
+                          <div 
+                            key={i} 
+                            className={cn(
+                              "relative group aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all",
+                              isSelected 
+                                ? "border-primary ring-2 ring-primary/30" 
+                                : "border-border hover:border-primary/50"
+                            )}
+                            onClick={() => {
+                              if (postStyle === 'link') {
+                                setSelectedPrimaryImageIndex(i);
+                              } else {
+                                setSelectedPhotoIndexes(prev => 
+                                  prev.includes(i) 
+                                    ? prev.filter(idx => idx !== i)
+                                    : [...prev, i]
+                                );
+                              }
+                            }}
+                          >
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            {isSelected && (
+                              <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                <div className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                                  ✓
+                                </div>
+                              </div>
+                            )}
+                            {postStyle === 'photos' && isSelected && selectedPhotoIndexes.length > 1 && (
+                              <Badge className="absolute top-1 right-1 text-[8px] px-1 py-0 h-4">
+                                {selectedPhotoIndexes.indexOf(i) + 1}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {postStyle === 'photos' && (
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {selectedPhotoIndexes.length} תמונות נבחרו (לחץ לבחירה/ביטול)
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Manual image URL for free posts */}
+                {(!selectedPropertyId || selectedPropertyId === 'free') && (
+                  <div>
+                    <Label className="text-xs font-medium">
+                      תמונות {platforms.instagram && <span className="text-muted-foreground">(חובה באינסטגרם)</span>}
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        value={newImageUrl}
+                        onChange={e => setNewImageUrl(e.target.value)}
+                        placeholder="הזן URL של תמונה"
+                        dir="ltr"
+                        className="text-sm flex-1"
+                      />
+                      <Button size="sm" variant="outline" onClick={addImageUrl} disabled={!newImageUrl}>
+                        <Image className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    {imageUrls.length > 0 && (
+                      <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mt-2">
+                        {imageUrls.map((url, i) => (
+                          <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted">
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <button
+                              onClick={() => removeImage(i)}
+                              className="absolute top-1 left-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
               </div>
