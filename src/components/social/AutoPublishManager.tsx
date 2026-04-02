@@ -772,38 +772,21 @@ export const AutoPublishManager: React.FC = () => {
               </div>
             )}
 
-            {/* Schedule (one-time) */}
+            {/* Schedule (one-time) — inline */}
             {mode === 'one_time' && (
-              <div className="flex flex-wrap items-end gap-3">
-                <div>
-                  <Label className="text-xs font-medium">תזמון</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-sm mt-1">
-                        <CalendarDays className="h-3.5 w-3.5 ml-1" />
-                        {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : 'בחר תאריך'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={scheduleDate}
-                        onSelect={setScheduleDate}
-                        className="p-3 pointer-events-auto"
-                        disabled={date => date < new Date()}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div>
-                  <Input
-                    type="time"
-                    value={scheduleTime}
-                    onChange={e => setScheduleTime(e.target.value)}
-                    className="w-28 text-sm"
-                    dir="ltr"
-                  />
-                </div>
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-xs h-7">
+                      <CalendarDays className="h-3 w-3 ml-1" />
+                      {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : 'תאריך'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="p-3 pointer-events-auto" disabled={date => date < new Date()} />
+                  </PopoverContent>
+                </Popover>
+                <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-24 text-xs h-7" dir="ltr" />
               </div>
             )}
 
