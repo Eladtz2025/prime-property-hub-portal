@@ -58,7 +58,7 @@ async function publishToFacebookPage(
       const res = await fetch(`${GRAPH_API}/${pageId}/feed`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, access_token: accessToken }),
+        body: JSON.stringify({ message: text, access_token: accessToken, ...privacyParam }),
       });
       const data = await res.json();
       if (data.error) return { success: false, error: data.error.message };
