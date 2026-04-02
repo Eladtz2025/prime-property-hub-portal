@@ -380,9 +380,11 @@ export const AutoPublishManager: React.FC = () => {
         : [];
 
       // In photos mode, append property URL to text so users can still click through
-      const finalContentText = (isPhotosMode && propertyUrl)
+      // Add RTL mark at start to force Facebook RTL alignment for Hebrew
+      const rtlMark = '\u200F';
+      const finalContentText = rtlMark + ((isPhotosMode && propertyUrl)
         ? `${contentText}\n\n🔗 ${propertyUrl}`
-        : contentText;
+        : contentText);
 
       const post = await createPost.mutateAsync({
         platform,

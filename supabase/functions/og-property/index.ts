@@ -172,7 +172,7 @@ serve(async (req) => {
     const ogImageUrl = mainImage;
 
     // Escape content for safe HTML attribute embedding
-    const escapedDescription = escapeHtml(description.substring(0, 200));
+    const escapedDescription = escapeHtml('\u200F' + description.substring(0, 200));
     const escapedTitle = escapeHtml(fullTitle);
     const escapedSiteName = escapeHtml(siteName);
 
