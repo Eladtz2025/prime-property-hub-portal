@@ -1,43 +1,49 @@
 
+## התאמת תצוגת הפוסט למראה האמיתי בפייסבוק
 
-## תיקון: המרה אוטומטית של User Token ל-Page Access Token
+### הבעיות שרואים בצילום מסך
 
-### הבעיה
+| # | בעיה | הסבר |
+|---|-------|------|
+| 1 | **כותרת Link Card שונה** | בתצוגה המקדימה אנחנו מייצרים כותרת משלנו ("דירה למכירה: צפון ישן, תל אביב"). אבל פייסבוק **מתעלם** ממה שאנחנו שולחים — הוא קורא את `og:title` מהאתר עצמו (`property.title`). לכן ה-preview חייב להציג את `property.title` |
+| 2 | **כפילות "למכירה: למכירה"** | ה-`property.title` בDB מכיל "למכירה: למכירה \| צפון ישן \| דופלקס פנטהאוז". זו בעיה בנתונים, אבל גם ה-OG description מציג כתובת — צריך לתקן |
+| 3 | **OG description מכיל כתובת** | בדף הנכס: `ogDescription = property.description \|\| "${property.rooms} חדרים ב${property.address}, ${property.city}"` — מציג כתובת רחוב |
+| 4 | **סגנון Preview לא תואם** | פייסבוק האמיתי: תמונה full-width בלי רווחים, פס אפור צמוד מתחת. ה-preview שלנו מציג `border-t border-b` ו-`aspectRatio` שנראים שונה |
 
-אתה מכניס **User Access Token** מ-Graph API Explorer. הטוקן הזה מסוג `USER` ופג תוקף תוך שעות בודדות. הקוד מזהה אותו כ-Short-Lived וחוסם. 
+### שינויים
 
-מה שצריך זה **Page Access Token** — שלא פג תוקף. אבל במקום לדרוש ממך ליצור אותו ידנית, **המערכת תמיר אוטומטית** את ה-User Token ל-Page Token.
+| # | קובץ | מה |
+|---|-------|----|
+| 1 | `AutoPublishManager.tsx` | ב-`buildLinkCard` — שנה `linkTitle` להשתמש ב-`prop.title` (מה שפייסבוק באמת יציג). שנה `linkDescription` להשתמש בחדרים/מ"ר/מחיר בלי כתובת |
+| 2 | `PropertyDetailPage.tsx` | תקן `ogDescription` — החלף `property.address` ב-`property.neighborhood \|\| property.city` |
+| 3 | `FacebookPostPreview.tsx` | עדכונים קוסמטיים להתאמת המראה לפייסבוק אמיתי: הסר `border-t` מעל התמונה, הקטן padding, התאם גודל כותרת |
 
-### פתרון
+### פירוט
 
-**קובץ: `SocialAccountSetup.tsx`**
+**`buildLinkCard` — שימוש ב-property.title:**
+```typescript
+// לפני — כותרת מיוצרת שונה ממה שפייסבוק מציג
+linkTitle = neighborhood && neighborhood !== city
+  ? `דירה ${typeLabel}: ${neighborhood}, ${city}`
+  : `דירה ${typeLabel} ב${city}`;
 
-אחרי אימות שהטוקן עובד (שורה 43), לפני בדיקת debug_token:
-
-1. בדוק אם הטוקן הוא מסוג `USER` (דרך debug_token)
-2. אם כן — קרא ל-Facebook API להמיר אותו ל-Page Token:
-   ```
-   GET /{pageId}?fields=access_token&access_token={userToken}
-   ```
-   זה מחזיר Page Access Token שלא פג תוקף
-3. השתמש ב-Page Token מכאן והלאה (לשמירה ול-debug)
-4. אם הטוקן כבר מסוג `PAGE` — המשך כרגיל בלי המרה
-
-### סדר פעולות חדש
-
-```text
-1. בדוק שהטוקן עובד (GET /{pageId}?fields=name,id)
-2. Debug token → בדוק type
-3. אם type=USER → המר ל-Page Token
-4. Debug את ה-Page Token החדש → קבל expiry אמיתי
-5. שמור את ה-Page Token (לא את ה-User Token)
+// אחרי — מה שפייסבוק באמת יציג (מ-og:title)
+linkTitle = prop.title || `דירה ${typeLabel} ב${city}`;
 ```
 
-### מה זה נותן
+**OG description — ללא כתובת:**
+```typescript
+// לפני
+const ogDescription = property.description || `${property.rooms} חדרים ב${property.address}, ${property.city}`;
 
-- אתה ממשיך להכניס את הטוקן מ-Graph API Explorer כרגיל
-- המערכת ממירה אותו אוטומטית ל-Page Token שלא פג
-- אין יותר שגיאת "Short-Lived"
+// אחרי
+const locationLabel = property.neighborhood || property.city;
+const ogDescription = property.description || `${property.rooms} חדרים ב${locationLabel}, ${property.city}`;
+```
 
-**קובץ אחד: `SocialAccountSetup.tsx`**
+**Preview — התאמה ויזואלית:**
+- הסרת `border-t` מעל תמונת ה-Link Card כדי שהתמונה תהיה צמודה לטקסט
+- התמונה ב-full width בלי `aspectRatio` מגביל (כמו בפייסבוק אמיתי)
+- הקטנת כותרת Link Card ל-`15px` (פייסבוק אמיתי משתמש בגודל קטן יותר)
 
+**3 קבצים: `AutoPublishManager.tsx`, `PropertyDetailPage.tsx`, `FacebookPostPreview.tsx`**
