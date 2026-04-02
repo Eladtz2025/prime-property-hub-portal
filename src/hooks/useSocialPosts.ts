@@ -101,6 +101,7 @@ export function useCreateSocialPost() {
       property_id?: string;
       template_id?: string;
       target_group_id?: string;
+      link_url?: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');

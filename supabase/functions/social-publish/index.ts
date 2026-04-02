@@ -19,7 +19,8 @@ async function publishToFacebookPage(
   accessToken: string,
   text: string,
   imageUrls: string[],
-  videoUrl?: string
+  videoUrl?: string,
+  linkUrl?: string
 ): Promise<PublishResult> {
   try {
     // Video post
@@ -38,7 +39,19 @@ async function publishToFacebookPage(
       return { success: true, external_post_id: data.id, external_post_url: `https://facebook.com/${data.id}` };
     }
 
-    // Text only
+    // Link post — Facebook generates OG card automatically
+    if (linkUrl && (!imageUrls || imageUrls.length === 0)) {
+      const res = await fetch(`${GRAPH_API}/${pageId}/feed`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, link: linkUrl, access_token: accessToken }),
+      });
+      const data = await res.json();
+      if (data.error) return { success: false, error: data.error.message };
+      return { success: true, external_post_id: data.id, external_post_url: `https://facebook.com/${data.id}` };
+    }
+
+    // Text only (no images, no link)
     if (!imageUrls || imageUrls.length === 0) {
       const res = await fetch(`${GRAPH_API}/${pageId}/feed`, {
         method: 'POST',
@@ -289,7 +302,8 @@ Deno.serve(async (req) => {
         account.access_token,
         fullText,
         imageUrls,
-        post.video_url
+        post.video_url,
+        post.link_url
       );
     } else {
       // Instagram
