@@ -458,12 +458,10 @@ export const AutoPublishManager: React.FC = () => {
 
       {/* Inline Form — always visible */}
       <Card className="border-primary/20">
-          <CardContent className="pt-4 space-y-4">
-            {/* Publication Type + Name + Filters — single row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <Label className="text-xs font-medium">סוג פרסום</Label>
-                <Select value={mode === 'one_time' ? 'one_time' : queueType === 'article_oneshot' ? 'auto_articles' : 'auto_properties'} onValueChange={(v) => {
+          <CardContent className="pt-3 pb-3 space-y-2">
+            {/* Row 1: All controls in one line */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={mode === 'one_time' ? 'one_time' : queueType === 'article_oneshot' ? 'auto_articles' : 'auto_properties'} onValueChange={(v) => {
                   if (v === 'one_time') {
                     setMode('one_time');
                   } else if (v === 'auto_properties') {
@@ -475,55 +473,45 @@ export const AutoPublishManager: React.FC = () => {
                     setQueueType('article_oneshot');
                   }
                 }}>
-                  <SelectTrigger className="h-8 text-sm mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="one_time">
-                      <span className="flex items-center gap-1.5"><Send className="h-3 w-3" /> חד-פעמי</span>
-                    </SelectItem>
-                    <SelectItem value="auto_properties">
-                      <span className="flex items-center gap-1.5"><Building2 className="h-3 w-3" /> אוטומטי — דירות</span>
-                    </SelectItem>
-                    <SelectItem value="auto_articles">
-                      <span className="flex items-center gap-1.5"><Newspaper className="h-3 w-3" /> אוטומטי — כתבות</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <SelectTrigger className="h-8 text-xs w-[130px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="one_time">
+                    <span className="flex items-center gap-1.5"><Send className="h-3 w-3" /> חד-פעמי</span>
+                  </SelectItem>
+                  <SelectItem value="auto_properties">
+                    <span className="flex items-center gap-1.5"><Building2 className="h-3 w-3" /> אוטו — דירות</span>
+                  </SelectItem>
+                  <SelectItem value="auto_articles">
+                    <span className="flex items-center gap-1.5"><Newspaper className="h-3 w-3" /> אוטו — כתבות</span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
 
               {mode === 'recurring' && (
-                <div>
-                  <Label className="text-xs font-medium">שם התבנית</Label>
-                  <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-8 text-sm mt-1" placeholder="לדוגמה: דירות יומי" />
-                </div>
+                <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-8 text-xs w-[140px]" placeholder="שם התבנית" />
               )}
 
               {mode === 'recurring' && queueType === 'property_rotation' && (
-                <div>
-                  <Label className="text-xs font-medium">סוג נכס</Label>
-                  <Select value={propertyFilter} onValueChange={(v) => setPropertyFilter(v as 'all' | 'rental' | 'sale')}>
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">הכל</SelectItem>
-                      <SelectItem value="rental">השכרה בלבד</SelectItem>
-                      <SelectItem value="sale">מכירה בלבד</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={propertyFilter} onValueChange={(v) => setPropertyFilter(v as 'all' | 'rental' | 'sale')}>
+                  <SelectTrigger className="h-8 text-xs w-[110px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">הכל</SelectItem>
+                    <SelectItem value="rental">השכרה</SelectItem>
+                    <SelectItem value="sale">מכירה</SelectItem>
+                  </SelectContent>
+                </Select>
               )}
-            </div>
 
-            {/* One-time: Property & Template selection */}
-            {mode === 'one_time' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs font-medium">מקור</Label>
+              {/* One-time: Property & Template inline */}
+              {mode === 'one_time' && (
+                <>
                   <Select value={selectedPropertyId} onValueChange={handleSelectProperty}>
-                    <SelectTrigger className="text-sm mt-1">
-                      <SelectValue placeholder="בחר נכס (אופציונלי)" />
+                    <SelectTrigger className="h-8 text-xs w-[180px]">
+                      <SelectValue placeholder="בחר נכס" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="free">פוסט חופשי</SelectItem>
@@ -553,12 +541,9 @@ export const AutoPublishManager: React.FC = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div>
-                  <Label className="text-xs font-medium">תבנית</Label>
                   <Select value={selectedTemplateId} onValueChange={applyTemplate}>
-                    <SelectTrigger className="text-sm mt-1">
-                      <SelectValue placeholder="בחר תבנית (אופציונלי)" />
+                    <SelectTrigger className="h-8 text-xs w-[140px]">
+                      <SelectValue placeholder="תבנית" />
                     </SelectTrigger>
                     <SelectContent>
                       {socialTemplates?.map(t => (
@@ -566,197 +551,139 @@ export const AutoPublishManager: React.FC = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-              </div>
-            )}
+                </>
+              )}
 
-            {/* Platforms */}
-            <div>
-              <Label className="text-xs font-medium mb-2 block">פלטפורמה</Label>
-              <div className="flex gap-2">
+              {/* Platform buttons inline */}
+              <div className="flex gap-1.5 items-center border-r border-border pr-2 mr-1">
                 <Button
                   type="button"
                   variant={platforms.facebook ? 'default' : 'outline'}
                   size="sm"
-                  className={cn("gap-1.5 h-7 text-xs", platforms.facebook && "bg-[#1877F2] hover:bg-[#1877F2]/90")}
+                  className={cn("gap-1 h-7 text-xs px-2", platforms.facebook && "bg-[#1877F2] hover:bg-[#1877F2]/90")}
                   onClick={() => setPlatforms(p => ({ ...p, facebook: !p.facebook }))}
                 >
-                  <Facebook className="h-3 w-3" /> פייסבוק
+                  <Facebook className="h-3 w-3" /> FB
                 </Button>
                 <Button
                   type="button"
                   variant={platforms.instagram ? 'default' : 'outline'}
                   size="sm"
-                  className={cn("gap-1.5 h-7 text-xs", platforms.instagram && "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90")}
+                  className={cn("gap-1 h-7 text-xs px-2", platforms.instagram && "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90")}
                   onClick={() => setPlatforms(p => ({ ...p, instagram: !p.instagram }))}
                 >
-                  <Instagram className="h-3 w-3" /> אינסטגרם
+                  <Instagram className="h-3 w-3" /> IG
                 </Button>
               </div>
 
-              {/* Publish target (page vs groups) */}
+              {/* Publish target inline */}
               {platforms.facebook && (
-                <div className="mt-2 space-y-2">
-                  <Label className="text-xs font-medium">יעד פרסום בפייסבוק</Label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={publishTarget === 'page' ? 'default' : 'outline'}
-                      className="text-xs h-7"
-                      onClick={() => setPublishTarget('page')}
-                    >
-                      עמוד ראשי
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={publishTarget === 'groups' ? 'default' : 'outline'}
-                      className="text-xs h-7"
-                      onClick={() => setPublishTarget('groups')}
-                    >
-                      קבוצות
-                    </Button>
-                  </div>
-                  {publishTarget === 'groups' && facebookGroups && facebookGroups.length > 0 && (
-                    <div className="space-y-1.5 bg-muted/30 rounded-md p-2">
-                      {facebookGroups.map((group: any) => (
-                        <label key={group.id} className="flex items-center gap-2 text-xs cursor-pointer">
-                          <Checkbox
-                            checked={selectedGroupIds.includes(group.id)}
-                            onCheckedChange={(checked) => {
-                              setSelectedGroupIds(prev =>
-                                checked
-                                  ? [...prev, group.id]
-                                  : prev.filter(id => id !== group.id)
-                              );
-                            }}
-                          />
-                          <span>{group.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                  {publishTarget === 'groups' && (!facebookGroups || facebookGroups.length === 0) && (
-                    <p className="text-[10px] text-muted-foreground">לא נמצאו קבוצות. הוסף קבוצות בהגדרות.</p>
-                  )}
+                <div className="flex gap-1.5 items-center">
+                  <Button type="button" size="sm" variant={publishTarget === 'page' ? 'default' : 'outline'} className="text-xs h-7 px-2" onClick={() => setPublishTarget('page')}>
+                    עמוד
+                  </Button>
+                  <Button type="button" size="sm" variant={publishTarget === 'groups' ? 'default' : 'outline'} className="text-xs h-7 px-2" onClick={() => setPublishTarget('groups')}>
+                    קבוצות
+                  </Button>
                 </div>
               )}
             </div>
+
+            {/* Groups selection if needed */}
+            {platforms.facebook && publishTarget === 'groups' && (
+              <>
+                {facebookGroups && facebookGroups.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 bg-muted/30 rounded-md p-2">
+                    {facebookGroups.map((group: any) => (
+                      <label key={group.id} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={selectedGroupIds.includes(group.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedGroupIds(prev =>
+                              checked ? [...prev, group.id] : prev.filter(id => id !== group.id)
+                            );
+                          }}
+                        />
+                        <span>{group.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">לא נמצאו קבוצות. הוסף קבוצות בהגדרות.</p>
+                )}
+              </>
+            )}
             {mode === 'recurring' && (
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <Label className="text-xs font-medium">תדירות</Label>
-                  <Select value={formFrequencyDays} onValueChange={setFormFrequencyDays}>
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FREQUENCY_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs font-medium">שעת פרסום</Label>
-                  <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-8 text-sm w-28 mt-1" />
-                </div>
+              <div className="flex items-center gap-2">
+                <Select value={formFrequencyDays} onValueChange={setFormFrequencyDays}>
+                  <SelectTrigger className="h-8 text-xs w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FREQUENCY_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-8 text-xs w-24" />
               </div>
             )}
 
             {/* Text */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <Label className="text-xs font-medium">
-                  {mode === 'recurring' && queueType === 'property_rotation' ? 'תבנית פוסט' : 'טקסט הפוסט'}
-                </Label>
-                <span className="text-[10px] text-muted-foreground">{charCount} תווים</span>
-              </div>
               {mode === 'recurring' && queueType === 'property_rotation' && (
-                <div className="space-y-1 mb-1">
-                  <div className="flex gap-1.5 flex-wrap">
-                    {TEMPLATE_PRESETS.map(preset => (
-                      <Button
-                        key={preset.id}
-                        type="button"
-                        variant={contentText === preset.text ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-6 text-[11px] px-2"
-                        onClick={() => setContentText(preset.text)}
-                      >
-                        {preset.label}
-                      </Button>
-                    ))}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    placeholders: {'{address}'}, {'{price}'}, {'{rooms}'}, {'{size}'}, {'{floor}'}, {'{neighborhood}'}, {'{city}'}, {'{property_type}'}
-                  </p>
+                <div className="flex gap-1.5 flex-wrap mb-1">
+                  {TEMPLATE_PRESETS.map(preset => (
+                    <Button
+                      key={preset.id}
+                      type="button"
+                      variant={contentText === preset.text ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-6 text-[11px] px-2"
+                      onClick={() => setContentText(preset.text)}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                  <span className="text-[10px] text-muted-foreground self-center">
+                    {'{address}'} {'{price}'} {'{rooms}'} {'{neighborhood}'} {'{city}'}
+                  </span>
                 </div>
               )}
               <Textarea
                 value={contentText}
                 onChange={e => setContentText(e.target.value)}
                 placeholder={mode === 'recurring' ? 'תבנית הפוסט שתפורסם אוטומטית...' : 'כתוב את תוכן הפוסט...'}
-                className="min-h-[120px] text-sm"
+                className="min-h-[80px] text-sm"
                 dir="rtl"
               />
-            </div>
-
-            {/* Hashtags */}
-            <div>
-              <Label className="text-xs font-medium">האשטגים</Label>
-              <HashtagGroupSelector value={hashtags} onChange={setHashtags} />
+              <div className="flex items-center justify-between mt-1">
+                <HashtagGroupSelector value={hashtags} onChange={setHashtags} />
+                <span className="text-[10px] text-muted-foreground">{charCount} תווים</span>
+              </div>
             </div>
 
             {/* Images & Post Style (one-time) */}
             {mode === 'one_time' && (
-              <div className="space-y-3">
-                {/* Post style toggle — only when a property is selected */}
+              <div className="space-y-2">
+                {/* Post style + image gallery inline */}
                 {selectedPropertyId && selectedPropertyId !== 'free' && imageUrls.length > 0 && (
-                  <div>
-                    <Label className="text-xs font-medium mb-2 block">סגנון פרסום</Label>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={postStyle === 'link' ? 'default' : 'outline'}
-                        className="text-xs h-7 gap-1.5"
-                        onClick={() => setPostStyle('link')}
-                      >
-                        🔗 Link Card
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={postStyle === 'photos' ? 'default' : 'outline'}
-                        className="text-xs h-7 gap-1.5"
-                        onClick={() => {
-                          setPostStyle('photos');
-                          if (selectedPhotoIndexes.length === 0 && imageUrls.length > 0) {
-                            setSelectedPhotoIndexes([0]);
-                          }
-                        }}
-                      >
-                        🖼️ תמונות
-                      </Button>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      {postStyle === 'link' 
-                        ? 'פייסבוק יציג כרטיס קישור עם תמונה אחת ולינק לאתר'
-                        : 'פוסט עם תמונות בלבד — בחר את התמונות שיופיעו'}
-                    </p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Button type="button" size="sm" variant={postStyle === 'link' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => setPostStyle('link')}>
+                      🔗 Link
+                    </Button>
+                    <Button type="button" size="sm" variant={postStyle === 'photos' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => { setPostStyle('photos'); if (selectedPhotoIndexes.length === 0 && imageUrls.length > 0) setSelectedPhotoIndexes([0]); }}>
+                      🖼️ תמונות
+                    </Button>
+                    <span className="text-[10px] text-muted-foreground">
+                      {postStyle === 'link' ? 'בחר תמונה ראשית' : `${selectedPhotoIndexes.length} נבחרו`}
+                    </span>
                   </div>
                 )}
 
-                {/* Image gallery — property selected */}
                 {selectedPropertyId && selectedPropertyId !== 'free' && imageUrls.length > 0 && (
                   <div>
-                    <Label className="text-xs font-medium mb-1.5 block">
-                      {postStyle === 'link' ? 'בחר תמונה ראשית' : 'בחר תמונות לפוסט'}
-                      {platforms.instagram && <span className="text-muted-foreground mr-1">(חובה באינסטגרם)</span>}
-                    </Label>
-                    <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
+                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5">
                       {imageUrls.map((url, i) => {
                         const isSelected = postStyle === 'link' 
                           ? i === selectedPrimaryImageIndex
@@ -799,11 +726,6 @@ export const AutoPublishManager: React.FC = () => {
                         );
                       })}
                     </div>
-                    {postStyle === 'photos' && (
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        {selectedPhotoIndexes.length} תמונות נבחרו (לחץ לבחירה/ביטול)
-                      </p>
-                    )}
                   </div>
                 )}
 
@@ -845,38 +767,21 @@ export const AutoPublishManager: React.FC = () => {
               </div>
             )}
 
-            {/* Schedule (one-time) */}
+            {/* Schedule (one-time) — inline */}
             {mode === 'one_time' && (
-              <div className="flex flex-wrap items-end gap-3">
-                <div>
-                  <Label className="text-xs font-medium">תזמון</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-sm mt-1">
-                        <CalendarDays className="h-3.5 w-3.5 ml-1" />
-                        {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : 'בחר תאריך'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={scheduleDate}
-                        onSelect={setScheduleDate}
-                        className="p-3 pointer-events-auto"
-                        disabled={date => date < new Date()}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div>
-                  <Input
-                    type="time"
-                    value={scheduleTime}
-                    onChange={e => setScheduleTime(e.target.value)}
-                    className="w-28 text-sm"
-                    dir="ltr"
-                  />
-                </div>
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-xs h-7">
+                      <CalendarDays className="h-3 w-3 ml-1" />
+                      {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : 'תאריך'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="p-3 pointer-events-auto" disabled={date => date < new Date()} />
+                  </PopoverContent>
+                </Popover>
+                <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-24 text-xs h-7" dir="ltr" />
               </div>
             )}
 
@@ -960,37 +865,32 @@ export const AutoPublishManager: React.FC = () => {
               );
             })()}
 
-            {/* Private post toggle + Actions */}
-            <div className="space-y-3 pt-3 border-t border-border">
+            {/* Actions — inline */}
+            <div className="flex flex-wrap items-center gap-2 pt-2">
               {mode === 'one_time' && platforms.facebook && (
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox
-                    checked={isPrivatePost}
-                    onCheckedChange={(checked) => setIsPrivatePost(!!checked)}
-                  />
-                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs">פרסום פרטי (לבדיקה — רק אתה תראה)</span>
+                <label className="flex items-center gap-1.5 cursor-pointer mr-2">
+                  <Checkbox checked={isPrivatePost} onCheckedChange={(checked) => setIsPrivatePost(!!checked)} />
+                  <Lock className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-[11px]">פרטי</span>
                 </label>
               )}
-              <div className="flex flex-wrap gap-2">
-                {mode === 'one_time' ? (
-                  <>
-                    <Button size="sm" onClick={() => handleActionClick('publish')} disabled={createPost.isPending || publishPost.isPending} className="gap-1.5 h-8">
-                      <Send className="h-3.5 w-3.5" /> {isPrivatePost ? 'פרסם פרטי (טסט)' : 'פרסם עכשיו'}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleActionClick('schedule')} disabled={createPost.isPending} className="gap-1.5 h-8">
-                      <Clock className="h-3.5 w-3.5" /> תזמן
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleActionClick('draft')} disabled={createPost.isPending} className="gap-1.5 h-8">
-                      <Save className="h-3.5 w-3.5" /> טיוטא
-                    </Button>
-                  </>
-                ) : (
-                  <Button size="sm" onClick={handleSaveTemplate} disabled={saveQueue.isPending} className="gap-1.5 h-8">
-                    <Save className="h-3.5 w-3.5" /> {saveQueue.isPending ? 'שומר...' : editingId ? 'עדכן תבנית' : 'שמור תבנית'}
+              {mode === 'one_time' ? (
+                <>
+                  <Button size="sm" onClick={() => handleActionClick('publish')} disabled={createPost.isPending || publishPost.isPending} className="gap-1 h-7 text-xs">
+                    <Send className="h-3 w-3" /> {isPrivatePost ? 'פרסם פרטי' : 'פרסם'}
                   </Button>
-                )}
-              </div>
+                  <Button size="sm" variant="outline" onClick={() => handleActionClick('schedule')} disabled={createPost.isPending} className="gap-1 h-7 text-xs">
+                    <Clock className="h-3 w-3" /> תזמן
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleActionClick('draft')} disabled={createPost.isPending} className="gap-1 h-7 text-xs">
+                    <Save className="h-3 w-3" /> טיוטא
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" onClick={handleSaveTemplate} disabled={saveQueue.isPending} className="gap-1 h-7 text-xs">
+                  <Save className="h-3 w-3" /> {saveQueue.isPending ? 'שומר...' : editingId ? 'עדכן תבנית' : 'שמור תבנית'}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
