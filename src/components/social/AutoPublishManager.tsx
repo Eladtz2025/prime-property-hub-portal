@@ -458,7 +458,7 @@ export const AutoPublishManager: React.FC = () => {
 
       {/* Inline Form — always visible */}
       <Card className="border-primary/20">
-          <CardContent className="pt-4 space-y-4">
+          <CardContent className="pt-3 pb-3 space-y-2">
             {/* Publication Type + Name + Filters — single row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
