@@ -805,7 +805,16 @@ export const AutoPublishManager: React.FC = () => {
               if (mode === 'one_time' && selectedPropertyId && selectedPropertyId !== 'free' && properties.length) {
                 const selectedProp = properties.find(p => p.id === selectedPropertyId);
                 if (selectedProp) {
-                  buildLinkCard(selectedProp);
+                  if (postStyle === 'link') {
+                    buildLinkCard(selectedProp);
+                    // Use selected primary image instead of default main
+                    if (imageUrls[selectedPrimaryImageIndex]) {
+                      linkImage = imageUrls[selectedPrimaryImageIndex];
+                    }
+                  } else {
+                    // Photos mode — show selected images in grid
+                    previewImages = selectedPhotoIndexes.map(i => imageUrls[i]).filter(Boolean);
+                  }
                 }
               }
               
@@ -813,11 +822,11 @@ export const AutoPublishManager: React.FC = () => {
                 <FacebookPostPreview
                   text={previewText}
                   hashtags={hashtags || undefined}
-                  imageUrls={!linkImage && previewImages.length > 0 ? previewImages : undefined}
-                  linkUrl={linkUrl}
-                  linkTitle={linkTitle}
-                  linkDescription={linkDescription}
-                  linkImage={linkImage}
+                  imageUrls={postStyle === 'photos' && previewImages.length > 0 ? previewImages : (!linkImage && previewImages.length > 0 ? previewImages : undefined)}
+                  linkUrl={postStyle === 'photos' ? undefined : linkUrl}
+                  linkTitle={postStyle === 'photos' ? undefined : linkTitle}
+                  linkDescription={postStyle === 'photos' ? undefined : linkDescription}
+                  linkImage={postStyle === 'photos' ? undefined : linkImage}
                 />
               );
             })()}
