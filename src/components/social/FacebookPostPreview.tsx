@@ -63,11 +63,9 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
         </div>
       </div>
 
-      {/* Body text */}
+      {/* Body text with "See more" truncation like real Facebook */}
       <div className="px-4 pb-2">
-        <div className="text-[15px] text-[#050505] dark:text-[#e4e6eb] whitespace-pre-wrap leading-[1.3333]" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
-          {text || <span className="text-[#65676b]">הטקסט שלך יופיע כאן...</span>}
-        </div>
+        <TextWithSeeMore text={text} />
         {hashtags && (
           <div className="mt-1 text-[15px] text-[#216fdb] dark:text-[#75b7ff]" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
             {hashtags}
