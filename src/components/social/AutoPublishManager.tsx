@@ -365,6 +365,7 @@ export const AutoPublishManager: React.FC = () => {
         property_id: selectedPropertyId || undefined,
         template_id: selectedTemplateId || undefined,
         link_url: isPhotosMode ? undefined : propertyUrl,
+        is_private: isPrivatePost || undefined,
       });
       if (action === 'publish' && post?.id) {
         await publishPost.mutateAsync(post.id);
