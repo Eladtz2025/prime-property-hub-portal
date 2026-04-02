@@ -203,6 +203,17 @@ export const AutoPublishManager: React.FC = () => {
       .replace(/{property_type}/g, typeLabel);
   };
 
+  const fillHashtagPlaceholders = (tags: string, prop: any): string => {
+    return tags
+      .replace(/{neighborhood}/g, prop.neighborhood?.replace(/[-\s]/g, '_') || '')
+      .replace(/{city}/g, prop.city?.replace(/[-\s]/g, '_') || '')
+      .replace(/{property_type}/g, prop.property_type === 'sale' ? 'למכירה' : 'להשכרה')
+      .replace(/#{2,}/g, '#')
+      .replace(/#\s/g, '')
+      .replace(/#$/g, '')
+      .trim();
+  };
+
   const handleSelectProperty = async (propId: string) => {
     setSelectedPropertyId(propId);
     if (propId === 'free') return;
@@ -215,8 +226,12 @@ export const AutoPublishManager: React.FC = () => {
           ? `₪${Number(prop.current_market_value).toLocaleString()}`
           : '';
       const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
+      const neighborhood = prop.neighborhood;
+      const locationLine = neighborhood
+        ? `\n📍 ${neighborhood}, ${prop.city}`
+        : '';
       setContentText(
-        `🏠 דירה ${typeLabel} ב${prop.city || ''}\n\n📍 ${prop.neighborhood || prop.city || ''}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר${prop.floor ? `\n🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
+        `🏠 דירה ${typeLabel} ב${prop.city || ''}${locationLine}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר${prop.floor ? `\n🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
       );
       const tags = ['#נדלן', `#דירה${typeLabel.replace('ל', 'ל')}`];
       if (prop.city) tags.push(`#${prop.city.replace(/[-\s]/g, '_')}`);
@@ -244,12 +259,16 @@ export const AutoPublishManager: React.FC = () => {
     const tmpl = socialTemplates?.find(t => t.id === templateId);
     if (!tmpl) return;
     let text = tmpl.template_text;
+    let tags = tmpl.hashtags || '';
     if (selectedPropertyId && selectedPropertyId !== 'free') {
       const prop = properties.find(p => p.id === selectedPropertyId);
-      if (prop) text = fillPropertyPlaceholders(text, prop);
+      if (prop) {
+        text = fillPropertyPlaceholders(text, prop);
+        if (tags) tags = fillHashtagPlaceholders(tags, prop);
+      }
     }
     setContentText(text);
-    if (tmpl.hashtags) setHashtags(tmpl.hashtags);
+    if (tags) setHashtags(tags);
   };
 
   const addImageUrl = () => {
@@ -354,10 +373,15 @@ export const AutoPublishManager: React.FC = () => {
         ? selectedPhotoIndexes.map(i => imageUrls[i]).filter(Boolean)
         : [];
 
+      // In photos mode, append property URL to text so users can still click through
+      const finalContentText = (isPhotosMode && propertyUrl)
+        ? `${contentText}\n\n🔗 ${propertyUrl}`
+        : contentText;
+
       const post = await createPost.mutateAsync({
         platform,
         post_type: 'property_listing',
-        content_text: contentText,
+        content_text: finalContentText,
         image_urls: isPhotosMode ? photosToSend : (propertyUrl ? [] : imageUrls),
         hashtags,
         status: action === 'draft' ? 'draft' : 'scheduled',
