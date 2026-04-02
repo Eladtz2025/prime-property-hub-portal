@@ -166,13 +166,13 @@ serve(async (req) => {
       ? `${baseUrl}/en/property/${propertyId}`
       : `${baseUrl}/property/${propertyId}`;
 
-    const fullTitle = `${propertyTypePrefix}: ${title}`;
+    const fullTitle = `\u200F${propertyTypePrefix}: ${title}`;
 
     // Use the main property image directly (Facebook doesn't support SVG)
     const ogImageUrl = mainImage;
 
     // Escape content for safe HTML attribute embedding
-    const escapedDescription = escapeHtml(description.substring(0, 200));
+    const escapedDescription = escapeHtml('\u200F' + description.substring(0, 200));
     const escapedTitle = escapeHtml(fullTitle);
     const escapedSiteName = escapeHtml(siteName);
 

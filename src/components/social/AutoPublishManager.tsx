@@ -227,11 +227,14 @@ export const AutoPublishManager: React.FC = () => {
           : '';
       const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
       const neighborhood = prop.neighborhood;
-      const locationLine = neighborhood
-        ? `\n📍 ${neighborhood}, ${prop.city}`
-        : '';
+      const details = [
+        price ? `💰 ${price}` : '',
+        prop.rooms ? `🛏️ ${prop.rooms} חד'` : '',
+        prop.property_size ? `📐 ${prop.property_size} מ"ר` : '',
+        prop.floor ? `🏢 קומה ${prop.floor}` : '',
+      ].filter(Boolean).join(' | ');
       setContentText(
-        `🏠 דירה ${typeLabel} ב${prop.city || ''}${locationLine}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר${prop.floor ? `\n🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
+        `🏠 דירה ${typeLabel} ב${prop.city || ''}${neighborhood ? ` - ${neighborhood}` : ''}\n${details}\n📞 לפרטים נוספים צרו קשר`
       );
       const tags = ['#נדלן', `#דירה${typeLabel.replace('ל', 'ל')}`];
       if (prop.city) tags.push(`#${prop.city.replace(/[-\s]/g, '_')}`);
@@ -374,9 +377,11 @@ export const AutoPublishManager: React.FC = () => {
         : [];
 
       // In photos mode, append property URL to text so users can still click through
-      const finalContentText = (isPhotosMode && propertyUrl)
+      // Add RTL mark at start to force Facebook RTL alignment for Hebrew
+      const rtlMark = '\u200F';
+      const finalContentText = rtlMark + ((isPhotosMode && propertyUrl)
         ? `${contentText}\n\n🔗 ${propertyUrl}`
-        : contentText;
+        : contentText);
 
       const post = await createPost.mutateAsync({
         platform,
