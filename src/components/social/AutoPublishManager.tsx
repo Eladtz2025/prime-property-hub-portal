@@ -760,7 +760,7 @@ export const AutoPublishManager: React.FC = () => {
                   ? (prop.current_market_value ? `₪${Number(prop.current_market_value).toLocaleString()}` : '')
                   : (prop.monthly_rent ? `₪${Number(prop.monthly_rent).toLocaleString()}` : '');
                 linkUrl = `https://citymarket.co.il/property/${prop.id}`;
-                linkTitle = `דירה ${typeLabel}: ${prop.address || ''}, ${prop.city || ''}`;
+                linkTitle = `דירה ${typeLabel}: ${prop.neighborhood || prop.city || ''}, ${prop.city || ''}`;
                 const parts = [];
                 if (prop.rooms) parts.push(`${prop.rooms} חדרים`);
                 if (prop.property_size) parts.push(`${prop.property_size} מ"ר`);
