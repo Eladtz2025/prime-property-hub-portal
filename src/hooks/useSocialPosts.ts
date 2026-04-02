@@ -156,6 +156,9 @@ export function usePublishPost() {
         body: { post_id: postId, is_private: isPrivate },
       });
       if (error) throw error;
+      if (data && !data.success) {
+        throw new Error(data.error || 'פרסום נכשל');
+      }
       return data;
     },
     onSuccess: (data) => {
