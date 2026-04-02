@@ -203,6 +203,17 @@ export const AutoPublishManager: React.FC = () => {
       .replace(/{property_type}/g, typeLabel);
   };
 
+  const fillHashtagPlaceholders = (tags: string, prop: any): string => {
+    return tags
+      .replace(/{neighborhood}/g, prop.neighborhood?.replace(/[-\s]/g, '_') || '')
+      .replace(/{city}/g, prop.city?.replace(/[-\s]/g, '_') || '')
+      .replace(/{property_type}/g, prop.property_type === 'sale' ? 'למכירה' : 'להשכרה')
+      .replace(/#{2,}/g, '#')
+      .replace(/#\s/g, '')
+      .replace(/#$/g, '')
+      .trim();
+  };
+
   const handleSelectProperty = async (propId: string) => {
     setSelectedPropertyId(propId);
     if (propId === 'free') return;
@@ -215,8 +226,12 @@ export const AutoPublishManager: React.FC = () => {
           ? `₪${Number(prop.current_market_value).toLocaleString()}`
           : '';
       const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
+      const neighborhood = prop.neighborhood;
+      const locationLine = neighborhood
+        ? `\n📍 ${neighborhood}, ${prop.city}`
+        : '';
       setContentText(
-        `🏠 דירה ${typeLabel} ב${prop.city || ''}\n\n📍 ${prop.neighborhood || prop.city || ''}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר${prop.floor ? `\n🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
+        `🏠 דירה ${typeLabel} ב${prop.city || ''}${locationLine}\n💰 ${price}\n🛏️ ${prop.rooms || ''} חדרים\n📐 ${prop.property_size || ''} מ"ר${prop.floor ? `\n🏢 קומה ${prop.floor}` : ''}\n\n📞 לפרטים נוספים צרו קשר`
       );
       const tags = ['#נדלן', `#דירה${typeLabel.replace('ל', 'ל')}`];
       if (prop.city) tags.push(`#${prop.city.replace(/[-\s]/g, '_')}`);
