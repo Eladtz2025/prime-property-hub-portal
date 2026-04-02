@@ -227,9 +227,6 @@ export const AutoPublishManager: React.FC = () => {
           : '';
       const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
       const neighborhood = prop.neighborhood;
-      const locationLine = neighborhood
-        ? `\n📍 ${neighborhood}, ${prop.city}`
-        : '';
       const details = [
         price ? `💰 ${price}` : '',
         prop.rooms ? `🛏️ ${prop.rooms} חד'` : '',
