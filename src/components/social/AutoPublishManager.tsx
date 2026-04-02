@@ -62,7 +62,7 @@ const TEMPLATE_PRESETS = [
     id: 'simple',
     label: '📝 פשוטה',
     text: `דירת {rooms} חדרים {property_type} ב{city}
-{address}, {neighborhood}
+{neighborhood}
 {size} מ"ר, קומה {floor}
 {price}
 
