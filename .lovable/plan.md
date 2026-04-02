@@ -1,45 +1,37 @@
 
 
-## הסרת כתובת ותיאור ארוך מפוסט נכס
+## תיקון דומיין ושכפול עיר בפוסט פייסבוק
 
 ### הבעיות
-1. כשבוחרים דירה, הטקסט כולל את **כל התיאור** (`prop.description`) — טקסט ארוך מיותר
-2. **שם הרחוב** מופיע בטקסט הפוסט — מידע שלא רוצים לחשוף
+
+1. **דומיין שגוי** — הקוד משתמש ב-`citymarket.co.il` בכל מקום, אבל הדומיין האמיתי הוא `ctmarketproperties.com`. פייסבוק יציג `CTMARKETPROPERTIES.COM` בתחתית ה-Link Card — לא `CITYMARKET.CO.IL` כמו שמוצג בתצוגה המקדימה
+2. **כפילות עיר** — כש-`neighborhood` ריק, ה-`linkTitle` מייצר `דירה למכירה: תל אביב-יפו, תל אביב-יפו` כי שני ה-fallbacks מחזירים את אותו ערך
+3. **OG Edge Function** — גם `og-property/index.ts` משתמש ב-`citymarket.co.il`
+
+### מה באמת יראה בפייסבוק?
+פייסבוק שולף את ה-OG tags מהדומיין. הדומיין שיוצג תמיד הוא הדומיין האמיתי של ה-URL שנשלח. לכן:
+- אם נשלח `https://www.ctmarketproperties.com/property/123` → פייסבוק יציג `CTMARKETPROPERTIES.COM`
+- הכותרת והתיאור יבואו מה-OG tags של הדף (מה שה-`og-property` function מחזיר)
 
 ### שינויים
 
-| # | מה | פרטים |
-|---|-----|--------|
-| 1 | Default text (שורה 210) | הסר את `prop.address` ואת `prop.description` מהטקסט שנבנה אוטומטית כשאין תבנית |
-| 2 | Preset "מינימלית" | החלף `{address}, {city}` ב-`{neighborhood}, {city}` (בלי כתובת) |
-| 3 | Preset "פשוטה" | הסר `{address}` מהשורה |
-| 4 | Link Card title (שורה 763) | החלף `prop.address` ב-`prop.neighborhood` — כי ה-Link Card שפייסבוק מציג כולל כותרת |
+| # | קובץ | שינוי |
+|---|-------|--------|
+| 1 | `src/components/social/AutoPublishManager.tsx` | החלף `citymarket.co.il` → `www.ctmarketproperties.com` (2 מקומות). תקן linkTitle — כשאין neighborhood, הצג רק עיר פעם אחת |
+| 2 | `supabase/functions/og-property/index.ts` | החלף `citymarket.co.il` → `www.ctmarketproperties.com` |
+| 3 | `supabase/functions/auto-publish/index.ts` | החלף `citymarket.co.il` → `www.ctmarketproperties.com` |
+| 4 | `src/components/social/FacebookPostPreview.tsx` | ה-preview כבר מציג domain מה-URL, אז יתעדכן אוטומטית |
 
-**קובץ אחד: `AutoPublishManager.tsx`**
+### תיקון linkTitle
 
-### דוגמה — לפני ואחרי
-
-**לפני:**
 ```
-🏠 דירה להשכרה בתל אביב
-📍 דיזנגוף 50
-💰 ₪5,000
-🛏️ 3 חדרים
-📐 80 מ"ר
-🏢 קומה 4
+// לפני — כפילות
+`דירה למכירה: תל אביב-יפו, תל אביב-יפו`
 
-תיאור ארוך של הדירה עם כל הפרטים...
+// אחרי
+`דירה למכירה: הצפון הישן, תל אביב-יפו`  // כשיש שכונה
+`דירה למכירה בתל אביב-יפו`                // כשאין שכונה
 ```
 
-**אחרי:**
-```
-🏠 דירה להשכרה בתל אביב
-📍 הצפון הישן
-💰 ₪5,000
-🛏️ 3 חדרים
-📐 80 מ"ר
-🏢 קומה 4
-
-📞 לפרטים נוספים צרו קשר
-```
+**4 קבצים (3 קבצי קוד + deploy של 2 edge functions).**
 
