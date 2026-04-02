@@ -611,286 +611,290 @@ export const AutoPublishManager: React.FC = () => {
                 ) : (
                   <p className="text-[10px] text-muted-foreground">לא נמצאו קבוצות. הוסף קבוצות בהגדרות.</p>
                 )}
-              </>
-            )}
-            {mode === 'recurring' && (
-              <div className="flex items-center gap-2">
-                <Select value={formFrequencyDays} onValueChange={setFormFrequencyDays}>
-                  <SelectTrigger className="h-8 text-xs w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FREQUENCY_OPTIONS.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-8 text-xs w-24" />
-              </div>
+            </>
             )}
 
-            {/* Text */}
-            <div>
-              {mode === 'recurring' && queueType === 'property_rotation' && (
-                <div className="flex gap-1.5 flex-wrap mb-1">
-                  {TEMPLATE_PRESETS.map(preset => (
-                    <Button
-                      key={preset.id}
-                      type="button"
-                      variant={contentText === preset.text ? 'default' : 'outline'}
-                      size="sm"
-                      className="h-6 text-[11px] px-2"
-                      onClick={() => setContentText(preset.text)}
-                    >
-                      {preset.label}
-                    </Button>
-                  ))}
-                  <span className="text-[10px] text-muted-foreground self-center">
-                    {'{address}'} {'{price}'} {'{rooms}'} {'{neighborhood}'} {'{city}'}
-                  </span>
-                </div>
-              )}
-              <Textarea
-                value={contentText}
-                onChange={e => setContentText(e.target.value)}
-                placeholder={mode === 'recurring' ? 'תבנית הפוסט שתפורסם אוטומטית...' : 'כתוב את תוכן הפוסט...'}
-                className="min-h-[80px] text-sm"
-                dir="rtl"
-              />
-              <div className="flex items-center justify-between mt-1">
-                <HashtagGroupSelector value={hashtags} onChange={setHashtags} />
-                <span className="text-[10px] text-muted-foreground">{charCount} תווים</span>
-              </div>
-            </div>
-
-            {/* Images & Post Style (one-time) */}
-            {mode === 'one_time' && (
+            {/* Two-column layout: form right, preview left */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Right column — form controls */}
               <div className="space-y-2">
-                {/* Post style + image gallery inline */}
-                {selectedPropertyId && selectedPropertyId !== 'free' && imageUrls.length > 0 && (
-                  <div className="flex items-center gap-2 mb-1">
-                    <Button type="button" size="sm" variant={postStyle === 'link' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => setPostStyle('link')}>
-                      🔗 Link
-                    </Button>
-                    <Button type="button" size="sm" variant={postStyle === 'photos' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => { setPostStyle('photos'); if (selectedPhotoIndexes.length === 0 && imageUrls.length > 0) setSelectedPhotoIndexes([0]); }}>
-                      🖼️ תמונות
-                    </Button>
-                    <span className="text-[10px] text-muted-foreground">
-                      {postStyle === 'link' ? 'בחר תמונה ראשית' : `${selectedPhotoIndexes.length} נבחרו`}
-                    </span>
-                  </div>
-                )}
-
-                {selectedPropertyId && selectedPropertyId !== 'free' && imageUrls.length > 0 && (
-                  <div>
-                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5">
-                      {imageUrls.map((url, i) => {
-                        const isSelected = postStyle === 'link' 
-                          ? i === selectedPrimaryImageIndex
-                          : selectedPhotoIndexes.includes(i);
-                        return (
-                          <div 
-                            key={i} 
-                            className={cn(
-                              "relative group aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all",
-                              isSelected 
-                                ? "border-primary ring-2 ring-primary/30" 
-                                : "border-border hover:border-primary/50"
-                            )}
-                            onClick={() => {
-                              if (postStyle === 'link') {
-                                setSelectedPrimaryImageIndex(i);
-                              } else {
-                                setSelectedPhotoIndexes(prev => 
-                                  prev.includes(i) 
-                                    ? prev.filter(idx => idx !== i)
-                                    : [...prev, i]
-                                );
-                              }
-                            }}
-                          >
-                            <img src={url} alt="" className="w-full h-full object-cover" />
-                            {isSelected && (
-                              <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                                <div className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
-                                  ✓
-                                </div>
-                              </div>
-                            )}
-                            {postStyle === 'photos' && isSelected && selectedPhotoIndexes.length > 1 && (
-                              <Badge className="absolute top-1 right-1 text-[8px] px-1 py-0 h-4">
-                                {selectedPhotoIndexes.indexOf(i) + 1}
-                              </Badge>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Manual image URL for free posts */}
-                {(!selectedPropertyId || selectedPropertyId === 'free') && (
-                  <div>
-                    <Label className="text-xs font-medium">
-                      תמונות {platforms.instagram && <span className="text-muted-foreground">(חובה באינסטגרם)</span>}
-                    </Label>
-                    <div className="flex gap-2 mt-1">
-                      <Input
-                        value={newImageUrl}
-                        onChange={e => setNewImageUrl(e.target.value)}
-                        placeholder="הזן URL של תמונה"
-                        dir="ltr"
-                        className="text-sm flex-1"
-                      />
-                      <Button size="sm" variant="outline" onClick={addImageUrl} disabled={!newImageUrl}>
-                        <Image className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                    {imageUrls.length > 0 && (
-                      <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mt-2">
-                        {imageUrls.map((url, i) => (
-                          <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted">
-                            <img src={url} alt="" className="w-full h-full object-cover" />
-                            <button
-                              onClick={() => removeImage(i)}
-                              className="absolute top-1 left-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
+                {mode === 'recurring' && (
+                  <div className="flex items-center gap-2">
+                    <Select value={formFrequencyDays} onValueChange={setFormFrequencyDays}>
+                      <SelectTrigger className="h-8 text-xs w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FREQUENCY_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                    <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-8 text-xs w-24" />
+                  </div>
+                )}
+
+                {/* Text */}
+                <div>
+                  {mode === 'recurring' && queueType === 'property_rotation' && (
+                    <div className="flex gap-1.5 flex-wrap mb-1">
+                      {TEMPLATE_PRESETS.map(preset => (
+                        <Button
+                          key={preset.id}
+                          type="button"
+                          variant={contentText === preset.text ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-6 text-[11px] px-2"
+                          onClick={() => setContentText(preset.text)}
+                        >
+                          {preset.label}
+                        </Button>
+                      ))}
+                      <span className="text-[10px] text-muted-foreground self-center">
+                        {'{address}'} {'{price}'} {'{rooms}'} {'{neighborhood}'} {'{city}'}
+                      </span>
+                    </div>
+                  )}
+                  <Textarea
+                    value={contentText}
+                    onChange={e => setContentText(e.target.value)}
+                    placeholder={mode === 'recurring' ? 'תבנית הפוסט שתפורסם אוטומטית...' : 'כתוב את תוכן הפוסט...'}
+                    className="min-h-[80px] text-sm"
+                    dir="rtl"
+                  />
+                  <div className="flex items-center justify-between mt-1">
+                    <HashtagGroupSelector value={hashtags} onChange={setHashtags} />
+                    <span className="text-[10px] text-muted-foreground">{charCount} תווים</span>
+                  </div>
+                </div>
+
+                {/* Images & Post Style (one-time) */}
+                {mode === 'one_time' && (
+                  <div className="space-y-2">
+                    {selectedPropertyId && selectedPropertyId !== 'free' && imageUrls.length > 0 && (
+                      <div className="flex items-center gap-2 mb-1">
+                        <Button type="button" size="sm" variant={postStyle === 'link' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => setPostStyle('link')}>
+                          🔗 Link
+                        </Button>
+                        <Button type="button" size="sm" variant={postStyle === 'photos' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => { setPostStyle('photos'); if (selectedPhotoIndexes.length === 0 && imageUrls.length > 0) setSelectedPhotoIndexes([0]); }}>
+                          🖼️ תמונות
+                        </Button>
+                        <span className="text-[10px] text-muted-foreground">
+                          {postStyle === 'link' ? 'בחר תמונה ראשית' : `${selectedPhotoIndexes.length} נבחרו`}
+                        </span>
+                      </div>
+                    )}
+
+                    {selectedPropertyId && selectedPropertyId !== 'free' && imageUrls.length > 0 && (
+                      <div>
+                        <div className="grid grid-cols-5 sm:grid-cols-6 gap-1.5">
+                          {imageUrls.map((url, i) => {
+                            const isSelected = postStyle === 'link' 
+                              ? i === selectedPrimaryImageIndex
+                              : selectedPhotoIndexes.includes(i);
+                            return (
+                              <div 
+                                key={i} 
+                                className={cn(
+                                  "relative group aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all",
+                                  isSelected 
+                                    ? "border-primary ring-2 ring-primary/30" 
+                                    : "border-border hover:border-primary/50"
+                                )}
+                                onClick={() => {
+                                  if (postStyle === 'link') {
+                                    setSelectedPrimaryImageIndex(i);
+                                  } else {
+                                    setSelectedPhotoIndexes(prev => 
+                                      prev.includes(i) 
+                                        ? prev.filter(idx => idx !== i)
+                                        : [...prev, i]
+                                    );
+                                  }
+                                }}
+                              >
+                                <img src={url} alt="" className="w-full h-full object-cover" />
+                                {isSelected && (
+                                  <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                    <div className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                                      ✓
+                                    </div>
+                                  </div>
+                                )}
+                                {postStyle === 'photos' && isSelected && selectedPhotoIndexes.length > 1 && (
+                                  <Badge className="absolute top-1 right-1 text-[8px] px-1 py-0 h-4">
+                                    {selectedPhotoIndexes.indexOf(i) + 1}
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Manual image URL for free posts */}
+                    {(!selectedPropertyId || selectedPropertyId === 'free') && (
+                      <div>
+                        <Label className="text-xs font-medium">
+                          תמונות {platforms.instagram && <span className="text-muted-foreground">(חובה באינסטגרם)</span>}
+                        </Label>
+                        <div className="flex gap-2 mt-1">
+                          <Input
+                            value={newImageUrl}
+                            onChange={e => setNewImageUrl(e.target.value)}
+                            placeholder="הזן URL של תמונה"
+                            dir="ltr"
+                            className="text-sm flex-1"
+                          />
+                          <Button size="sm" variant="outline" onClick={addImageUrl} disabled={!newImageUrl}>
+                            <Image className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                        {imageUrls.length > 0 && (
+                          <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mt-2">
+                            {imageUrls.map((url, i) => (
+                              <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted">
+                                <img src={url} alt="" className="w-full h-full object-cover" />
+                                <button
+                                  onClick={() => removeImage(i)}
+                                  className="absolute top-1 left-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* Schedule (one-time) — inline */}
-            {mode === 'one_time' && (
-              <div className="flex items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-xs h-7">
-                      <CalendarDays className="h-3 w-3 ml-1" />
-                      {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : 'תאריך'}
+                {/* Schedule (one-time) — inline */}
+                {mode === 'one_time' && (
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-xs h-7">
+                          <CalendarDays className="h-3 w-3 ml-1" />
+                          {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : 'תאריך'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="p-3 pointer-events-auto" disabled={date => date < new Date()} />
+                      </PopoverContent>
+                    </Popover>
+                    <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-24 text-xs h-7" dir="ltr" />
+                  </div>
+                )}
+
+                {/* Actions — inline */}
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  {mode === 'one_time' && platforms.facebook && (
+                    <label className="flex items-center gap-1.5 cursor-pointer mr-2">
+                      <Checkbox checked={isPrivatePost} onCheckedChange={(checked) => setIsPrivatePost(!!checked)} />
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-[11px]">פרטי</span>
+                    </label>
+                  )}
+                  {mode === 'one_time' ? (
+                    <>
+                      <Button size="sm" onClick={() => handleActionClick('publish')} disabled={createPost.isPending || publishPost.isPending} className="gap-1 h-7 text-xs">
+                        <Send className="h-3 w-3" /> {isPrivatePost ? 'פרסם פרטי' : 'פרסם'}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleActionClick('schedule')} disabled={createPost.isPending} className="gap-1 h-7 text-xs">
+                        <Clock className="h-3 w-3" /> תזמן
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleActionClick('draft')} disabled={createPost.isPending} className="gap-1 h-7 text-xs">
+                        <Save className="h-3 w-3" /> טיוטא
+                      </Button>
+                    </>
+                  ) : (
+                    <Button size="sm" onClick={handleSaveTemplate} disabled={saveQueue.isPending} className="gap-1 h-7 text-xs">
+                      <Save className="h-3 w-3" /> {saveQueue.isPending ? 'שומר...' : editingId ? 'עדכן תבנית' : 'שמור תבנית'}
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="p-3 pointer-events-auto" disabled={date => date < new Date()} />
-                  </PopoverContent>
-                </Popover>
-                <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-24 text-xs h-7" dir="ltr" />
+                  )}
+                </div>
               </div>
-            )}
 
-            {/* Facebook Preview */}
-            {(() => {
-              let previewText = contentText;
-              let previewImages: string[] = imageUrls;
-              let linkUrl: string | undefined;
-              let linkTitle: string | undefined;
-              let linkDescription: string | undefined;
-              let linkImage: string | undefined;
+              {/* Left column — Facebook Preview (sticky) */}
+              <div className="lg:sticky lg:top-4 self-start">
+                {(() => {
+                  let previewText = contentText;
+                  let previewImages: string[] = imageUrls;
+                  let linkUrl: string | undefined;
+                  let linkTitle: string | undefined;
+                  let linkDescription: string | undefined;
+                  let linkImage: string | undefined;
 
-              const getMainImage = (prop: any): string | undefined => {
-                if (!prop?.property_images?.length) return undefined;
-                const sorted = [...prop.property_images].sort((a: any, b: any) => {
-                  if (a.is_main && !b.is_main) return -1;
-                  if (!a.is_main && b.is_main) return 1;
-                  return (a.order_index || 0) - (b.order_index || 0);
-                });
-                return sorted[0]?.image_url || undefined;
-              };
+                  const getMainImage = (prop: any): string | undefined => {
+                    if (!prop?.property_images?.length) return undefined;
+                    const sorted = [...prop.property_images].sort((a: any, b: any) => {
+                      if (a.is_main && !b.is_main) return -1;
+                      if (!a.is_main && b.is_main) return 1;
+                      return (a.order_index || 0) - (b.order_index || 0);
+                    });
+                    return sorted[0]?.image_url || undefined;
+                  };
 
-              const buildLinkCard = (prop: any) => {
-                const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
-                const price = prop.property_type === 'sale'
-                  ? (prop.current_market_value ? `₪${Number(prop.current_market_value).toLocaleString()}` : '')
-                  : (prop.monthly_rent ? `₪${Number(prop.monthly_rent).toLocaleString()}` : '');
-                linkUrl = `https://www.ctmarketproperties.com/property/${prop.id}`;
-                const neighborhood = prop.neighborhood;
-                const city = prop.city || '';
-                linkTitle = prop.title || (neighborhood && neighborhood !== city
-                  ? `דירה ${typeLabel}: ${neighborhood}, ${city}`
-                  : `דירה ${typeLabel} ב${city}`);
-                const parts = [];
-                if (prop.rooms) parts.push(`${prop.rooms} חדרים`);
-                if (prop.property_size) parts.push(`${prop.property_size} מ"ר`);
-                if (price) parts.push(price);
-                linkDescription = parts.join(' | ');
-                linkImage = getMainImage(prop);
-              };
-              
-              // In recurring mode, use first matching property as sample
-              if (mode === 'recurring' && queueType === 'property_rotation' && properties.length) {
-                const filteredProps = propertyFilter === 'all' 
-                  ? properties 
-                  : properties.filter(p => p.property_type === propertyFilter);
-                const sampleProp = filteredProps[0];
-                if (sampleProp) {
-                  previewText = fillPropertyPlaceholders(contentText, sampleProp);
-                  buildLinkCard(sampleProp);
-                }
-              }
-              
-              // In one-time mode, use selected property
-              if (mode === 'one_time' && selectedPropertyId && selectedPropertyId !== 'free' && properties.length) {
-                const selectedProp = properties.find(p => p.id === selectedPropertyId);
-                if (selectedProp) {
-                  if (postStyle === 'link') {
-                    buildLinkCard(selectedProp);
-                    // Use selected primary image instead of default main
-                    if (imageUrls[selectedPrimaryImageIndex]) {
-                      linkImage = imageUrls[selectedPrimaryImageIndex];
+                  const buildLinkCard = (prop: any) => {
+                    const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
+                    const price = prop.property_type === 'sale'
+                      ? (prop.current_market_value ? `₪${Number(prop.current_market_value).toLocaleString()}` : '')
+                      : (prop.monthly_rent ? `₪${Number(prop.monthly_rent).toLocaleString()}` : '');
+                    linkUrl = `https://www.ctmarketproperties.com/property/${prop.id}`;
+                    const neighborhood = prop.neighborhood;
+                    const city = prop.city || '';
+                    linkTitle = prop.title || (neighborhood && neighborhood !== city
+                      ? `דירה ${typeLabel}: ${neighborhood}, ${city}`
+                      : `דירה ${typeLabel} ב${city}`);
+                    const parts = [];
+                    if (prop.rooms) parts.push(`${prop.rooms} חדרים`);
+                    if (prop.property_size) parts.push(`${prop.property_size} מ"ר`);
+                    if (price) parts.push(price);
+                    linkDescription = parts.join(' | ');
+                    linkImage = getMainImage(prop);
+                  };
+                  
+                  if (mode === 'recurring' && queueType === 'property_rotation' && properties.length) {
+                    const filteredProps = propertyFilter === 'all' 
+                      ? properties 
+                      : properties.filter(p => p.property_type === propertyFilter);
+                    const sampleProp = filteredProps[0];
+                    if (sampleProp) {
+                      previewText = fillPropertyPlaceholders(contentText, sampleProp);
+                      buildLinkCard(sampleProp);
                     }
-                  } else {
-                    // Photos mode — show selected images in grid
-                    previewImages = selectedPhotoIndexes.map(i => imageUrls[i]).filter(Boolean);
                   }
-                }
-              }
-              
-              return (
-                <FacebookPostPreview
-                  text={previewText}
-                  hashtags={hashtags || undefined}
-                  imageUrls={postStyle === 'photos' && previewImages.length > 0 ? previewImages : (!linkImage && previewImages.length > 0 ? previewImages : undefined)}
-                  linkUrl={postStyle === 'photos' ? undefined : linkUrl}
-                  linkTitle={postStyle === 'photos' ? undefined : linkTitle}
-                  linkDescription={postStyle === 'photos' ? undefined : linkDescription}
-                  linkImage={postStyle === 'photos' ? undefined : linkImage}
-                />
-              );
-            })()}
-
-            {/* Actions — inline */}
-            <div className="flex flex-wrap items-center gap-2 pt-2">
-              {mode === 'one_time' && platforms.facebook && (
-                <label className="flex items-center gap-1.5 cursor-pointer mr-2">
-                  <Checkbox checked={isPrivatePost} onCheckedChange={(checked) => setIsPrivatePost(!!checked)} />
-                  <Lock className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-[11px]">פרטי</span>
-                </label>
-              )}
-              {mode === 'one_time' ? (
-                <>
-                  <Button size="sm" onClick={() => handleActionClick('publish')} disabled={createPost.isPending || publishPost.isPending} className="gap-1 h-7 text-xs">
-                    <Send className="h-3 w-3" /> {isPrivatePost ? 'פרסם פרטי' : 'פרסם'}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleActionClick('schedule')} disabled={createPost.isPending} className="gap-1 h-7 text-xs">
-                    <Clock className="h-3 w-3" /> תזמן
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleActionClick('draft')} disabled={createPost.isPending} className="gap-1 h-7 text-xs">
-                    <Save className="h-3 w-3" /> טיוטא
-                  </Button>
-                </>
-              ) : (
-                <Button size="sm" onClick={handleSaveTemplate} disabled={saveQueue.isPending} className="gap-1 h-7 text-xs">
-                  <Save className="h-3 w-3" /> {saveQueue.isPending ? 'שומר...' : editingId ? 'עדכן תבנית' : 'שמור תבנית'}
-                </Button>
-              )}
+                  
+                  if (mode === 'one_time' && selectedPropertyId && selectedPropertyId !== 'free' && properties.length) {
+                    const selectedProp = properties.find(p => p.id === selectedPropertyId);
+                    if (selectedProp) {
+                      if (postStyle === 'link') {
+                        buildLinkCard(selectedProp);
+                        if (imageUrls[selectedPrimaryImageIndex]) {
+                          linkImage = imageUrls[selectedPrimaryImageIndex];
+                        }
+                      } else {
+                        previewImages = selectedPhotoIndexes.map(i => imageUrls[i]).filter(Boolean);
+                      }
+                    }
+                  }
+                  
+                  return (
+                    <FacebookPostPreview
+                      text={previewText}
+                      hashtags={hashtags || undefined}
+                      imageUrls={postStyle === 'photos' && previewImages.length > 0 ? previewImages : (!linkImage && previewImages.length > 0 ? previewImages : undefined)}
+                      linkUrl={postStyle === 'photos' ? undefined : linkUrl}
+                      linkTitle={postStyle === 'photos' ? undefined : linkTitle}
+                      linkDescription={postStyle === 'photos' ? undefined : linkDescription}
+                      linkImage={postStyle === 'photos' ? undefined : linkImage}
+                    />
+                  );
+                })()}
+              </div>
             </div>
           </CardContent>
         </Card>
