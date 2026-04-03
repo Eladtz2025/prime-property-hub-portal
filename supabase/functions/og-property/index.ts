@@ -150,12 +150,12 @@ serve(async (req) => {
 
     const rtlWrap = (text: string) => `\u202B${text}\u202C`;
 
-    const fullTitle = `\u200F${propertyTypePrefix}: ${title}`;
+    const fullTitle = `${propertyTypePrefix}: ${title}`;
     const finalTitle = customTitle || fullTitle;
     const finalDesc = customDesc || description;
 
-    const escapedDescription = escapeHtml(isEnglish ? finalDesc.substring(0, 200) : rtlWrap(finalDesc.substring(0, 200)));
-    const escapedTitle = escapeHtml(isEnglish ? finalTitle : rtlWrap(finalTitle));
+    const escapedDescription = escapeHtml(finalDesc.substring(0, 200));
+    const escapedTitle = escapeHtml(finalTitle);
     const escapedSiteName = escapeHtml(siteName);
 
     console.log(`OG image URL (transformed): ${ogImageUrl}`);
