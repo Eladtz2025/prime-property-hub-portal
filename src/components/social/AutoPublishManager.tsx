@@ -675,6 +675,26 @@ export const AutoPublishManager: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Custom Link Card fields */}
+                {mode === 'one_time' && postStyle === 'link' && selectedPropertyId && selectedPropertyId !== 'free' && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      value={customLinkTitle}
+                      onChange={e => setCustomLinkTitle(e.target.value)}
+                      placeholder="כותרת Link Card (אוטומטי אם ריק)"
+                      className="text-xs h-7"
+                      dir="rtl"
+                    />
+                    <Input
+                      value={customLinkDesc}
+                      onChange={e => setCustomLinkDesc(e.target.value)}
+                      placeholder="תיאור Link Card (אוטומטי אם ריק)"
+                      className="text-xs h-7"
+                      dir="rtl"
+                    />
+                  </div>
+                )}
+
                 {/* Images & Post Style (one-time) */}
                 {mode === 'one_time' && (
                   <div className="space-y-2">
