@@ -877,18 +877,21 @@ export const AutoPublishManager: React.FC = () => {
                     const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
                     const price = prop.property_type === 'sale'
                       ? (prop.current_market_value ? `₪${Number(prop.current_market_value).toLocaleString()}` : '')
-                      : (prop.monthly_rent ? `₪${Number(prop.monthly_rent).toLocaleString()}` : '');
+                      : (prop.monthly_rent ? `₪${Number(prop.monthly_rent).toLocaleString()}${prop.property_type === 'sale' ? '' : '/חודש'}` : '');
                     linkUrl = `https://www.ctmarketproperties.com/property/${prop.id}`;
-                    const neighborhood = prop.neighborhood;
-                    const city = prop.city || '';
-                    linkTitle = prop.title || (neighborhood && neighborhood !== city
-                      ? `דירה ${typeLabel}: ${neighborhood}, ${city}`
-                      : `דירה ${typeLabel} ב${city}`);
-                    const parts = [];
-                    if (prop.rooms) parts.push(`${prop.rooms} חדרים`);
-                    if (prop.property_size) parts.push(`${prop.property_size} מ"ר`);
-                    if (price) parts.push(price);
-                    linkDescription = parts.join(' | ');
+                    // Title — synced with og-property: "typePrefix: property.title"
+                    linkTitle = `${typeLabel}: ${prop.title || 'נכס'}`;
+                    // Description — synced with og-property: emojis + pipe separator
+                    const descParts: string[] = [];
+                    if (prop.rooms) descParts.push(`🛏️ ${prop.rooms} חד'`);
+                    if (prop.property_size) descParts.push(`📐 ${prop.property_size} מ"ר`);
+                    if (prop.floor != null && prop.floor !== undefined) descParts.push(`🏢 קומה ${prop.floor}`);
+                    if (prop.balcony === true) descParts.push(`🌿 מרפסת`);
+                    if (prop.parking === true) descParts.push(`🚗 חניה`);
+                    if (prop.elevator === true) descParts.push(`🛗 מעלית`);
+                    if (price) descParts.push(`💰 ${price}`);
+                    descParts.push(`📍 ${prop.neighborhood || prop.city || ''}`);
+                    linkDescription = descParts.join(' | ');
                     linkImage = getMainImage(prop);
                   };
                   

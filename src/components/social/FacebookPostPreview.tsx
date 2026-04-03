@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Globe, ThumbsUp, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
 
-const MAX_LINES = 5;
+const MAX_LINES = 3;
 const MAX_CHARS = 300;
 
 const TextWithSeeMore: React.FC<{ text: string }> = ({ text }) => {
