@@ -1,0 +1,1 @@
+UPDATE social_accounts SET is_active = true WHERE id = '6cb34d66-6ed7-4fe9-b45a-5d575a7c5aa4';
