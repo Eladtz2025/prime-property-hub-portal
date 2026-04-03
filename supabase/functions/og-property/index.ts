@@ -26,8 +26,10 @@ serve(async (req) => {
     const url = new URL(req.url);
     const propertyId = url.searchParams.get('id');
     const lang = url.searchParams.get('lang') || 'he';
+    const customTitle = url.searchParams.get('custom_title');
+    const customDesc = url.searchParams.get('custom_desc');
     
-    console.log(`OG Property request for ID: ${propertyId}, lang: ${lang}`);
+    console.log(`OG Property request for ID: ${propertyId}, lang: ${lang}, customTitle: ${customTitle}, customDesc: ${customDesc}`);
 
     if (!propertyId) {
       return new Response('Property ID required', { status: 400 });
