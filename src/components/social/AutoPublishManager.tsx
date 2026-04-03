@@ -375,13 +375,11 @@ export const AutoPublishManager: React.FC = () => {
         ? `https://www.ctmarketproperties.com/property/${selectedPropertyId}`
         : undefined;
 
-      // Always route link posts through og-property so Facebook gets a normalized 1200x630 image
-      // Use Supabase URL directly — custom domains don't proxy /functions/v1/
+      // Route link posts through the main domain so Facebook displays ctmarketproperties.com
+      // The Vercel edge function (api/og-redirect.js) detects bots and proxies to Supabase og-property
       let linkUrl: string | undefined;
       if (!isPhotosMode && selectedPropertyId && selectedPropertyId !== 'free') {
-        linkUrl = `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=${selectedPropertyId}&lang=he`
-          + `&img_index=${selectedPrimaryImageIndex}`
-          + `&v=${Date.now()}`
+        linkUrl = `https://www.ctmarketproperties.com/property/${selectedPropertyId}?img_index=${selectedPrimaryImageIndex}&v=${Date.now()}`
           + (customLinkTitle ? `&custom_title=${encodeURIComponent(customLinkTitle)}` : '')
           + (customLinkDesc ? `&custom_desc=${encodeURIComponent(customLinkDesc)}` : '');
       } else if (!isPhotosMode) {
