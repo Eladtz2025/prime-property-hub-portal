@@ -1,56 +1,53 @@
 
 
-## שליטה על Link Card + יישור RTL בפייסבוק
+## סנכרון התצוגה המקדימה עם מה שפייסבוק באמת מציג
 
-### הבעיות
-1. **טקסט Link Card מיושר לשמאל** — הכותרת והתיאור מתחת לתמונה מופיעים בצד שמאל במקום ימין
-2. **אין שליטה על התוכן** — מה שמופיע ב-Link Card נקבע אוטומטית מנתוני הנכס, בלי אפשרות לערוך
+### הבעיות מהצילום
 
-### הסבר טכני
-פייסבוק גורד את `og:title` ו-`og:description` מה-URL שנשלח בפוסט. הפונקציה `og-property` כבר מוסיפה `\u200F` (RTL mark) אבל פייסבוק לפעמים מתעלם ממנו. הפתרון: להוסיף תו RTL embedding (`\u202B`) שכופה כיוון ימין-לשמאל ברמת הפסקה.
+| # | בתצוגה המקדימה | בפייסבוק בפועל |
+|---|----------------|----------------|
+| 1 | **כותרת Link Card**: "דירה למכירה בתל אביב-יפו" | **og:title**: "למכירה: דירת 3 חדרים עם מרפסות \| חניה \| מיקום מובחר בנווה צדק" — זה `propertyTypePrefix: property.title` |
+| 2 | **תיאור Link Card**: "3 חדרים \| 68 מ"ר \| ₪5,250,000" | **og:description**: "🛏️ 3 חד' \| 📐 68 מ"ר \| 🏢 קומה 2 \| 🌿 מרפסת \| 🚗 חניה \| 🛗 מעלית \| 📍 תל אביב יפו" — עם אימוג'ים וכל הפרטים |
+| 3 | **"קרא עוד"** אחרי 5 שורות | פייסבוק חותך אחרי **~3 שורות** בפוסט עם Link Card |
+
+**הסיבה**: הפונקציה `buildLinkCard` ב-`AutoPublishManager` מייצרת תוכן שונה מהפונקציה `og-property` שפייסבוק באמת גורד.
 
 ### שינויים
 
 | # | קובץ | מה |
 |---|-------|----|
-| 1 | `og-property/index.ts` | תמיכה ב-query params `custom_title` ו-`custom_desc` שעוקפים את הערכים האוטומטיים. חיזוק RTL עם `\u202B` (Right-to-Left Embedding) |
-| 2 | `AutoPublishManager.tsx` | הוספת 2 שדות טקסט קטנים: "כותרת Link Card" ו-"תיאור Link Card" שמאפשרים עריכה. כשריקים — נשארים אוטומטיים. הערכים מועברים כ-query params ב-URL |
-| 3 | `FacebookPostPreview.tsx` | יישור RTL ל-Link Card area: זיהוי אם הטקסט בעברית (תו ראשון עברי) → `text-right dir="rtl"`, אם באנגלית → `text-left dir="ltr"` |
+| 1 | `AutoPublishManager.tsx` | לשנות `buildLinkCard` כדי שייצר **בדיוק** את אותו title ו-description כמו `og-property` |
+| 2 | `FacebookPostPreview.tsx` | להוריד את `MAX_LINES` מ-5 ל-3 כדי לשקף את ההתנהגות האמיתית של פייסבוק בפוסטים עם Link Card |
 
 ### פירוט
 
-**og-property — query params + RTL חזק:**
+**buildLinkCard — סנכרון עם og-property:**
 ```typescript
-// קריאת override מ-URL
-const customTitle = url.searchParams.get('custom_title');
-const customDesc = url.searchParams.get('custom_desc');
+// לפני — כותרת שונה מ-og:title
+linkTitle = prop.title || `דירה ${typeLabel} ב${city}`;
+const parts = [];
+if (prop.rooms) parts.push(`${prop.rooms} חדרים`);
+if (prop.property_size) parts.push(`${prop.property_size} מ"ר`);
+linkDescription = parts.join(' | ');
 
-// שימוש ב-override אם קיים
-const finalTitle = customTitle || fullTitle;
-const finalDesc = customTitle || description; // custom = custom RTL handling
-
-// RTL embedding חזק יותר
-const rtlWrap = (text: string) => `\u202B${text}\u202C`;
-const escapedTitle = escapeHtml(isEnglish ? finalTitle : rtlWrap(finalTitle));
+// אחרי — בדיוק כמו og-property
+linkTitle = `${typeLabel}: ${prop.title || 'נכס'}`;
+const descParts = [];
+if (prop.rooms) descParts.push(`🛏️ ${prop.rooms} חד'`);
+if (prop.property_size) descParts.push(`📐 ${prop.property_size} מ"ר`);
+if (prop.floor != null) descParts.push(`🏢 קומה ${prop.floor}`);
+if (prop.balcony) descParts.push(`🌿 מרפסת`);
+if (prop.parking) descParts.push(`🚗 חניה`);
+if (prop.elevator) descParts.push(`🛗 מעלית`);
+if (price) descParts.push(`💰 ${price}`);
+descParts.push(`📍 ${prop.neighborhood || prop.city}`);
+linkDescription = descParts.join(' | ');
 ```
 
-**AutoPublishManager — שדות עריכה:**
-```
-[כותרת Link Card]  [תיאור Link Card]
-```
-שני inputs קטנים עם placeholder מהערך האוטומטי. כש-linkUrl נבנה, מוסיפים query params:
+**TextWithSeeMore — threshold מותאם:**
 ```typescript
-const ogUrl = `https://...og-property?id=${prop.id}&lang=he` +
-  (customLinkTitle ? `&custom_title=${encodeURIComponent(customLinkTitle)}` : '') +
-  (customLinkDesc ? `&custom_desc=${encodeURIComponent(customLinkDesc)}` : '');
+const MAX_LINES = 3; // Facebook חותך אחרי 3 שורות בפוסט עם Link Card
 ```
 
-**FacebookPostPreview — כיוון אוטומטי:**
-```typescript
-const isHebrew = (text: string) => /[\u0590-\u05FF]/.test(text?.charAt(0) || '');
-// בתוך ה-Link Card area:
-<div dir={isHebrew(linkTitle) ? 'rtl' : 'ltr'} className={isHebrew(linkTitle) ? 'text-right' : 'text-left'}>
-```
-
-**3 קבצים + deploy של og-property.**
+**2 קבצים.**
 
