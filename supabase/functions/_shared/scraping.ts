@@ -106,7 +106,7 @@ export function validateScrapedContent(
   if (source === 'yad2') {
     const hasListingIndicators = 
       (markdown && (markdown.includes('₪') || markdown.includes('חד\'') || markdown.includes('חדרים'))) ||
-      (html && (html.includes('feeditem') || html.includes('feed_item')));
+      (html && (html.includes('feeditem') || html.includes('feed_item') || html.includes('__NEXT_DATA__') || html.includes('realestate/item/')));
     
     if (!hasListingIndicators) {
       return { valid: false, reason: 'Yad2 page has no property indicators - likely blocked or empty' };
