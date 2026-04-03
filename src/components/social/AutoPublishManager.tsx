@@ -376,9 +376,10 @@ export const AutoPublishManager: React.FC = () => {
         : undefined;
 
       // Always route link posts through og-property so Facebook gets a normalized 1200x630 image
+      // Use Supabase URL directly — custom domains don't proxy /functions/v1/
       let linkUrl: string | undefined;
       if (!isPhotosMode && selectedPropertyId && selectedPropertyId !== 'free') {
-        linkUrl = `https://www.ctmarketproperties.com/functions/v1/og-property?id=${selectedPropertyId}&lang=he`
+        linkUrl = `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=${selectedPropertyId}&lang=he`
           + `&img_index=${selectedPrimaryImageIndex}`
           + `&v=${Date.now()}`
           + (customLinkTitle ? `&custom_title=${encodeURIComponent(customLinkTitle)}` : '')
