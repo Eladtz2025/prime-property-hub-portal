@@ -168,14 +168,19 @@ serve(async (req) => {
       ? `${baseUrl}/en/property/${propertyId}`
       : `${baseUrl}/property/${propertyId}`;
 
-    const fullTitle = `\u200F${propertyTypePrefix}: ${title}`;
+    // RTL embedding wrapper for Hebrew text
+    const rtlWrap = (text: string) => `\u202B${text}\u202C`;
+
+    // Use custom overrides if provided, otherwise use auto-generated
+    const finalTitle = customTitle || fullTitle;
+    const finalDesc = customDesc || description;
 
     // Use the main property image directly (Facebook doesn't support SVG)
     const ogImageUrl = mainImage;
 
-    // Escape content for safe HTML attribute embedding
-    const escapedDescription = escapeHtml('\u200F' + description.substring(0, 200));
-    const escapedTitle = escapeHtml(fullTitle);
+    // Escape content for safe HTML attribute embedding — apply RTL embedding for Hebrew
+    const escapedDescription = escapeHtml(isEnglish ? finalDesc.substring(0, 200) : rtlWrap(finalDesc.substring(0, 200)));
+    const escapedTitle = escapeHtml(isEnglish ? finalTitle : rtlWrap(finalTitle));
     const escapedSiteName = escapeHtml(siteName);
 
     // Generate HTML with OG tags

@@ -367,20 +367,21 @@ export const AutoPublishManager: React.FC = () => {
       scheduledAt = dt.toISOString();
     }
     for (const platform of selectedPlatforms) {
-      // Build property URL for link posts — include custom OG overrides
-      let propertyUrl = selectedPropertyId && selectedPropertyId !== 'free'
+      // In photos mode, send selected images; in link mode, Facebook generates OG card
+      const isPhotosMode = postStyle === 'photos';
+
+      // Build property URL for link posts — use og-property endpoint with custom OG overrides
+      const propertyUrl = selectedPropertyId && selectedPropertyId !== 'free'
         ? `https://www.ctmarketproperties.com/property/${selectedPropertyId}`
         : undefined;
 
-      // For link posts, use og-property endpoint with custom params so Facebook scrapes correct OG tags
-      const ogPropertyUrl = selectedPropertyId && selectedPropertyId !== 'free' && !isPhotosMode
+      // For link posts with custom title/desc, use og-property endpoint so Facebook scrapes custom OG tags
+      const linkUrl = !isPhotosMode && selectedPropertyId && selectedPropertyId !== 'free' && (customLinkTitle || customLinkDesc)
         ? `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=${selectedPropertyId}&lang=he`
           + (customLinkTitle ? `&custom_title=${encodeURIComponent(customLinkTitle)}` : '')
           + (customLinkDesc ? `&custom_desc=${encodeURIComponent(customLinkDesc)}` : '')
-        : undefined;
+        : (isPhotosMode ? undefined : propertyUrl);
 
-      // In photos mode, send selected images; in link mode, Facebook generates OG card
-      const isPhotosMode = postStyle === 'photos';
       const photosToSend = isPhotosMode
         ? selectedPhotoIndexes.map(i => imageUrls[i]).filter(Boolean)
         : [];
@@ -402,7 +403,7 @@ export const AutoPublishManager: React.FC = () => {
         scheduled_at: action === 'publish' ? new Date().toISOString() : scheduledAt,
         property_id: selectedPropertyId || undefined,
         template_id: selectedTemplateId || undefined,
-        link_url: isPhotosMode ? undefined : propertyUrl,
+        link_url: linkUrl,
       });
       if (action === 'publish' && post?.id) {
         const result = await publishPost.mutateAsync({ postId: post.id, isPrivate: isPrivatePost });
