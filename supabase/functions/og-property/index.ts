@@ -172,6 +172,7 @@ serve(async (req) => {
     const rtlWrap = (text: string) => `\u202B${text}\u202C`;
 
     // Use custom overrides if provided, otherwise use auto-generated
+    const fullTitle = `${propertyTypePrefix}: ${title}`;
     const finalTitle = customTitle || fullTitle;
     const finalDesc = customDesc || description;
 
