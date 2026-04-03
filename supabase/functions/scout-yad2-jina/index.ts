@@ -137,28 +137,27 @@ serve(async (req) => {
     await updatePageStatus(supabase, runId, page, { url: urls[0] });
 
     for (const url of urls) {
-      console.log(`🟠 Yad2-Jina page ${page}: Scraping ${url}`);
+      console.log(`🟠 Yad2-Proxy page ${page}: Scraping ${url}`);
 
-      const timeoutSec = config.wait_for_ms ? Math.round(config.wait_for_ms / 1000) : 30;
-      const scrapeResult = await scrapeYad2WithJina(url, YAD2_CONFIG.MAX_RETRIES, timeoutSec);
+      const scrapeResult = await scrapeYad2ViaProxy(url, YAD2_CONFIG.MAX_RETRIES);
       if (!scrapeResult) {
-        console.warn(`⚠️ Yad2-Jina page ${page}: Scrape failed for ${url}`);
+        console.warn(`⚠️ Yad2-Proxy page ${page}: Scrape failed for ${url}`);
         urlsFailed++;
         continue;
       }
 
-      const { markdown, html } = scrapeResult;
-      const validation = validateScrapedContent(markdown, html, 'yad2');
+      const { html } = scrapeResult;
+      const validation = validateScrapedContent(undefined, html, 'yad2');
       if (!validation.valid) {
-        console.warn(`⚠️ Yad2-Jina page ${page}: Validation failed: ${validation.reason}`);
+        console.warn(`⚠️ Yad2-Proxy page ${page}: Validation failed: ${validation.reason}`);
         urlsFailed++;
         continue;
       }
 
-      const parseResult = parseYad2Markdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const parseResult = parseYad2Html(html, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
-      console.log(`🟠 Yad2-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
+      console.log(`🟠 Yad2-Proxy page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
 
       if (markdown.length > 1000) {
         try {
