@@ -44,31 +44,31 @@ const buildDescription = (property: any, isEnglish: boolean, location: string): 
   const parts: string[] = [];
   
   if (property.rooms) {
-    parts.push(isEnglish ? `🛏️ ${property.rooms} rooms` : `🛏️ ${property.rooms} חד'`);
+    parts.push(isEnglish ? `${property.rooms} rooms` : `${property.rooms} חד'`);
   }
   if (property.property_size) {
-    parts.push(isEnglish ? `📐 ${property.property_size} sqm` : `📐 ${property.property_size} מ"ר`);
+    parts.push(isEnglish ? `${property.property_size} sqm` : `${property.property_size} מ"ר`);
   }
   if (property.floor !== null && property.floor !== undefined) {
-    parts.push(isEnglish ? `🏢 Floor ${property.floor}` : `🏢 קומה ${property.floor}`);
+    parts.push(isEnglish ? `Floor ${property.floor}` : `קומה ${property.floor}`);
   }
   if (property.balcony === true) {
-    parts.push(isEnglish ? `🌿 Balcony` : `🌿 מרפסת`);
+    parts.push(isEnglish ? `Balcony` : `מרפסת`);
   }
   if (property.parking === true) {
-    parts.push(isEnglish ? `🚗 Parking` : `🚗 חניה`);
+    parts.push(isEnglish ? `Parking` : `חניה`);
   }
   if (property.elevator === true) {
-    parts.push(isEnglish ? `🛗 Elevator` : `🛗 מעלית`);
+    parts.push(isEnglish ? `Elevator` : `מעלית`);
   }
   if (property.monthly_rent) {
     const formatted = isEnglish
       ? new Intl.NumberFormat('en-US').format(property.monthly_rent)
       : new Intl.NumberFormat('he-IL').format(property.monthly_rent);
     const suffix = property.property_type === 'sale' ? '' : (isEnglish ? '/month' : '/חודש');
-    parts.push(`💰 ₪${formatted}${suffix}`);
+    parts.push(`₪${formatted}${suffix}`);
   }
-  parts.push(`📍 ${location}`);
+  parts.push(location);
   
   return parts.join(' | ');
 };
