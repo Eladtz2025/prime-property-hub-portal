@@ -378,7 +378,7 @@ export const AutoPublishManager: React.FC = () => {
       // Always route link posts through og-property so Facebook gets a normalized 1200x630 image
       let linkUrl: string | undefined;
       if (!isPhotosMode && selectedPropertyId && selectedPropertyId !== 'free') {
-        linkUrl = `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=${selectedPropertyId}&lang=he`
+        linkUrl = `https://www.ctmarketproperties.com/functions/v1/og-property?id=${selectedPropertyId}&lang=he`
           + `&img_index=${selectedPrimaryImageIndex}`
           + `&v=${Date.now()}`
           + (customLinkTitle ? `&custom_title=${encodeURIComponent(customLinkTitle)}` : '')
