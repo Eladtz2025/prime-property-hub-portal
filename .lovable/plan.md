@@ -1,68 +1,50 @@
 
-## תיקון אמיתי: לאחד את כל תמונות ה-Link Card למראה של פוסט ה־2 חדרים ב־6500
 
-### למה התיקון האחרון לא פתר
-השינוי האחרון טיפל רק ב־UI של ה-preview (`aspect-[1.91/1]`).  
-אבל בפייסבוק האמיתי ה-layout נקבע לפי ה־`og:image` וה־URL שנשלח לפרסום. כרגע יש עדיין 2 בעיות:
-1. לפעמים הפרסום נשען על URL אחד ולפעמים על URL אחר
-2. ה־`og:image` עדיין מגיע מתמונה מקורית בגודל/יחס לא אחיד
+## תיקון Domain ויישור RTL ב-Link Card של פייסבוק
 
-בגלל זה פייסבוק מחליט לבד אם להציג:
-- כרטיס גדול לרוחב כמו בדוגמת ה־6500
-- או כרטיס קטן עם thumbnail בצד
+### 2 הבעיות מהצילום
 
-### מה אבנה
-1. **איחוד מקור ה־OG**  
-   כל פוסט Link יפורסם תמיד דרך `og-property`, גם בלי override ידני.
+| # | בעיה | סיבה |
+|---|-------|------|
+| 1 | **Domain מופיע כ-`jswumsdymlooeobrxict.supabase.co`** | ה-URL שנשלח לפייסבוק הוא של Supabase function, ופייסבוק מציג את ה-domain של ה-URL שהוא גרד |
+| 2 | **כותרת/תיאור Link Card מיושרים לשמאל** | פייסבוק מפשיט תווי RTL מ-OG tags. צריך לוודא שהתו הראשון של `og:title` ו-`og:description` הוא עברי (לא אימוג'י ולא Unicode control character) |
 
-2. **תמונת OG אחידה לכל הנכסים**  
-   `og-property` תוציא תמיד `og:image` בגודל קבוע `1200x630` (יחס 1.91:1), כך שפייסבוק יקבל תמיד תמונה “גדולה לרוחב”.
+### פתרון
 
-3. **התמונה שנבחרה ב־UI תהיה גם התמונה בפוסט האמיתי**  
-   במקום שהבחירה תשפיע רק על ה-preview, אעביר ל־`og-property` את התמונה שנבחרה (`image_id` או `image_index`) כדי שהפוסט בפועל וה-preview יהיו זהים.
+**בעיה 1 — Domain:**
+ב-`AutoPublishManager.tsx`, ה-`linkUrl` נבנה עם URL של Supabase:
+```
+https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=...
+```
+צריך להחליף ל-URL דרך הדומיין הראשי. ה-edge function כבר מוגדרת גם דרך:
+```
+https://www.ctmarketproperties.com/functions/v1/og-property?id=...
+```
+אם Supabase custom domain לא מוגדר, האלטרנטיבה היא לשלוח את ה-`propertyUrl` הרגיל (`www.ctmarketproperties.com/property/{id}`) ולהבטיח שדף הנכס יכלול OG tags. 
 
-4. **מניעת cache ישן של Facebook**  
-   אוסיף פרמטר version/cache-bust ל־URL של ה־link card כדי שפייסבוק יגרד מחדש ולא יישאר עם preview ישן.
+**הפתרון הפרקטי:** להחליף את ה-domain ב-`linkUrl` מ-Supabase URL ל-URL עם הדומיין הראשי. Edge functions ב-Supabase נגישות גם דרך custom domain אם הוא מוגדר. אם לא — נשלח את `propertyUrl` ישירות ונוסיף OG tags ל-`index.html` כ-fallback.
 
-5. **סנכרון preview עם הפרסום האמיתי**  
-   ה-preview ישתמש באותה תמונת OG מנורמלת ובאותו domain תצוגה של האתר, כדי שלא יהיה מצב שה-preview נראה אחיד אבל הפוסט בפועל נראה אחרת.
+**בעיה 2 — RTL:**
+ב-`og-property/index.ts`, הכותרת מתחילה ב-`\u200F` (RTL mark) ואחריו `\u202B` (RTL embedding). פייסבוק מתעלם מתווים אלה ומסתכל על התו הראשון "האמיתי". אם זה אימוג'י — הוא מניח LTR.
+
+**פתרון:** בכותרת, להעביר את הטקסט העברי לפני כל אימוג'י. בתיאור, להתחיל עם תו עברי ולא עם אימוג'י:
+```
+// לפני
+og:title = "‏‫למכירה: דירת 3 חדרים..."
+og:description = "‏‫🛏️ 3 חד' | 📐 68 מ"ר..."
+
+// אחרי — ללא RTL control chars, מתחיל בעברית
+og:title = "למכירה: דירת 3 חדרים..."
+og:description = "3 חד' | 68 מ"ר | קומה 2 | מרפסת | חניה | תל אביב"
+```
 
 ### קבצים
-- `src/components/social/AutoPublishManager.tsx`
-- `src/components/social/FacebookPostPreview.tsx`
-- `supabase/functions/og-property/index.ts`
 
-### פירוט טכני
-**`AutoPublishManager.tsx`**
-- לבנות תמיד `linkUrl` דרך `og-property`
-- להעביר פרמטר של התמונה שנבחרה + `v=...` ל־fresh scrape
-- ליישר את ה-preview כך שישתמש באותה לוגיקה של התמונה האמיתית
-- במידת הצורך לשמור לא רק `image_url` אלא גם מזהה/סדר תמונה כדי למנוע mismatch
+| # | קובץ | שינוי |
+|---|-------|-------|
+| 1 | `AutoPublishManager.tsx` | החלפת domain ב-`linkUrl` מ-Supabase ל-`www.ctmarketproperties.com` |
+| 2 | `og-property/index.ts` | הסרת `\u200F`/`\u202B` מ-OG title ו-description; הסרת אימוג'ים מ-OG description כדי שהתו הראשון יהיה עברי; שמירת אימוג'ים ב-HTML body בלבד |
+| 3 | `FacebookPostPreview.tsx` | סנכרון ה-preview: הצגת domain כ-`ctmarketproperties.com` ותיאור בלי אימוג'ים |
 
-**`og-property/index.ts`**
-- לקרוא את פרמטר התמונה שנבחרה
-- לבחור אותה במקום תמיד `mainImage`
-- להחליף `og:image = raw image` ב־URL אחיד של תמונה חתוכה/מותאמת ל־`1200x630`
-- להשאיר `og:image:width/height` תואמים למה שנשלח באמת
+**3 קבצים + deploy של edge function.**
 
-**`FacebookPostPreview.tsx`**
-- להשאיר תצוגת Link Card ביחס קבוע `1.91:1`
-- לא להסיק את ה-domain מה־Supabase function URL, אלא מה־canonical/domain של האתר
-- להציג בדיוק את אותו מבנה שצפוי בפוסט האמיתי
-
-### תוצאה צפויה
-כל נכס, לא משנה אם התמונה המקורית אנכית / אופקית / מרובעת, יוצג כמו דוגמת ה־2 חדרים ב־6500:
-- תמונה גדולה לרוחב
-- בלי thumbnail קטן בצד
-- אותה תמונה ב־preview ובפוסט שפורסם
-
-### בדיקה אחרי היישום
-אבדוק עם 3 נכסים שונים:
-1. תמונה אנכית
-2. תמונה מרובעת
-3. תמונה אופקית
-
-והתוצאה הצפויה בכולם:
-- אותו layout גדול
-- אותה תמונה שנבחרה
-- התאמה מלאה בין preview לבין מה שמופיע בפייסבוק
