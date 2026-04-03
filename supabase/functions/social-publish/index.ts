@@ -315,8 +315,8 @@ Deno.serve(async (req) => {
           status: 'failed',
           error_message: 'Instagram Business Account ID not configured.',
         }).eq('id', post_id);
-        return new Response(JSON.stringify({ error: 'IG user ID missing' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        return new Response(JSON.stringify({ success: false, error: 'חסר Instagram Business Account ID. יש להגדיר בהגדרות.', error_code: 'ig_missing' }), {
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 

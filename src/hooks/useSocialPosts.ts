@@ -149,6 +149,7 @@ export function usePublishPost() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
+    retry: false,
     mutationFn: async (params: string | { postId: string; isPrivate?: boolean }) => {
       const postId = typeof params === 'string' ? params : params.postId;
       const isPrivate = typeof params === 'string' ? false : params.isPrivate;
