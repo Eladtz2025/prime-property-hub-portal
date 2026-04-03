@@ -68,10 +68,8 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
   const hasLinkCard = !!linkUrl && !!linkImage;
   const hasImages = !hasLinkCard && imageUrls.length > 0;
 
-  // Extract domain from linkUrl
-  const linkDomain = linkUrl ? (() => {
-    try { return new URL(linkUrl).hostname.replace('www.', '').toUpperCase(); } catch { return ''; }
-  })() : '';
+  // Always show the actual website domain, not the Supabase function URL
+  const linkDomain = linkUrl ? 'CTMARKETPROPERTIES.COM' : '';
 
   return (
     <div className="max-w-[500px] mx-auto rounded-lg bg-white dark:bg-[#242526] shadow-md border border-[#dddfe2] dark:border-[#3a3b3c] overflow-hidden" dir="rtl">
