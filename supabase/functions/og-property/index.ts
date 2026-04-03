@@ -148,7 +148,7 @@ serve(async (req) => {
       ? `${baseUrl}/en/property/${propertyId}`
       : `${baseUrl}/property/${propertyId}`;
 
-    const rtlWrap = (text: string) => `\u202B${text}\u202C`;
+    
 
     const fullTitle = `${propertyTypePrefix}: ${title}`;
     const finalTitle = customTitle || fullTitle;
