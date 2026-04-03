@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, RefreshCw, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSocialAccounts, useSaveSocialAccount } from '@/hooks/useSocialPosts';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const SocialAccountSetup: React.FC = () => {
   const { data: accounts, isLoading } = useSocialAccounts();
@@ -29,101 +30,72 @@ export const SocialAccountSetup: React.FC = () => {
   }, [fbAccount, igAccount]);
 
   const handleVerifyAndSave = async () => {
-    if (!accessToken || !pageId) {
+    const effectivePageId = pageId || fbAccount?.page_id;
+    if (!accessToken || !effectivePageId) {
       toast({ title: 'יש להזין Page ID ו-Access Token', variant: 'destructive' });
       return;
     }
 
     setVerifying(true);
-    let finalToken = accessToken;
     try {
-      // Verify token by fetching page info
-      const res = await fetch(
-        `https://graph.facebook.com/v21.0/${pageId}?fields=name,id&access_token=${finalToken}`
-      );
-      const data = await res.json();
+      // Call server-side edge function for token verification & exchange
+      const { data, error } = await supabase.functions.invoke('verify-meta-connection', {
+        body: {
+          access_token: accessToken,
+          page_id: effectivePageId,
+          ig_user_id: igUserId || igAccount?.ig_user_id || null,
+        },
+      });
 
-      if (data.error) {
-        toast({ title: 'טוקן לא תקין', description: data.error.message, variant: 'destructive' });
+      if (error) {
+        toast({ title: 'שגיאה בחיבור', description: error.message, variant: 'destructive' });
         return;
       }
 
-      // Debug token to check type
-      const tokenRes = await fetch(
-        `https://graph.facebook.com/v21.0/debug_token?input_token=${finalToken}&access_token=${finalToken}`
-      );
-      const tokenData = await tokenRes.json();
-
-      if (tokenData.data?.error) {
-        toast({ title: 'טוקן לא תקין', description: tokenData.data.error.message, variant: 'destructive' });
+      if (!data?.success) {
+        toast({ title: 'שגיאה באימות', description: data?.error || 'Unknown error', variant: 'destructive' });
         return;
       }
 
-      // If it's a User token, auto-convert to Page Access Token
-      if (tokenData.data?.type === 'USER') {
-        toast({ title: 'ממיר לטוקן דף...', description: 'הטוקן שהוזן הוא User Token, ממיר אוטומטית ל-Page Token' });
-        
-        const pageTokenRes = await fetch(
-          `https://graph.facebook.com/v21.0/${pageId}?fields=access_token&access_token=${finalToken}`
-        );
-        const pageTokenData = await pageTokenRes.json();
-
-        if (pageTokenData.error || !pageTokenData.access_token) {
-          toast({ title: 'שגיאה בהמרת טוקן', description: pageTokenData.error?.message || 'לא התקבל Page Token. ודא שיש לך הרשאת pages_manage_posts', variant: 'destructive' });
-          return;
-        }
-
-        finalToken = pageTokenData.access_token;
-
-        // Re-debug the new Page Token to get real expiry
-        const pageDebugRes = await fetch(
-          `https://graph.facebook.com/v21.0/debug_token?input_token=${finalToken}&access_token=${finalToken}`
-        );
-        const pageDebugData = await pageDebugRes.json();
-
-        if (pageDebugData.data?.error) {
-          toast({ title: 'שגיאה באימות Page Token', description: pageDebugData.data.error.message, variant: 'destructive' });
-          return;
-        }
-      } else {
-        // For PAGE tokens, warn if short-lived
-        const tokenExpiresAt = tokenData.data?.expires_at;
-        if (tokenExpiresAt && tokenExpiresAt > 0 && (tokenExpiresAt * 1000 - Date.now()) < 24 * 60 * 60 * 1000) {
-          toast({ title: 'טוקן Short-Lived', description: 'יש ליצור Long-Lived Token דרך Graph API Explorer', variant: 'destructive' });
-          return;
-        }
-      }
-
-      // Use real expiry from debug data, fallback to 60 days (Page tokens are permanent)
-      const debugData = tokenData.data?.type === 'USER' ? (await (await fetch(`https://graph.facebook.com/v21.0/debug_token?input_token=${finalToken}&access_token=${finalToken}`)).json()).data : tokenData.data;
-      const realExpiry = debugData?.data_access_expires_at
-        ? new Date(debugData.data_access_expires_at * 1000).toISOString()
-        : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+      // Token verified and exchanged server-side — save the result
+      const tokenExpiry = data.is_permanent
+        ? null // permanent tokens don't have expiry
+        : data.token_expires_at;
 
       // Save Facebook account
       await saveMutation.mutateAsync({
         platform: 'facebook',
-        page_id: pageId,
-        page_name: data.name,
-        access_token: finalToken,
-        ig_user_id: igUserId || undefined,
-        token_expires_at: realExpiry,
+        page_id: data.page_id,
+        page_name: data.page_name,
+        access_token: data.page_access_token,
+        ig_user_id: data.ig_user_id || undefined,
+        token_expires_at: tokenExpiry || undefined,
       });
 
-      // If IG user ID provided, save Instagram account too
-      if (igUserId) {
+      // If IG user ID verified, save Instagram account too
+      if (data.ig_user_id) {
         await saveMutation.mutateAsync({
           platform: 'instagram',
-          page_id: pageId,
-          page_name: data.name + ' (Instagram)',
-          access_token: finalToken,
-          ig_user_id: igUserId,
-          token_expires_at: realExpiry,
+          page_id: data.page_id,
+          page_name: data.page_name + ' (Instagram)',
+          access_token: data.page_access_token,
+          ig_user_id: data.ig_user_id,
+          token_expires_at: tokenExpiry || undefined,
         });
       }
 
+      const statusMsg = data.is_permanent
+        ? 'טוקן קבוע (ללא פקיעה)'
+        : data.token_expires_at
+          ? `פג תוקף: ${new Date(data.token_expires_at).toLocaleDateString('he-IL')}`
+          : 'מחובר';
+
+      const conversionMsg = data.token_type === 'USER'
+        ? ' (הומר אוטומטית מ-User Token)'
+        : '';
+
       setAccessToken('');
-      toast({ title: 'חשבון Meta חובר בהצלחה! 🎉' });
+      toast({ title: `חשבון Meta חובר בהצלחה! 🎉`, description: `${statusMsg}${conversionMsg}` });
     } catch (e) {
       toast({ title: 'שגיאה באימות', description: e instanceof Error ? e.message : 'Unknown', variant: 'destructive' });
     } finally {
@@ -131,9 +103,25 @@ export const SocialAccountSetup: React.FC = () => {
     }
   };
 
-  const getDaysLeft = (expiresAt?: string) => {
-    if (!expiresAt) return null;
-    return Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const getStatusDisplay = (account: typeof fbAccount) => {
+    if (!account?.is_active) return null;
+
+    // If no token_expires_at, it's a permanent token
+    if (!account.token_expires_at) {
+      return <Badge variant="secondary" className="text-[10px]">קבוע ✓</Badge>;
+    }
+
+    const daysLeft = Math.ceil((new Date(account.token_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    
+    if (daysLeft <= 0) {
+      return <Badge variant="destructive" className="text-[10px]">פג תוקף</Badge>;
+    }
+    
+    return (
+      <Badge variant={daysLeft < 7 ? 'destructive' : 'secondary'} className="text-[10px]">
+        {daysLeft} ימים
+      </Badge>
+    );
   };
 
   return (
@@ -156,11 +144,7 @@ export const SocialAccountSetup: React.FC = () => {
             {fbAccount?.is_active && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">{fbAccount.page_name}</span>
-                {getDaysLeft(fbAccount.token_expires_at ?? undefined) !== null && (
-                  <Badge variant={getDaysLeft(fbAccount.token_expires_at ?? undefined)! < 7 ? 'destructive' : 'secondary'} className="text-[10px]">
-                    {getDaysLeft(fbAccount.token_expires_at ?? undefined)} ימים
-                  </Badge>
-                )}
+                {getStatusDisplay(fbAccount)}
               </div>
             )}
           </div>
@@ -175,7 +159,10 @@ export const SocialAccountSetup: React.FC = () => {
               <span className="text-sm font-medium">אינסטגרם</span>
             </div>
             {igAccount?.is_active && (
-              <span className="text-xs text-muted-foreground">{igAccount.page_name}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{igAccount.page_name}</span>
+                {getStatusDisplay(igAccount)}
+              </div>
             )}
           </div>
         </CardContent>
@@ -212,10 +199,11 @@ export const SocialAccountSetup: React.FC = () => {
                 <li>הוסיפו את ההרשאות: <code className="bg-muted px-1 rounded text-[11px]">pages_manage_posts</code>, <code className="bg-muted px-1 rounded text-[11px]">pages_read_engagement</code></li>
                 <li>לאינסטגרם: הוסיפו גם <code className="bg-muted px-1 rounded text-[11px]">instagram_basic</code>, <code className="bg-muted px-1 rounded text-[11px]">instagram_content_publish</code></li>
                 <li>
-                  צרו Long-Lived Page Access Token ב-{' '}
+                  צרו Access Token (כל סוג) ב-{' '}
                   <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener" className="text-primary underline">
                     Graph API Explorer <ExternalLink className="h-3 w-3 inline" />
                   </a>
+                  {' '} — המערכת תמיר אוטומטית ל-Page Token קבוע
                 </li>
                 <li>העתיקו את ה-Token, Page ID ו-IG User ID (אם רלוונטי) לטופס למטה</li>
               </ol>
@@ -244,7 +232,7 @@ export const SocialAccountSetup: React.FC = () => {
               />
             </div>
             <div>
-              <Label className="text-xs">Page Access Token (Long-Lived)</Label>
+              <Label className="text-xs">Access Token (User או Page — יומר אוטומטית)</Label>
               <Input
                 value={accessToken}
                 onChange={e => setAccessToken(e.target.value)}
@@ -258,13 +246,13 @@ export const SocialAccountSetup: React.FC = () => {
 
           <Button
             onClick={handleVerifyAndSave}
-            disabled={verifying || !pageId || !accessToken}
+            disabled={verifying || (!pageId && !fbAccount?.page_id) || !accessToken}
             className="w-full"
           >
             {verifying ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin ml-2" />
-                מאמת...
+                מאמת ומחבר...
               </>
             ) : (
               'בדוק חיבור ושמור'
