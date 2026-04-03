@@ -1,54 +1,46 @@
 
 
-## תיקון Domain בפייסבוק Link Card — ללא שבירת דברים
+## עדכון scout-yad2-jina לשימוש ב-Vercel Proxy
 
-### מצב נוכחי
-- קיים כבר `api/og-redirect.js` — Vercel Edge Function שמזהה בוטים של פייסבוק ומפנה אותם ל-`og-property` של Supabase
-- הבעיה: ב-`AutoPublishManager.tsx` ה-`linkUrl` שנשלח לפייסבוק הוא ישירות ל-Supabase (`jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=...`)
-- לכן פייסבוק מציג את הדומיין של Supabase במקום `ctmarketproperties.com`
+### הבעיה
+הפונקציה `scout-yad2-jina` משתמשת ב-Jina Reader שנחסם ע"י WAF של יד2 (403). יצרנו proxy ב-Vercel (`api/yad2-proxy.js`) שמבצע את הבקשה מ-IP של Vercel Edge.
 
-### הפתרון
-במקום לשלוח את ה-Supabase URL, לשלוח את ה-URL של הדומיין הראשי:
-```
-https://www.ctmarketproperties.com/property/{id}?img_index=0&v=123...
-```
+### אתגר טכני חשוב
+ה-proxy מחזיר **HTML גולמי**, אבל הפארסר הקיים (`parseYad2Markdown`) מצפה ל-**Markdown** (פורמט Jina). יד2 הוא אפליקציית Next.js, ולכן ה-HTML מכיל תג `<script id="__NEXT_DATA__">` עם כל נתוני הנכסים כ-JSON מובנה — שזה בעצם **טוב יותר** מפירוס Markdown.
 
-כשפייסבוק יגרד את ה-URL הזה, `og-redirect.js` יזהה שזה בוט ויפנה ל-Supabase function — אבל הדומיין שיוצג יהיה `CTMARKETPROPERTIES.COM`.
+### תוכנית — 2 שלבים
 
-### שינויים
+**שלב 1: עדכון פונקציית הסריקה** (`scout-yad2-jina/index.ts`)
+- החלפת `scrapeYad2WithJina` בפונקציה חדשה `scrapeYad2ViaProxy` שקוראת ל:
+  `https://www.ctmarketproperties.com/api/yad2-proxy`
+- שליחת POST עם `{ url }` וה-header `x-proxy-key` מה-secret
+- קבלת HTML בחזרה
 
-| # | קובץ | מה |
-|---|-------|----|
-| 1 | `api/og-redirect.js` | להעביר query params (img_index, custom_title, custom_desc, v) ל-Supabase function |
-| 2 | `AutoPublishManager.tsx` | להחליף linkUrl מ-Supabase URL ל-`www.ctmarketproperties.com/property/{id}?...` |
+**שלב 2: פארסר HTML חדש ליד2** (`_experimental/parser-yad2-html.ts`)
+- חילוץ `__NEXT_DATA__` JSON מה-HTML
+- פירוס נכסים מה-JSON המובנה (כתובת, מחיר, חדרים, קומה, שטח, פרטי/תיווך)
+- אם `__NEXT_DATA__` לא נמצא — fallback לפירוס ה-HTML ישירות
+- ממשק זהה: מחזיר `ParserResult` עם אותו מבנה בדיוק
 
-### פירוט טכני
+### קבצים שישתנו
 
-**`api/og-redirect.js` — העברת query params:**
-```javascript
-// לפני
-const ogUrl = `...og-property?id=${propertyId}&lang=${lang}`;
+| # | קובץ | שינוי |
+|---|-------|-------|
+| 1 | `supabase/functions/scout-yad2-jina/index.ts` | החלפת `scrapeYad2WithJina` ב-`scrapeYad2ViaProxy`, שימוש בפארסר HTML במקום Markdown |
+| 2 | `supabase/functions/_experimental/parser-yad2-html.ts` | **חדש** — פארסר HTML/JSON ליד2 |
 
-// אחרי — מעביר את כל הפרמטרים
-const ogUrl = `...og-property?id=${propertyId}&lang=${lang}&${url.searchParams.toString()}`;
-```
+### מה לא משתנה
+- `api/yad2-proxy.js` — כבר קיים ומוכן
+- `parser-yad2.ts` — נשאר כ-fallback
+- כל הלוגיקה של chaining, retry, run management — ללא שינוי
+- scout של מדל"ן והומלס — **ללא שינוי כלל**
+- `validateScrapedContent` — ישתמש ב-HTML במקום markdown
 
-**`AutoPublishManager.tsx` — linkUrl דרך הדומיין הראשי:**
-```typescript
-// לפני
-linkUrl = `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=${selectedPropertyId}&lang=he&img_index=...`;
+### סדר עבודה
+1. יצירת הפארסר החדש
+2. עדכון `scout-yad2-jina` — רק החלפת פונקציית הסריקה
+3. Deploy ובדיקה עם `curl_edge_functions`
+4. בדיקת לוגים לוודא שהפרוקסי עובד ושהפארסר מחלץ נכסים
 
-// אחרי
-linkUrl = `https://www.ctmarketproperties.com/property/${selectedPropertyId}?img_index=${selectedPrimaryImageIndex}&v=${Date.now()}` 
-  + (customLinkTitle ? `&custom_title=${encodeURIComponent(customLinkTitle)}` : '')
-  + (customLinkDesc ? `&custom_desc=${encodeURIComponent(customLinkDesc)}` : '');
-```
-
-### למה זה בטוח
-- `og-redirect.js` כבר עובד ומוכח — רק מוסיפים העברת פרמטרים
-- משתמשים רגילים ימשיכו לקבל את ה-SPA כרגיל
-- בוטים של פייסבוק יקבלו את אותו OG HTML בדיוק, רק מדומיין אחר
-- ה-preview ב-UI לא משתנה
-
-**2 קבצים, שינוי מינימלי.**
+**3 קבצים (1 חדש + 1 עדכון + proxy קיים), ללא שינוי בשום מערכת אחרת.**
 
