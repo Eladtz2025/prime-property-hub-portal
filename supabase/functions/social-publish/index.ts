@@ -274,8 +274,8 @@ Deno.serve(async (req) => {
         error_message: 'No active social account found. Please connect your Meta account.',
       }).eq('id', post_id);
 
-      return new Response(JSON.stringify({ error: 'No active account' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      return new Response(JSON.stringify({ success: false, error: 'אין חשבון Meta מחובר. יש לחבר חשבון בהגדרות.', error_code: 'no_account' }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -286,8 +286,8 @@ Deno.serve(async (req) => {
         error_message: 'Access token expired. Please refresh your Meta token.',
       }).eq('id', post_id);
 
-      return new Response(JSON.stringify({ error: 'Token expired' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      return new Response(JSON.stringify({ success: false, error: 'הטוקן פג תוקף. יש לחדש את הטוקן בהגדרות.', error_code: 'token_expired' }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
