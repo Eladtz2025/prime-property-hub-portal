@@ -47,8 +47,10 @@ export default async function handler(request) {
   if (propertyId && isSocialMediaBot(userAgent)) {
     console.log(`Bot detected: ${userAgent}, fetching OG for property ${propertyId}`);
     
-    // Fetch from Supabase Edge Function
-    const ogUrl = `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=${propertyId}&lang=${lang}`;
+    // Forward all query params (img_index, custom_title, custom_desc, v, etc.) to Supabase Edge Function
+    const extraParams = new URLSearchParams(url.searchParams);
+    extraParams.delete(''); // clean up
+    const ogUrl = `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=${propertyId}&lang=${lang}&${extraParams.toString()}`;
     
     try {
       const response = await fetch(ogUrl);
