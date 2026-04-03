@@ -370,17 +370,22 @@ export const AutoPublishManager: React.FC = () => {
       // In photos mode, send selected images; in link mode, Facebook generates OG card
       const isPhotosMode = postStyle === 'photos';
 
-      // Build property URL for link posts — use og-property endpoint with custom OG overrides
+      // Build property URL for link posts — ALWAYS use og-property endpoint for consistent 1200x630 OG image
       const propertyUrl = selectedPropertyId && selectedPropertyId !== 'free'
         ? `https://www.ctmarketproperties.com/property/${selectedPropertyId}`
         : undefined;
 
-      // For link posts with custom title/desc, use og-property endpoint so Facebook scrapes custom OG tags
-      const linkUrl = !isPhotosMode && selectedPropertyId && selectedPropertyId !== 'free' && (customLinkTitle || customLinkDesc)
-        ? `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=${selectedPropertyId}&lang=he`
+      // Always route link posts through og-property so Facebook gets a normalized 1200x630 image
+      let linkUrl: string | undefined;
+      if (!isPhotosMode && selectedPropertyId && selectedPropertyId !== 'free') {
+        linkUrl = `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=${selectedPropertyId}&lang=he`
+          + `&img_index=${selectedPrimaryImageIndex}`
+          + `&v=${Date.now()}`
           + (customLinkTitle ? `&custom_title=${encodeURIComponent(customLinkTitle)}` : '')
-          + (customLinkDesc ? `&custom_desc=${encodeURIComponent(customLinkDesc)}` : '')
-        : (isPhotosMode ? undefined : propertyUrl);
+          + (customLinkDesc ? `&custom_desc=${encodeURIComponent(customLinkDesc)}` : '');
+      } else if (!isPhotosMode) {
+        linkUrl = propertyUrl;
+      }
 
       const photosToSend = isPhotosMode
         ? selectedPhotoIndexes.map(i => imageUrls[i]).filter(Boolean)
