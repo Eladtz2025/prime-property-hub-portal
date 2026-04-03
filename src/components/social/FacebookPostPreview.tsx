@@ -115,7 +115,7 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
 
       {/* Link Card (OG Preview) */}
       {hasLinkCard && (
-        <div className="border-b border-[#dddfe2] dark:border-[#3a3b3c] cursor-pointer">
+      <div className="border-b border-[#dddfe2] dark:border-[#3a3b3c] cursor-pointer">
           <div className="relative overflow-hidden">
             <img 
               src={linkImage} 
@@ -124,15 +124,15 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
               style={{ maxHeight: '260px' }}
             />
           </div>
-          <div className="bg-[#f0f2f5] dark:bg-[#3a3b3c] px-3 py-2">
-            <div className="text-[12px] text-[#65676b] dark:text-[#b0b3b8] uppercase tracking-wide" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+          <div className="bg-[#f0f2f5] dark:bg-[#3a3b3c] px-3 py-2" dir={/[\u0590-\u05FF]/.test(linkTitle?.charAt(0) || '') ? 'rtl' : 'ltr'}>
+            <div className={`text-[12px] text-[#65676b] dark:text-[#b0b3b8] uppercase tracking-wide ${/[\u0590-\u05FF]/.test(linkTitle?.charAt(0) || '') ? 'text-right' : 'text-left'}`} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
               {linkDomain}
             </div>
-            <div className="text-[15px] font-semibold text-[#050505] dark:text-[#e4e6eb] leading-tight mt-0.5 line-clamp-2" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+            <div className={`text-[15px] font-semibold text-[#050505] dark:text-[#e4e6eb] leading-tight mt-0.5 line-clamp-2 ${/[\u0590-\u05FF]/.test(linkTitle?.charAt(0) || '') ? 'text-right' : 'text-left'}`} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
               {linkTitle}
             </div>
             {linkDescription && (
-              <div className="text-[14px] text-[#65676b] dark:text-[#b0b3b8] leading-tight mt-0.5 line-clamp-1" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              <div className={`text-[14px] text-[#65676b] dark:text-[#b0b3b8] leading-tight mt-0.5 line-clamp-1 ${/[\u0590-\u05FF]/.test(linkDescription?.charAt(0) || '') ? 'text-right' : 'text-left'}`} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
                 {linkDescription}
               </div>
             )}

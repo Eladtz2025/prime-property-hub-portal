@@ -126,6 +126,8 @@ export const AutoPublishManager: React.FC = () => {
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'publish' | 'schedule' | null>(null);
   const [isPrivatePost, setIsPrivatePost] = useState(false);
+  const [customLinkTitle, setCustomLinkTitle] = useState('');
+  const [customLinkDesc, setCustomLinkDesc] = useState('');
 
   const activeCount = queues?.filter(q => q.is_active).length || 0;
 
@@ -365,13 +367,21 @@ export const AutoPublishManager: React.FC = () => {
       scheduledAt = dt.toISOString();
     }
     for (const platform of selectedPlatforms) {
-      // Build property URL for link posts
+      // In photos mode, send selected images; in link mode, Facebook generates OG card
+      const isPhotosMode = postStyle === 'photos';
+
+      // Build property URL for link posts — use og-property endpoint with custom OG overrides
       const propertyUrl = selectedPropertyId && selectedPropertyId !== 'free'
         ? `https://www.ctmarketproperties.com/property/${selectedPropertyId}`
         : undefined;
 
-      // In photos mode, send selected images; in link mode, Facebook generates OG card
-      const isPhotosMode = postStyle === 'photos';
+      // For link posts with custom title/desc, use og-property endpoint so Facebook scrapes custom OG tags
+      const linkUrl = !isPhotosMode && selectedPropertyId && selectedPropertyId !== 'free' && (customLinkTitle || customLinkDesc)
+        ? `https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property?id=${selectedPropertyId}&lang=he`
+          + (customLinkTitle ? `&custom_title=${encodeURIComponent(customLinkTitle)}` : '')
+          + (customLinkDesc ? `&custom_desc=${encodeURIComponent(customLinkDesc)}` : '')
+        : (isPhotosMode ? undefined : propertyUrl);
+
       const photosToSend = isPhotosMode
         ? selectedPhotoIndexes.map(i => imageUrls[i]).filter(Boolean)
         : [];
@@ -393,7 +403,7 @@ export const AutoPublishManager: React.FC = () => {
         scheduled_at: action === 'publish' ? new Date().toISOString() : scheduledAt,
         property_id: selectedPropertyId || undefined,
         template_id: selectedTemplateId || undefined,
-        link_url: isPhotosMode ? undefined : propertyUrl,
+        link_url: linkUrl,
       });
       if (action === 'publish' && post?.id) {
         const result = await publishPost.mutateAsync({ postId: post.id, isPrivate: isPrivatePost });
@@ -673,6 +683,26 @@ export const AutoPublishManager: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Custom Link Card fields */}
+                {mode === 'one_time' && postStyle === 'link' && selectedPropertyId && selectedPropertyId !== 'free' && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      value={customLinkTitle}
+                      onChange={e => setCustomLinkTitle(e.target.value)}
+                      placeholder="כותרת Link Card (אוטומטי אם ריק)"
+                      className="text-xs h-7"
+                      dir="rtl"
+                    />
+                    <Input
+                      value={customLinkDesc}
+                      onChange={e => setCustomLinkDesc(e.target.value)}
+                      placeholder="תיאור Link Card (אוטומטי אם ריק)"
+                      className="text-xs h-7"
+                      dir="rtl"
+                    />
+                  </div>
+                )}
+
                 {/* Images & Post Style (one-time) */}
                 {mode === 'one_time' && (
                   <div className="space-y-2">
@@ -878,6 +908,9 @@ export const AutoPublishManager: React.FC = () => {
                     if (selectedProp) {
                       if (postStyle === 'link') {
                         buildLinkCard(selectedProp);
+                        // Apply custom overrides for preview
+                        if (customLinkTitle) linkTitle = customLinkTitle;
+                        if (customLinkDesc) linkDescription = customLinkDesc;
                         if (imageUrls[selectedPrimaryImageIndex]) {
                           linkImage = imageUrls[selectedPrimaryImageIndex];
                         }
