@@ -22,7 +22,7 @@ export const SocialDashboard: React.FC = () => {
   const totalCount = allPosts?.length || 0;
 
   const expiringToken = accounts?.find(a => {
-    if (!a.token_expires_at) return false;
+    if (!a.token_expires_at || !a.is_active) return false;
     const daysLeft = (new Date(a.token_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
     return daysLeft < 7 && daysLeft > 0;
   });
