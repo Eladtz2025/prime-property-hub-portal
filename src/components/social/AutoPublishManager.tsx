@@ -908,6 +908,9 @@ export const AutoPublishManager: React.FC = () => {
                     if (selectedProp) {
                       if (postStyle === 'link') {
                         buildLinkCard(selectedProp);
+                        // Apply custom overrides for preview
+                        if (customLinkTitle) linkTitle = customLinkTitle;
+                        if (customLinkDesc) linkDescription = customLinkDesc;
                         if (imageUrls[selectedPrimaryImageIndex]) {
                           linkImage = imageUrls[selectedPrimaryImageIndex];
                         }
