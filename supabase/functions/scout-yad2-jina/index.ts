@@ -159,11 +159,11 @@ serve(async (req) => {
 
       console.log(`🟠 Yad2-Proxy page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
 
-      if (markdown.length > 1000) {
+      if (html.length > 1000) {
         try {
           await supabase.from('debug_scrape_samples').upsert({
             source: 'yad2', url, html: html?.substring(0, 100000) || null,
-            markdown: markdown?.substring(0, 100000) || null,
+            markdown: null,
             properties_found: extractedProperties.length, updated_at: new Date().toISOString()
           }, { onConflict: 'source' });
         } catch (debugErr) { console.warn('Failed to save debug sample:', debugErr); }
