@@ -1,46 +1,24 @@
 
 
-## עדכון scout-yad2-jina לשימוש ב-Vercel Proxy
+## שחזור scout-yad2-jina לגרסת Jina המקורית
 
-### הבעיה
-הפונקציה `scout-yad2-jina` משתמשת ב-Jina Reader שנחסם ע"י WAF של יד2 (403). יצרנו proxy ב-Vercel (`api/yad2-proxy.js`) שמבצע את הבקשה מ-IP של Vercel Edge.
+### מה משתנה
+הפונקציה `scout-yad2-jina/index.ts` עברה לשימוש ב-Vercel Proxy + HTML parser. צריך להחזיר אותה לשימוש ב-Jina Reader (free tier) + Markdown parser — בדיוק כמו שהיה לפני השינויים.
 
-### אתגר טכני חשוב
-ה-proxy מחזיר **HTML גולמי**, אבל הפארסר הקיים (`parseYad2Markdown`) מצפה ל-**Markdown** (פורמט Jina). יד2 הוא אפליקציית Next.js, ולכן ה-HTML מכיל תג `<script id="__NEXT_DATA__">` עם כל נתוני הנכסים כ-JSON מובנה — שזה בעצם **טוב יותר** מפירוס Markdown.
+### שינויים בקובץ אחד: `supabase/functions/scout-yad2-jina/index.ts`
 
-### תוכנית — 2 שלבים
-
-**שלב 1: עדכון פונקציית הסריקה** (`scout-yad2-jina/index.ts`)
-- החלפת `scrapeYad2WithJina` בפונקציה חדשה `scrapeYad2ViaProxy` שקוראת ל:
-  `https://www.ctmarketproperties.com/api/yad2-proxy`
-- שליחת POST עם `{ url }` וה-header `x-proxy-key` מה-secret
-- קבלת HTML בחזרה
-
-**שלב 2: פארסר HTML חדש ליד2** (`_experimental/parser-yad2-html.ts`)
-- חילוץ `__NEXT_DATA__` JSON מה-HTML
-- פירוס נכסים מה-JSON המובנה (כתובת, מחיר, חדרים, קומה, שטח, פרטי/תיווך)
-- אם `__NEXT_DATA__` לא נמצא — fallback לפירוס ה-HTML ישירות
-- ממשק זהה: מחזיר `ParserResult` עם אותו מבנה בדיוק
-
-### קבצים שישתנו
-
-| # | קובץ | שינוי |
-|---|-------|-------|
-| 1 | `supabase/functions/scout-yad2-jina/index.ts` | החלפת `scrapeYad2WithJina` ב-`scrapeYad2ViaProxy`, שימוש בפארסר HTML במקום Markdown |
-| 2 | `supabase/functions/_experimental/parser-yad2-html.ts` | **חדש** — פארסר HTML/JSON ליד2 |
+1. **הסרת קוד הפרוקסי** — מחיקת `VERCEL_PROXY_URL`, `ProxyScrapeResult`, ופונקציית `scrapeYad2ViaProxy` (שורות 9-62)
+2. **החזרת import של Jina** — `import { scrapeWithJina } from "../_shared/scraping-jina.ts"`
+3. **החזרת import של Markdown parser** — `import { parseYad2Markdown } from "../_experimental/parser-yad2.ts"` במקום `parseYad2Html`
+4. **שינוי לוגיקת הסריקה** — שימוש ב-`scrapeWithJina(url, 'yad2', MAX_RETRIES)` שמחזיר markdown, ואז `parseYad2Markdown(markdown, ...)` לפירוק
+5. **עדכון validation** — `validateScrapedContent(markdown, undefined, 'yad2')` במקום HTML
+6. **עדכון debug sample** — שמירת markdown במקום html
 
 ### מה לא משתנה
-- `api/yad2-proxy.js` — כבר קיים ומוכן
-- `parser-yad2.ts` — נשאר כ-fallback
-- כל הלוגיקה של chaining, retry, run management — ללא שינוי
-- scout של מדל"ן והומלס — **ללא שינוי כלל**
-- `validateScrapedContent` — ישתמש ב-HTML במקום markdown
+- כל לוגיקת ה-chaining, retry, run management — ללא שינוי
+- הומלס, מדל"ן — ללא שינוי
+- `scraping-jina.ts` — ללא שינוי
+- `parser-yad2.ts` — כבר קיים ועובד
 
-### סדר עבודה
-1. יצירת הפארסר החדש
-2. עדכון `scout-yad2-jina` — רק החלפת פונקציית הסריקה
-3. Deploy ובדיקה עם `curl_edge_functions`
-4. בדיקת לוגים לוודא שהפרוקסי עובד ושהפארסר מחלץ נכסים
-
-**3 קבצים (1 חדש + 1 עדכון + proxy קיים), ללא שינוי בשום מערכת אחרת.**
+### קובץ אחד בלבד, שחזור למצב שעבד לפני כן.
 
