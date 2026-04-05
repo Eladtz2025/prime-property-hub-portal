@@ -3,67 +3,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, validateScrapedContent } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 import { saveProperty } from "../_shared/property-helpers.ts";
-import { parseYad2Html } from "../_experimental/parser-yad2-html.ts";
+import { scrapeWithJina } from "../_shared/scraping-jina.ts";
+import { parseYad2Markdown } from "../_experimental/parser-yad2.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
-
-const VERCEL_PROXY_URL = 'https://www.ctmarketproperties.com/api/yad2-proxy';
-
-interface ProxyScrapeResult { html: string; status: number; }
-
-async function scrapeYad2ViaProxy(url: string, maxRetries = 2): Promise<ProxyScrapeResult | null> {
-  const proxyKey = Deno.env.get('YAD2_PROXY_KEY');
-  if (!proxyKey) {
-    console.error('❌ YAD2_PROXY_KEY secret not configured');
-    return null;
-  }
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 40000);
-      console.log(`🌐 Yad2-Proxy scrape attempt ${attempt + 1}/${maxRetries} for ${url}`);
-
-      const response = await fetch(VERCEL_PROXY_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-proxy-key': proxyKey,
-        },
-        body: JSON.stringify({ url }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`✅ Yad2-Proxy scrape successful (status=${data.status}, html=${data.length} chars)`);
-        if (data.status === 200 && data.html) {
-          return { html: data.html, status: data.status };
-        }
-        console.warn(`⚠️ Proxy returned upstream status ${data.status}`);
-        if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 5000 * (attempt + 1)));
-        continue;
-      }
-
-      const errorText = await response.text();
-      console.warn(`⚠️ Yad2-Proxy attempt ${attempt + 1} failed, status: ${response.status}, error: ${errorText.substring(0, 200)}`);
-      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 5000 * (attempt + 1)));
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.error(`⏱️ Yad2-Proxy attempt ${attempt + 1} timeout`);
-      } else {
-        console.error(`❌ Yad2-Proxy attempt ${attempt + 1} error:`, error);
-      }
-      if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 5000 * (attempt + 1)));
-    }
-  }
-  console.error(`❌ All ${maxRetries} Yad2-Proxy attempts failed for ${url}`);
-  return null;
-}
 
 /**
  * Edge Function for scraping Yad2 using Jina Reader - SEQUENTIAL MODE
- * Clone of scout-yad2 with Firecrawl replaced by Jina.
  */
 
 const YAD2_CONFIG = {
@@ -137,33 +82,33 @@ serve(async (req) => {
     await updatePageStatus(supabase, runId, page, { url: urls[0] });
 
     for (const url of urls) {
-      console.log(`🟠 Yad2-Proxy page ${page}: Scraping ${url}`);
+      console.log(`🟠 Yad2-Jina page ${page}: Scraping ${url}`);
 
-      const scrapeResult = await scrapeYad2ViaProxy(url, YAD2_CONFIG.MAX_RETRIES);
+      const scrapeResult = await scrapeWithJina(url, 'yad2', YAD2_CONFIG.MAX_RETRIES);
       if (!scrapeResult) {
-        console.warn(`⚠️ Yad2-Proxy page ${page}: Scrape failed for ${url}`);
+        console.warn(`⚠️ Yad2-Jina page ${page}: Scrape failed for ${url}`);
         urlsFailed++;
         continue;
       }
 
-      const { html } = scrapeResult;
-      const validation = validateScrapedContent(undefined, html, 'yad2');
+      const { markdown } = scrapeResult;
+      const validation = validateScrapedContent(markdown, undefined, 'yad2');
       if (!validation.valid) {
-        console.warn(`⚠️ Yad2-Proxy page ${page}: Validation failed: ${validation.reason}`);
+        console.warn(`⚠️ Yad2-Jina page ${page}: Validation failed: ${validation.reason}`);
         urlsFailed++;
         continue;
       }
 
-      const parseResult = parseYad2Html(html, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const parseResult = parseYad2Markdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
-      console.log(`🟠 Yad2-Proxy page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
+      console.log(`🟠 Yad2-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
 
-      if (html.length > 1000) {
+      if (markdown.length > 1000) {
         try {
           await supabase.from('debug_scrape_samples').upsert({
-            source: 'yad2', url, html: html?.substring(0, 100000) || null,
-            markdown: null,
+            source: 'yad2', url, markdown: markdown?.substring(0, 100000) || null,
+            html: null,
             properties_found: extractedProperties.length, updated_at: new Date().toISOString()
           }, { onConflict: 'source' });
         } catch (debugErr) { console.warn('Failed to save debug sample:', debugErr); }
@@ -194,10 +139,10 @@ serve(async (req) => {
     await updatePageStatus(supabase, runId, page, { status: 'completed', found: totalFound, new: totalNew, duration_ms: duration });
     await incrementRunStats(supabase, runId, totalFound, totalNew);
 
-    console.log(`✅ Yad2-Proxy page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
+    console.log(`✅ Yad2-Jina page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
     await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
 
-    return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'no-ai' }), {
+    return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'jina-markdown' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
