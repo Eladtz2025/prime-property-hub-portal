@@ -133,11 +133,11 @@ export const PropertyRequirementsDropdown = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-72 p-3 bg-popover border shadow-lg z-50" 
+        className="w-[calc(100vw-2rem)] sm:w-80 p-3 bg-popover border shadow-lg z-[100]" 
         align="start"
         sideOffset={4}
       >
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
           <p className="text-sm font-medium text-muted-foreground mb-3">דרישות מהנכס:</p>
           
           {/* Regular Features */}
@@ -150,7 +150,7 @@ export const PropertyRequirementsDropdown = ({
               <div 
                 key={feature.key} 
                 className={cn(
-                  "flex items-center gap-2 p-2 rounded-lg border transition-colors",
+                  "flex items-center gap-2 p-2.5 rounded-lg border transition-colors touch-manipulation",
                   isRequired ? "bg-primary/5 border-primary/20" : "bg-muted/30"
                 )}
               >
@@ -216,7 +216,7 @@ export const PropertyRequirementsDropdown = ({
                 <div 
                   key={feature.key} 
                   className={cn(
-                    "flex items-center gap-2 p-2 rounded-lg border transition-colors mb-1",
+                    "flex items-center gap-2 p-2.5 rounded-lg border transition-colors mb-1 touch-manipulation",
                     isRequired ? "bg-primary/5 border-primary/20" : "bg-muted/30"
                   )}
                 >
