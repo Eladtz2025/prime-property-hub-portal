@@ -325,7 +325,10 @@ export const CustomerCard = ({
             {customer.move_in_date && (
               <div className="text-right">
                 <span className="text-muted-foreground">תאריך כניסה:</span>
-                <span className="mr-2">{format(new Date(customer.move_in_date), 'dd/MM/yyyy', { locale: he })}</span>
+                <span className={`mr-2 ${new Date(customer.move_in_date) < new Date() ? 'text-destructive font-medium' : ''}`}>
+                  {format(new Date(customer.move_in_date), 'dd/MM/yyyy', { locale: he })}
+                  {new Date(customer.move_in_date) < new Date() && ' ⚠️ עבר'}
+                </span>
               </div>
             )}
             {customer.preferred_neighborhoods && customer.preferred_neighborhoods.length > 0 && (
