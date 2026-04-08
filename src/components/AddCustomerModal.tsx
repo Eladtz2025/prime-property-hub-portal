@@ -336,7 +336,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
 
         <div className="space-y-4">
           {/* Basic Info */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>שם מלא *</Label>
               <Input
@@ -357,7 +357,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
               <Label>טלפון *</Label>
               <div className="flex gap-2">
                 <Select value={phoneCountry} onValueChange={setPhoneCountry}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-[100px] sm:w-[140px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -385,7 +385,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>טלפון 2</Label>
               <Input
