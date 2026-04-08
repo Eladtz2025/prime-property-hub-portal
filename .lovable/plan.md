@@ -1,24 +1,17 @@
 
 
-## שחזור scout-yad2-jina לגרסת Jina המקורית
+## תיקון שדה טלפון במובייל — טופס הוספת לקוח
 
-### מה משתנה
-הפונקציה `scout-yad2-jina/index.ts` עברה לשימוש ב-Vercel Proxy + HTML parser. צריך להחזיר אותה לשימוש ב-Jina Reader (free tier) + Markdown parser — בדיוק כמו שהיה לפני השינויים.
+### הבעיה
+בטופס "הוספת לקוח חדש" במובייל (384px), השורה הראשונה היא `grid-cols-2` עם שם מלא + טלפון. שדה הטלפון כולל בורר מדינה (`w-[140px]`) + שדה קלט, ובמסך צר הם נדחסים ואין מקום להכניס מספר.
 
-### שינויים בקובץ אחד: `supabase/functions/scout-yad2-jina/index.ts`
+### הפתרון
+בקובץ `src/components/AddCustomerModal.tsx`:
 
-1. **הסרת קוד הפרוקסי** — מחיקת `VERCEL_PROXY_URL`, `ProxyScrapeResult`, ופונקציית `scrapeYad2ViaProxy` (שורות 9-62)
-2. **החזרת import של Jina** — `import { scrapeWithJina } from "../_shared/scraping-jina.ts"`
-3. **החזרת import של Markdown parser** — `import { parseYad2Markdown } from "../_experimental/parser-yad2.ts"` במקום `parseYad2Html`
-4. **שינוי לוגיקת הסריקה** — שימוש ב-`scrapeWithJina(url, 'yad2', MAX_RETRIES)` שמחזיר markdown, ואז `parseYad2Markdown(markdown, ...)` לפירוק
-5. **עדכון validation** — `validateScrapedContent(markdown, undefined, 'yad2')` במקום HTML
-6. **עדכון debug sample** — שמירת markdown במקום html
+1. **שורת שם+טלפון** (שורה 339): שינוי מ-`grid-cols-2` ל-`grid-cols-1 sm:grid-cols-2` — במובייל כל שדה בשורה נפרדת
+2. **בורר מדינה** (שורה 360): הקטנת רוחב מ-`w-[140px]` ל-`w-[100px] sm:w-[140px]` — במובייל מציג פחות טקסט אבל עדיין שמיש
+3. **שורת טלפון2+אימייל** (שורה 388): אותו שינוי — `grid-cols-1 sm:grid-cols-2`
 
-### מה לא משתנה
-- כל לוגיקת ה-chaining, retry, run management — ללא שינוי
-- הומלס, מדל"ן — ללא שינוי
-- `scraping-jina.ts` — ללא שינוי
-- `parser-yad2.ts` — כבר קיים ועובד
-
-### קובץ אחד בלבד, שחזור למצב שעבד לפני כן.
+### שינוי בקובץ אחד בלבד
+`src/components/AddCustomerModal.tsx` — 3 שורות בלבד משתנות.
 
