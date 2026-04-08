@@ -764,6 +764,35 @@ export function calculatePriorityScore(property: ScoutedProperty, lead: ContactL
     priority += 4;
   }
   
+  // ===== PENALTY FOR UNKNOWN STRICT FEATURES (-5 each) =====
+  // Properties with null data for required strict features get lower priority
+  // so verified properties rank higher
+  
+  if (lead.elevator_required && !lead.elevator_flexible && property.features?.elevator == null) {
+    priority -= 5;
+  }
+  if (lead.parking_required && !lead.parking_flexible && property.features?.parking == null) {
+    priority -= 5;
+  }
+  if (lead.mamad_required && !lead.mamad_flexible && property.features?.mamad == null) {
+    priority -= 5;
+  }
+  if (lead.balcony_required && !lead.balcony_flexible && property.features?.balcony == null) {
+    priority -= 5;
+  }
+  if (lead.yard_required && !lead.yard_flexible && property.features?.yard == null) {
+    priority -= 5;
+  }
+  if (lead.roof_required && !lead.roof_flexible && property.features?.roof == null) {
+    priority -= 5;
+  }
+  if (lead.pets && !lead.pets_flexible && property.features?.pets == null && property.features?.allows_pets == null) {
+    priority -= 5;
+  }
+  if (lead.furnished_required && !lead.furnished_flexible && property.features?.furnished == null) {
+    priority -= 5;
+  }
+  
   return priority;
 }
 
