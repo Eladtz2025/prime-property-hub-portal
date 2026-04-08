@@ -1,81 +1,51 @@
 
 
-## תוכנית תיקון מערכת ההתאמות — טיפול ב-null כ"לא ידוע"
+## סימון לקוחות עם תאריך כניסה שעבר
 
-### הבעיה המרכזית
+### הבעיה
+26 לקוחות עם `move_in_date` שכבר עבר (חלקם מינואר 2026) עדיין מסומנים כ-`eligible` ומשתתפים בהתאמות — מבזבזים חישובים ומוסיפים רעש.
 
-כש-lead דורש פיצ'ר בצורה **חובה** (למשל מרפסת, `flexible=false`), המערכת בודקת:
-```typescript
-if (property.features?.balcony !== true) → REJECT
+### הפתרון — שינוי ב-3 מקומות
+
+#### 1. סימון ויזואלי ב-UI (לא חוסם, רק מציג)
+
+**`src/components/CustomerCard.tsx`** — בשורת תאריך כניסה, אם התאריך עבר → הצגה באדום עם אייקון ⚠️:
+```
+תאריך כניסה: 15/01/2026 ⚠️ עבר
 ```
 
-**נתונים אמיתיים:**
-- מרפסת: 783 נכסים עם `true`, 130 עם `false`, **3,126 עם null** (77%)
-- ממ"ד: 519 נכסים עם data, **3,520 עם null** (87%)
-- חיות: רק 6 נכסים עם data
+**`src/components/ExpandableCustomerRow.tsx`** — אותו סימון ויזואלי בשורת הלקוח המורחבת.
 
-11 לקוחות דורשים מרפסת חובה, 8 חניה חובה, 8 מעלית חובה — וכולם מפסידים את 77% מהנכסים שפשוט **לא ידוע** אם יש בהם מרפסת.
+**`src/components/CustomerDetailSheet.tsx`** — אותו סימון בדף פרטי הלקוח.
 
-**בעיה נוספת:** 26 לקוחות עם תאריך כניסה שעבר עדיין eligible — מזבזבים חישובי matching.
+#### 2. סינון בהתאמות (Edge Function)
 
-### הפתרון — שינוי ב-`matching.ts` בלבד
+**`supabase/functions/_shared/matching.ts`** — בתחילת `calculateMatch`, אם ל-lead יש `move_in_date` שעבר ו-`immediate_entry` הוא false → החזרת ציון 0 עם סיבה "תאריך כניסה עבר".
 
-**עיקרון:** כש-null — לא לדחות, אלא להוסיף הערה "לא ידוע" ולתת ציון priority נמוך יותר.
-
-#### שינוי 1: פיצ'רים עם null עוברים עם הערה (לא נדחים)
-
-לכל בדיקת פיצ'ר חובה (elevator, parking, balcony, yard, roof, mamad, pets, furnished), במקום:
+הלוגיקה:
 ```typescript
-if (property.features?.balcony !== true) {
-  return { matchScore: 0, ... } // REJECT
+if (lead.move_in_date && !lead.immediate_entry) {
+  const moveDate = new Date(lead.move_in_date);
+  if (moveDate < new Date()) {
+    return { matchScore: 0, matchReasons: ['תאריך כניסה עבר'], priority: 0 };
+  }
 }
 ```
-ישתנה ל:
-```typescript
-if (property.features?.balcony === false) {
-  return { matchScore: 0, ... } // REJECT - explicitly no balcony
-}
-if (property.features?.balcony !== true) {
-  reasons.push('מרפסת - לא ידוע ⚠️');
-  // Continue - don't reject
-} else {
-  reasons.push('יש מרפסת (חובה) ✓');
-}
-```
-
-**ההבדל:** `false` (מפורש שאין) = דחייה. `null/undefined` (לא ידוע) = עובר עם הערה.
-
-#### שינוי 2: Priority penalty ל-null features
-
-בפונקציית `calculatePriorityScore`, נכסים עם features לא ידועים יקבלו priority נמוך יותר:
-```typescript
-// For each required strict feature with null data: -5 priority
-if (lead.balcony_required && !lead.balcony_flexible && property.features?.balcony == null) {
-  priority -= 5;
-}
-```
-ככה נכסים עם מידע מלא יופיעו ראשונים, ונכסים עם "לא ידוע" יופיעו אחריהם.
-
-#### שינוי 3: outdoor_space_any (OR mode) עם null
-
-אותו עיקרון — אם אף אחד מהפיצ'רים לא `false` מפורש אבל כולם `null`, הנכס עובר עם הערה.
 
 ### מה לא משתנה
-- שום UI לא משתנה
-- שום edge function אחרת
-- שום טבלה בדאטאבייס
-- לוגיקת עיר/שכונה/מחיר/חדרים — ללא שינוי
-- לוגיקת תאריך כניסה — ללא שינוי
-- `match-batch/index.ts` — ללא שינוי
+- שום טבלה בדאטאבייס — לא נוגעים ב-`matching_status` או ב-eligibility trigger
+- הלקוח **לא נמחק ולא מוסתר** — רק מסומן ויזואלית ולא משתתף בהתאמות
+- אם המשתמש מעדכן את תאריך הכניסה לתאריך עתידי — הלקוח חוזר אוטומטית להתאמות
+- לוגיקת עיר/שכונה/מחיר/פיצ'רים — ללא שינוי
 
-### סיכון
-**אפס שבירה** — הלוגיקה משתנה רק בכיוון של "יותר התאמות" (פחות דחיות). נכסים שכבר הותאמו ימשיכו להיות מותאמים. נכסים שנדחו בגלל null עכשיו יעברו עם הערה ⚠️ שנראית ברשימת ההתאמות.
+### למה זה בטוח
+- ב-UI: רק הוספת צבע אדום + טקסט — אין שינוי בלוגיקה
+- בהתאמות: רק הוספת בדיקה **בתחילת** `calculateMatch` לפני כל שאר הבדיקות — לא נוגע בשום לוגיקה קיימת
+- אם לקוח עם תאריך שעבר עדיין רלוונטי, המשתמש פשוט מעדכן את התאריך או מסמן "כניסה מיידית"
 
-### השפעה צפויה
-- **לפני:** ~266 נכסים עם התאמות, ממוצע 1.9 לידים
-- **אחרי:** צפוי גידול משמעותי — אלפי נכסים שנדחו רק בגלל null יוכלו להתאים
-- ה-priority score יבטיח שנכסים עם מידע מלא ימוקמו גבוה יותר
-
-### קובץ אחד בלבד
-`supabase/functions/_shared/matching.ts` — שינוי בלוגיקת הבדיקה של ~8 פיצ'רים + penalty ב-priority score.
+### קבצים שמשתנים
+1. `src/components/CustomerCard.tsx` — סימון אדום לתאריך שעבר
+2. `src/components/ExpandableCustomerRow.tsx` — סימון אדום לתאריך שעבר
+3. `src/components/CustomerDetailSheet.tsx` — סימון אדום לתאריך שעבר
+4. `supabase/functions/_shared/matching.ts` — בדיקת תאריך עבר בתחילת calculateMatch
 
