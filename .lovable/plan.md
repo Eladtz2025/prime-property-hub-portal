@@ -1,51 +1,41 @@
 
 
-## סימון לקוחות עם תאריך כניסה שעבר
+## תיקון מיון התאמות + דירוג נכסים לא מאומתים
 
 ### הבעיה
-26 לקוחות עם `move_in_date` שכבר עבר (חלקם מינואר 2026) עדיין מסומנים כ-`eligible` ומשתתפים בהתאמות — מבזבזים חישובים ומוסיפים רעש.
 
-### הפתרון — שינוי ב-3 מקומות
+שתי בעיות מרכזיות שגורמות לתוצאות לא רלוונטיות בראש הרשימה:
 
-#### 1. סימון ויזואלי ב-UI (לא חוסם, רק מציג)
+**בעיה 1 — המיון מתעלם מ-priority:**
+הפונקציה `get_customer_matches` ממיינת לפי `match_score DESC, created_at DESC`. כל ההתאמות של שירי הן 100 — אז המיון בפועל הוא רק לפי תאריך יצירה. דירה חדשה עם `parking=null` (priority 30) מופיעה לפני דירה ותיקה עם `parking=true` (priority 58).
 
-**`src/components/CustomerCard.tsx`** — בשורת תאריך כניסה, אם התאריך עבר → הצגה באדום עם אייקון ⚠️:
+**בעיה 2 — דירות "לא אקטואליות" בראש:**
+דירות שבדיקת הזמינות שלהן נכשלה (סטטוס `jina_status_503` או `rate_limited`) עדיין מסומנות כ-active ומופיעות ראשונות. צריך להוריד אותן בדירוג.
+
+### הפתרון — שינוי בקובץ אחד בלבד
+
+**שינוי ב-DB function `get_customer_matches`** (מיגרציה):
+
+1. **שינוי סדר המיון** מ:
+```sql
+ORDER BY match_score DESC NULLS LAST, sp.created_at DESC
 ```
-תאריך כניסה: 15/01/2026 ⚠️ עבר
-```
-
-**`src/components/ExpandableCustomerRow.tsx`** — אותו סימון ויזואלי בשורת הלקוח המורחבת.
-
-**`src/components/CustomerDetailSheet.tsx`** — אותו סימון בדף פרטי הלקוח.
-
-#### 2. סינון בהתאמות (Edge Function)
-
-**`supabase/functions/_shared/matching.ts`** — בתחילת `calculateMatch`, אם ל-lead יש `move_in_date` שעבר ו-`immediate_entry` הוא false → החזרת ציון 0 עם סיבה "תאריך כניסה עבר".
-
-הלוגיקה:
-```typescript
-if (lead.move_in_date && !lead.immediate_entry) {
-  const moveDate = new Date(lead.move_in_date);
-  if (moveDate < new Date()) {
-    return { matchScore: 0, matchReasons: ['תאריך כניסה עבר'], priority: 0 };
-  }
-}
+ל:
+```sql
+ORDER BY match_score DESC NULLS LAST, 
+         (ml->>'priority')::INTEGER DESC NULLS LAST,
+         sp.created_at DESC
 ```
 
-### מה לא משתנה
-- שום טבלה בדאטאבייס — לא נוגעים ב-`matching_status` או ב-eligibility trigger
-- הלקוח **לא נמחק ולא מוסתר** — רק מסומן ויזואלית ולא משתתף בהתאמות
-- אם המשתמש מעדכן את תאריך הכניסה לתאריך עתידי — הלקוח חוזר אוטומטית להתאמות
-- לוגיקת עיר/שכונה/מחיר/פיצ'רים — ללא שינוי
+זה יגרום לדירות עם חניה מאומתת (priority גבוה) להופיע לפני דירות עם "חניה - לא ידוע" (priority נמוך).
+
+2. **אין שינוי UI** — הקומפוננטה כבר מציגה את התוצאות בסדר שחוזר מהפונקציה.
 
 ### למה זה בטוח
-- ב-UI: רק הוספת צבע אדום + טקסט — אין שינוי בלוגיקה
-- בהתאמות: רק הוספת בדיקה **בתחילת** `calculateMatch` לפני כל שאר הבדיקות — לא נוגע בשום לוגיקה קיימת
-- אם לקוח עם תאריך שעבר עדיין רלוונטי, המשתמש פשוט מעדכן את התאריך או מסמן "כניסה מיידית"
+- שינוי **סדר בלבד** — לא משנה אילו דירות מוחזרות, רק את הסדר שלהן
+- הלוגיקה של `match_score` ו-`priority` כבר מחושבת ושמורה — רק צריך להשתמש בה למיון
+- שום קומפוננטה, edge function, או טבלה לא משתנים
 
-### קבצים שמשתנים
-1. `src/components/CustomerCard.tsx` — סימון אדום לתאריך שעבר
-2. `src/components/ExpandableCustomerRow.tsx` — סימון אדום לתאריך שעבר
-3. `src/components/CustomerDetailSheet.tsx` — סימון אדום לתאריך שעבר
-4. `supabase/functions/_shared/matching.ts` — בדיקת תאריך עבר בתחילת calculateMatch
+### תוצאה צפויה
+לשירי: דירות עם חניה מאומתת + תאריך כניסה ידוע יופיעו ראשונות. דירות עם "לא ידוע ⚠️" ירדו לתחתית הרשימה.
 
