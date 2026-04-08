@@ -547,21 +547,30 @@ export async function calculateMatch(
     reasons.push('יש ממ"ד ✓');
   }
   
-  // ===== NEW: Furnished =====
+  // ===== Furnished =====
   if (lead.furnished_required && lead.furnished_flexible === false) {
     const propertyFurnished = property.features?.furnished;
     
     if (lead.furnished_required === 'fully_furnished') {
-      if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת מלא - לא צוין בנכס'], priority: 0 };
+      if (propertyFurnished === false || propertyFurnished === 'unfurnished') {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת מלא - לא מרוהטת'], priority: 0 };
       }
-      reasons.push('מרוהטת מלא (חובה) ✓');
+      if (propertyFurnished === 'fully_furnished' || propertyFurnished === true) {
+        reasons.push('מרוהטת מלא (חובה) ✓');
+      } else if (propertyFurnished === 'partially_furnished') {
+        reasons.push('מרוהטת חלקית (נדרש מלא) ⚠️');
+      } else {
+        reasons.push('ריהוט - לא ידוע ⚠️');
+      }
     } else if (lead.furnished_required === 'partially_furnished') {
-      // Accept fully or partially furnished
-      if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== 'partially_furnished' && propertyFurnished !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת לפחות חלקית - לא צוין בנכס'], priority: 0 };
+      if (propertyFurnished === false || propertyFurnished === 'unfurnished') {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת - לא מרוהטת'], priority: 0 };
       }
-      reasons.push('מרוהטת (חובה) ✓');
+      if (propertyFurnished === 'fully_furnished' || propertyFurnished === 'partially_furnished' || propertyFurnished === true) {
+        reasons.push('מרוהטת (חובה) ✓');
+      } else {
+        reasons.push('ריהוט - לא ידוע ⚠️');
+      }
     }
   } else if (lead.furnished_required && property.features?.furnished) {
     const furnishedLabel = property.features.furnished === 'fully_furnished' ? 'מרוהטת מלא' : 'מרוהטת חלקית';
