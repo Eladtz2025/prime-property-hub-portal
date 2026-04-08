@@ -25,7 +25,7 @@ export async function scrapeWithJina(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const isYad2 = source === 'yad2';
-      const fetchTimeout = isYad2 ? 35000 : 45000;
+      const fetchTimeout = isYad2 ? 55000 : 45000;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), fetchTimeout);
 
@@ -42,9 +42,8 @@ export async function scrapeWithJina(
 
       // Yad2 is a React SPA - needs longer render timeout but shorter fetch timeout
       if (isYad2) {
-        headers['X-Timeout'] = '30';
+        headers['X-Timeout'] = '45';
         headers['X-Wait-For-Selector'] = 'a[href*="/realestate/item/"]';
-        headers['X-Proxy-Country'] = 'IL';
       }
 
       if (isHomeless) {
@@ -80,7 +79,7 @@ export async function scrapeWithJina(
 
       // Wait before retry with exponential backoff
       if (attempt < maxRetries - 1) {
-        const waitTime = 3000 * (attempt + 1);
+        const waitTime = 5000 * (attempt + 1);
         console.log(`Waiting ${waitTime}ms before retry...`);
         await new Promise(r => setTimeout(r, waitTime));
       }
@@ -92,7 +91,7 @@ export async function scrapeWithJina(
       }
 
       if (attempt < maxRetries - 1) {
-        const waitTime = 3000 * (attempt + 1);
+        const waitTime = 5000 * (attempt + 1);
         await new Promise(r => setTimeout(r, waitTime));
       }
     }
