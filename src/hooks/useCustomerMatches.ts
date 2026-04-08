@@ -83,28 +83,34 @@ export const useCustomerMatches = (customerId: string, includeDismissed: boolean
         duplicatesCount: row.duplicates_count || 1,
       }));
 
+      // Preserve DB order (already sorted by score → priority → created_at)
+      const dbOrderMap = new Map<string, number>();
+      matches.forEach((match, index) => {
+        dbOrderMap.set(match.id, index);
+      });
+
       // Group matches by duplicate_group_id
       const groupedMap = new Map<string, CustomerMatch[]>();
       
       matches.forEach(match => {
-        const groupKey = match.duplicateGroupId || match.id; // Use ID if no duplicate group
+        const groupKey = match.duplicateGroupId || match.id;
         if (!groupedMap.has(groupKey)) {
           groupedMap.set(groupKey, []);
         }
         groupedMap.get(groupKey)!.push(match);
       });
 
-      // Convert to GroupedMatch array, sorted by best score in each group
+      // Convert to GroupedMatch array
       const grouped: GroupedMatch[] = Array.from(groupedMap.entries()).map(([groupId, groupMatches]) => ({
         groupId: groupMatches[0].duplicateGroupId,
-        matches: groupMatches.sort((a, b) => b.matchScore - a.matchScore),
+        matches: groupMatches.sort((a, b) => (dbOrderMap.get(a.id) ?? 0) - (dbOrderMap.get(b.id) ?? 0)),
       }));
 
-      // Sort groups by best match score
+      // Sort groups by best (lowest) DB order index — preserves DB's score+priority+date sorting
       grouped.sort((a, b) => {
-        const aScore = Math.max(...a.matches.map(m => m.matchScore));
-        const bScore = Math.max(...b.matches.map(m => m.matchScore));
-        return bScore - aScore;
+        const aOrder = Math.min(...a.matches.map(m => dbOrderMap.get(m.id) ?? 0));
+        const bOrder = Math.min(...b.matches.map(m => dbOrderMap.get(m.id) ?? 0));
+        return aOrder - bOrder;
       });
 
       return grouped;
