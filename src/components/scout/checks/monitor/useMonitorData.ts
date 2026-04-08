@@ -416,7 +416,7 @@ export function useMonitorData() {
         .order('started_at', { ascending: false });
       return data ?? [];
     },
-    refetchInterval: 15000,
+    refetchInterval: 30000,
   });
 
 
