@@ -253,7 +253,7 @@ export const ChecksDashboard: React.FC = () => {
       const { data } = await supabase.from('availability_check_runs').select('started_at, completed_at, status, properties_checked, inactive_marked').order('started_at', { ascending: false }).limit(1).maybeSingle();
       return data;
     },
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
 
@@ -297,7 +297,7 @@ export const ChecksDashboard: React.FC = () => {
         new_properties: totalNew,
       };
     },
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
   // Dedup stats — read from scouted_properties + backfill_progress for accurate counts
