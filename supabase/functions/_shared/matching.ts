@@ -175,6 +175,15 @@ export async function calculateMatch(
 ): Promise<MatchResult> {
   const reasons: string[] = [];
   
+  // ===== EXPIRED MOVE-IN DATE CHECK =====
+  // If lead has a move_in_date that's already passed and they don't want immediate entry, skip
+  if (lead.move_in_date && !lead.immediate_entry) {
+    const moveDate = new Date(lead.move_in_date);
+    if (moveDate < new Date()) {
+      return { lead, matchScore: 0, matchReasons: ['תאריך כניסה עבר'], priority: 0 };
+    }
+  }
+  
   // NOTE: Lead eligibility checks (cities, neighborhoods, budget, rooms) have been 
   // moved to a database trigger (update_lead_eligibility). match-batch now filters
   // by matching_status = 'eligible' before calling this function.

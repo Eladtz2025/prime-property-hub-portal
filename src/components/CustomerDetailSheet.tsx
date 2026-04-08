@@ -519,7 +519,10 @@ export const CustomerDetailSheet = ({
           <div className="text-xs text-muted-foreground space-y-1">
             <p>נוצר: {format(new Date(customer.created_at), 'dd/MM/yyyy', { locale: he })}</p>
             {customer.move_in_date && (
-              <p>תאריך כניסה רצוי: {format(new Date(customer.move_in_date), 'dd/MM/yyyy', { locale: he })}</p>
+              <p className={new Date(customer.move_in_date) < new Date() ? 'text-destructive font-medium' : ''}>
+                תאריך כניסה רצוי: {format(new Date(customer.move_in_date), 'dd/MM/yyyy', { locale: he })}
+                {new Date(customer.move_in_date) < new Date() && ' ⚠️ עבר'}
+              </p>
             )}
           </div>
         </div>

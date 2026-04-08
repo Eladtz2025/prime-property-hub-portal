@@ -618,9 +618,12 @@ export const ExpandableCustomerRow = ({
                       type="date"
                       value={formData.move_in_date || ''}
                       onChange={(e) => setFormData({ ...formData, move_in_date: e.target.value })}
-                      className="h-8 text-sm"
+                      className={cn("h-8 text-sm", formData.move_in_date && new Date(formData.move_in_date) < new Date() && 'border-destructive text-destructive')}
                       disabled={formData.immediate_entry === true}
                     />
+                    {formData.move_in_date && new Date(formData.move_in_date) < new Date() && (
+                      <p className="text-[10px] text-destructive mt-0.5">⚠️ תאריך עבר</p>
+                    )}
                     <div className="flex items-center gap-2 mt-1">
                       <div className="flex items-center gap-1">
                         <Checkbox 
