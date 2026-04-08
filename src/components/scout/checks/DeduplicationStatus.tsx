@@ -71,7 +71,7 @@ export const DeduplicationStatus: React.FC = () => {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
 
   // Live stats from scouted_properties
@@ -87,7 +87,7 @@ export const DeduplicationStatus: React.FC = () => {
         unchecked: uncheckedRes.count ?? 0,
       };
     },
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
 
   // Duplicate groups detail
