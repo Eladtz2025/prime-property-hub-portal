@@ -166,6 +166,20 @@ const getTaskConfig = (taskName: string) => {
 // ── Hook ──
 
 export function useMonitorData() {
+  // Light query to detect any active process — controls fast polling
+  const { data: hasActiveProcess } = useQuery({
+    queryKey: ['monitor-has-active-process'],
+    queryFn: async () => {
+      const [availRes, backfillRes, scanRes] = await Promise.all([
+        supabase.from('availability_check_runs').select('id', { count: 'exact', head: true }).eq('status', 'running'),
+        supabase.from('backfill_progress').select('id', { count: 'exact', head: true }).eq('status', 'running'),
+        supabase.from('scout_runs').select('id', { count: 'exact', head: true }).eq('status', 'running'),
+      ]);
+      return ((availRes.count ?? 0) + (backfillRes.count ?? 0) + (scanRes.count ?? 0)) > 0;
+    },
+    refetchInterval: 10000,
+  });
+
   // Availability run
   const { data: availRun } = useQuery({
     queryKey: ['monitor-availability-run'],
@@ -180,7 +194,7 @@ export function useMonitorData() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 2000,
+    refetchInterval: hasActiveProcess ? 2000 : false,
   });
 
   // Backfill tasks (running)
@@ -195,7 +209,7 @@ export function useMonitorData() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 2000,
+    refetchInterval: hasActiveProcess ? 2000 : false,
   });
 
   // Completed backfill tasks today (for dailyRunsHealth)
@@ -268,7 +282,7 @@ export function useMonitorData() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 2000,
+    refetchInterval: hasActiveProcess ? 2000 : false,
   });
 
   // Recent scout runs for pipeline stats (last 24h, excluding matching)
@@ -284,7 +298,7 @@ export function useMonitorData() {
         .order('started_at', { ascending: false });
       return data ?? [];
     },
-    refetchInterval: 15000,
+    refetchInterval: 30000,
   });
 
   // Scouted properties from latest completed scan runs (per source)
@@ -338,7 +352,7 @@ export function useMonitorData() {
         .maybeSingle();
       return data;
     },
-    refetchInterval: 15000,
+    refetchInterval: 30000,
   });
 
   // Latest completed dedup run window
@@ -420,7 +434,7 @@ export function useMonitorData() {
         .gte('created_at', today.toISOString());
       return count ?? 0;
     },
-    refetchInterval: 15000,
+    refetchInterval: 30000,
   });
 
   // ── Build feed items (include completed runs so screen is never empty) ──

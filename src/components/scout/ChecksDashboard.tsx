@@ -317,7 +317,7 @@ export const ChecksDashboard: React.FC = () => {
         lastRun: lastRunRes.data,
       };
     },
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
 
   // Matching stats
