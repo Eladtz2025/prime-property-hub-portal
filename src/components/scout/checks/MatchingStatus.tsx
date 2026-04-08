@@ -21,7 +21,7 @@ export const MatchingStatus: React.FC = () => {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
   // Pending properties (status = 'new' and active)
@@ -36,7 +36,7 @@ export const MatchingStatus: React.FC = () => {
       if (error) throw error;
       return count ?? 0;
     },
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
 
   // Lead stats
@@ -82,7 +82,7 @@ export const MatchingStatus: React.FC = () => {
 
       return { eligible, incomplete, total: eligible + incomplete, withMatches, withoutMatches };
     },
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
 
   const lastRun = runs?.[0];

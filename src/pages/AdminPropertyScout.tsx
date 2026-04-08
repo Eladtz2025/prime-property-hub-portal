@@ -49,38 +49,32 @@ const AdminPropertyScout: React.FC = () => {
     refetchInterval: 15000,
   });
 
-  // Distribution stats for pie charts
+  // Distribution stats for pie charts — lightweight COUNT queries
   const { data: distribution } = useQuery({
     queryKey: ['scout-distribution-stats'],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('scouted_properties')
-        .select('source, is_private, property_type')
-        .eq('is_active', true);
-
-      const sources: Record<string, number> = {};
-      let privateCount = 0;
-      let brokerCount = 0;
-      let saleCount = 0;
-      let rentCount = 0;
-
-      if (data) {
-        for (const p of data) {
-          // Source
-          const src = p.source || 'אחר';
-          sources[src] = (sources[src] || 0) + 1;
-          // Private/broker
-          if (p.is_private === true) privateCount++;
-          else if (p.is_private === false) brokerCount++;
-          // Sale/rent
-          if (p.property_type === 'sale') saleCount++;
-          else if (p.property_type === 'rent') rentCount++;
-        }
-      }
-
-      return { sources, privateCount, brokerCount, saleCount, rentCount };
+      const [yad2Res, madlanRes, homelessRes, privateRes, brokerRes, saleRes, rentRes] = await Promise.all([
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('source', 'yad2'),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('source', 'madlan'),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('source', 'homeless'),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('is_private', true),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('is_private', false),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('property_type', 'sale'),
+        supabase.from('scouted_properties').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('property_type', 'rent'),
+      ]);
+      return {
+        sources: {
+          yad2: yad2Res.count ?? 0,
+          madlan: madlanRes.count ?? 0,
+          homeless: homelessRes.count ?? 0,
+        } as Record<string, number>,
+        privateCount: privateRes.count ?? 0,
+        brokerCount: brokerRes.count ?? 0,
+        saleCount: saleRes.count ?? 0,
+        rentCount: rentRes.count ?? 0,
+      };
     },
-    refetchInterval: 30000,
+    refetchInterval: 60000,
   });
 
   // Historical comparison
@@ -274,11 +268,11 @@ const AdminPropertyScout: React.FC = () => {
           </TabsList>
 
           <TabsContent value="properties" className="mt-6">
-            <ScoutedPropertiesTable />
+            {activeTab === 'properties' && <ScoutedPropertiesTable />}
           </TabsContent>
 
           <TabsContent value="dashboard" className="mt-6">
-            <ChecksDashboard />
+            {activeTab === 'dashboard' && <ChecksDashboard />}
           </TabsContent>
         </Tabs>
       </div>

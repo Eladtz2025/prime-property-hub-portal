@@ -94,7 +94,7 @@ export const ScoutRunHistory: React.FC = () => {
           : undefined
       })) as ScoutRun[];
     },
-    refetchInterval: 10000
+    refetchInterval: 30000
   });
 
   // Fetch actual matches from scouted_properties grouped by hour
@@ -124,7 +124,7 @@ export const ScoutRunHistory: React.FC = () => {
       });
       return counts;
     },
-    refetchInterval: 10000
+    refetchInterval: 30000
   });
 
   const groupedData = useMemo(() => {
