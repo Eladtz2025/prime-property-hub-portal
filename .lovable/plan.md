@@ -1,41 +1,49 @@
 
 
-## תיקון מיון התאמות + דירוג נכסים לא מאומתים
+## בעיה שנמצאה — הקליינט מבטל את המיון של ה-DB
 
-### הבעיה
+### הממצאים
 
-שתי בעיות מרכזיות שגורמות לתוצאות לא רלוונטיות בראש הרשימה:
+**הבדיקה הראתה תמונה חיובית ברובה:**
+- שירי: כל 44 ההתאמות שלה הן **עם חניה** (parking=true) — אין שום נכס בלי חניה
+- אין לידים עם תאריך שעבר ב-matched_leads (התיקון עובד)
+- אין התאמות מתחת ל-score 60
+- 81 מתוך 103 נכסים מותאמים אומתו (content_ok), רק 5 עם בעיות (503/rate_limited)
+- סדר ה-priority ב-DB תקין: חניה מאומתת + מרפסת מאומתת (priority 59) → חניה בלי מרפסת (53) → נמוך (20)
 
-**בעיה 1 — המיון מתעלם מ-priority:**
-הפונקציה `get_customer_matches` ממיינת לפי `match_score DESC, created_at DESC`. כל ההתאמות של שירי הן 100 — אז המיון בפועל הוא רק לפי תאריך יצירה. דירה חדשה עם `parking=null` (priority 30) מופיעה לפני דירה ותיקה עם `parking=true` (priority 58).
+**בעיה אחת קריטית:**
+הקוד בקליינט (`useCustomerMatches.ts` שורות 103-108) **ממיין מחדש לפי matchScore בלבד**. כשכל ההתאמות הן 100, המיון הזה לא עושה כלום — והסדר נקבע לפי סדר הכנסה ל-Map, לא לפי priority. **זה מבטל את כל המיון שתיקנו ב-DB.**
 
-**בעיה 2 — דירות "לא אקטואליות" בראש:**
-דירות שבדיקת הזמינות שלהן נכשלה (סטטוס `jina_status_503` או `rate_limited`) עדיין מסומנות כ-active ומופיעות ראשונות. צריך להוריד אותן בדירוג.
+### הפתרון — שינוי בקובץ אחד
 
-### הפתרון — שינוי בקובץ אחד בלבד
+**`src/hooks/useCustomerMatches.ts`:**
 
-**שינוי ב-DB function `get_customer_matches`** (מיגרציה):
+1. להוסיף שדה `matchPriority` ל-interface ולמיפוי מה-DB (צריך גם לעדכן את ה-DB function להחזיר priority כעמודה)
+2. **או** (גישה פשוטה יותר): לשמור על הסדר שמגיע מה-DB — להפסיק למיין מחדש בקליינט
 
-1. **שינוי סדר המיון** מ:
-```sql
-ORDER BY match_score DESC NULLS LAST, sp.created_at DESC
+**הגישה המומלצת — לשמור את סדר ה-DB:**
+- שורות 103-108: במקום למיין groups לפי score בלבד, לשמור על הסדר המקורי שהגיע מה-DB function
+- הדרך: לתת לכל match אינדקס לפי הסדר שהגיע, ולמיין groups לפי האינדקס הנמוך ביותר שלהם
+
+```typescript
+// Map each match to its original DB order
+matches.forEach((match, index) => {
+  match._dbOrder = index;
+});
+
+// Sort groups by the best (lowest) DB order index
+grouped.sort((a, b) => {
+  const aOrder = Math.min(...a.matches.map(m => m._dbOrder));
+  const bOrder = Math.min(...b.matches.map(m => m._dbOrder));
+  return aOrder - bOrder;
+});
 ```
-ל:
-```sql
-ORDER BY match_score DESC NULLS LAST, 
-         (ml->>'priority')::INTEGER DESC NULLS LAST,
-         sp.created_at DESC
-```
-
-זה יגרום לדירות עם חניה מאומתת (priority גבוה) להופיע לפני דירות עם "חניה - לא ידוע" (priority נמוך).
-
-2. **אין שינוי UI** — הקומפוננטה כבר מציגה את התוצאות בסדר שחוזר מהפונקציה.
 
 ### למה זה בטוח
-- שינוי **סדר בלבד** — לא משנה אילו דירות מוחזרות, רק את הסדר שלהן
-- הלוגיקה של `match_score` ו-`priority` כבר מחושבת ושמורה — רק צריך להשתמש בה למיון
-- שום קומפוננטה, edge function, או טבלה לא משתנים
+- לא משנה אילו נכסים מוחזרים, רק את הסדר
+- ה-DB function כבר ממיינת נכון (score → priority → created_at)
+- הקליינט פשוט מפסיק לדרוס את המיון הנכון
 
-### תוצאה צפויה
-לשירי: דירות עם חניה מאומתת + תאריך כניסה ידוע יופיעו ראשונות. דירות עם "לא ידוע ⚠️" ירדו לתחתית הרשימה.
+### קובץ אחד בלבד
+`src/hooks/useCustomerMatches.ts` — שינוי לוגיקת המיון בשורות 97-108
 
