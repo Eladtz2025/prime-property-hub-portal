@@ -155,7 +155,7 @@ export const ChecksDashboard: React.FC = () => {
       ]);
       return { pending: pendingRes.count ?? 0, checkedToday: checkedTodayRes.count ?? 0, timeouts: timeoutRes.count ?? 0, totalActive: totalActiveRes.count ?? 0, pendingRecheck: recheckRes.count ?? 0 };
     },
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
 
   // Backfill remaining count
@@ -169,7 +169,7 @@ export const ChecksDashboard: React.FC = () => {
         .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
       return count ?? 0;
     },
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
 
   // Pending properties for matching (status='new' and active)
@@ -184,7 +184,7 @@ export const ChecksDashboard: React.FC = () => {
       if (error) throw error;
       return count ?? 0;
     },
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
 
   // Lead stats for matching card
