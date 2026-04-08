@@ -399,23 +399,32 @@ export async function calculateMatch(
   }
   
   // ===== FEATURE CHECKS (only if required AND not flexible) =====
+  // NULL HANDLING: false = explicitly missing → reject. null/undefined = unknown → pass with warning.
   
   // Elevator
   if (lead.elevator_required && lead.elevator_flexible === false) {
-    if (property.features?.elevator !== true) {
-      return { lead, matchScore: 0, matchReasons: ['נדרשת מעלית - לא צוין שיש בנכס'], priority: 0 };
+    if (property.features?.elevator === false) {
+      return { lead, matchScore: 0, matchReasons: ['נדרשת מעלית - אין בנכס'], priority: 0 };
     }
-    reasons.push('יש מעלית (חובה) ✓');
+    if (property.features?.elevator === true) {
+      reasons.push('יש מעלית (חובה) ✓');
+    } else {
+      reasons.push('מעלית - לא ידוע ⚠️');
+    }
   } else if (lead.elevator_required && property.features?.elevator === true) {
     reasons.push('יש מעלית ✓');
   }
   
   // Parking
   if (lead.parking_required && lead.parking_flexible === false) {
-    if (property.features?.parking !== true) {
-      return { lead, matchScore: 0, matchReasons: ['נדרשת חניה - לא צוין שיש בנכס'], priority: 0 };
+    if (property.features?.parking === false) {
+      return { lead, matchScore: 0, matchReasons: ['נדרשת חניה - אין בנכס'], priority: 0 };
     }
-    reasons.push('יש חניה (חובה) ✓');
+    if (property.features?.parking === true) {
+      reasons.push('יש חניה (חובה) ✓');
+    } else {
+      reasons.push('חניה - לא ידוע ⚠️');
+    }
   } else if (lead.parking_required && property.features?.parking === true) {
     reasons.push('יש חניה ✓');
   }
@@ -432,52 +441,79 @@ export async function calculateMatch(
       const hasAnyOutdoor = outdoorOptions.some(opt => 
         property.features?.[opt] === true
       );
+      // Check if any is explicitly false
+      const anyExplicitlyFalse = outdoorOptions.every(opt => 
+        property.features?.[opt] === false
+      );
       
-      if (!hasAnyOutdoor) {
+      if (anyExplicitlyFalse) {
         const optionsText = outdoorOptions.map(opt => {
           if (opt === 'balcony') return 'מרפסת';
           if (opt === 'yard') return 'חצר';
           if (opt === 'roof') return 'גג';
           return opt;
         }).join(' או ');
-        return { lead, matchScore: 0, matchReasons: [`נדרש ${optionsText} - לא צוין שיש בנכס`], priority: 0 };
+        return { lead, matchScore: 0, matchReasons: [`נדרש ${optionsText} - אין בנכס`], priority: 0 };
       }
       
-      // Add what was found - mark as required since outdoor_space_any is a must-have
-      const foundOutdoor = outdoorOptions.filter(opt => property.features?.[opt] === true);
-      const foundText = foundOutdoor.map(opt => {
-        if (opt === 'balcony') return 'מרפסת';
-        if (opt === 'yard') return 'חצר';
-        if (opt === 'roof') return 'גג';
-        return opt;
-      }).join(' / ');
-      reasons.push(`יש ${foundText} (חובה) ✓`);
+      if (hasAnyOutdoor) {
+        // Add what was found
+        const foundOutdoor = outdoorOptions.filter(opt => property.features?.[opt] === true);
+        const foundText = foundOutdoor.map(opt => {
+          if (opt === 'balcony') return 'מרפסת';
+          if (opt === 'yard') return 'חצר';
+          if (opt === 'roof') return 'גג';
+          return opt;
+        }).join(' / ');
+        reasons.push(`יש ${foundText} (חובה) ✓`);
+      } else {
+        // All are null/undefined — pass with warning
+        const optionsText = outdoorOptions.map(opt => {
+          if (opt === 'balcony') return 'מרפסת';
+          if (opt === 'yard') return 'חצר';
+          if (opt === 'roof') return 'גג';
+          return opt;
+        }).join('/');
+        reasons.push(`${optionsText} - לא ידוע ⚠️`);
+      }
     }
   } else {
     // AND mode: each feature is checked individually
     if (lead.balcony_required && lead.balcony_flexible === false) {
-      if (property.features?.balcony !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - לא צוין שיש בנכס'], priority: 0 };
+      if (property.features?.balcony === false) {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - אין בנכס'], priority: 0 };
       }
-      reasons.push('יש מרפסת (חובה) ✓');
+      if (property.features?.balcony === true) {
+        reasons.push('יש מרפסת (חובה) ✓');
+      } else {
+        reasons.push('מרפסת - לא ידוע ⚠️');
+      }
     } else if (lead.balcony_required && property.features?.balcony === true) {
       reasons.push('יש מרפסת ✓');
     }
     
     if (lead.yard_required && lead.yard_flexible === false) {
-      if (property.features?.yard !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - לא צוין שיש בנכס'], priority: 0 };
+      if (property.features?.yard === false) {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - אין בנכס'], priority: 0 };
       }
-      reasons.push('יש חצר (חובה) ✓');
+      if (property.features?.yard === true) {
+        reasons.push('יש חצר (חובה) ✓');
+      } else {
+        reasons.push('חצר - לא ידוע ⚠️');
+      }
     } else if (lead.yard_required && property.features?.yard === true) {
       reasons.push('יש חצר ✓');
     }
     
     if (lead.roof_required && lead.roof_flexible === false) {
-      if (property.features?.roof !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרש גג - לא צוין שיש בנכס'], priority: 0 };
+      if (property.features?.roof === false) {
+        return { lead, matchScore: 0, matchReasons: ['נדרש גג - אין בנכס'], priority: 0 };
       }
-      reasons.push('יש גג (חובה) ✓');
+      if (property.features?.roof === true) {
+        reasons.push('יש גג (חובה) ✓');
+      } else {
+        reasons.push('גג - לא ידוע ⚠️');
+      }
     } else if (lead.roof_required && property.features?.roof === true) {
       reasons.push('יש גג ✓');
     }
@@ -485,20 +521,28 @@ export async function calculateMatch(
   
   // Pets
   if (lead.pets === true && lead.pets_flexible === false) {
-    if (property.features?.pets !== true && property.features?.allows_pets !== true) {
+    if (property.features?.pets === false || property.features?.allows_pets === false) {
       return { lead, matchScore: 0, matchReasons: ['נדרש לאפשר חיות מחמד - לא מותר בנכס'], priority: 0 };
     }
-    reasons.push('מאפשר חיות מחמד (חובה) ✓');
+    if (property.features?.pets === true || property.features?.allows_pets === true) {
+      reasons.push('מאפשר חיות מחמד (חובה) ✓');
+    } else {
+      reasons.push('חיות מחמד - לא ידוע ⚠️');
+    }
   } else if (lead.pets === true && (property.features?.pets === true || property.features?.allows_pets === true)) {
     reasons.push('מאפשר חיות מחמד ✓');
   }
   
-  // ===== NEW: Mamad (Safe Room) =====
+  // ===== Mamad (Safe Room) =====
   if (lead.mamad_required && lead.mamad_flexible === false) {
-    if (property.features?.mamad !== true) {
-      return { lead, matchScore: 0, matchReasons: ['נדרש ממ"ד - לא צוין שיש בנכס'], priority: 0 };
+    if (property.features?.mamad === false) {
+      return { lead, matchScore: 0, matchReasons: ['נדרש ממ"ד - אין בנכס'], priority: 0 };
     }
-    reasons.push('יש ממ"ד (חובה) ✓');
+    if (property.features?.mamad === true) {
+      reasons.push('יש ממ"ד (חובה) ✓');
+    } else {
+      reasons.push('ממ"ד - לא ידוע ⚠️');
+    }
   } else if (lead.mamad_required && property.features?.mamad === true) {
     reasons.push('יש ממ"ד ✓');
   }
