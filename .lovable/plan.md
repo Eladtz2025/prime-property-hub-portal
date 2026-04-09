@@ -1,114 +1,66 @@
 
 
-## תוכנית תיקון מערכת ההתאמות — 4 נקודות
+## תוכנית תיקון — שיפור חילוץ פיצ'רים ותיקון נתונים קיימים
 
-### נקודה 1: חילוץ פיצ'רים כבר מהסריקה הראשונה
+### ממצאי הבדיקה
 
-**מצב נוכחי:** הפרסר של הסריקה הראשונה (`parser-utils.ts` → `extractFeatures`) מזהה פיצ'רים רק כ-`true` — אם מצא "חניה" בטקסט, מסמן `parking: true`. אם לא מצא — לא מסמן כלום (`undefined`). הפרסר הזה רץ על טקסט מרשימות (דפי חיפוש), שבדרך כלל מכילים מעט מידע על פיצ'רים.
+| ממצא | חומרה | השפעה |
+|------|--------|--------|
+| **1,091 נכסים עם features={}** למרות backfill_status=completed | קריטית | נכסים אלו נדחים מכל התאמה שדורשת פיצ'ר כחובה |
+| **isolatePropertyDescription חותך את "מפרט מלא"** — סקשן עם פרטי חניה/מעלית/ממ"ד של מדל"ן | קריטית | ~50% מנכסי מדל"ן לא מזוהים |
+| **Regex ממ"ד לא תופס Unicode gershayim** — מדל"ן משתמש ב-`״` (U+05F4) ולא `"` | בינונית | 89% mamad_null |
+| **parser-utils.ts ממ"ד** — אותה בעיה ברגקס | בינונית | סריקה ראשונה מפספסת |
 
-**מה משתנה:**
-- **`parser-utils.ts`** — הפונקציה `extractFeatures` תוסיף negative inference: אם הטקסט מכיל מילות מפתח של פיצ'רים אחרים (סימן שזה בלוק מפורט) אבל לא מזכיר חניה/מרפסת — תסמן `false`.
-- הלוגיקה: אם הבלוק מכיל לפחות 2 פיצ'רים מוכרים (כלומר יש רשימת מאפיינים), כל פיצ'ר שלא מוזכר יסומן `false`.
-- אם הבלוק קצר מדי ולא מכיל פיצ'רים כלל — לא מסמנים כלום (נשאר `undefined` לטיפול ב-backfill).
+### מה מתוקן
 
-**קבצים:** `supabase/functions/_experimental/parser-utils.ts`
+#### 1. תיקון `isolatePropertyDescription` למדל"ן
+**קובץ:** `backfill-property-data-jina/index.ts` (שורות 1217-1226)
 
----
+**לפני:** אם "יתרונות" + "תיאור" > 50 תווים → מחזיר רק אותם, מדלג על "מפרט מלא"
+**אחרי:** תמיד מוסיף את סקשן "מפרט מלא" לטקסט המחולץ:
 
-### נקודה 2: Negative Inference מלא ב-Backfill
-
-**מצב נוכחי:** ה-backfill (`backfill-property-data-jina/index.ts`) מבצע negative inference רק למעלית (שורה 725-727). שאר הפיצ'רים נשארים `null` אם לא נמצאו.
-
-**מה משתנה:**
-- **`backfill-property-data-jina/index.ts`** — הרחבת ה-negative inference לכל 8 הפיצ'רים הקריטיים: parking, balcony, elevator, mamad, yard, roof, pets, storage.
-- הלוגיקה: אם ה-backfill הצליח לגרד את הדף (יש markdown תקין) ולא מצא אזכור של הפיצ'ר, הוא יסומן `false`.
-- **רק אם אין ערך קיים** — לא דורסים `true` שכבר נקבע.
-
-**קוד לפני:**
 ```typescript
-if (mergedFeatures.elevator !== true && !existingFeatures.elevator) {
-  mergedFeatures.elevator = false;
+if (source === 'madlan') {
+  let text = '';
+  const advantagesMatch = markdown.match(/יתרונות הנכס([\s\S]*?)(?:##|תיאור הנכס|מפרט מלא|מידע נוסף|$)/i);
+  if (advantagesMatch) text += advantagesMatch[1] + '\n';
+  const descriptionMatch = markdown.match(/תיאור הנכס([\s\S]*?)(?:##|מפרט מלא|מידע נוסף|צור קשר|$)/i);
+  if (descriptionMatch) text += descriptionMatch[1] + '\n';
+  // NEW: always include "מפרט מלא" section
+  const specMatch = markdown.match(/מפרט מלא([\s\S]*?)(?:##|מידע נוסף|צור קשר|$)/i);
+  if (specMatch) text += specMatch[1] + '\n';
+  if (text.length > 50) return text;
+  return markdown; // fallback: return full text
 }
 ```
 
-**קוד אחרי:**
-```typescript
-const inferFalse = ['elevator', 'parking', 'balcony', 'mamad', 'yard', 'roof', 'storage', 'pets'];
-for (const key of inferFalse) {
-  if (mergedFeatures[key] !== true && !existingFeatures[key]) {
-    mergedFeatures[key] = false;
-  }
-}
-```
+#### 2. תיקון Regex ממ"ד — תמיכה ב-Unicode gershayim
+**קבצים:** `backfill-property-data-jina/index.ts` + `parser-utils.ts`
 
-**קבצים:** `backfill-property-data-jina/index.ts`
+הוספת `״` (U+05F4) לכל regex של ממ"ד:
+- `ממ"?ד` → `ממ["״]?ד`
+- `\bממ"ד\b` → `ממ["״]ד`
 
----
+#### 3. הרצה מחדש של backfill על 1,091 נכסים עם features={}
+**ללא שינוי קוד** — איפוס `backfill_status` ל-`pending` עבור נכסים עם `features = '{}'` כדי שיעברו שוב את ה-backfill עם הלוגיקה המתוקנת. זה יקרה בחלון ה-backfill הבא (00:00-02:30).
 
-### נקודה 3: Strict Matching — null = דחייה
-
-**מצב נוכחי:** כשלקוח דורש פיצ'ר כחובה (`flexible: false`) והנכס הוא `null`, המערכת **מעבירה** אותו עם הערה "לא ידוע ⚠️". זו הסיבה שדירות בלי חניה מופיעות אצל שירי.
-
-**מה משתנה:**
-- **`matching.ts`** — שינוי בכל 8 בדיקות הפיצ'רים (שורות 414-570): אם `flexible === false` והערך הוא `null/undefined` → דחייה (`matchScore: 0`) במקום pass with warning.
-
-**קוד לפני (דוגמה — חניה):**
-```typescript
-if (lead.parking_required && lead.parking_flexible === false) {
-  if (property.features?.parking === false) {
-    return { matchScore: 0, ... };  // reject
-  }
-  if (property.features?.parking === true) {
-    reasons.push('יש חניה (חובה) ✓');
-  } else {
-    reasons.push('חניה - לא ידוע ⚠️');  // ← BUG: עובר!
-  }
-}
-```
-
-**קוד אחרי:**
-```typescript
-if (lead.parking_required && lead.parking_flexible === false) {
-  if (property.features?.parking !== true) {
-    return { matchScore: 0, matchReasons: ['נדרשת חניה - אין או לא ידוע'], priority: 0 };
-  }
-  reasons.push('יש חניה (חובה) ✓');
-}
-```
-
-אותו שינוי ל: elevator, balcony, yard, roof, mamad, pets, furnished.
-
-**קבצים:** `supabase/functions/_shared/matching.ts`
-
----
-
-### נקודה 4: ניקוי התאמות קיימות שגויות
-
-**בעיה:** אחרי התיקונים, יהיו אלפי התאמות ישנות ב-`matched_leads` שלא היו אמורות לעבור. צריך לנקות אותן.
-
-**מה משתנה:**
-- הפעלת ה-matching engine מחדש על כל הנכסים הפעילים (הפונקציה `run-matching` כבר קיימת)
-- זה יחשב מחדש את ה-`matched_leads` לכל נכס לפי הלוגיקה החדשה
-- התאמות שגויות ייעלמו אוטומטית
-
-**ללא שינוי קוד** — רק הפעלה ידנית אחרי deploy של התיקונים.
-
----
+#### 4. הרצת matching מחדש אחרי ה-backfill
+לאחר שה-backfill מסיים — הרצת `run-matching` כדי לעדכן את ההתאמות לפי הנתונים החדשים.
 
 ### סדר ביצוע
-
-1. תיקון backfill (negative inference לכל הפיצ'רים) — deploy
-2. תיקון parser-utils (negative inference בסריקה ראשונה) — deploy
-3. תיקון matching.ts (strict matching) — deploy
-4. הרצת matching מחדש לניקוי התאמות ישנות
+1. תיקון `isolatePropertyDescription` + regex ממ"ד → deploy backfill
+2. תיקון regex ממ"ד ב-parser-utils → deploy scouts
+3. איפוס backfill_status ל-1,091 נכסים
+4. בדיקות חיות — סריקה מכל אתר + בדיקת backfill על נכס ספציפי
+5. הרצת matching מחדש
 
 ### מה לא משתנה
-- שום UI
-- שום טבלה בדאטאבייס
-- לוגיקת סריקה (scouts)
-- לוגיקת בדיקת זמינות
+- לוגיקת matching (כבר תוקנה)
+- UI
+- טבלאות DB
+- לוגיקת סריקה ראשונה (scouts)
+- בדיקות זמינות
 
-### סיכונים
-- **ירידה זמנית בכמות התאמות** — נכסים שעדיין לא עברו backfill עם negative inference ייפלטרו. זה צפוי ורצוי — עדיף 10 התאמות מדויקות מ-44 עם 29 לא רלוונטיות.
-- **אין סיכון לשבירה** — הלוגיקה משתנה רק בכיוון של "יותר מחמיר" בהתאמות. שום פיצ'ר אחר לא מושפע.
+### סיכון
+**אפסי** — שינוי ב-regex ובחילוץ טקסט בלבד. הפיצ'רים רק מתווספים (לא נמחקים). נכסים שכבר יש להם `parking=true` לא יידרסו.
 
