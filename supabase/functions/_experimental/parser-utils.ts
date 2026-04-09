@@ -644,8 +644,8 @@ export function extractFeatures(text: string): PropertyFeatures {
     features.elevator = true;
   }
   
-  // Mamad / Safe room patterns (ממ"ד)
-  if (/ממ"?ד|מרחב\s*מוגן/.test(text)) {
+  // Mamad / Safe room patterns (ממ"ד / ממ״ד)
+  if (/ממ["״]?ד|מרחב\s*מוגן/.test(text)) {
     features.mamad = true;
   }
   

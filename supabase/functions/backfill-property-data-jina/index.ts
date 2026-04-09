@@ -1174,8 +1174,8 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
   )) features.parking = true;
 
   if (hasFeature(
-    [/יש\s*ממ"?ד/i, /כולל\s*ממ"?ד/i, /עם\s*ממ"?ד/i, /\bממ"ד\b/, /\bממד\b/, /מרחב\s*מוגן/i, /חדר\s*ביטחון/i, /ממ"?ד\s*צמוד/i, /ממ"?ד\s*קומתי/i],
-    [/אין\s*ממ"?ד/i, /ללא\s*ממ"?ד/i, /בלי\s*ממ"?ד/i]
+    [/יש\s*ממ["״]?ד/i, /כולל\s*ממ["״]?ד/i, /עם\s*ממ["״]?ד/i, /ממ["״]ד/, /\bממד\b/, /מרחב\s*מוגן/i, /חדר\s*ביטחון/i, /ממ["״]?ד\s*צמוד/i, /ממ["״]?ד\s*קומתי/i],
+    [/אין\s*ממ["״]?ד/i, /ללא\s*ממ["״]?ד/i, /בלי\s*ממ["״]?ד/i]
   )) features.mamad = true;
 
   if (hasFeature(
@@ -1221,8 +1221,11 @@ function isolatePropertyDescription(markdown: string, source?: string): string {
     if (advantagesMatch) text += advantagesMatch[1] + '\n';
     const descriptionMatch = markdown.match(/תיאור הנכס([\s\S]*?)(?:##|מפרט מלא|מידע נוסף|צור קשר|$)/i);
     if (descriptionMatch) text += descriptionMatch[1] + '\n';
+    // Always include "מפרט מלא" section — contains parking/elevator/mamad data
+    const specMatch = markdown.match(/מפרט מלא([\s\S]*?)(?:##|מידע נוסף|צור קשר|$)/i);
+    if (specMatch) text += specMatch[1] + '\n';
     if (text.length > 50) return text;
-    return markdown.replace(/##?\s*מפרט מלא[\s\S]*?(?=##|מידע נוסף|צור קשר|$)/gi, '');
+    return markdown; // fallback: return full text
   }
 
   if (markdown.length < 2000) return markdown;
