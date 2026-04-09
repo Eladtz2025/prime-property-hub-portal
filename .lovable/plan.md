@@ -1,25 +1,30 @@
 
 
-## תיקון שאריות מספר טלי — 5 קבצים שהוחמצו
+## הגבלת המוניטור החי ל-20 פריטים בכל טאב
 
 ### הבעיה
-בהחלפה הקודמת הוחמצו מספר מקומות שעדיין מפנים ל-054-228-4477 / 972542284477 / טלי.
+הפיד של כל טאב במוניטור טוען מאות פריטים (200 בזמינות, 250 בסריקה/כפילויות/התאמות) — מכביד על ה-DOM ומאט את העבודה.
 
-### קבצים שצריך לתקן
+### הפתרון
+שינוי שורה אחת ב-`LiveMonitor.tsx` — חיתוך `filteredFeed` ל-20 פריטים לפני שליחה ל-`LiveFeedTab`:
 
-| # | קובץ | מה להחליף |
-|---|-------|-----------|
-| 1 | `src/pages/PropertyDetailPage.tsx` (שורה 47) | `972542284477` → `972545503055` |
-| 2 | `src/pages/PropertyDetailPage.tsx` (שורה 54) | `0542284477` → `0545503055` |
-| 3 | `src/pages/en/PropertyDetail.tsx` (שורה 54) | `0542284477` → `0545503055` |
-| 4 | `src/pages/en/Contact.tsx` (שורות 69, 110, 113) | טלפון 054-228-4477 → 054-550-3055 |
-| 5 | `src/components/he/Header.tsx` (שורות 91, 155) | `972542284477` → `972545503055`, "טלי: 054-228-4477" → "אלעד: 054-550-3055" |
-| 6 | `src/components/en/Footer.tsx` (שורות 128-129) | `0542284477` → `0545503055`, תצוגה → 054-550-3055 |
-| 7 | `supabase/functions/check-lease-expiry/index.ts` (שורה 19) | `972542284477` → `972545503055`, שם "טלי" → "אלעד" |
+```typescript
+// שורה 48, שינוי:
+return feedItems.filter(f => f.type === activeTab);
+// ל:
+return feedItems.filter(f => f.type === activeTab).slice(0, 20);
+```
 
-### הערה
-`phoneFormatter.ts` — רק קומנטים/דוגמאות, לא משפיע על הפונקציונליות. אפשר להחליף גם שם לסדר.
+בנוסף, הקטנת ה-limits ב-`useMonitorData.ts` כדי לא לשלוף נתונים מיותרים מ-DB:
+- שורה 333: `limit(250)` → `limit(50)` (scan properties)
+- שורה 377: `limit(250)` → `limit(50)` (dedup properties)
+- שורה 396: `limit(250)` → `limit(50)` (matching properties)
+- שורה 454: `.slice(0, 200)` → `.slice(0, 50)` (availability details)
+
+### קבצים שמשתנים
+1. `src/components/scout/checks/LiveMonitor.tsx` — slice(0, 20) על filteredFeed
+2. `src/components/scout/checks/monitor/useMonitorData.ts` — הקטנת limits מ-250/200 ל-50
 
 ### סיכון
-**אפסי** — החלפת מחרוזות בלבד.
+**אפסי** — רק הצגה מצומצמת, אין שינוי בלוגיקה.
 
