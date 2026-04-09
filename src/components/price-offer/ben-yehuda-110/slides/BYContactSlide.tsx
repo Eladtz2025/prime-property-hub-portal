@@ -118,21 +118,21 @@ const BYContactSlide = ({ content }: BYContactSlideProps) => {
             className="text-white text-xs md:text-sm font-light mb-2 md:mb-3"
             style={{ textShadow: softShadow }}
           >
-            Tali Silberberg · Elad Tzabari
+            Elad Tzabari · Tali Silberberg
           </p>
 
           {/* Contact Buttons */}
           <div className="flex flex-col sm:flex-row items-center gap-2">
             <a 
-              href="tel:054-228-4477" 
+              href="tel:054-550-3055" 
               className="flex items-center gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors px-3 md:px-5 py-1.5 md:py-2 rounded-full"
             >
               <Phone className="w-3 h-3 md:w-4 md:h-4 text-[#f5c242]" />
-              <span className="text-white text-xs md:text-sm font-medium">054-228-4477</span>
+              <span className="text-white text-xs md:text-sm font-medium">054-550-3055</span>
             </a>
 
             <a 
-              href="https://wa.me/972542284477" 
+              href="https://wa.me/972545503055" 
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] transition-colors px-3 md:px-5 py-1.5 md:py-2 rounded-full"

@@ -134,7 +134,7 @@ const PriceOfferView = () => {
       ? `היי, ראיתי את הצעת המחיר לנכס ${offer.property_title}. אשמח לשמוע פרטים נוספים.`
       : `Hi, I saw the price offer for ${offer.property_title}. I'd like to hear more details.`;
     
-    const whatsappNumber = '972542284477';
+    const whatsappNumber = '972545503055';
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };

@@ -79,9 +79,9 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
         </div>
 
         {/* Two Profile Cards */}
-        <div className="w-full max-w-4xl grid grid-cols-2 gap-2 md:gap-3 lg:gap-4 mb-1.5 md:mb-2">
+        <div className="w-full max-w-4xl flex justify-center mb-1.5 md:mb-2">
           {/* Elad Card */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-4 text-center">
+          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-4 text-center max-w-xs w-full">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-1 md:mb-2">
               <Award className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
             </div>
@@ -102,31 +102,6 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
             </div>
             <p className="text-white/90 text-[10px] md:text-xs font-light">
               Tel Aviv market expertise
-            </p>
-          </div>
-
-          {/* Tali Card */}
-          <div className="bg-[#8b7765]/70 backdrop-blur-sm rounded-lg p-2 md:p-4 text-center">
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5c242]/20 flex items-center justify-center mx-auto mb-1 md:mb-2">
-              <Globe className="w-4 h-4 md:w-5 md:h-5 text-[#f5c242]" />
-            </div>
-            <h4 
-              className="text-xs md:text-sm font-serif text-white mb-1"
-              style={{ textShadow: softShadow }}
-            >
-              Tali Silberberg
-            </h4>
-            <div className="mb-1">
-              <span 
-                className="text-xl md:text-3xl font-bold text-[#f5c242]"
-                style={{ textShadow: softShadow }}
-              >
-                10+
-              </span>
-              <span className="text-white/80 text-[10px] ml-1">Years</span>
-            </div>
-            <p className="text-white/90 text-[10px] md:text-xs font-light">
-              International perspective
             </p>
           </div>
         </div>

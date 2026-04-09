@@ -88,7 +88,7 @@ const EnglishHeader = () => {
             {/* Right: Phone + Mail + Hamburger */}
             <div className="flex items-center gap-3 md:gap-4 z-10">
               <a
-                href="tel:+972542284477"
+                href="tel:+972545503055"
                 className="p-2 transition-all duration-300 hover:scale-110"
                 style={{ color: iconColor, filter: iconFilter }}
                 aria-label="Call us"
@@ -152,7 +152,7 @@ const EnglishHeader = () => {
             <div className="flex flex-wrap items-center justify-center gap-4 text-white/50 text-xs md:text-sm tracking-wide">
               <a href="mailto:citymarketlv@gmail.com" className="hover:text-white/80 transition-colors">citymarketlv@gmail.com</a>
               <span className="hidden md:inline">·</span>
-              <a href="tel:+972542284477" className="hover:text-white/80 transition-colors">Tali: +972-54-228-4477</a>
+              <a href="tel:+972545503055" className="hover:text-white/80 transition-colors">Elad: +972-54-550-3055</a>
             </div>
           </div>
         </div>
