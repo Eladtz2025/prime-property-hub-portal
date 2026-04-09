@@ -322,13 +322,8 @@ const PropertyDetailPage = () => {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Right Column - Image Gallery */}
-          <div className="lg:col-span-2 order-1 lg:order-1">
-            <ImageCarousel images={propertyImages} furnishedImages={furnishedImages} priceLabel="" />
-          </div>
-
-          {/* Left Column - Property Details */}
-          <div className="space-y-6 order-2 lg:order-2">
+          {/* Right Column (RTL) - Property Details */}
+          <div className="space-y-6 order-2 lg:order-1">
             {/* Badge and Title */}
             <div className="text-right">
               <div className="mb-3">
@@ -425,8 +420,13 @@ const PropertyDetailPage = () => {
               onClick={handleCopyLink}
             >
               {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-              שתף נכס זה
+             שתף נכס זה
             </Button>
+          </div>
+
+          {/* Left Column (RTL) - Image Gallery */}
+          <div className="lg:col-span-2 order-1 lg:order-2">
+            <ImageCarousel images={propertyImages} furnishedImages={furnishedImages} priceLabel="" />
           </div>
         </div>
 
