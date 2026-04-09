@@ -9,8 +9,8 @@ const queryClient = new QueryClient({
         logger.warn(`Query failed ${failureCount} times`, { error });
         return failureCount < 3;
       },
-      staleTime: 2 * 60 * 1000, // 2 minutes
-      gcTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
     },
     mutations: {
       retry: (failureCount, error) => {

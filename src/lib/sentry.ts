@@ -14,12 +14,12 @@ export const initSentry = () => {
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration(),
     ],
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 0.1,
     replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
+    replaysOnErrorSampleRate: 0.5,
   });
   
-  console.log('[Sentry] Initialized successfully');
+  logger.info('[Sentry] Initialized successfully');
 };
 
 export const captureError = (
