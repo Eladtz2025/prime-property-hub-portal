@@ -1,50 +1,43 @@
 
 
-## תוכנית — שיפור חלון הוספת נכס חדש
+## תיקון בחירת תמונה ראשית
 
-### שני תיקונים נדרשים
+### הבאג
+בקוד השמירה (`PropertyEditRow.tsx` שורה 340 ו-`PropertyEditModal.tsx` שורה 406):
 
----
+```typescript
+is_main: image.isPrimary || i === 0
+```
 
-### 1. בחירת בעלים/מתווך קיים בסקשן "פרטי הבעלים"
+הביטוי `|| i === 0` גורם לתמונה הראשונה **תמיד** להישמר כ-primary, גם אם המשתמש בחר תמונה אחרת. אם המשתמש סימן את תמונה #3 כראשית, גם תמונה #0 נשמרת כ-`is_main: true` — ואז בטעינה מחדש, שתי תמונות מסומנות, או שתמונה #0 "מנצחת" כי היא הראשונה.
 
-**מצב נוכחי:** שדות טקסט חופשי בלבד (שם, טלפון, אימייל).
+### התיקון
 
-**שינוי:** הוספת שדה בחירה מעל שדות הבעלים עם 3 אפשרויות:
-- **הכנסה ידנית** (ברירת מחדל — כמו היום)
-- **בחירת בעלים קיים** — שליפה מטבלת `properties` (שדות `owner_name`, `owner_phone` ייחודיים)
-- **בחירת מתווך קיים** — שליפה מטבלת `brokers` (שם + טלפון + משרד)
+**2 קבצים:**
 
-כשנבחר בעלים/מתווך מהרשימה, השדות (שם, טלפון, אימייל) מתמלאים אוטומטית. המשתמש יכול לערוך אותם אחרי המילוי.
+1. **`src/components/PropertyEditRow.tsx`** (שורה 340):
+```typescript
+// לפני:
+is_main: image.isPrimary || i === 0,
+// אחרי:
+is_main: image.isPrimary === true,
+```
 
-**טכני:**
-- שאילתת `properties` עם `select distinct owner_name, owner_phone, owner_email` + filter ריקים
-- שאילתת `brokers` עם `select name, phone, office_name`
-- Combobox/Select עם חיפוש פנימי
+2. **`src/components/PropertyEditModal.tsx`** (שורה 406):
+```typescript
+// לפני:
+is_main: image.isPrimary || i === 0,
+// אחרי:
+is_main: image.isPrimary === true,
+```
 
----
-
-### 2. תיקון העלאת תמונות מחלון הפופ-אפ
-
-**הבעיה:** אחרי `onPropertyAdded()` (שורה 259), הקוד מנסה למצוא את ה-property ID על ידי שאילתת DB לפי כתובת ועיר (שורות 263-269). זה כושל כי:
-- `addProperty` מייצר `propertyId` עם `crypto.randomUUID()` ומחזיר אותו
-- אבל `onPropertyAdded` לא מחזיר את ה-ID חזרה ל-Modal
-- התחרות (race condition) בין insert לשאילתה
-
-**פתרון:** שינוי ה-flow כך ש-`onPropertyAdded` יחזיר את ה-property ID:
-- שינוי ה-interface: `onPropertyAdded: (property) => Promise<string>` (מחזיר ID)
-- בהורים (`Properties.tsx`, `AdminDashboard.tsx`): `addProperty` כבר מחזיר `Property` עם `id` — פשוט להחזיר אותו
-- ב-`AddPropertyModal`: שימוש ב-ID המוחזר ישירות לשמירת תמונות, במקום שאילתת חיפוש
-
----
-
-### קבצים שמשתנים
-1. **`src/components/AddPropertyModal.tsx`** — הוספת בחירת בעלים/מתווך + תיקון שמירת תמונות
-2. **`src/pages/Properties.tsx`** — החזרת property ID מ-`onPropertyAdded`
-3. **`src/pages/AdminDashboard.tsx`** — החזרת property ID מ-`onPropertyAdded`
+בנוסף — fallback ב-`setPrimaryImage` (ב-`ImageUpload.tsx`) כבר מטפל במקרה שאין אף תמונה ראשית, אז ה-`|| i === 0` מיותר לחלוטין.
 
 ### מה לא משתנה
-- `ImageUpload.tsx` — הקומפוננטה עצמה עובדת תקין
+- ImageUpload.tsx — הלוגיקה המקומית עובדת
+- PropertyGallery.tsx — לא רלוונטי (אין שם בחירת primary)
 - טבלאות DB
-- `useSupabasePropertyData.ts`
+
+### סיכון
+**אפסי** — תיקון שורה אחת בכל קובץ.
 
