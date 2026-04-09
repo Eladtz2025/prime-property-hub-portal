@@ -1,30 +1,50 @@
 
 
-## הגבלת המוניטור החי ל-20 פריטים בכל טאב
+## תיקונים בסיכון אפסי — שלושה שינויים בטוחים
 
-### הבעיה
-הפיד של כל טאב במוניטור טוען מאות פריטים (200 בזמינות, 250 בסריקה/כפילויות/התאמות) — מכביד על ה-DOM ומאט את העבודה.
+### 1. הורדת Sentry Sample Rates (#4)
+**קובץ:** `src/lib/sentry.ts`
 
-### הפתרון
-שינוי שורה אחת ב-`LiveMonitor.tsx` — חיתוך `filteredFeed` ל-20 פריטים לפני שליחה ל-`LiveFeedTab`:
+שינוי 2 מספרים בלבד:
+- `tracesSampleRate: 1.0` → `0.1` (10% במקום 100%)
+- `replaysOnErrorSampleRate: 1.0` → `0.5` (50% במקום 100%)
 
-```typescript
-// שורה 48, שינוי:
-return feedItems.filter(f => f.type === activeTab);
-// ל:
-return feedItems.filter(f => f.type === activeTab).slice(0, 20);
-```
+חוסך עלויות Sentry ומפחית עומס ביצועים. `replaysSessionSampleRate: 0.1` נשאר כמו שהוא.
 
-בנוסף, הקטנת ה-limits ב-`useMonitorData.ts` כדי לא לשלוף נתונים מיותרים מ-DB:
-- שורה 333: `limit(250)` → `limit(50)` (scan properties)
-- שורה 377: `limit(250)` → `limit(50)` (dedup properties)
-- שורה 396: `limit(250)` → `limit(50)` (matching properties)
-- שורה 454: `.slice(0, 200)` → `.slice(0, 50)` (availability details)
+### 2. החלפת console.log ל-logger (#11)
+**179 שימושים ב-12 קבצים** (לא כולל Edge Functions שרצים ב-Deno):
 
-### קבצים שמשתנים
-1. `src/components/scout/checks/LiveMonitor.tsx` — slice(0, 20) על filteredFeed
-2. `src/components/scout/checks/monitor/useMonitorData.ts` — הקטנת limits מ-250/200 ל-50
+| קובץ | console.log |
+|-------|-------------|
+| `src/utils/pwa.ts` | 4 |
+| `src/utils/notifyNewLead.ts` | 1 |
+| `src/lib/sentry.ts` | 2 |
+| `src/pages/PitchDeckBuilder.tsx` | 3 |
+| `src/pages/ImportFromStorage.tsx` | 2 |
+| `src/hooks/useTranslation.ts` | 1 |
+| `src/lib/owner-portal.ts` | 4 |
+| `src/components/PropertyDetailModal.tsx` | 1+ |
+| ועוד... | |
 
-### סיכון
-**אפסי** — רק הצגה מצומצמת, אין שינוי בלוגיקה.
+ה-`logger` כבר קיים ב-`src/utils/logger.ts` ועובד רק ב-DEV. פשוט מחליפים `console.log` → `logger.info` ו-`console.error` → `logger.error`.
+
+**לא נוגעים ב:**
+- `scripts/processExcelToJSON.ts` (סקריפט build, לא runtime)
+- `supabase/functions/*` (Deno, לא משתמש ב-logger)
+
+### 3. שיפור React Query Cache (#20)
+**קובץ:** `src/components/DataProvider.tsx`
+
+שינוי ברירת המחדל:
+- `staleTime: 2 * 60 * 1000` → `5 * 60 * 1000` (5 דקות)
+- `gcTime: 5 * 60 * 1000` → `10 * 60 * 1000` (10 דקות)
+
+מפחית שאילתות מיותרות לנתונים שלא משתנים מהר. כל hook ספציפי יכול לדרוס עם staleTime משלו.
+
+---
+
+### סיכום
+- **3 שינויים**, כולם config/logging בלבד
+- **0 שינויי לוגיקה** — שום דבר לא יכול להישבר
+- Edge Functions לא נוגעים
 
