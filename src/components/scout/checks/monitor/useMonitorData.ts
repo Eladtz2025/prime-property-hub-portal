@@ -413,7 +413,8 @@ export function useMonitorData() {
         .from('availability_check_runs')
         .select('started_at, completed_at, properties_checked, inactive_marked, status, run_details')
         .gte('started_at', since.toISOString())
-        .order('started_at', { ascending: false });
+        .order('started_at', { ascending: false })
+        .limit(1);
       return data ?? [];
     },
     refetchInterval: 30000,
@@ -447,7 +448,12 @@ export function useMonitorData() {
       ? (Array.isArray(availSource.run_details) ? availSource.run_details as unknown as AvailDetail[] : [])
       : [];
 
-    availDetails.forEach(d => {
+    // Limit to 200 most recent items for performance (sort by checked_at desc, take 200)
+    const limitedAvailDetails = availDetails
+      .sort((a, b) => (b.checked_at || '').localeCompare(a.checked_at || ''))
+      .slice(0, 200);
+
+    limitedAvailDetails.forEach(d => {
       const { label, detail, status } = availReasonDetail(d.reason, d.is_inactive);
       const eventKind: FeedItem['eventKind'] = d.is_inactive ? 'inactive' : d.reason.includes('timeout') ? 'timeout' : 'checked';
       items.push({
