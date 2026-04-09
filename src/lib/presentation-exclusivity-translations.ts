@@ -80,7 +80,7 @@ export const presentationExclusivityTranslations = {
     errorConfirmation: "You must confirm the terms",
     
     // Agent info
-    agentName: "Tali Silberberg",
+    agentName: "Elad Tzabari",
     agentLicense: "License #3252315",
     companyName: "City Market Properties",
   },
@@ -163,7 +163,7 @@ export const presentationExclusivityTranslations = {
     errorConfirmation: "יש לאשר את התנאים",
     
     // Agent info
-    agentName: "טלי זילברברג",
+    agentName: "אלעד צברי",
     agentLicense: "רישיון מספר 3252315",
     companyName: "סיטי מרקט נכסים",
   }

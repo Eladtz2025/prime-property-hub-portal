@@ -35,7 +35,7 @@ const NextStepsSlide = ({
     { icon: "users", title: "ביקורים וסיורים", description: "אני מלווה כל ביקור ומדווחת בזמן אמת", timing: "שבוע 1-3" },
     { icon: "handshake", title: "סגירת עסקה", description: "מו״מ, חתימה על חוזה, ומסירת מפתחות", timing: "שבוע 2-6" },
   ],
-  whatsappNumber = "972542284477",
+  whatsappNumber = "972545503055",
   propertyTitle = "הנכס שלי",
   closingMessage = "בואו נתחיל. אשמח לענות על כל שאלה.",
 }: NextStepsSlideProps) => {

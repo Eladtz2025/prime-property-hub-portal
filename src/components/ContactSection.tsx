@@ -18,8 +18,8 @@ const ContactSection = () => {
               <Phone className="h-6 w-6 text-primary" />
             </div>
             <h3 className="font-bold mb-2">טלפון</h3>
-            <a href="tel:0542284477" className="text-muted-foreground hover:text-primary transition-colors">
-              054-228-4477
+            <a href="tel:0545503055" className="text-muted-foreground hover:text-primary transition-colors">
+              054-550-3055
             </a>
           </Card>
 

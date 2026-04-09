@@ -66,7 +66,7 @@ const Contact = () => {
       <Helmet>
         <html lang="he" dir="rtl" />
         <title>צור קשר - CITY MARKET Properties | נדל"ן בתל אביב</title>
-        <meta name="description" content="צרו קשר עם CITY MARKET Properties. מומחים בתיווך נדל&quot;ן, השכרות, מכירות וניהול נכסים בתל אביב. טלפון: 054-228-4477" />
+        <meta name="description" content="צרו קשר עם CITY MARKET Properties. מומחים בתיווך נדל&quot;ן, השכרות, מכירות וניהול נכסים בתל אביב. טלפון: 054-550-3055" />
         <meta property="og:title" content="צור קשר - CITY MARKET Properties" />
         <meta property="og:description" content="צרו קשר עם מומחי הנדל&quot;ן שלנו בתל אביב" />
         <meta property="og:image" content="https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png" />
@@ -111,10 +111,10 @@ const Contact = () => {
                       טלפון
                     </h3>
                     <a 
-                      href="tel:+972542284477" 
+                      href="tel:+972545503055" 
                       className="font-montserrat text-muted-foreground hover:text-primary transition-colors cursor-pointer underline"
                     >
-                      054-228-4477
+                      054-550-3055
                     </a>
                   </div>
                 </div>

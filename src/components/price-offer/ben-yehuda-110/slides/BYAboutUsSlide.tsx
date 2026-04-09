@@ -114,7 +114,7 @@ const BYAboutUsSlide = ({ content }: BYAboutUsSlideProps) => {
               className="text-xs md:text-sm font-serif text-white mb-1"
               style={{ textShadow: softShadow }}
             >
-              Tali Silberberg
+              Elad Tzabari
             </h4>
             <div className="mb-1">
               <span 

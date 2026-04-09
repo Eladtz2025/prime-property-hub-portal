@@ -23,8 +23,7 @@ const DynamicAboutUsSlide = ({
   const isRTL = language === 'he';
 
   const defaultTeamMembers = [
-    { name: "Elad Tzabari", years: "15+", expertise: "Tel Aviv market expertise", icon: "Award" },
-    { name: "Tali Silberberg", years: "10+", expertise: "International perspective", icon: "Globe" }
+    { name: "Elad Tzabari", years: "15+", expertise: "Tel Aviv market expertise", icon: "Award" }
   ];
 
   const teamMembers = data.team_members?.length ? data.team_members : defaultTeamMembers;

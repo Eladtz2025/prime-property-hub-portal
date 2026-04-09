@@ -185,7 +185,7 @@ export const generatePresentationExclusivityPDF = async (formData: PresentationE
       <div style="flex: 1; text-align: center;">
         <p style="font-size: 12px; color: #f5c242; margin-bottom: 10px;">${labels.agentSig}</p>
         ${formData.agentSignature ? `<img src="${formData.agentSignature}" style="max-width: 150px; max-height: 60px; background: white; border-radius: 4px; padding: 5px;" />` : '<div style="height: 60px; border-bottom: 1px solid rgba(255,255,255,0.5);"></div>'}
-        <p style="font-size: 11px; margin-top: 8px;">${isHebrew ? 'טלי זילברברג - סיטי מרקט נכסים' : 'Tali Silberberg - City Market Properties'}</p>
+        <p style="font-size: 11px; margin-top: 8px;">${isHebrew ? 'אלעד צברי - סיטי מרקט נכסים' : 'Elad Tzabari - City Market Properties'}</p>
       </div>
     </div>
     
