@@ -493,18 +493,7 @@ export async function calculateMatch(
     }
   }
   
-  // Pets
-  if (lead.pets === true && lead.pets_flexible === false) {
-    if (property.features?.pets === false || property.features?.allows_pets === false) {
-      return { lead, matchScore: 0, matchReasons: ['נדרש לאפשר חיות מחמד - לא מותר בנכס'], priority: 0 };
-    }
-    if (property.features?.pets !== true && property.features?.allows_pets !== true) {
-      return { lead, matchScore: 0, matchReasons: ['נדרש לאפשר חיות מחמד - אין או לא ידוע'], priority: 0 };
-    }
-    reasons.push('מאפשר חיות מחמד (חובה) ✓');
-  } else if (lead.pets === true && (property.features?.pets === true || property.features?.allows_pets === true)) {
-    reasons.push('מאפשר חיות מחמד ✓');
-  }
+  // Pets — removed from matching logic (data coverage too low: 5-18%)
   
   
   // ===== Furnished =====
@@ -698,11 +687,7 @@ export function calculatePriorityScore(property: ScoutedProperty, lead: ContactL
     priority += 6;
   }
   
-  // Pets: +4 pts
-  if (lead.pets && lead.pets_flexible && 
-      (property.features?.pets === true || property.features?.allows_pets === true)) {
-    priority += 4;
-  }
+  // Pets — removed from priority logic (data coverage too low)
   
   // Furnished: +4 pts
   if (lead.furnished_required && lead.furnished_flexible && property.features?.furnished) {
@@ -728,9 +713,7 @@ export function calculatePriorityScore(property: ScoutedProperty, lead: ContactL
   if (lead.roof_required && !lead.roof_flexible && property.features?.roof == null) {
     priority -= 5;
   }
-  if (lead.pets && !lead.pets_flexible && property.features?.pets == null && property.features?.allows_pets == null) {
-    priority -= 5;
-  }
+  // Pets penalty — removed (data coverage too low)
   if (lead.furnished_required && !lead.furnished_flexible && property.features?.furnished == null) {
     priority -= 5;
   }
