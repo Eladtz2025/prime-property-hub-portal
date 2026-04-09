@@ -1,66 +1,46 @@
 
 
-## תוכנית תיקון — שיפור חילוץ פיצ'רים ותיקון נתונים קיימים
+## תיקון ביצועים — טאב זמינות במוניטור
 
-### ממצאי הבדיקה
+### הבעיה
+- `run_details` בריצה האחרונה: **2,420 פריטים, 100KB**
+- ריצות גדולות: עד **11,907 פריטים, 535KB**
+- כל הנתונים נטענים לזיכרון, ממופים ל-FeedItem, ו-**כל 2,420 השורות מרונדרות ב-DOM בבת אחת**
+- אין pagination, אין virtualization, אין limit
 
-| ממצא | חומרה | השפעה |
-|------|--------|--------|
-| **1,091 נכסים עם features={}** למרות backfill_status=completed | קריטית | נכסים אלו נדחים מכל התאמה שדורשת פיצ'ר כחובה |
-| **isolatePropertyDescription חותך את "מפרט מלא"** — סקשן עם פרטי חניה/מעלית/ממ"ד של מדל"ן | קריטית | ~50% מנכסי מדל"ן לא מזוהים |
-| **Regex ממ"ד לא תופס Unicode gershayim** — מדל"ן משתמש ב-`״` (U+05F4) ולא `"` | בינונית | 89% mamad_null |
-| **parser-utils.ts ממ"ד** — אותה בעיה ברגקס | בינונית | סריקה ראשונה מפספסת |
+### הפתרון — שתי שכבות
 
-### מה מתוקן
+#### 1. הגבלת הנתונים מה-DB
+**קובץ:** `src/components/scout/checks/monitor/useMonitorData.ts`
 
-#### 1. תיקון `isolatePropertyDescription` למדל"ן
-**קובץ:** `backfill-property-data-jina/index.ts` (שורות 1217-1226)
+בשאילתת `recentAvailRuns` (שורה 407-420), ה-`run_details` נטען בשלמותו. הפתרון:
+- הוספת `.limit(1)` לשאילתה — אין צורך בכל הריצות של היום, רק האחרונה
+- זה כבר יחסוך טעינה של ריצות ישנות עם עוד אלפי פריטים
 
-**לפני:** אם "יתרונות" + "תיאור" > 50 תווים → מחזיר רק אותם, מדלג על "מפרט מלא"
-**אחרי:** תמיד מוסיף את סקשן "מפרט מלא" לטקסט המחולץ:
+#### 2. חיתוך ה-feed ב-client
+**קובץ:** `src/components/scout/checks/monitor/useMonitorData.ts`
 
-```typescript
-if (source === 'madlan') {
-  let text = '';
-  const advantagesMatch = markdown.match(/יתרונות הנכס([\s\S]*?)(?:##|תיאור הנכס|מפרט מלא|מידע נוסף|$)/i);
-  if (advantagesMatch) text += advantagesMatch[1] + '\n';
-  const descriptionMatch = markdown.match(/תיאור הנכס([\s\S]*?)(?:##|מפרט מלא|מידע נוסף|צור קשר|$)/i);
-  if (descriptionMatch) text += descriptionMatch[1] + '\n';
-  // NEW: always include "מפרט מלא" section
-  const specMatch = markdown.match(/מפרט מלא([\s\S]*?)(?:##|מידע נוסף|צור קשר|$)/i);
-  if (specMatch) text += specMatch[1] + '\n';
-  if (text.length > 50) return text;
-  return markdown; // fallback: return full text
-}
-```
+בבניית ה-`feedItems` (שורה 444-464), כל ה-`availDetails` מתווספים ל-feed. הפתרון:
+- הגבלת `availDetails` ל-**200 פריטים אחרונים** (לפי `checked_at`)
+- המשתמש רואה את ה-200 האחרונים — מספיק לניטור בזמן אמת
+- הסטטיסטיקות (2420 בבאדג') ממשיכות להיות מחושבות מ-`properties_checked` — לא מושפעות
 
-#### 2. תיקון Regex ממ"ד — תמיכה ב-Unicode gershayim
-**קבצים:** `backfill-property-data-jina/index.ts` + `parser-utils.ts`
+#### 3. (אופציונלי בעתיד) Virtualization
+אם עדיין יהיה צורך — הוספת `react-window` ל-`LiveFeedTab`. אבל עם 200 שורות זה לא נדרש.
 
-הוספת `״` (U+05F4) לכל regex של ממ"ד:
-- `ממ"?ד` → `ממ["״]?ד`
-- `\bממ"ד\b` → `ממ["״]ד`
-
-#### 3. הרצה מחדש של backfill על 1,091 נכסים עם features={}
-**ללא שינוי קוד** — איפוס `backfill_status` ל-`pending` עבור נכסים עם `features = '{}'` כדי שיעברו שוב את ה-backfill עם הלוגיקה המתוקנת. זה יקרה בחלון ה-backfill הבא (00:00-02:30).
-
-#### 4. הרצת matching מחדש אחרי ה-backfill
-לאחר שה-backfill מסיים — הרצת `run-matching` כדי לעדכן את ההתאמות לפי הנתונים החדשים.
-
-### סדר ביצוע
-1. תיקון `isolatePropertyDescription` + regex ממ"ד → deploy backfill
-2. תיקון regex ממ"ד ב-parser-utils → deploy scouts
-3. איפוס backfill_status ל-1,091 נכסים
-4. בדיקות חיות — סריקה מכל אתר + בדיקת backfill על נכס ספציפי
-5. הרצת matching מחדש
+### קבצים שמשתנים
+1. `src/components/scout/checks/monitor/useMonitorData.ts` — limit(1) על שאילתה + חיתוך availDetails ל-200
 
 ### מה לא משתנה
-- לוגיקת matching (כבר תוקנה)
-- UI
-- טבלאות DB
-- לוגיקת סריקה ראשונה (scouts)
-- בדיקות זמינות
+- UI של המוניטור
+- לוגיקת שאר הטאבים (סריקה, השלמה, כפילויות, התאמות)
+- שום edge function או טבלה
 
 ### סיכון
-**אפסי** — שינוי ב-regex ובחילוץ טקסט בלבד. הפיצ'רים רק מתווספים (לא נמחקים). נכסים שכבר יש להם `parking=true` לא יידרסו.
+**אפסי** — רק מגבילים את כמות הנתונים שמוצגים. הנתונים ב-DB לא משתנים.
+
+### תוצאה צפויה
+- טעינת הטאב: מ-~535KB ל-~25KB (הריצה האחרונה בלבד, 200 פריטים)
+- רינדור DOM: מ-2,420 שורות ל-200
+- זמן תגובה משופר משמעותית
 
