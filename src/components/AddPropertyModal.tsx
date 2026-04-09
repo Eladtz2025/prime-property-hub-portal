@@ -109,7 +109,53 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const { logActivity } = useActivityLogger();
   const { toast } = useToast();
   const [errors, setErrors] = useState<{ ownerPhone?: string; ownerEmail?: string; tenantPhone?: string }>({});
-  const [touched, setTouched] = useState<{ ownerPhone?: boolean; ownerEmail?: boolean; tenantPhone?: boolean }>({});
+  const [ownerSource, setOwnerSource] = useState<OwnerSourceType>('manual');
+
+  // Load existing owners (distinct from properties table)
+  const { data: existingOwners = [] } = useQuery({
+    queryKey: ['existing-owners'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('owner_name, owner_phone, owner_email')
+        .not('owner_name', 'is', null)
+        .not('owner_name', 'eq', '');
+      
+      if (error) throw error;
+      
+      // Deduplicate by name+phone
+      const seen = new Set<string>();
+      const unique: ExistingOwner[] = [];
+      for (const row of data || []) {
+        const key = `${row.owner_name}-${row.owner_phone || ''}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push({
+            ownerName: row.owner_name || '',
+            ownerPhone: row.owner_phone || '',
+            ownerEmail: row.owner_email || '',
+          });
+        }
+      }
+      return unique.sort((a, b) => a.ownerName.localeCompare(b.ownerName, 'he'));
+    },
+    enabled: isOpen,
+  });
+
+  // Load existing brokers
+  const { data: existingBrokers = [] } = useQuery({
+    queryKey: ['existing-brokers-for-modal'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('brokers')
+        .select('id, name, phone, office_name')
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isOpen,
+  });
 
   const handleFieldBlur = (field: 'ownerPhone' | 'ownerEmail' | 'tenantPhone') => {
     setTouched(prev => ({ ...prev, [field]: true }));
