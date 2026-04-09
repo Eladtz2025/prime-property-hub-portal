@@ -425,8 +425,10 @@ const PropertyDetailPage = () => {
           </div>
 
           {/* Left Column (RTL) - Image Gallery */}
-          <div className="lg:col-span-2 order-1 lg:order-2">
-            <ImageCarousel images={propertyImages} furnishedImages={furnishedImages} priceLabel="" />
+          <div className="lg:col-span-2 order-1 lg:order-2 h-full">
+            <div className="h-full overflow-hidden rounded-xl">
+              <ImageCarousel images={propertyImages} furnishedImages={furnishedImages} priceLabel="" />
+            </div>
           </div>
         </div>
 
