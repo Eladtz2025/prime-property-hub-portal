@@ -1,33 +1,50 @@
 
 
-## איפוס backfill_status לנכסים קיימים — עיבוד מחדש עם לוגיקת שלילה מתוקנת
+## תוכנית — שיפור חלון הוספת נכס חדש
 
-### הבעיה
-הנכסים הקיימים ב-DB (כולל אלו של שירי ורוני) עדיין מחזיקים ערכי features שגויים (למשל `parking: true` כש"חניה: אין"). הלוגיקה תוקנה אבל הנתונים הישנים לא עודכנו.
+### שני תיקונים נדרשים
 
-### מה צריך לעשות
+---
 
-**פעולה אחת:** איפוס `backfill_status` ל-`pending` + ניקוי `features` לכל הנכסים הפעילים, כדי שבהרצת backfill הבאה הם יעובדו מחדש עם הלוגיקה המתוקנת.
+### 1. בחירת בעלים/מתווך קיים בסקשן "פרטי הבעלים"
 
-```sql
-UPDATE scouted_properties
-SET 
-  backfill_status = 'pending',
-  features = '{}'::jsonb
-WHERE is_active = true
-  AND source IN ('homeless', 'madlan');
-```
+**מצב נוכחי:** שדות טקסט חופשי בלבד (שם, טלפון, אימייל).
 
-**הערה:** נכסי yad2 לא עוברים backfill (Jina חסום) — הפיצ'רים שלהם מגיעים רק מהסריקה הראשונה. לכן לא נאפס אותם — התיקון ב-`extractFeatures` כבר ישפיע על סריקות חדשות בלבד.
+**שינוי:** הוספת שדה בחירה מעל שדות הבעלים עם 3 אפשרויות:
+- **הכנסה ידנית** (ברירת מחדל — כמו היום)
+- **בחירת בעלים קיים** — שליפה מטבלת `properties` (שדות `owner_name`, `owner_phone` ייחודיים)
+- **בחירת מתווך קיים** — שליפה מטבלת `brokers` (שם + טלפון + משרד)
 
-### תוצאה צפויה
-- ~1,463 נכסים (homeless + madlan) יעברו עיבוד מחדש בהרצת backfill הבאה (00:00-02:30)
-- פיצ'רים שליליים ("חניה: אין") יזוהו נכון כ-`false`
-- התאמות שגויות (כמו שירי ורוני) ייפלטרו בהרצת matching הבאה
+כשנבחר בעלים/מתווך מהרשימה, השדות (שם, טלפון, אימייל) מתמלאים אוטומטית. המשתמש יכול לערוך אותם אחרי המילוי.
 
-### קבצים/טבלאות שמשתנים
-- `scouted_properties` — עדכון נתונים בלבד (לא שינוי סכמה)
+**טכני:**
+- שאילתת `properties` עם `select distinct owner_name, owner_phone, owner_email` + filter ריקים
+- שאילתת `brokers` עם `select name, phone, office_name`
+- Combobox/Select עם חיפוש פנימי
 
-### סיכון
-**אפסי** — רק איפוס סטטוס. הנכסים יעובדו מחדש בחלון הלילי הרגיל.
+---
+
+### 2. תיקון העלאת תמונות מחלון הפופ-אפ
+
+**הבעיה:** אחרי `onPropertyAdded()` (שורה 259), הקוד מנסה למצוא את ה-property ID על ידי שאילתת DB לפי כתובת ועיר (שורות 263-269). זה כושל כי:
+- `addProperty` מייצר `propertyId` עם `crypto.randomUUID()` ומחזיר אותו
+- אבל `onPropertyAdded` לא מחזיר את ה-ID חזרה ל-Modal
+- התחרות (race condition) בין insert לשאילתה
+
+**פתרון:** שינוי ה-flow כך ש-`onPropertyAdded` יחזיר את ה-property ID:
+- שינוי ה-interface: `onPropertyAdded: (property) => Promise<string>` (מחזיר ID)
+- בהורים (`Properties.tsx`, `AdminDashboard.tsx`): `addProperty` כבר מחזיר `Property` עם `id` — פשוט להחזיר אותו
+- ב-`AddPropertyModal`: שימוש ב-ID המוחזר ישירות לשמירת תמונות, במקום שאילתת חיפוש
+
+---
+
+### קבצים שמשתנים
+1. **`src/components/AddPropertyModal.tsx`** — הוספת בחירת בעלים/מתווך + תיקון שמירת תמונות
+2. **`src/pages/Properties.tsx`** — החזרת property ID מ-`onPropertyAdded`
+3. **`src/pages/AdminDashboard.tsx`** — החזרת property ID מ-`onPropertyAdded`
+
+### מה לא משתנה
+- `ImageUpload.tsx` — הקומפוננטה עצמה עובדת תקין
+- טבלאות DB
+- `useSupabasePropertyData.ts`
 
