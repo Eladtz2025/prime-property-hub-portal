@@ -1,43 +1,50 @@
 
 
-## תיקון בחירת תמונה ראשית
+## תיקון בעיית 2 תמונות ראשיות
 
-### הבאג
-בקוד השמירה (`PropertyEditRow.tsx` שורה 340 ו-`PropertyEditModal.tsx` שורה 406):
+### הבעיה
+ב-DB של מאזה 31 יש **2 תמונות** עם `is_main: true` (index 0 ו-index 8) — שאריות מהבאג הקודם (`|| i === 0`). התיקון הקודם מנע יצירת כפילויות **חדשות**, אבל:
+
+1. **נתונים ישנים** — הכפילויות שכבר נשמרו ב-DB לא תוקנו
+2. **טעינה ללא נורמליזציה** — כשפותחים עריכה, שתי התמונות נטענות כ-`isPrimary: true`. גם אם המשתמש לוחץ על כוכב חדש, התמונה הראשונה (index 0) נשארת primary כי היא כבר הייתה כזו ב-DB
+
+### הפתרון — 2 חלקים
+
+**חלק 1: נורמליזציה בטעינה**
+ב-`PropertyEditRow.tsx` וב-`PropertyEditModal.tsx` — אחרי מיפוי התמונות מ-DB, לוודא שרק תמונה **אחת** מסומנת כראשית (הראשונה שנמצאה עם `is_main: true`):
 
 ```typescript
-is_main: image.isPrimary || i === 0
+// אחרי ה-map
+let foundPrimary = false;
+images.forEach(img => {
+  if (img.isPrimary && !foundPrimary) {
+    foundPrimary = true;
+  } else if (img.isPrimary) {
+    img.isPrimary = false;
+  }
+});
 ```
 
-הביטוי `|| i === 0` גורם לתמונה הראשונה **תמיד** להישמר כ-primary, גם אם המשתמש בחר תמונה אחרת. אם המשתמש סימן את תמונה #3 כראשית, גם תמונה #0 נשמרת כ-`is_main: true` — ואז בטעינה מחדש, שתי תמונות מסומנות, או שתמונה #0 "מנצחת" כי היא הראשונה.
+**חלק 2: ניקוי נתונים קיימים**
+Migration שמתקנת את כל הנכסים שיש להם יותר מתמונה ראשית אחת — משאירה רק את זו עם ה-`order_index` הגבוה ביותר (הבחירה האחרונה של המשתמש):
 
-### התיקון
-
-**2 קבצים:**
-
-1. **`src/components/PropertyEditRow.tsx`** (שורה 340):
-```typescript
-// לפני:
-is_main: image.isPrimary || i === 0,
-// אחרי:
-is_main: image.isPrimary === true,
+```sql
+UPDATE property_images SET is_main = false
+WHERE id IN (
+  SELECT id FROM (
+    SELECT id, ROW_NUMBER() OVER (
+      PARTITION BY property_id ORDER BY order_index DESC
+    ) as rn
+    FROM property_images WHERE is_main = true
+  ) sub WHERE rn > 1
+);
 ```
 
-2. **`src/components/PropertyEditModal.tsx`** (שורה 406):
-```typescript
-// לפני:
-is_main: image.isPrimary || i === 0,
-// אחרי:
-is_main: image.isPrimary === true,
-```
-
-בנוסף — fallback ב-`setPrimaryImage` (ב-`ImageUpload.tsx`) כבר מטפל במקרה שאין אף תמונה ראשית, אז ה-`|| i === 0` מיותר לחלוטין.
-
-### מה לא משתנה
-- ImageUpload.tsx — הלוגיקה המקומית עובדת
-- PropertyGallery.tsx — לא רלוונטי (אין שם בחירת primary)
-- טבלאות DB
+### קבצים שמשתנים
+1. `src/components/PropertyEditRow.tsx` — נורמליזציה בטעינה
+2. `src/components/PropertyEditModal.tsx` — נורמליזציה בטעינה
+3. **Migration חדשה** — ניקוי כפילויות קיימות
 
 ### סיכון
-**אפסי** — תיקון שורה אחת בכל קובץ.
+**אפסי** — ניקוי נתונים + הגנה בקוד
 
