@@ -330,7 +330,7 @@ export function useMonitorData() {
           .gte('last_seen_at', run.started_at)
           .lte('last_seen_at', run.completed_at)
           .order('created_at', { ascending: false })
-          .limit(250);
+          .limit(50);
         if (data) allProps.push(...data);
       }
       return allProps;
@@ -374,7 +374,7 @@ export function useMonitorData() {
         .gte('dedup_checked_at', latestDedupRun.started_at)
         .lte('dedup_checked_at', latestDedupRun.completed_at)
         .order('dedup_checked_at', { ascending: false })
-        .limit(250);
+        .limit(50);
       return data ?? [];
     },
     enabled: !!latestDedupRun,
@@ -393,7 +393,7 @@ export function useMonitorData() {
         .gte('updated_at', since24h)
         .not('matched_leads', 'is', null)
         .order('updated_at', { ascending: false })
-        .limit(250);
+        .limit(50);
       // Filter client-side: only properties with non-empty matched_leads array
       return (data ?? []).filter(p => {
         const ml = p.matched_leads;
@@ -451,7 +451,7 @@ export function useMonitorData() {
     // Limit to 200 most recent items for performance (sort by checked_at desc, take 200)
     const limitedAvailDetails = availDetails
       .sort((a, b) => (b.checked_at || '').localeCompare(a.checked_at || ''))
-      .slice(0, 200);
+      .slice(0, 50);
 
     limitedAvailDetails.forEach(d => {
       const { label, detail, status } = availReasonDetail(d.reason, d.is_inactive);

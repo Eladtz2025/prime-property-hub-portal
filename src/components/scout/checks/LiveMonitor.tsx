@@ -45,7 +45,7 @@ export const LiveMonitor: React.FC = () => {
   // Filter feed by active tab
   const filteredFeed = useMemo(() => {
     if (activeTab === 'schedule') return [];
-    return feedItems.filter(f => f.type === activeTab);
+    return feedItems.filter(f => f.type === activeTab).slice(0, 20);
   }, [feedItems, activeTab]);
 
   const healthColor = dailyRunsHealth.passed === dailyRunsHealth.total
