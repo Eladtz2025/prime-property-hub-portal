@@ -1,80 +1,120 @@
 
 
-## הוספת סיבות דחייה אוטומטית ליד כל התאמה בדיאלוג ההתאמות
+## תוכנית תיקון — זיהוי שלילה (Negation) בכל שלבי החילוץ
 
-### הבעיה
-כשנכס נדחה אוטומטית על ידי מערכת ההתאמות (score 0), הוא פשוט לא מופיע — ואין שום אינדיקציה למה. המשתמש לא יודע למה לקוח X קיבל רק 5 התאמות ולא 20.
+### 3 באגים שזוהו
 
-### הגישה
-בזמן ה-matching (ב-`trigger-matching`), נאסוף סיכום של סיבות הדחייה ונשמור אותו על הליד עצמו. לדוגמה: "312 נכסים נדחו: מחיר גבוה (180), שכונה לא מתאימה (95), אין חניה (37)". הנתון הזה יוצג כסימון אדום קטן בעמודת ההתאמות בטבלת הלקוחות.
+| # | מיקום | באג | דוגמה |
+|---|-------|-----|--------|
+| 1 | **Scout `extractFeatures`** (`parser-utils.ts:627`) | אין בדיקת שלילה — regex `/חניה/` תופס גם "חניה: אין" | `parking: true` במקום `false` |
+| 2 | **`mergeFeatures`** (`parser-utils.ts:711`) | מעתיק רק `true`, מתעלם מ-`false` | Scout שגוי (`true`) לא נדרס ע"י backfill (`false`) |
+| 3 | **Backfill merge** (`backfill-property-data-jina:716-731`) | `{...existing, ...features}` + negative inference מדלג אם existing כבר `true` | Scout שגוי (`true`) נשאר לנצח |
 
-### מה משתנה
-
-#### 1. הוספת עמודה `rejection_summary` ל-`contact_leads`
-```sql
-ALTER TABLE contact_leads ADD COLUMN rejection_summary jsonb DEFAULT NULL;
+### שרשרת הכשל
+```text
+Scout: "חניה: אין" → regex /חניה/ → parking: true (שגוי!)
+    ↓
+Backfill: hasFeature() → negative detected → parking: false (נכון)
+    ↓
+Merge: existing.parking=true, new.parking=false
+    → {...existing, ...new} = parking: false ← זה בסדר
+    → אבל negative inference (שורה 728): existing[parking]=true → skip
+    → אם backfill לא זיהה כלום: existing stays true
+    ↓
+Matching: lead requires parking → property has true → MATCH (שגוי!)
 ```
-הפורמט: `{"total_rejected": 312, "reasons": {"מחיר גבוה": 180, "שכונה לא מתאימה": 95, "אין חניה": 37, ...}}`
 
-#### 2. שמירת סיכום דחיות ב-`trigger-matching`
-בסיום ריצת ההתאמה ללקוח ספציפי, נספור את כל הדחיות לפי סיבה ונעדכן את `rejection_summary` על הליד.
+### תיקונים
 
-**קובץ:** `supabase/functions/trigger-matching/index.ts`
+#### 1. `parser-utils.ts` — `extractFeatures` (סריקה ראשונה)
+הוספת בדיקת שלילה **לפני** בדיקת חיוב לכל פיצ'ר:
 
+```typescript
+// לפני כל regex חיובי, בדיקה אם יש שלילה
+const NEGATION_PREFIX = /(?:אין|ללא|בלי|לא|ב?לעדי)\s*/;
+
+// חניה
+if (NEGATION_PREFIX.test(text.match(/(.{0,10}חניה)/)?.[1] || '') || /חניה:\s*אין/.test(text)) {
+  features.parking = false;
+} else if (/חניה|חנייה/.test(text)) {
+  features.parking = true;
+}
 ```
-// After processing all properties:
-const rejectionCounts: Record<string, number> = {};
-let totalRejected = 0;
-matchResults.forEach(r => {
-  if (!r.isNewMatch && r.rejectionReason) {
-    totalRejected++;
-    rejectionCounts[r.rejectionReason] = (rejectionCounts[r.rejectionReason] || 0) + 1;
+
+אותו דבר עבור: מרפסת, מעלית, ממ"ד, מחסן, חצר/גינה, גג, מזגן, ריהוט.
+
+הפיצ'רים שצריכים בדיקת שלילה:
+- **חניה** — `אין חניה`, `ללא חניה`, `חניה: אין`
+- **מרפסת** — `אין מרפסת`, `ללא מרפסת`, `מרפסת: אין`
+- **מעלית** — `אין מעלית`, `ללא מעלית`, `מעלית: אין`
+- **ממ"ד** — `אין ממ"ד`, `ללא ממ"ד`, `ממ"ד: אין`
+- **מחסן** — `אין מחסן`, `ללא מחסן`, `מחסן: אין`
+- **חצר/גינה** — `אין חצר`, `ללא גינה`
+- **גג** — `אין גג`
+- **מזגן** — `אין מזגן`, `ללא מיזוג`
+- **ריהוט** — `לא מרוהטת`, `ללא ריהוט`
+
+פורמט נוסף שקריטי לזהות (מדל"ן/יד2): `פיצ'ר: אין` או `פיצ'ר: לא`
+
+#### 2. `parser-utils.ts` — `mergeFeatures`
+שינוי הלוגיקה כך ש-`false` מפורש **גם** נשמר:
+
+```typescript
+export function mergeFeatures(...featureSets: PropertyFeatures[]): PropertyFeatures {
+  const merged: PropertyFeatures = {};
+  for (const features of featureSets) {
+    if (!features) continue;
+    for (const [key, value] of Object.entries(features)) {
+      if (value === true || value === false) {
+        // false מפורש דורס undefined, אבל true דורס false
+        if ((merged as any)[key] === undefined || value === true) {
+          (merged as any)[key] = value;
+        }
+      }
+    }
   }
-});
-// Save to lead
-await supabase.from('contact_leads').update({
-  rejection_summary: { total_rejected: totalRejected, reasons: rejectionCounts }
-}).eq('id', leadId);
+  return merged;
+}
 ```
 
-צריך גם לעדכן את `matchResults` לכלול את `rejectionReason` מה-`calculateMatch`.
+#### 3. `backfill-property-data-jina/index.ts` — merge + negative inference
+שינוי שורה 716 + 728 כך שתוצאת backfill **דורסת** ערך שגוי מהסריקה:
 
-#### 3. הצגת סימון אדום ב-UI
-**קובץ:** `src/components/customers/CustomerMatchesCell.tsx`
+```typescript
+// Merge: backfill overrides scout for explicit values
+const mergedFeatures = { ...existingFeatures };
+for (const [key, value] of Object.entries(features)) {
+  if (value === true || value === false) {
+    mergedFeatures[key] = value; // Backfill always wins
+  }
+}
 
-ליד מספר ההתאמות, הוספת עיגול אדום קטן (🔴) עם tooltip שמפרט את סיבות הדחייה:
-
+// Negative inference: apply even if existing is true (scout could be wrong)
+for (const key of inferFalse) {
+  if (mergedFeatures[key] !== true) {
+    mergedFeatures[key] = false;
+  }
+}
 ```
-<Tooltip>
-  <TooltipTrigger>
-    <span className="h-4 w-4 bg-destructive/20 text-destructive rounded-full text-[10px] flex items-center justify-center">!</span>
-  </TooltipTrigger>
-  <TooltipContent>
-    312 נכסים נדחו:
-    • מחיר גבוה מהתקציב — 180
-    • שכונה לא מתאימה — 95
-    • אין חניה — 37
-  </TooltipContent>
-</Tooltip>
-```
 
-הסימון יופיע רק כשיש rejection_summary.
-
-#### 4. שליפת rejection_summary מה-DB
-**קובץ:** `src/hooks/useCustomerData.ts` — הוספת `rejection_summary` לשאילתה של הלקוחות.
+### סדר ביצוע
+1. תיקון `extractFeatures` ב-`parser-utils.ts` — שלילה בסריקה ראשונה
+2. תיקון `mergeFeatures` ב-`parser-utils.ts` — תמיכה ב-false
+3. תיקון merge + negative inference ב-`backfill-property-data-jina/index.ts`
+4. Deploy scouts + backfill
+5. **בדיקות חיות:**
+   - סריקה מכל אתר (yad2, madlan, homeless) — בדיקה שפיצ'רים שליליים מסומנים כ-`false`
+   - הרצת backfill על נכס ספציפי עם "חניה: אין" — וידוא שהתוצאה `parking: false`
+   - בדיקה במערכת ההתאמות שנכס בלי חניה לא מוצע ללקוח שדורש חניה
 
 ### קבצים שמשתנים
-1. **Migration** — עמודה `rejection_summary` ב-`contact_leads`
-2. `supabase/functions/trigger-matching/index.ts` — איסוף ושמירת סיכום דחיות
-3. `src/components/customers/CustomerMatchesCell.tsx` — סימון אדום + tooltip
-4. `src/hooks/useCustomerData.ts` — שליפת השדה החדש
+1. `supabase/functions/_experimental/parser-utils.ts` — extractFeatures + mergeFeatures
+2. `supabase/functions/backfill-property-data-jina/index.ts` — merge logic + negative inference
 
 ### מה לא משתנה
-- לוגיקת ההתאמה עצמה (`matching.ts`)
-- PropertyMatchCard, DialogContent
-- טבלאות אחרות
-- Edge functions אחרים
+- UI, טבלאות, matching.ts, edge functions אחרים
+- Backfill של Homeless (כבר משתמש ב-bold detection)
 
 ### סיכון
-**נמוך** — שמירת נתון נוסף על הליד בלבד. לא משנה את ההתאמות עצמן.
+**נמוך** — שינויים ברגקס וב-merge logic בלבד. התוצאה: פיצ'רים שליליים יזוהו נכון. נכסים שכבר מסומנים נכון לא יושפעו.
 
