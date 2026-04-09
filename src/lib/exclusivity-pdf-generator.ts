@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import type jsPDF from 'jspdf';
 import { exclusivityTranslations } from './exclusivity-translations';
 import { format, addDays } from 'date-fns';
 import { he } from 'date-fns/locale';
