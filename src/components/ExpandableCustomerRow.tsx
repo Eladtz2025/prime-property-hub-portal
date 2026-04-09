@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { WhatsAppSendDialog } from "@/components/WhatsAppSendDialog";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -101,7 +101,7 @@ const formatBudget = (min?: number | null, max?: number | null) => {
   return '-';
 };
 
-export const ExpandableCustomerRow = ({
+export const ExpandableCustomerRow = React.memo(({
   customer,
   isExpanded,
   onToggleExpand,
@@ -921,4 +921,4 @@ export const ExpandableCustomerRow = ({
       )}
     </>
   );
-};
+});

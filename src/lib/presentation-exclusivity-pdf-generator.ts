@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import type jsPDF from 'jspdf';
 
 export interface PresentationExclusivityFormData {
   language: 'en' | 'he';
@@ -30,6 +29,8 @@ export interface PresentationExclusivityFormData {
 }
 
 export const generatePresentationExclusivityPDF = async (formData: PresentationExclusivityFormData): Promise<jsPDF> => {
+  const { default: html2canvas } = await import('html2canvas');
+  const { default: jsPDF } = await import('jspdf');
   const isHebrew = formData.language === 'he';
   const dir = isHebrew ? 'rtl' : 'ltr';
   const textAlign = isHebrew ? 'right' : 'left';

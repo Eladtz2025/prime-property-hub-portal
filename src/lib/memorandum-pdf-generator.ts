@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import type jsPDF from 'jspdf';
 import { memorandumTranslations } from './memorandum-translations';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -41,6 +40,8 @@ export interface MemorandumFormData {
 }
 
 export async function generateMemorandumPDF(formData: MemorandumFormData): Promise<jsPDF> {
+  const { default: html2canvas } = await import('html2canvas');
+  const { default: jsPDF } = await import('jspdf');
   const t = memorandumTranslations[formData.language];
   const isRTL = formData.language === 'he';
   const formDate = format(new Date(formData.form_date), 'dd/MM/yyyy', { locale: he });

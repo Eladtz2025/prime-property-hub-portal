@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import type jsPDF from 'jspdf';
 import { brokerageFormTranslations } from './brokerage-form-translations';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -22,6 +21,8 @@ interface BrokerageFormData {
 }
 
 export async function generateBrokerageFormPDF(formData: BrokerageFormData): Promise<jsPDF> {
+  const { default: html2canvas } = await import('html2canvas');
+  const { default: jsPDF } = await import('jspdf');
   const t = brokerageFormTranslations.he;
   const properties = formData.properties || [];
   const formDate = format(new Date(formData.form_date), 'dd/MM/yyyy', { locale: he });
