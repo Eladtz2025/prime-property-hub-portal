@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logger } from '@/utils/logger';
 
 interface ConsultationModalProps {
   open: boolean;
@@ -54,14 +55,14 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
       });
 
       if (notifyError) {
-        console.error('Error notifying admins:', notifyError);
+        logger.error('Error notifying admins:', notifyError);
       }
 
       toast.success("הבקשה נשלחה בהצלחה!");
       setFormData({ name: "", phone: "", email: "", message: "" });
       onOpenChange(false);
     } catch (error) {
-      console.error('Error submitting consultation request:', error);
+      logger.error('Error submitting consultation request:', error);
       toast.error("שליחת הבקשה נכשלה. אנא נסה שוב.");
     } finally {
       setIsSubmitting(false);

@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
 import { SaveToPropertyDialog } from './SaveToPropertyDialog';
 import { validateFileSize, downloadImage, enhancementTypeTranslations } from './utils';
+import { logger } from '@/utils/logger';
 
 const enhancementTypes = [
   { value: 'lighting', label: 'שיפור תאורה וצבעים', description: 'התאמת בהירות, ניגודיות וצבעים' },
@@ -104,7 +105,7 @@ export const AutoEnhanceTab: React.FC = () => {
   const handleEnhance = async () => {
     // Prevent double submission
     if (isProcessingRef.current) {
-      console.log('Already processing, ignoring duplicate request');
+      logger.info('Already processing, ignoring duplicate request');
       return;
     }
     
@@ -148,7 +149,7 @@ export const AutoEnhanceTab: React.FC = () => {
         toast.success('התמונה שופרה בהצלחה!');
       }
     } catch (error: any) {
-      console.error('Error enhancing image:', error);
+      logger.error('Error enhancing image:', error);
       toast.error(error.message || 'שגיאה בשיפור התמונה');
     } finally {
       setIsEnhancing(false);

@@ -15,6 +15,7 @@ import PitchDecksList from '@/components/pitch-deck/builder/PitchDecksList';
 import BusinessExpensesList from '@/components/BusinessExpensesList';
 import ProfessionalsList from '@/components/ProfessionalsList';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 interface FormCounts {
   brokerage: number;
@@ -71,7 +72,7 @@ export const DashboardFormsCubes = () => {
         pitch_decks: pitchDecksCount || 0, business_expenses: expensesCount || 0, professionals: professionalsCount || 0,
       });
     } catch (error) {
-      console.error('Error fetching form counts:', error);
+      logger.error('Error fetching form counts:', error);
     }
   };
 

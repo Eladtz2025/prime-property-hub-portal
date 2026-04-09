@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { PropertyWithTenant } from '@/types/owner-portal';
 import { format } from 'date-fns';
+import { logger } from '@/utils/logger';
 
 interface ExpensesViewProps {
   properties: PropertyWithTenant[];
@@ -82,7 +83,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ properties }) => {
       if (error) throw error;
       setExpenses(data || []);
     } catch (error) {
-      console.error('Error loading expenses:', error);
+      logger.error('Error loading expenses:', error);
       toast({
         title: 'שגיאה',
         description: 'לא ניתן לטעון את ההוצאות',
@@ -109,7 +110,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({ properties }) => {
       
       loadExpenses();
     } catch (error) {
-      console.error('Error deleting expense:', error);
+      logger.error('Error deleting expense:', error);
       toast({
         title: 'שגיאה',
         description: 'שגיאה במחיקת ההוצאה',

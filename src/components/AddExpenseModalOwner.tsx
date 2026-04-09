@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface AddExpenseModalOwnerProps {
   open: boolean;
@@ -89,7 +90,7 @@ export const AddExpenseModalOwner: React.FC<AddExpenseModalOwnerProps> = ({
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error adding expense:', error);
+      logger.error('Error adding expense:', error);
       toast.error('שגיאה בהוספת הוצאה');
     } finally {
       setIsSubmitting(false);

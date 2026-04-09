@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 const CACHE_KEY_PREFIX = 'translation_cache_';
 const CACHE_EXPIRY_DAYS = 7;
@@ -30,7 +31,7 @@ const getCachedTranslation = (text: string): string | null => {
     
     return translation;
   } catch (error) {
-    console.error('Error reading from cache:', error);
+    logger.error('Error reading from cache:', error);
     return null;
   }
 };
@@ -44,7 +45,7 @@ const setCachedTranslation = (text: string, translation: string): void => {
     };
     localStorage.setItem(cacheKey, JSON.stringify(cached));
   } catch (error) {
-    console.error('Error writing to cache:', error);
+    logger.error('Error writing to cache:', error);
   }
 };
 
@@ -94,7 +95,7 @@ export const useTranslation = (texts: string[]) => {
 
         setTranslations(translationMap);
       } catch (error) {
-        console.error('Translation error:', error);
+        logger.error('Translation error:', error);
         // Fallback: use original texts
         textsToTranslate.forEach(text => {
           translationMap[text] = text;
@@ -119,8 +120,8 @@ export const clearTranslationCache = (): void => {
         localStorage.removeItem(key);
       }
     });
-    console.log('Translation cache cleared');
+    logger.info('Translation cache cleared');
   } catch (error) {
-    console.error('Error clearing cache:', error);
+    logger.error('Error clearing cache:', error);
   }
 };

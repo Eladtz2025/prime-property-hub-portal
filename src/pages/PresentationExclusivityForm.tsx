@@ -25,6 +25,7 @@ import {
   PresentationExclusivityLanguage 
 } from "@/lib/presentation-exclusivity-translations";
 import { 
+import { logger } from '@/utils/logger';
   downloadPresentationExclusivityPDF,
   PresentationExclusivityFormData 
 } from "@/lib/presentation-exclusivity-pdf-generator";
@@ -123,7 +124,7 @@ const PresentationExclusivityForm = () => {
         setAgentSignatureData(data.agent_signature || "");
       }
     } catch (error) {
-      console.error('Error loading form data:', error);
+      logger.error('Error loading form data:', error);
       toast.error('Failed to load form data');
     } finally {
       setIsLoading(false);
@@ -257,7 +258,7 @@ const PresentationExclusivityForm = () => {
       toast.success(t.formSaved);
       setShowThankYou(true);
     } catch (error) {
-      console.error('Error saving form:', error);
+      logger.error('Error saving form:', error);
       toast.error('Failed to save form');
     } finally {
       setIsSaving(false);
@@ -301,7 +302,7 @@ const PresentationExclusivityForm = () => {
       await navigator.clipboard.writeText(link);
       toast.success(t.linkCreated);
     } catch (error) {
-      console.error('Error creating link:', error);
+      logger.error('Error creating link:', error);
       toast.error('Failed to create link');
     } finally {
       setIsSaving(false);
@@ -314,7 +315,7 @@ const PresentationExclusivityForm = () => {
       await downloadPresentationExclusivityPDF(formData);
       toast.success(t.pdfDownloaded);
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast.error('Failed to generate PDF');
     }
   };

@@ -41,7 +41,7 @@ export const OwnerInvitation: React.FC = () => {
         setError('הזמנה לא תקינה או שפגה תוקפה');
       }
     } catch (error) {
-      console.error('Error loading invitation:', error);
+      logger.error('Error loading invitation:', error);
       setError('שגיאה בטעינת ההזמנה');
     } finally {
       setLoadingInvitation(false);

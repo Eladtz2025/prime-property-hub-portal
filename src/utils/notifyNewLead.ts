@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from '@/utils/logger';
 
 interface LeadData {
   name: string;
@@ -21,12 +22,12 @@ export const notifyNewLead = async (leadData: LeadData): Promise<void> => {
     });
 
     if (error) {
-      console.error('Failed to send lead notification:', error);
+      logger.error('Failed to send lead notification:', error);
     } else {
-      console.log('Lead notification sent successfully');
+      logger.info('Lead notification sent successfully');
     }
   } catch (error) {
     // Don't throw - notification failure shouldn't break the form submission
-    console.error('Error sending lead notification:', error);
+    logger.error('Error sending lead notification:', error);
   }
 };

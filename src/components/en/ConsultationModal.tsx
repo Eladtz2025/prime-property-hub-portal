@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertCircle } from "lucide-react";
+import { logger } from '@/utils/logger';
 
 interface ConsultationModalProps {
   open: boolean;
@@ -117,14 +118,14 @@ export const ConsultationModal = ({ open, onOpenChange }: ConsultationModalProps
       });
 
       if (notifyError) {
-        console.error('Error notifying admins:', notifyError);
+        logger.error('Error notifying admins:', notifyError);
       }
 
       toast.success("Your request has been submitted successfully!");
       setFormData({ name: "", phone: "", email: "", message: "" });
       onOpenChange(false);
     } catch (error) {
-      console.error('Error submitting consultation request:', error);
+      logger.error('Error submitting consultation request:', error);
       toast.error("Failed to submit request. Please try again.");
     } finally {
       setIsSubmitting(false);

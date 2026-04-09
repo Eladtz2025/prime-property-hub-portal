@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import { Canvas as FabricCanvas, FabricImage, Rect, IText, Circle as FabricCircle } from 'fabric';
 import { SaveToPropertyDialog } from './SaveToPropertyDialog';
 import { validateFileSize } from './utils';
+import { logger } from '@/utils/logger';
 
 export const ManualEditorTab: React.FC = () => {
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
@@ -238,7 +239,7 @@ export const ManualEditorTab: React.FC = () => {
         
         URL.revokeObjectURL(url);
       } catch (error) {
-        console.error('Error loading image:', error);
+        logger.error('Error loading image:', error);
         toast.error('שגיאה בטעינת התמונה');
         URL.revokeObjectURL(url);
       }
@@ -278,7 +279,7 @@ export const ManualEditorTab: React.FC = () => {
         
         URL.revokeObjectURL(url);
       } catch (error) {
-        console.error('Error loading image:', error);
+        logger.error('Error loading image:', error);
         toast.error('שגיאה בטעינת התמונה');
         URL.revokeObjectURL(url);
       }

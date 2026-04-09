@@ -1,10 +1,11 @@
 import * as Sentry from '@sentry/react';
+import { logger } from '@/utils/logger';
 
 export const initSentry = () => {
   const dsn = import.meta.env.VITE_SENTRY_DSN;
   
   if (!dsn) {
-    console.log('[Sentry] No DSN configured, Sentry disabled');
+    logger.info('[Sentry] No DSN configured, Sentry disabled');
     return;
   }
 
@@ -14,12 +15,12 @@ export const initSentry = () => {
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration(),
     ],
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 0.1,
     replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
+    replaysOnErrorSampleRate: 0.5,
   });
   
-  console.log('[Sentry] Initialized successfully');
+  logger.info('[Sentry] Initialized successfully');
 };
 
 export const captureError = (

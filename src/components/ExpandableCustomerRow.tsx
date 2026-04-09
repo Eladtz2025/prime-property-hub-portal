@@ -22,6 +22,7 @@ import { CustomerMatchesCell } from "@/components/customers/CustomerMatchesCell"
 import { CitySelectorDropdown } from "@/components/ui/city-selector";
 import { NeighborhoodSelectorDropdown } from "@/components/ui/neighborhood-selector";
 import { COUNTRY_CODES, parsePhoneNumber, combinePhoneNumber } from '@/utils/phoneCountryCodes';
+import { logger } from '@/utils/logger';
 
 interface Agent {
   id: string;
@@ -293,7 +294,7 @@ export const ExpandableCustomerRow = ({
           onSave();
         })
         .catch((matchError) => {
-          console.error('Error re-matching:', matchError);
+          logger.error('Error re-matching:', matchError);
         });
       }
     } catch (error) {

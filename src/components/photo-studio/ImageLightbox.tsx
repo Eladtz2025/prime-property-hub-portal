@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, Download, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface ImageLightboxProps {
   images: string[];
@@ -84,7 +85,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       } catch (error) {
-        console.error('Download failed:', error);
+        logger.error('Download failed:', error);
       }
     }
     

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export interface Professional {
   id: string;
@@ -33,7 +34,7 @@ export const useProfessionals = () => {
       if (error) throw error;
       setProfessionals((data as Professional[]) || []);
     } catch (error) {
-      console.error('Error fetching professionals:', error);
+      logger.error('Error fetching professionals:', error);
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ export const useProfessionals = () => {
       toast.success('איש המקצוע נוסף בהצלחה');
       fetchProfessionals();
     } catch (error) {
-      console.error('Error adding professional:', error);
+      logger.error('Error adding professional:', error);
       toast.error('שגיאה בהוספה');
     }
   };
@@ -66,7 +67,7 @@ export const useProfessionals = () => {
       toast.success('הפרטים עודכנו');
       fetchProfessionals();
     } catch (error) {
-      console.error('Error updating professional:', error);
+      logger.error('Error updating professional:', error);
       toast.error('שגיאה בעדכון');
     }
   };
@@ -81,7 +82,7 @@ export const useProfessionals = () => {
       toast.success('איש המקצוע נמחק');
       fetchProfessionals();
     } catch (error) {
-      console.error('Error deleting professional:', error);
+      logger.error('Error deleting professional:', error);
       toast.error('שגיאה במחיקה');
     }
   };

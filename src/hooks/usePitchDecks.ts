@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PitchDeck, PitchDeckSlide, DEFAULT_SLIDES } from '@/types/pitch-deck';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export const usePitchDecks = () => {
   return useQuery({
@@ -141,7 +142,7 @@ export const useCreatePitchDeck = () => {
       toast.success('המצגת נוצרה בהצלחה');
     },
     onError: (error) => {
-      console.error('Error creating pitch deck:', error);
+      logger.error('Error creating pitch deck:', error);
       toast.error('שגיאה ביצירת המצגת');
     },
   });
@@ -168,7 +169,7 @@ export const useUpdatePitchDeck = () => {
       toast.success('המצגת עודכנה בהצלחה');
     },
     onError: (error) => {
-      console.error('Error updating pitch deck:', error);
+      logger.error('Error updating pitch deck:', error);
       toast.error('שגיאה בעדכון המצגת');
     },
   });
@@ -191,7 +192,7 @@ export const useDeletePitchDeck = () => {
       toast.success('המצגת נמחקה בהצלחה');
     },
     onError: (error) => {
-      console.error('Error deleting pitch deck:', error);
+      logger.error('Error deleting pitch deck:', error);
       toast.error('שגיאה במחיקת המצגת');
     },
   });
@@ -224,7 +225,7 @@ export const useUpdateSlide = () => {
             slideType: data.slide_type
           }
         }).catch(err => {
-          console.warn('Background translation failed:', err);
+          logger.warn('Background translation failed:', err);
         });
       }
       
@@ -234,7 +235,7 @@ export const useUpdateSlide = () => {
       queryClient.invalidateQueries({ queryKey: ['pitch-deck', data.deck_id] });
     },
     onError: (error) => {
-      console.error('Error updating slide:', error);
+      logger.error('Error updating slide:', error);
       toast.error('שגיאה בעדכון הסלייד');
     },
   });
@@ -260,7 +261,7 @@ export const useUpdateSlideOrder = () => {
       queryClient.invalidateQueries({ queryKey: ['pitch-deck', deckId] });
     },
     onError: (error) => {
-      console.error('Error updating slide order:', error);
+      logger.error('Error updating slide order:', error);
       toast.error('שגיאה בעדכון סדר הסליידים');
     },
   });

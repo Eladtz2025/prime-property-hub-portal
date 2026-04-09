@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export interface DevelopmentIdea {
   id: string;
@@ -31,7 +32,7 @@ export const useDevelopmentIdeas = () => {
       if (error) throw error;
       setIdeas(data || []);
     } catch (error) {
-      console.error('Error fetching ideas:', error);
+      logger.error('Error fetching ideas:', error);
       toast.error('שגיאה בטעינת רעיונות');
     } finally {
       setIsLoading(false);
@@ -61,7 +62,7 @@ export const useDevelopmentIdeas = () => {
       toast.success('רעיון נוסף בהצלחה');
       fetchIdeas();
     } catch (error) {
-      console.error('Error adding idea:', error);
+      logger.error('Error adding idea:', error);
       toast.error('שגיאה בהוספת רעיון');
     }
   }, [user, fetchIdeas]);
@@ -80,7 +81,7 @@ export const useDevelopmentIdeas = () => {
         idea.id === id ? { ...idea, priority } : idea
       ));
     } catch (error) {
-      console.error('Error updating priority:', error);
+      logger.error('Error updating priority:', error);
       toast.error('שגיאה בעדכון חשיבות');
       fetchIdeas();
     }
@@ -114,7 +115,7 @@ export const useDevelopmentIdeas = () => {
           : idea
       ));
     } catch (error) {
-      console.error('Error toggling idea:', error);
+      logger.error('Error toggling idea:', error);
       toast.error('שגיאה בעדכון רעיון');
       fetchIdeas();
     }
@@ -133,7 +134,7 @@ export const useDevelopmentIdeas = () => {
       setIdeas(prev => prev.filter(idea => idea.id !== id));
       toast.success('רעיון נמחק');
     } catch (error) {
-      console.error('Error deleting idea:', error);
+      logger.error('Error deleting idea:', error);
       toast.error('שגיאה במחיקת רעיון');
       fetchIdeas();
     }

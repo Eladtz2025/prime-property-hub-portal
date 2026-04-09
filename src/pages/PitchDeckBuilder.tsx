@@ -23,6 +23,7 @@ import SlideList from '@/components/pitch-deck/builder/SlideList';
 import SlideEditor from '@/components/pitch-deck/builder/SlideEditor';
 import { toast } from 'sonner';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { logger } from '@/utils/logger';
 
 const PitchDeckBuilder = () => {
   const { id } = useParams<{ id: string }>();
@@ -208,7 +209,7 @@ const PitchDeckBuilder = () => {
   };
 
   const handleSave = async () => {
-    console.log('handleSave called', { title, slug, isNew, propertyId });
+    logger.info('handleSave called', { title, slug, isNew, propertyId });
     
     if (!title || !slug) {
       toast.error('יש למלא שם וכתובת URL');
@@ -226,7 +227,7 @@ const PitchDeckBuilder = () => {
     
     try {
       if (isNew) {
-        console.log('Creating new pitch deck...');
+        logger.info('Creating new pitch deck...');
         const newDeck = await createMutation.mutateAsync({
           title,
           slug,
@@ -239,7 +240,7 @@ const PitchDeckBuilder = () => {
           theme_color: themeColor,
           overlay_opacity: overlayOpacity,
         });
-        console.log('Created deck:', newDeck);
+        logger.info('Created deck:', newDeck);
         toast.success('המצגת נוצרה בהצלחה');
         navigate(`/admin-dashboard/pitch-decks/${newDeck.id}`);
       } else if (id) {
@@ -264,7 +265,7 @@ const PitchDeckBuilder = () => {
       });
       setHasUnsavedChanges(false);
     } catch (error) {
-      console.error('Save error:', error);
+      logger.error('Save error:', error);
       toast.error('שגיאה בשמירה: ' + (error as Error).message);
     } finally {
       setIsSaving(false);

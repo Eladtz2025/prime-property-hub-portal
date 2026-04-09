@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from '@/utils/logger';
 
 export interface Broker {
   id: string;
@@ -67,7 +68,7 @@ export function useBrokerData() {
 
       setBrokers(brokersWithNames);
     } catch (error) {
-      console.error('Error fetching brokers:', error);
+      logger.error('Error fetching brokers:', error);
     } finally {
       setLoading(false);
     }

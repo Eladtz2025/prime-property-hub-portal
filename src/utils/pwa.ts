@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 export const registerServiceWorker = async () => {
   if ('serviceWorker' in navigator) {
     try {
@@ -5,14 +6,14 @@ export const registerServiceWorker = async () => {
       const existingRegistrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of existingRegistrations) {
         await registration.unregister();
-        console.log('SW unregistered old:', registration);
+        logger.info('SW unregistered old:', registration);
       }
       
       // Register with cache-busting and force network fetch
       const registration = await navigator.serviceWorker.register(`/sw.js?v=${Date.now()}`, {
         updateViaCache: 'none' // Critical: always fetch sw.js from network
       });
-      console.log('SW registered: ', registration);
+      logger.info('SW registered: ', registration);
       
       // Force update check immediately
       registration.update();
@@ -24,13 +25,13 @@ export const registerServiceWorker = async () => {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // New content available - no auto-reload to prevent page jumps
-              console.log('[SW] New content available, refresh when convenient');
+              logger.info('[SW] New content available, refresh when convenient');
             }
           });
         }
       });
     } catch (error) {
-      console.log('SW registration failed: ', error);
+      logger.info('SW registration failed: ', error);
     }
   }
 };

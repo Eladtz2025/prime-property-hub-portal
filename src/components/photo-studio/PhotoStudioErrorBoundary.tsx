@@ -2,6 +2,7 @@ import React, { Component, ReactNode } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -24,7 +25,7 @@ export class PhotoStudioErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error(`PhotoStudio ${this.props.tabName} error:`, error, errorInfo);
+    logger.error(`PhotoStudio ${this.props.tabName} error:`, error, errorInfo);
   }
 
   handleReset = () => {

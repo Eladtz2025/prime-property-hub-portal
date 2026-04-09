@@ -12,6 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/social/ConfirmDialog';
+import { logger } from '@/utils/logger';
 
 interface MessageTemplate {
   id: string;
@@ -136,7 +137,7 @@ export const WhatsAppSendDialog = ({ open, onOpenChange, phone, name, context, t
         .limit(100);
       setChatMessages(data || []);
     } catch (err) {
-      console.error('Error loading chat:', err);
+      logger.error('Error loading chat:', err);
     } finally {
       setChatLoading(false);
     }

@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { logger } from '@/utils/logger';
 
 interface Recipient {
   id: string;
@@ -137,7 +138,7 @@ export const WhatsAppCompose: React.FC = () => {
         );
       }
     } catch (err) {
-      console.error('Error loading recipients:', err);
+      logger.error('Error loading recipients:', err);
     } finally {
       setLoading(false);
     }
@@ -226,7 +227,7 @@ export const WhatsAppCompose: React.FC = () => {
 
       setChatMessages(data || []);
     } catch (err) {
-      console.error('Error loading chat:', err);
+      logger.error('Error loading chat:', err);
     } finally {
       setChatLoading(false);
     }

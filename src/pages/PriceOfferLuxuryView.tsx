@@ -3,6 +3,7 @@ import { useParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import PitchDeck from "@/components/price-offer/pitch/PitchDeck";
+import { logger } from '@/utils/logger';
 
 interface PriceOffer {
   id: string;
@@ -115,7 +116,7 @@ const PriceOfferLuxuryView = () => {
           .eq('id', offerData.id);
 
       } catch (err) {
-        console.error('Error fetching offer:', err);
+        logger.error('Error fetching offer:', err);
         setNotFound(true);
       } finally {
         setLoading(false);

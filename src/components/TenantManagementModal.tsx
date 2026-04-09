@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/utils/logger';
 
 interface Tenant {
   id: string;
@@ -211,7 +212,7 @@ export const TenantManagementModal: React.FC<TenantManagementModalProps> = ({
       setRentPayments(payments || []);
       setCommunications(comms || []);
     } catch (error) {
-      console.error('Error loading tenant data:', error);
+      logger.error('Error loading tenant data:', error);
     }
   };
 
@@ -274,7 +275,7 @@ export const TenantManagementModal: React.FC<TenantManagementModalProps> = ({
       onTenantUpdated();
       onClose();
     } catch (error) {
-      console.error('Error saving tenant:', error);
+      logger.error('Error saving tenant:', error);
       toast({
         title: "שגיאה",
         description: "אירעה שגיאה בשמירת פרטי הדייר",
@@ -328,7 +329,7 @@ export const TenantManagementModal: React.FC<TenantManagementModalProps> = ({
 
       loadTenantData(tenant.id);
     } catch (error) {
-      console.error('Error adding payment:', error);
+      logger.error('Error adding payment:', error);
       toast({
         title: "שגיאה",
         description: "אירעה שגיאה בהוספת התשלום",
@@ -374,7 +375,7 @@ export const TenantManagementModal: React.FC<TenantManagementModalProps> = ({
 
       loadTenantData(tenant.id);
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
       toast({
         title: "שגיאה",
         description: "אירעה שגיאה בשליחת ההודעה",

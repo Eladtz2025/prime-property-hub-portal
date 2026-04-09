@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { 
+import { logger } from '@/utils/logger';
   DatabaseProperty, 
   PropertyWithTenant, 
   Tenant, 
@@ -20,7 +21,7 @@ export const syncPropertiesByPhone = async (ownerId: string): Promise<void> => {
     .single();
 
   if (profileError || !profile?.phone) {
-    console.log('No phone found for owner:', ownerId);
+    logger.info('No phone found for owner:', ownerId);
     return;
   }
 
@@ -31,7 +32,7 @@ export const syncPropertiesByPhone = async (ownerId: string): Promise<void> => {
     .eq('owner_phone', profile.phone);
 
   if (propertiesError || !matchingProperties || matchingProperties.length === 0) {
-    console.log('No matching properties found for phone:', profile.phone);
+    logger.info('No matching properties found for phone:', profile.phone);
     return;
   }
 
@@ -58,9 +59,9 @@ export const syncPropertiesByPhone = async (ownerId: string): Promise<void> => {
       .insert(newOwnershipRecords);
 
     if (insertError) {
-      console.error('Error creating property ownership:', insertError);
+      logger.error('Error creating property ownership:', insertError);
     } else {
-      console.log(`Linked ${newOwnershipRecords.length} properties to owner ${ownerId}`);
+      logger.info(`Linked ${newOwnershipRecords.length} properties to owner ${ownerId}`);
     }
   }
 };
@@ -95,7 +96,7 @@ export const getOwnerProperties = async (ownerId: string): Promise<PropertyWithT
       .eq('owner_id', ownerId);
 
     if (ownershipError || !ownershipData || ownershipData.length === 0) {
-      console.log('No properties found for owner:', ownerId);
+      logger.info('No properties found for owner:', ownerId);
       return [];
     }
 
@@ -112,7 +113,7 @@ export const getOwnerProperties = async (ownerId: string): Promise<PropertyWithT
     .in('id', propertyIds);
 
   if (error) {
-    console.error('Error fetching owner properties:', error);
+    logger.error('Error fetching owner properties:', error);
     return [];
   }
 
@@ -139,7 +140,7 @@ export const getPropertyTenant = async (propertyId: string): Promise<Tenant | nu
     .single();
 
   if (error) {
-    console.error('Error fetching tenant:', error);
+    logger.error('Error fetching tenant:', error);
     return null;
   }
 
@@ -187,7 +188,7 @@ export const getPropertyFinancials = async (propertyId: string): Promise<Financi
     .order('transaction_date', { ascending: false });
 
   if (error) {
-    console.error('Error fetching financial records:', error);
+    logger.error('Error fetching financial records:', error);
     return [];
   }
 
@@ -299,7 +300,7 @@ export const getPropertyDocuments = async (propertyId: string): Promise<Property
     .order('uploaded_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching documents:', error);
+    logger.error('Error fetching documents:', error);
     return [];
   }
 
@@ -316,7 +317,7 @@ export const getOwnerNotifications = async (ownerId: string): Promise<Notificati
     .limit(50);
 
   if (error) {
-    console.error('Error fetching notifications:', error);
+    logger.error('Error fetching notifications:', error);
     return [];
   }
 
@@ -364,7 +365,7 @@ export const getInvitationByToken = async (token: string): Promise<PropertyInvit
     .single();
 
   if (error) {
-    console.error('Error fetching invitation:', error);
+    logger.error('Error fetching invitation:', error);
     return null;
   }
 

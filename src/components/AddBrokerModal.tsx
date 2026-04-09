@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertCircle } from "lucide-react";
 import { validateField, requiredPhoneSchema, requiredNameSchema, FormErrors, FormTouched } from '@/utils/formValidation';
+import { logger } from '@/utils/logger';
 
 interface Property {
   id: string;
@@ -183,7 +184,7 @@ export function AddBrokerModal({ open, onClose, onSave, editBroker }: AddBrokerM
       onClose();
       resetForm();
     } catch (error) {
-      console.error('Error saving broker:', error);
+      logger.error('Error saving broker:', error);
       toast.error("שגיאה בשמירת המתווך");
     } finally {
       setLoading(false);

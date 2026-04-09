@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
 import { SaveToPropertyDialog } from './SaveToPropertyDialog';
 import { validateFileSize, downloadImage } from './utils';
+import { logger } from '@/utils/logger';
 
 // Calculate initial brush size based on screen
 const getInitialBrushSize = () => {
@@ -311,7 +312,7 @@ export const ElementRemovalTab: React.FC = () => {
         setRemovalDescription('');
       }
     } catch (error: any) {
-      console.error('Error removing elements:', error);
+      logger.error('Error removing elements:', error);
       toast.error(error.message || 'שגיאה בהסרת האלמנטים');
     } finally {
       setIsProcessing(false);

@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { PropertyWithTenant } from '@/types/owner-portal';
+import { logger } from '@/utils/logger';
 
 interface PropertyGalleryProps {
   properties: PropertyWithTenant[];
@@ -70,7 +71,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
       if (error) throw error;
       setImages(data || []);
     } catch (error) {
-      console.error('Error loading images:', error);
+      logger.error('Error loading images:', error);
       toast({
         title: 'שגיאה',
         description: 'לא ניתן לטעון את התמונות',
@@ -118,7 +119,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
           .upload(fileName, file);
 
         if (uploadError) {
-          console.error('❌ Storage upload error:', uploadError);
+          logger.error('❌ Storage upload error:', uploadError);
           throw uploadError;
         }
         
@@ -147,7 +148,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
           .select();
 
         if (dbError) {
-          console.error('❌ Database insert error:', dbError);
+          logger.error('❌ Database insert error:', dbError);
           throw dbError;
         }
         
@@ -159,7 +160,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
       });
       loadImages();
     } catch (error) {
-      console.error('❌❌❌ Error uploading files:', error);
+      logger.error('❌❌❌ Error uploading files:', error);
       toast({
         title: 'שגיאה',
         description: error instanceof Error ? error.message : 'שגיאה בהעלאה',
@@ -197,7 +198,7 @@ export const PropertyGallery: React.FC<PropertyGalleryProps> = ({ properties }) 
       });
       loadImages();
     } catch (error) {
-      console.error('Error deleting image:', error);
+      logger.error('Error deleting image:', error);
       toast({
         title: 'שגיאה',
         description: 'שגיאה במחיקת התמונה',

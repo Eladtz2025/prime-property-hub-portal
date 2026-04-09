@@ -12,6 +12,7 @@ import PriceOfferDivider from '@/components/price-offer/PriceOfferDivider';
 import PriceOfferVideoBlock from '@/components/price-offer/PriceOfferVideoBlock';
 import PriceOfferMapBlock from '@/components/price-offer/PriceOfferMapBlock';
 import PriceOfferPriceQuote from '@/components/price-offer/PriceOfferPriceQuote';
+import { logger } from '@/utils/logger';
 
 interface PriceOffer {
   id: string;
@@ -120,7 +121,7 @@ const PriceOfferView = () => {
 
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching offer:', error);
+        logger.error('Error fetching offer:', error);
         setNotFound(true);
         setLoading(false);
       }

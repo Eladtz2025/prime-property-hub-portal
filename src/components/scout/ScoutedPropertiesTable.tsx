@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { formatDistanceToNow, startOfDay, startOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { logger } from '@/utils/logger';
 
 // Clean address for display — removes city names, duplicates, generic words, artifacts
 // streetNeighborhoodMap: Map<street_name, canonical_neighborhood> from DB
@@ -406,7 +407,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
         .eq('city', 'תל אביב יפו');
       
       if (error) {
-        console.error('Failed to load street neighborhoods:', error);
+        logger.error('Failed to load street neighborhoods:', error);
         return new Map<string, string>();
       }
       
@@ -579,7 +580,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
       }
     },
     onError: (error) => {
-      console.error('Duplicate detection error:', error);
+      logger.error('Duplicate detection error:', error);
       toast.error('שגיאה בסריקת כפילויות');
     }
   });
@@ -804,7 +805,7 @@ export const ScoutedPropertiesTable: React.FC = () => {
   // Backend handles cleanup via checkAndFinalizeRun in run-helpers.ts
   useEffect(() => {
     if (stuckScans.length > 0) {
-      console.warn(`Detected ${stuckScans.length} potentially stuck scans:`, stuckScans.map(s => ({ id: s.id, source: s.source })));
+      logger.warn(`Detected ${stuckScans.length} potentially stuck scans:`, stuckScans.map(s => ({ id: s.id, source: s.source })));
     }
   }, [stuckScans.length]);
   
@@ -910,7 +911,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
       setCheckingPropertyId(null);
     },
     onError: (error) => {
-      console.error('Availability check error:', error);
+      logger.error('Availability check error:', error);
       toast.error('שגיאה בבדיקת זמינות');
       setCheckingPropertyId(null);
     }
@@ -989,7 +990,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
       // Don't invalidate immediately - let the polling pick up the progress
     },
     onError: (error) => {
-      console.error('Match error:', error);
+      logger.error('Match error:', error);
       toast.error('שגיאה בהפעלת חישוב התאמות');
     }
   });
@@ -1059,7 +1060,7 @@ const { data, error } = await supabase.functions.invoke('check-property-availabi
       setDetailsDialogOpen(false);
     },
     onError: (error) => {
-      console.error('Import error:', error);
+      logger.error('Import error:', error);
       toast.error('שגיאה בייבוא הנכס');
     }
   });

@@ -27,6 +27,7 @@ import { OwnerDocuments } from './OwnerDocuments';
 import { MarketInsights } from './MarketInsights';
 import { PropertyGallery } from './PropertyGallery';
 import { ExpensesView } from './ExpensesView';
+import { logger } from '@/utils/logger';
 
 export const OwnerDashboard: React.FC = () => {
   const { user, profile } = useAuth();
@@ -59,7 +60,7 @@ export const OwnerDashboard: React.FC = () => {
       setProperties(propertiesData);
       setNotifications(notificationsData);
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      logger.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
     }

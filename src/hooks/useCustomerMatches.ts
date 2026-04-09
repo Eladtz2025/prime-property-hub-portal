@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from '@/utils/logger';
 
 interface CustomerMatch {
   id: string;
@@ -38,7 +39,7 @@ export const useCustomerMatches = (customerId: string, includeDismissed: boolean
         });
 
       if (error) {
-        console.error('Error fetching customer matches:', error);
+        logger.error('Error fetching customer matches:', error);
         throw error;
       }
       

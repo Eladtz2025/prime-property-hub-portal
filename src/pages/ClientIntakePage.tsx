@@ -18,6 +18,7 @@ import { CitySelectorDropdown } from '@/components/ui/city-selector';
 import { NeighborhoodSelectorDropdown } from '@/components/ui/neighborhood-selector';
 import { cn } from '@/lib/utils';
 import { normalizePhoneForComparison, getPhoneSuffix } from '@/utils/phoneNormalization';
+import { logger } from '@/utils/logger';
 
 // Validation schema
 const clientIntakeSchema = z.object({
@@ -270,7 +271,7 @@ export default function ClientIntakePage() {
       toast.success('הפרטים נשלחו בהצלחה!');
 
     } catch (error) {
-      console.error('Error submitting form:', error);
+      logger.error('Error submitting form:', error);
       toast.error('שגיאה בשליחת הטופס, נסה שוב');
     } finally {
       setIsSubmitting(false);

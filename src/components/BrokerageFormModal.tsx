@@ -11,6 +11,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import { Trash2, Save } from 'lucide-react';
 import { brokerageFormSchema, propertyRowSchema, formatValidationErrors, sanitizeInput } from '@/utils/formValidation';
 import { z } from 'zod';
+import { logger } from '@/utils/logger';
 
 interface BrokerageFormModalProps {
   isOpen: boolean;
@@ -124,7 +125,7 @@ export const BrokerageFormModal: React.FC<BrokerageFormModalProps> = ({ isOpen, 
           variant: 'destructive',
         });
       } else {
-        console.error('Error saving form:', error);
+        logger.error('Error saving form:', error);
         toast({
           title: 'שגיאה',
           description: error instanceof Error ? error.message : 'שמירת הטופס נכשלה',

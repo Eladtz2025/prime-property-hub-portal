@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 interface BackfillProgress {
   id: string;
@@ -68,7 +69,7 @@ export const useBackfillProgressJina = () => {
       // Fire-and-forget - don't await the full batch
       supabase.functions.invoke('backfill-property-data-jina', {
         body: { action: 'start', dry_run: false }
-      }).catch(err => console.error('Backfill Jina error:', err));
+      }).catch(err => logger.error('Backfill Jina error:', err));
       return { fired: true };
     },
     onSuccess: () => {
@@ -76,7 +77,7 @@ export const useBackfillProgressJina = () => {
       setTimeout(() => refetchProgress(), 2000);
     },
     onError: (error) => {
-      console.error('Backfill Jina start error:', error);
+      logger.error('Backfill Jina start error:', error);
       toast.error('❌ שגיאה בהפעלת השלמת נתונים (Jina)');
     }
   });
@@ -95,7 +96,7 @@ export const useBackfillProgressJina = () => {
       refetchProgress();
     },
     onError: (error) => {
-      console.error('Backfill Jina stop error:', error);
+      logger.error('Backfill Jina stop error:', error);
       toast.error('❌ שגיאה בעצירת התהליך (Jina)');
     }
   });

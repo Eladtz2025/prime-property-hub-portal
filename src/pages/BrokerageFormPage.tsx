@@ -17,6 +17,7 @@ import { brokerageFormTranslations, BrokerageFormLanguage } from '@/lib/brokerag
 import { z } from 'zod';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { logger } from '@/utils/logger';
 
 const MAX_PROPERTIES = 10;
 
@@ -286,7 +287,7 @@ const BrokerageFormPage = () => {
         setTokenAgentSignature(formData.agentSignature);
       }
     } catch (err) {
-      console.error('Error loading form data:', err);
+      logger.error('Error loading form data:', err);
       toast.error(t.errorLoadingForm);
       navigate('/');
     } finally {
@@ -472,7 +473,7 @@ const BrokerageFormPage = () => {
       setMode('generated-link');
       toast.success(t.linkCreated);
     } catch (err) {
-      console.error('Error creating link:', err);
+      logger.error('Error creating link:', err);
       toast.error(t.errorCreatingLink);
     } finally {
       setLoading(false);
@@ -571,7 +572,7 @@ const BrokerageFormPage = () => {
             });
           }
         } catch (notifyError) {
-          console.error('Error sending notification:', notifyError);
+          logger.error('Error sending notification:', notifyError);
           // Don't fail the form save if notification fails
         }
       }
@@ -580,7 +581,7 @@ const BrokerageFormPage = () => {
       // Show thank you screen instead of closing
       setShowThankYou(true);
     } catch (err) {
-      console.error('Error saving form:', err);
+      logger.error('Error saving form:', err);
       toast.error(t.errorSavingForm);
     } finally {
       setLoading(false);
@@ -813,7 +814,7 @@ const BrokerageFormPage = () => {
       pdf.save(`brokerage-form-${clientName.replace(/\s+/g, '-')}-${formDate}.pdf`);
       toast.success(language === 'he' ? 'הקובץ הורד בהצלחה' : 'File downloaded successfully');
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast.error(language === 'he' ? 'שגיאה ביצירת הקובץ' : 'Error generating file');
     } finally {
       setGeneratingPDF(false);

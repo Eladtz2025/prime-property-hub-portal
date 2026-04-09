@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export type BrokerSource = 'all' | 'homeless' | 'madlan' | 'yad2';
 export type BrokerMode = 'audit' | 'fix';
@@ -160,7 +161,7 @@ export const useReclassifyBroker = () => {
         toast.info('כבר רץ תהליך קיים, עוקב אחריו...');
       }
     } catch (err) {
-      console.error('Reclassify start error:', err);
+      logger.error('Reclassify start error:', err);
       toast.error('❌ שגיאה בהפעלת התהליך');
       setRunningSource(null);
       // Clear queue on error
@@ -200,7 +201,7 @@ export const useReclassifyBroker = () => {
       if (error) throw error;
       toast.info('נשלחה בקשת עצירה...');
     } catch (err) {
-      console.error('Reclassify stop error:', err);
+      logger.error('Reclassify stop error:', err);
       toast.error('❌ שגיאה בעצירת התהליך');
     } finally {
       setIsStopping(false);

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logger } from '@/utils/logger';
 
 export interface ScoutSettingRow {
   id: string;
@@ -183,7 +184,7 @@ export function useScoutSettings(category?: keyof ScoutSettings) {
       const { data, error } = await query;
       
       if (error) {
-        console.error('Failed to fetch scout settings:', error);
+        logger.error('Failed to fetch scout settings:', error);
         return defaultSettings;
       }
       
@@ -270,7 +271,7 @@ export function useUpdateScoutSetting() {
       toast.success('ההגדרה עודכנה בהצלחה');
     },
     onError: (error) => {
-      console.error('Failed to update setting:', error);
+      logger.error('Failed to update setting:', error);
       toast.error('שגיאה בעדכון ההגדרה');
     },
   });

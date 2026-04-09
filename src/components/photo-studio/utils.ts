@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 // Maximum file size: 10MB
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -51,7 +52,7 @@ export const downloadImage = async (
     URL.revokeObjectURL(url);
     return true;
   } catch (error) {
-    console.error('Download failed:', error);
+    logger.error('Download failed:', error);
     toast.error('שגיאה בהורדת התמונה');
     return false;
   }

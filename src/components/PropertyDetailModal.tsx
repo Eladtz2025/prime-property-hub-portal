@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canViewPhoneNumbers, formatPhoneDisplay } from '@/utils/permissions';
 import { supabase } from '@/integrations/supabase/client';
 import { AddAppointmentModal } from './AddAppointmentModal';
+import { logger } from '@/utils/logger';
 
 interface PropertyDetailModalProps {
   property: Property;
@@ -39,7 +40,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
 
   const loadPropertyImages = async () => {
     try {
-      console.log('🔍 Loading images for property:', property.id);
+      logger.info('🔍 Loading images for property:', property.id);
       const { data, error } = await supabase
         .from('property_images')
         .select('*')
@@ -47,11 +48,11 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
         .order('order_index', { ascending: true });
 
       if (error) {
-        console.error('❌ Error loading images:', error);
+        logger.error('❌ Error loading images:', error);
         return;
       }
 
-      console.log('✅ Loaded', data?.length || 0, 'images from DB');
+      logger.info('✅ Loaded', data?.length || 0, 'images from DB');
       
       if (data && data.length > 0) {
         const loadedImages: PropertyImage[] = data.map(img => ({
@@ -67,7 +68,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
         setImages([]);
       }
     } catch (error) {
-      console.error('❌ Error loading property images:', error);
+      logger.error('❌ Error loading property images:', error);
     }
   };
   

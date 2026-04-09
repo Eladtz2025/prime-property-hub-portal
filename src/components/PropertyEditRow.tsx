@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PropertyDocuments } from './PropertyDocuments';
 import { ProjectUnitsTable } from './ProjectUnitsTable';
 import { triggerAutoScan } from '@/hooks/useAutoScanProject';
+import { logger } from '@/utils/logger';
 
 interface PropertyEditRowProps {
   property: Property;
@@ -101,7 +102,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
         }));
       }
     } catch (error) {
-      console.error('Error loading English fields:', error);
+      logger.error('Error loading English fields:', error);
     }
   };
 
@@ -139,7 +140,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
         description: direction === 'he-en' ? "הטקסט תורגם לאנגלית" : "הטקסט תורגם לעברית"
       });
     } catch (error: any) {
-      console.error('Translation error:', error);
+      logger.error('Translation error:', error);
       toast({
         title: "שגיאה בתרגום",
         description: error.message,
@@ -165,7 +166,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
         }));
       }
     } catch (error) {
-      console.error('Error loading show_on_website flag:', error);
+      logger.error('Error loading show_on_website flag:', error);
     }
   };
 
@@ -207,7 +208,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
         }));
       }
     } catch (error) {
-      console.error('Error loading property images:', error);
+      logger.error('Error loading property images:', error);
     }
   };
 

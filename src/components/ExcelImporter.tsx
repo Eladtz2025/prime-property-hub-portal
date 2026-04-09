@@ -6,6 +6,7 @@ import { Upload, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
 import * as XLSX from '@e965/xlsx';
 import { processExcelToUnified } from '@/utils/processExcelData';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 export const ExcelImporter = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -64,7 +65,7 @@ export const ExcelImporter = () => {
       }
       
     } catch (error) {
-      console.error('Error processing file:', error);
+      logger.error('Error processing file:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to process file');
     } finally {
       setIsProcessing(false);
