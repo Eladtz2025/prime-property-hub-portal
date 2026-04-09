@@ -1,25 +1,38 @@
 
 
-## הקטנת גובה הגלריה — התאמה לגובה עמודת הפרטים
+## החלפת פרטי טלי לאלעד — בכל האתר
 
-### הבעיה
-הגלריה (col-span-2) גבוהה מעמודת הפרטים מימין. המשתמש רוצה שגובה הגלריה יסתיים בקו התחתון של כפתור "שתף נכס זה".
+### סיכום
+החלפת מספר הטלפון 054-228-4477 (972542284477) והשם "טלי זילברברג" / "Tali Silberberg" בכל המקומות הציבוריים באתר לאלעד צברי / 054-550-3055 (972545503055).
 
-### הפתרון
-הגישה: לתת לשתי העמודות גובה זהה באמצעות `h-full` + `max-h` על הגלריה, כך שהגלריה תתאים לגובה עמודת הפרטים.
+### חריג חשוב — `business.ts`
+הקובץ `src/constants/business.ts` משמש לטפסי תיווך רשמיים (חוזי בלעדיות, הצעות מחיר) עם מספר רישיון של טלי. **יש להחליט**: האם גם שם להחליף לפרטים שלך, או להשאיר את טלי כברוקר רשמי בטפסים?
 
-**קובץ: `src/pages/PropertyDetailPage.tsx`**
+### קבצים שמשתנים (16 קבצים)
 
-1. על הגריד הראשי (שורה 324) — להוסיף `items-start` כדי שהעמודות לא יימתחו
-2. על ה-div של הגלריה (שורה 428) — להוסיף `max-h-fit` ולהעביר `h-full` ל-ImageCarousel wrapper כדי שהגלריה תתאים לגובה עמודת הפרטים
+| קובץ | שינוי |
+|-------|-------|
+| `src/constants/business.ts` | טלפון + שם (אם מאושר) |
+| `src/components/ContactSection.tsx` | 054-228-4477 → 054-550-3055 |
+| `src/components/Footer.tsx` | tel + תצוגה |
+| `src/components/he/Footer.tsx` | tel + תצוגה |
+| `src/components/en/Header.tsx` | tel + "Tali:" → "Elad:" |
+| `src/components/WhatsAppFloat.tsx` | 972542284477 → 972545503055 |
+| `src/pages/he/Contact.tsx` | טלפון + meta description |
+| `src/pages/PriceOfferView.tsx` | whatsapp number |
+| `src/pages/en/PropertyDetail.tsx` | fallback phone |
+| `src/components/pitch-deck/slides/DynamicContactSlide.tsx` | default phone + whatsapp |
+| `src/components/pitch-deck/slides/DynamicAboutUsSlide.tsx` | Tali defaults |
+| `src/components/price-offer/pitch/slides/NextStepsSlide.tsx` | default whatsapp |
+| `src/components/price-offer/ben-yehuda-110/slides/BYContactSlide.tsx` | שם |
+| `src/components/price-offer/ben-yehuda-110/slides/BYAboutUsSlide.tsx` | שם |
+| `src/lib/presentation-exclusivity-translations.ts` | שם סוכן HE+EN |
+| `src/lib/presentation-exclusivity-pdf-generator.ts` | שם בחתימה |
+| `supabase/functions/notify-new-lead/index.ts` | טלפון להתראות |
+| `src/types/pitch-deck.ts` | default team member |
 
-גישה טכנית: שימוש ב-CSS `max-height` שמתייחס לגובה העמודה השכנה. הדרך הפשוטה ביותר — להפוך את הגריד ל-`items-stretch` (ברירת מחדל) ולהגביל את תוכן הגלריה ל-`h-full overflow-hidden`, כך שהגלריה תיקח בדיוק את הגובה של עמודת הפרטים.
-
-שינויים:
-- שורה 324: וידוא שאין `items-start` (כדי ש-stretch יפעל)
-- שורה 428: הוספת `h-full` על ה-div של הגלריה
-- שורה 429: העברת `h-full` ל-ImageCarousel או עטיפה שלו ב-div עם `h-full overflow-hidden`
-
-### קובץ שמשתנה
-- `src/pages/PropertyDetailPage.tsx` — 2-3 שורות
+### מה לא משתנה
+- `phoneFormatter.ts` — רק דוגמאות בקומנטים, לא משפיע
+- `assign-properties-to-agents` — הקצאה פנימית, לא ציבורי
+- UI components, DB, matching logic
 
