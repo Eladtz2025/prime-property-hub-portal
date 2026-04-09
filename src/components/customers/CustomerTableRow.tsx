@@ -187,6 +187,7 @@ export const CustomerTableRow = ({
           roomsMin={customer.rooms_min}
           roomsMax={customer.rooms_max}
           propertyType={customer.property_type}
+          rejectionSummary={customer.rejection_summary}
           onRefresh={onSave}
         />
       </TableCell>
