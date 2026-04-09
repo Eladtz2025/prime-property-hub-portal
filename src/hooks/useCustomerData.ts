@@ -70,10 +70,8 @@ export interface Customer {
   // Eligibility fields from DB trigger
   matching_status: string | null;
   eligibility_reason: string | null;
-  rejection_summary: {
-    total_rejected: number;
-    reasons: Record<string, number>;
-  } | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  rejection_summary: any;
 }
 
 export interface PropertyInterest {
