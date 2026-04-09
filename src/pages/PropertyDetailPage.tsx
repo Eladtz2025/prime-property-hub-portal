@@ -420,8 +420,13 @@ const PropertyDetailPage = () => {
               onClick={handleCopyLink}
             >
               {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-              שתף נכס זה
+             שתף נכס זה
             </Button>
+          </div>
+
+          {/* Left Column (RTL) - Image Gallery */}
+          <div className="lg:col-span-2 order-1 lg:order-2">
+            <ImageCarousel images={propertyImages} furnishedImages={furnishedImages} priceLabel="" />
           </div>
         </div>
 
