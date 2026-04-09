@@ -1,46 +1,88 @@
 
 
-## תיקון ביצועים — טאב זמינות במוניטור
+## תוכנית שיפור מערכת חילוץ פיצ'רים + הסרת ממ"ד מהתאמות
 
-### הבעיה
-- `run_details` בריצה האחרונה: **2,420 פריטים, 100KB**
-- ריצות גדולות: עד **11,907 פריטים, 535KB**
-- כל הנתונים נטענים לזיכרון, ממופים ל-FeedItem, ו-**כל 2,420 השורות מרונדרות ב-DOM בבת אחת**
-- אין pagination, אין virtualization, אין limit
+### סיכום מצב נוכחי
 
-### הפתרון — שתי שכבות
+| אתר | סה"כ | חניה | ממ"ד | מרפסת | מעלית |
+|------|-------|------|------|--------|--------|
+| **yad2** | 2,597 | 73% | 22% | 29% | 61% |
+| **madlan** | 1,129 | 30% | 13% | 28% | 63% |
+| **homeless** | 334 | 27% | 18% | 28% | 51% |
 
-#### 1. הגבלת הנתונים מה-DB
-**קובץ:** `src/components/scout/checks/monitor/useMonitorData.ts`
+**בעיות עיקריות:**
+1. **מדל"ן — הסריקה הראשונה מחזירה `features: {}`** — הפארסר `parser-madlan-html.ts` לא מחלץ שום פיצ'ר
+2. **Backfill חסום** — 826 נכסים בסטטוס `pending` (מדל"ן+יד2+homeless) עם features ריקים
+3. **ממ"ד** — אחוז זיהוי נמוך (13-22%) כי המילה לא תמיד מוזכרת בטקסט → צריך להסיר מהתאמות
 
-בשאילתת `recentAvailRuns` (שורה 407-420), ה-`run_details` נטען בשלמותו. הפתרון:
-- הוספת `.limit(1)` לשאילתה — אין צורך בכל הריצות של היום, רק האחרונה
-- זה כבר יחסוך טעינה של ריצות ישנות עם עוד אלפי פריטים
+---
 
-#### 2. חיתוך ה-feed ב-client
-**קובץ:** `src/components/scout/checks/monitor/useMonitorData.ts`
+### נקודה 1: הסרת ממ"ד מלוגיקת ההתאמות
 
-בבניית ה-`feedItems` (שורה 444-464), כל ה-`availDetails` מתווספים ל-feed. הפתרון:
-- הגבלת `availDetails` ל-**200 פריטים אחרונים** (לפי `checked_at`)
-- המשתמש רואה את ה-200 האחרונים — מספיק לניטור בזמן אמת
-- הסטטיסטיקות (2420 בבאדג') ממשיכות להיות מחושבות מ-`properties_checked` — לא מושפעות
+**קובץ:** `supabase/functions/_shared/matching.ts`
 
-#### 3. (אופציונלי בעתיד) Virtualization
-אם עדיין יהיה צורך — הוספת `react-window` ל-`LiveFeedTab`. אבל עם 200 שורות זה לא נדרש.
+מחיקת הבלוק בשורות 509-517 (בדיקת `mamad_required` + `mamad_flexible`). גם הסרת:
+- בונוס priority של +8 נקודות על ממ"ד (שורה 691-694)
+- penalty של -5 על mamad null (שורה 736-738)
+
+**תוצאה:** ממ"ד לא ישפיע על ציון ההתאמה ולא ידחה נכסים.
+
+---
+
+### נקודה 2: חילוץ פיצ'רים מהסריקה הראשונה — מדל"ן
+
+**קובץ:** `supabase/functions/_experimental/parser-madlan-html.ts`
+
+**מצב נוכחי:** שורה 357 — `features: {}` (ריק תמיד)
+
+**שינוי:** הוספת חילוץ מתוך ה-HTML של כרטיס הרשימה באמצעות `extractFeatures(cardText)` מ-`parser-utils.ts`. הטקסט של הכרטיס (`cardText`) כבר קיים בפונקציה — צריך רק להעביר אותו ל-`extractFeatures`.
+
+```
+features: extractFeatures(cardText)
+```
+
+זה יחלץ חניה, מרפסת, מעלית, מחסן, חצר, גג מהטקסט של הרשימה כבר בסריקה ראשונה.
+
+---
+
+### נקודה 3: שיפור Negative Inference בסריקה ראשונה
+
+**קובץ:** `supabase/functions/_experimental/parser-utils.ts`
+
+**מצב נוכחי:** הסקה שלילית מופעלת רק אם 2+ פיצ'רים זוהו. ברשימות קצרות (כמו מדל"ן) לעיתים מזוהה רק פיצ'ר אחד → אין הסקה שלילית → שאר הפיצ'רים נשארים null.
+
+**שינוי:** הורדת הסף מ-2 ל-1 — אם זוהה לפחות פיצ'ר אחד, שאר הפיצ'רים הקריטיים מסומנים כ-false. הסרת `mamad` מרשימת הפיצ'רים הקריטיים (כי הורדנו אותו מההתאמות).
+
+```typescript
+const criticalFeatures = ['parking', 'balcony', 'elevator', 'storage', 'yard', 'roof'];
+// threshold: 1 instead of 2
+if (recognizedCount >= 1) { ... }
+```
+
+---
+
+### נקודה 4: בדיקות חיות אחרי ה-deploy
+
+1. **סריקת מדל"ן** — הרצת scout ובדיקה שנכסים חדשים מקבלים features מלאים (לא `{}`)
+2. **בדיקת backfill** — בדיקה שנכסים שעוברים backfill מקבלים features מלאים
+3. **בדיקת matching** — הרצת matching ובדיקה שלשירי (ולקוחות אחרים) אין דירות עם פרטים חסרים שסותרים את הדרישות שלהם
+
+---
+
+### סדר ביצוע
+1. הסרת ממ"ד מ-`matching.ts` → deploy
+2. הוספת `extractFeatures` ל-`parser-madlan-html.ts` → deploy scouts
+3. שיפור סף negative inference ב-`parser-utils.ts` → deploy scouts
+4. בדיקות חיות — סריקה + backfill + matching
 
 ### קבצים שמשתנים
-1. `src/components/scout/checks/monitor/useMonitorData.ts` — limit(1) על שאילתה + חיתוך availDetails ל-200
+1. `supabase/functions/_shared/matching.ts` — הסרת ממ"ד
+2. `supabase/functions/_experimental/parser-madlan-html.ts` — חילוץ פיצ'רים
+3. `supabase/functions/_experimental/parser-utils.ts` — שיפור negative inference
 
 ### מה לא משתנה
-- UI של המוניטור
-- לוגיקת שאר הטאבים (סריקה, השלמה, כפילויות, התאמות)
-- שום edge function או טבלה
-
-### סיכון
-**אפסי** — רק מגבילים את כמות הנתונים שמוצגים. הנתונים ב-DB לא משתנים.
-
-### תוצאה צפויה
-- טעינת הטאב: מ-~535KB ל-~25KB (הריצה האחרונה בלבד, 200 פריטים)
-- רינדור DOM: מ-2,420 שורות ל-200
-- זמן תגובה משופר משמעותית
+- UI
+- טבלאות DB
+- Backfill logic
+- בדיקות זמינות
 
