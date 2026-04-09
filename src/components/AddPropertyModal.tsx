@@ -389,6 +389,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         notes: ''
       });
       setUploadedImages([]);
+      setOwnerSource('manual');
       
     } catch (error) {
       logger.error('Error adding property:', error, 'AddPropertyModal');
