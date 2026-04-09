@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router-dom';
 import TemplateSelector from '@/components/price-offer/templates/TemplateSelector';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-import { logger } from '@/utils/logger';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -19,6 +18,7 @@ import { logger } from '@/utils/logger';
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { logger } from '@/utils/logger';
 
 interface PriceOffer {
   id: string;
