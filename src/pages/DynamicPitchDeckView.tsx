@@ -6,7 +6,6 @@ import { usePitchDeckBySlug } from "@/hooks/usePitchDecks";
 import { PitchDeckSlide, SlideType } from "@/types/pitch-deck";
 import { ViewErrorBoundary } from "@/components/pitch-deck/ViewErrorBoundary";
 import {
-import { logger } from '@/utils/logger';
   DynamicTitleSlide,
   DynamicPropertySlide,
   DynamicFeaturesSlide,
@@ -19,6 +18,7 @@ import { logger } from '@/utils/logger';
   DynamicDifferentiatorsSlide,
   DynamicContactSlide,
 } from "@/components/pitch-deck/slides";
+import { logger } from '@/utils/logger';
 
 // Helper to get initial slide from URL hash
 const getInitialSlideFromHash = (): number => {

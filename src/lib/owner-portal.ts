@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { 
-import { logger } from '@/utils/logger';
   DatabaseProperty, 
   PropertyWithTenant, 
   Tenant, 
@@ -10,6 +9,7 @@ import { logger } from '@/utils/logger';
   PropertyInvitation,
   OwnerDashboardStats 
 } from '@/types/owner-portal';
+import { logger } from '@/utils/logger';
 
 // Sync properties by phone - automatically links properties to owner based on phone number
 export const syncPropertiesByPhone = async (ownerId: string): Promise<void> => {

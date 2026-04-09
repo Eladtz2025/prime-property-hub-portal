@@ -17,7 +17,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import {
-import { logger } from '@/utils/logger';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -27,6 +26,7 @@ import { logger } from '@/utils/logger';
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { logger } from '@/utils/logger';
 
 interface Agent {
   id: string;

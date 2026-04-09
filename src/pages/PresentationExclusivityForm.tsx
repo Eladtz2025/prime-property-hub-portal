@@ -25,10 +25,10 @@ import {
   PresentationExclusivityLanguage 
 } from "@/lib/presentation-exclusivity-translations";
 import { 
-import { logger } from '@/utils/logger';
   downloadPresentationExclusivityPDF,
   PresentationExclusivityFormData 
 } from "@/lib/presentation-exclusivity-pdf-generator";
+import { logger } from '@/utils/logger';
 
 // Default property data for Ben Yehuda 110
 const defaultPropertyData = {
