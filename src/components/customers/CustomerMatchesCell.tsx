@@ -23,6 +23,7 @@ interface CustomerMatchesCellProps {
   roomsMin?: number | null;
   roomsMax?: number | null;
   propertyType?: string | null;
+  rejectionSummary?: { total_rejected: number; reasons: Record<string, number> } | null;
   onRefresh: () => void;
 }
 
@@ -37,6 +38,7 @@ export const CustomerMatchesCell = ({
   roomsMin,
   roomsMax,
   propertyType,
+  rejectionSummary,
   onRefresh
 }: CustomerMatchesCellProps) => {
   const { toast } = useToast();
