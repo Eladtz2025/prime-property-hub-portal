@@ -12,16 +12,25 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Webhook token authentication
+  // Reject non-POST requests (bots, crawlers)
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Webhook token authentication — strict mode
   const url = new URL(req.url);
   const token = url.searchParams.get('token');
   const expectedToken = Deno.env.get('WEBHOOK_SECRET');
 
   if (expectedToken && token !== expectedToken) {
-    console.warn(`⚠️ WEBHOOK: Invalid/missing token from ${req.headers.get('x-forwarded-for') || 'unknown IP'}. Grace period — allowing request but logging warning.`);
-    // Grace period: log warning but don't block yet
-    // After updating Green API webhook URL with ?token=XXX, change this to return 401:
-    // return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.warn(`🚫 WEBHOOK BLOCKED: Invalid/missing token from ${req.headers.get('x-forwarded-for') || 'unknown IP'}`);
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   try {
