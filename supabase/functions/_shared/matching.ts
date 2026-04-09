@@ -432,7 +432,7 @@ export async function calculateMatch(
   
   // Outdoor space - OR mode vs AND mode
   if (lead.outdoor_space_any) {
-    // OR mode: at least one of the selected outdoor features MUST exist
+    // OR mode: at least one of the selected outdoor features MUST be explicitly true
     const outdoorOptions: string[] = [];
     if (lead.balcony_required) outdoorOptions.push('balcony');
     if (lead.yard_required) outdoorOptions.push('yard');
@@ -442,23 +442,8 @@ export async function calculateMatch(
       const hasAnyOutdoor = outdoorOptions.some(opt => 
         property.features?.[opt] === true
       );
-      // Check if any is explicitly false
-      const anyExplicitlyFalse = outdoorOptions.every(opt => 
-        property.features?.[opt] === false
-      );
-      
-      if (anyExplicitlyFalse) {
-        const optionsText = outdoorOptions.map(opt => {
-          if (opt === 'balcony') return 'מרפסת';
-          if (opt === 'yard') return 'חצר';
-          if (opt === 'roof') return 'גג';
-          return opt;
-        }).join(' או ');
-        return { lead, matchScore: 0, matchReasons: [`נדרש ${optionsText} - אין בנכס`], priority: 0 };
-      }
       
       if (hasAnyOutdoor) {
-        // Add what was found
         const foundOutdoor = outdoorOptions.filter(opt => property.features?.[opt] === true);
         const foundText = foundOutdoor.map(opt => {
           if (opt === 'balcony') return 'מרפסת';
@@ -468,53 +453,41 @@ export async function calculateMatch(
         }).join(' / ');
         reasons.push(`יש ${foundText} (חובה) ✓`);
       } else {
-        // All are null/undefined — pass with warning
+        // None explicitly true → reject
         const optionsText = outdoorOptions.map(opt => {
           if (opt === 'balcony') return 'מרפסת';
           if (opt === 'yard') return 'חצר';
           if (opt === 'roof') return 'גג';
           return opt;
-        }).join('/');
-        reasons.push(`${optionsText} - לא ידוע ⚠️`);
+        }).join(' או ');
+        return { lead, matchScore: 0, matchReasons: [`נדרש ${optionsText} - אין או לא ידוע`], priority: 0 };
       }
     }
   } else {
-    // AND mode: each feature is checked individually
+    // AND mode: each feature is checked individually — strict
     if (lead.balcony_required && lead.balcony_flexible === false) {
-      if (property.features?.balcony === false) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - אין בנכס'], priority: 0 };
+      if (property.features?.balcony !== true) {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - אין או לא ידוע'], priority: 0 };
       }
-      if (property.features?.balcony === true) {
-        reasons.push('יש מרפסת (חובה) ✓');
-      } else {
-        reasons.push('מרפסת - לא ידוע ⚠️');
-      }
+      reasons.push('יש מרפסת (חובה) ✓');
     } else if (lead.balcony_required && property.features?.balcony === true) {
       reasons.push('יש מרפסת ✓');
     }
     
     if (lead.yard_required && lead.yard_flexible === false) {
-      if (property.features?.yard === false) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - אין בנכס'], priority: 0 };
+      if (property.features?.yard !== true) {
+        return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - אין או לא ידוע'], priority: 0 };
       }
-      if (property.features?.yard === true) {
-        reasons.push('יש חצר (חובה) ✓');
-      } else {
-        reasons.push('חצר - לא ידוע ⚠️');
-      }
+      reasons.push('יש חצר (חובה) ✓');
     } else if (lead.yard_required && property.features?.yard === true) {
       reasons.push('יש חצר ✓');
     }
     
     if (lead.roof_required && lead.roof_flexible === false) {
-      if (property.features?.roof === false) {
-        return { lead, matchScore: 0, matchReasons: ['נדרש גג - אין בנכס'], priority: 0 };
+      if (property.features?.roof !== true) {
+        return { lead, matchScore: 0, matchReasons: ['נדרש גג - אין או לא ידוע'], priority: 0 };
       }
-      if (property.features?.roof === true) {
-        reasons.push('יש גג (חובה) ✓');
-      } else {
-        reasons.push('גג - לא ידוע ⚠️');
-      }
+      reasons.push('יש גג (חובה) ✓');
     } else if (lead.roof_required && property.features?.roof === true) {
       reasons.push('יש גג ✓');
     }
