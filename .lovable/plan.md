@@ -1,44 +1,15 @@
 
 
-## החלפת צדדים — גלריה ופרטים בדף נכס (עברית)
+## יישור פרטי הנכס לימין
 
-### מצב נוכחי (Desktop, שורות 324-331)
-בלאוט RTL, הגריד מציב את האלמנט הראשון (גלריה, `col-span-2`) בצד **ימין** ואת הפרטים בצד **שמאל**.
+### הבעיה
+שורות הפרטים (מחיר, חדרי רחצה, חדרים, קומה, מ"ר) מיושרות למרכז/שמאל במקום לימין. הסיבה: `justify-start` ב-`flex-row-reverse` ללא `dir="rtl"` מיישר שמאלה.
 
-### השינוי
-החלפת הסדר: הפרטים יהיו **ראשונים** בגריד (ימין ב-RTL, `col-span-1`) והגלריה **שנייה** (שמאל ב-RTL, `col-span-2`).
+### הפתרון
+בקובץ `src/pages/PropertyDetailPage.tsx`, שורות 342-367 — להחליף `justify-start` ב-`justify-end` בכל 5 שורות הפרטים (מחיר, חדרי רחצה, חדרים, קומה, מ"ר).
 
-### קובץ: `src/pages/PropertyDetailPage.tsx` (שורות ~324-331)
-
-**לפני:**
-```
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-  <!-- Gallery (col-span-2) - RIGHT in RTL -->
-  <div className="lg:col-span-2 order-1 lg:order-1">
-    <ImageCarousel ... />
-  </div>
-  <!-- Details (col-span-1) - LEFT in RTL -->
-  <div className="space-y-6 order-2 lg:order-2">
-```
-
-**אחרי:**
-```
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-  <!-- Details (col-span-1) - RIGHT in RTL -->
-  <div className="space-y-6 order-2 lg:order-1">
-    ...details...
-  </div>
-  <!-- Gallery (col-span-2) - LEFT in RTL -->
-  <div className="lg:col-span-2 order-1 lg:order-2">
-    <ImageCarousel ... />
-  </div>
-```
-
-הפרטים עוברים **לפני** הגלריה ב-DOM (כך שב-RTL הם מופיעים מימין), והגלריה עוברת שמאלה. ב-Mobile הסדר נשמר עם `order` (גלריה ראשונה, פרטים אחריה).
+לחלופין, פשוט להוסיף `dir="rtl"` על ה-`div` של הפרטים (שורה 340) ולהסיר את `flex-row-reverse` ו-`justify-start` מכל השורות — אבל הגישה המינימלית היא פשוט `justify-end`.
 
 ### קובץ שמשתנה
-- `src/pages/PropertyDetailPage.tsx` — החלפת סדר הבלוקים בגריד Desktop
-
-### מה לא משתנה
-- תוכן הפרטים, הגלריה, Mobile layout, Header/Footer
+- `src/pages/PropertyDetailPage.tsx` — 5 שינויים של `justify-start` → `justify-end` בשורות 342, 346, 353, 358, 364
 
