@@ -30,7 +30,7 @@ interface PropertyEditRowProps {
   onSave: (updatedProperty: Property) => void;
 }
 
-export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
+export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
   property,
   isOpen,
   onClose,
@@ -1092,4 +1092,4 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
       </CollapsibleContent>
     </Collapsible>
   );
-};
+});

@@ -101,7 +101,7 @@ const formatBudget = (min?: number | null, max?: number | null) => {
   return '-';
 };
 
-export const ExpandableCustomerRow = ({
+export const ExpandableCustomerRow = React.memo(({
   customer,
   isExpanded,
   onToggleExpand,
@@ -921,4 +921,4 @@ export const ExpandableCustomerRow = ({
       )}
     </>
   );
-};
+});
