@@ -1,50 +1,24 @@
 
 
-## תיקונים בסיכון אפסי — שלושה שינויים בטוחים
+## תיקון שגיאות בילד — 6 קבצים עם import שבור
 
-### 1. הורדת Sentry Sample Rates (#4)
-**קובץ:** `src/lib/sentry.ts`
+### הבעיה
+ב-6 קבצים, שורת `import { logger }` עדיין נמצאת בתוך בלוק import קיים — גורם לשגיאות TypeScript.
 
-שינוי 2 מספרים בלבד:
-- `tracesSampleRate: 1.0` → `0.1` (10% במקום 100%)
-- `replaysOnErrorSampleRate: 1.0` → `0.5` (50% במקום 100%)
+### הקבצים
+1. `src/components/AdminPriceOffersContent.tsx` (שורה 12)
+2. `src/components/BrokerageFormsMobileList.tsx` (שורה 41)
+3. `src/lib/owner-portal.ts` (שורה 3)
+4. `src/pages/AdminCustomers.tsx` (שורה 20)
+5. `src/pages/DynamicPitchDeckView.tsx` (שורה 9)
+6. `src/pages/PresentationExclusivityForm.tsx` (שורה 28)
 
-חוסך עלויות Sentry ומפחית עומס ביצועים. `replaysSessionSampleRate: 0.1` נשאר כמו שהוא.
+### הפתרון
+בכל קובץ:
+1. למצוא את `import { logger }` שנמצא בתוך בלוק import אחר
+2. להוציא אותו החוצה — לפני או אחרי בלוק ה-import שהוא תקוע בו
+3. לוודא שה-import המקורי שלם ותקין
 
-### 2. החלפת console.log ל-logger (#11)
-**179 שימושים ב-12 קבצים** (לא כולל Edge Functions שרצים ב-Deno):
-
-| קובץ | console.log |
-|-------|-------------|
-| `src/utils/pwa.ts` | 4 |
-| `src/utils/notifyNewLead.ts` | 1 |
-| `src/lib/sentry.ts` | 2 |
-| `src/pages/PitchDeckBuilder.tsx` | 3 |
-| `src/pages/ImportFromStorage.tsx` | 2 |
-| `src/hooks/useTranslation.ts` | 1 |
-| `src/lib/owner-portal.ts` | 4 |
-| `src/components/PropertyDetailModal.tsx` | 1+ |
-| ועוד... | |
-
-ה-`logger` כבר קיים ב-`src/utils/logger.ts` ועובד רק ב-DEV. פשוט מחליפים `console.log` → `logger.info` ו-`console.error` → `logger.error`.
-
-**לא נוגעים ב:**
-- `scripts/processExcelToJSON.ts` (סקריפט build, לא runtime)
-- `supabase/functions/*` (Deno, לא משתמש ב-logger)
-
-### 3. שיפור React Query Cache (#20)
-**קובץ:** `src/components/DataProvider.tsx`
-
-שינוי ברירת המחדל:
-- `staleTime: 2 * 60 * 1000` → `5 * 60 * 1000` (5 דקות)
-- `gcTime: 5 * 60 * 1000` → `10 * 60 * 1000` (10 דקות)
-
-מפחית שאילתות מיותרות לנתונים שלא משתנים מהר. כל hook ספציפי יכול לדרוס עם staleTime משלו.
-
----
-
-### סיכום
-- **3 שינויים**, כולם config/logging בלבד
-- **0 שינויי לוגיקה** — שום דבר לא יכול להישבר
-- Edge Functions לא נוגעים
+### סיכון
+**אפסי** — תיקון syntax בלבד, אין שינוי לוגי.
 
