@@ -722,8 +722,12 @@ Deno.serve(async (req) => {
           mergedFeatures.immediate_entry = entryDateInfo.immediate_entry;
         }
         
-        if (mergedFeatures.elevator !== true && !existingFeatures.elevator) {
-          mergedFeatures.elevator = false;
+        // Negative inference: if backfill succeeded and feature wasn't found, mark as false
+        const inferFalse = ['elevator', 'parking', 'balcony', 'mamad', 'yard', 'roof', 'storage', 'pets'];
+        for (const key of inferFalse) {
+          if ((mergedFeatures as any)[key] !== true && !(existingFeatures as any)[key]) {
+            (mergedFeatures as any)[key] = false;
+          }
         }
         
         if (hasNewFeatures || existingIsEmpty || entryDateInfo.entry_date || entryDateInfo.immediate_entry || mergedFeatures.elevator === false) {

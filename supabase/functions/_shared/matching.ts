@@ -408,32 +408,24 @@ export async function calculateMatch(
   }
   
   // ===== FEATURE CHECKS (only if required AND not flexible) =====
-  // NULL HANDLING: false = explicitly missing → reject. null/undefined = unknown → pass with warning.
+  // STRICT: if flexible=false and feature is not explicitly true → REJECT
   
   // Elevator
   if (lead.elevator_required && lead.elevator_flexible === false) {
-    if (property.features?.elevator === false) {
-      return { lead, matchScore: 0, matchReasons: ['נדרשת מעלית - אין בנכס'], priority: 0 };
+    if (property.features?.elevator !== true) {
+      return { lead, matchScore: 0, matchReasons: ['נדרשת מעלית - אין או לא ידוע'], priority: 0 };
     }
-    if (property.features?.elevator === true) {
-      reasons.push('יש מעלית (חובה) ✓');
-    } else {
-      reasons.push('מעלית - לא ידוע ⚠️');
-    }
+    reasons.push('יש מעלית (חובה) ✓');
   } else if (lead.elevator_required && property.features?.elevator === true) {
     reasons.push('יש מעלית ✓');
   }
   
   // Parking
   if (lead.parking_required && lead.parking_flexible === false) {
-    if (property.features?.parking === false) {
-      return { lead, matchScore: 0, matchReasons: ['נדרשת חניה - אין בנכס'], priority: 0 };
+    if (property.features?.parking !== true) {
+      return { lead, matchScore: 0, matchReasons: ['נדרשת חניה - אין או לא ידוע'], priority: 0 };
     }
-    if (property.features?.parking === true) {
-      reasons.push('יש חניה (חובה) ✓');
-    } else {
-      reasons.push('חניה - לא ידוע ⚠️');
-    }
+    reasons.push('יש חניה (חובה) ✓');
   } else if (lead.parking_required && property.features?.parking === true) {
     reasons.push('יש חניה ✓');
   }
