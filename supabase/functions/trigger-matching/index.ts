@@ -87,7 +87,10 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
   const properties = allProperties;
   console.log(`Lead re-match: Fetched ${properties.length} active properties`);
 
-  // Process all properties and calculate matches in parallel
+  // Process all properties and calculate matches, collecting rejection reasons
+  const rejectionCounts: Record<string, number> = {};
+  let totalRejected = 0;
+
   const matchResults = await Promise.all(
     properties.map(async (property) => {
       const matchResult = await calculateMatch(property as ScoutedProperty, lead as ContactLead, matchingSettings);
@@ -107,6 +110,27 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
           priority: matchResult.priority,
           reasons: matchResult.matchReasons
         });
+      } else if (matchResult.matchScore === 0 && matchResult.matchReasons.length > 0) {
+        // Collect rejection reason
+        const reason = matchResult.matchReasons[0];
+        // Normalize reason to category
+        let category = reason;
+        if (reason.includes('מחיר גבוה') || reason.includes('מחיר נמוך')) category = 'מחיר לא בטווח';
+        else if (reason.includes('שכונה לא מתאימה')) category = 'שכונה לא מתאימה';
+        else if (reason.includes('עיר לא מתאימה')) category = 'עיר לא מתאימה';
+        else if (reason.includes('חדרים')) category = 'חדרים לא בטווח';
+        else if (reason.includes('מעלית')) category = 'אין מעלית';
+        else if (reason.includes('חניה')) category = 'אין חניה';
+        else if (reason.includes('מרפסת') || reason.includes('חצר') || reason.includes('גג')) category = 'אין מרחב חיצוני';
+        else if (reason.includes('כתובת') || reason.includes('שכונה מוגדרת')) category = 'כתובת חסרה/לא ספציפית';
+        else if (reason.includes('תאריך כניסה') || reason.includes('לא פנוי')) category = 'תאריך כניסה לא מתאים';
+        else if (reason.includes('סוג עסקה')) category = 'סוג עסקה לא מתאים';
+        else if (reason.includes('מ״ר') || reason.includes('גודל')) category = 'גודל לא בטווח';
+        else if (reason.includes('מרוהטת')) category = 'ריהוט לא מתאים';
+        else if (reason.includes('קומה')) category = 'קומה לא מתאימה';
+        
+        totalRejected++;
+        rejectionCounts[category] = (rejectionCounts[category] || 0) + 1;
       }
       
       return {
@@ -139,13 +163,25 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
     }));
   }
 
-  console.log(`✅ Lead ${leadId} re-matched: ${updatedCount} properties matched`);
+  // Save rejection summary to lead
+  const rejectionSummary = totalRejected > 0 
+    ? { total_rejected: totalRejected, reasons: rejectionCounts }
+    : null;
+  
+  await supabase
+    .from('contact_leads')
+    .update({ rejection_summary: rejectionSummary })
+    .eq('id', leadId);
+
+  console.log(`✅ Lead ${leadId} re-matched: ${updatedCount} properties matched, ${totalRejected} rejected`);
 
   return new Response(JSON.stringify({
     success: true,
     lead_id: leadId,
     properties_checked: properties?.length || 0,
-    matches_updated: updatedCount
+    matches_updated: updatedCount,
+    total_rejected: totalRejected,
+    rejection_summary: rejectionSummary
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });

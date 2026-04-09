@@ -1,0 +1,1 @@
+ALTER TABLE public.contact_leads ADD COLUMN rejection_summary jsonb DEFAULT NULL;

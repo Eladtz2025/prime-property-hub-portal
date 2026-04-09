@@ -715,6 +715,7 @@ export type Database = {
           property_to_sell: boolean | null
           property_type: string | null
           purchase_purpose: string | null
+          rejection_summary: Json | null
           renovation_budget: number | null
           roof_flexible: boolean | null
           roof_required: boolean | null
@@ -777,6 +778,7 @@ export type Database = {
           property_to_sell?: boolean | null
           property_type?: string | null
           purchase_purpose?: string | null
+          rejection_summary?: Json | null
           renovation_budget?: number | null
           roof_flexible?: boolean | null
           roof_required?: boolean | null
@@ -839,6 +841,7 @@ export type Database = {
           property_to_sell?: boolean | null
           property_type?: string | null
           purchase_purpose?: string | null
+          rejection_summary?: Json | null
           renovation_budget?: number | null
           roof_flexible?: boolean | null
           roof_required?: boolean | null
