@@ -109,6 +109,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const { logActivity } = useActivityLogger();
   const { toast } = useToast();
   const [errors, setErrors] = useState<{ ownerPhone?: string; ownerEmail?: string; tenantPhone?: string }>({});
+  const [touched, setTouched] = useState<{ ownerPhone?: boolean; ownerEmail?: boolean; tenantPhone?: boolean }>({});
   const [ownerSource, setOwnerSource] = useState<OwnerSourceType>('manual');
 
   // Load existing owners (distinct from properties table)
