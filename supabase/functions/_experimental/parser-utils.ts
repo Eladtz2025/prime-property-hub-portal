@@ -629,57 +629,84 @@ export function extractFeatures(text: string): PropertyFeatures {
   
   const features: PropertyFeatures = {};
   
+  // Helper: check if feature context is negated
+  function isNegated(featurePattern: RegExp): boolean {
+    const negBefore = new RegExp(`(?:אין|ללא|בלי|לא|בלעדי)\\s*(?:${featurePattern.source})`, 'i');
+    if (negBefore.test(text)) return true;
+    const negAfter = new RegExp(`(?:${featurePattern.source})\\s*:?\\s*(?:אין|לא|ללא)`, 'i');
+    if (negAfter.test(text)) return true;
+    return false;
+  }
+  
   // Balcony patterns (מרפסת)
-  if (/מרפסת/.test(text)) {
+  if (isNegated(/מרפסת/)) {
+    features.balcony = false;
+  } else if (/מרפסת/.test(text)) {
     features.balcony = true;
   }
   
   // Parking patterns (חניה)
-  if (/חניה|חנייה|מקום\s*חניה/.test(text)) {
+  if (isNegated(/חניה|חנייה/)) {
+    features.parking = false;
+  } else if (/חניה|חנייה|מקום\s*חניה/.test(text)) {
     features.parking = true;
   }
   
   // Elevator patterns (מעלית)
-  if (/מעלית/.test(text)) {
+  if (isNegated(/מעלית/)) {
+    features.elevator = false;
+  } else if (/מעלית/.test(text)) {
     features.elevator = true;
   }
   
   // Mamad / Safe room patterns (ממ"ד / ממ״ד)
-  if (/ממ["״]?ד|מרחב\s*מוגן/.test(text)) {
+  if (isNegated(/ממ["״]?ד|מרחב\s*מוגן/)) {
+    features.mamad = false;
+  } else if (/ממ["״]?ד|מרחב\s*מוגן/.test(text)) {
     features.mamad = true;
   }
   
   // Storage patterns (מחסן)
-  if (/\bמחסן\b/.test(text)) {
+  if (isNegated(/מחסן/)) {
+    features.storage = false;
+  } else if (/מחסן/.test(text)) {
     features.storage = true;
   }
   
   // Air conditioning patterns (מזגן)
-  if (/מזגנ?|מיזוג/.test(text)) {
+  if (isNegated(/מזגנ?|מיזוג/)) {
+    features.aircon = false;
+  } else if (/מזגנ?|מיזוג/.test(text)) {
     features.aircon = true;
   }
   
   // Furnished patterns (מרוהטת)
-  if (/מרוהט/.test(text)) {
+  if (/לא\s*מרוהט|ללא\s*ריהוט/.test(text)) {
+    features.furnished = false;
+  } else if (/מרוהט/.test(text)) {
     features.furnished = true;
   }
   
-  // Renovated patterns (משופצת) - more specific to avoid "חדש" false positives
+  // Renovated patterns (משופצת)
   if (/משופצ|שופץ|לאחר\s*שיפוץ/.test(text)) {
     features.renovated = true;
   }
   
   // Yard/Garden patterns (חצר/גינה)
-  if (/חצר|גינה|גן\s*פרטי|דירת\s*גן/.test(text)) {
+  if (isNegated(/חצר|גינה/)) {
+    features.yard = false;
+  } else if (/חצר|גינה|גן\s*פרטי|דירת\s*גן/.test(text)) {
     features.yard = true;
   }
   
-  // Roof/Penthouse patterns (גג) - more specific
-  if (/גג\s*(פרטי|צמוד)?|פנטהאו[זס]|דירת\s*גג/.test(text)) {
+  // Roof/Penthouse patterns (גג)
+  if (isNegated(/גג/)) {
+    features.roof = false;
+  } else if (/גג\s*(פרטי|צמוד)?|פנטהאו[זס]|דירת\s*גג/.test(text)) {
     features.roof = true;
   }
   
-  // Accessible patterns (נגיש) - more specific  
+  // Accessible patterns (נגיש)
   if (/נגיש\s*(ל?נכים)?|נגישות/.test(text)) {
     features.accessible = true;
   }
@@ -689,10 +716,10 @@ export function extractFeatures(text: string): PropertyFeatures {
     features.pets = true;
   }
   
-  // Negative inference: if text contains a detailed features block (2+ recognized features),
+  // Negative inference: if text contains recognized features,
   // mark unmentioned critical features as false
   const criticalFeatures = ['parking', 'balcony', 'elevator', 'storage', 'yard', 'roof'];
-  const recognizedCount = criticalFeatures.filter(f => (features as any)[f] === true).length;
+  const recognizedCount = criticalFeatures.filter(f => (features as any)[f] !== undefined).length;
   
   if (recognizedCount >= 1) {
     for (const key of criticalFeatures) {
