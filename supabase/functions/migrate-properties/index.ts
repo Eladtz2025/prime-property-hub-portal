@@ -28,12 +28,12 @@ interface UnifiedDataFile {
 }
 
 serve(async (req) => {
+  const corsHeaders = getRestrictedCorsHeaders(req);
   console.log('Migration function called');
   
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const optionsResponse = handleCorsOptions(req);
+  if (optionsResponse) return optionsResponse;
 
   try {
     console.log('Starting property migration...');

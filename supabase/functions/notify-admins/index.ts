@@ -2,10 +2,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 import { getRestrictedCorsHeaders, handleCorsOptions } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
+  const corsHeaders = getRestrictedCorsHeaders(req);
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const optionsResponse = handleCorsOptions(req);
+  if (optionsResponse) return optionsResponse;
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
