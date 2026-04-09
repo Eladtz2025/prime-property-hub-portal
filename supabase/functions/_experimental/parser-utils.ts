@@ -689,6 +689,19 @@ export function extractFeatures(text: string): PropertyFeatures {
     features.pets = true;
   }
   
+  // Negative inference: if text contains a detailed features block (2+ recognized features),
+  // mark unmentioned critical features as false
+  const criticalFeatures = ['parking', 'balcony', 'elevator', 'mamad', 'storage', 'yard', 'roof'];
+  const recognizedCount = criticalFeatures.filter(f => (features as any)[f] === true).length;
+  
+  if (recognizedCount >= 2) {
+    for (const key of criticalFeatures) {
+      if ((features as any)[key] === undefined) {
+        (features as any)[key] = false;
+      }
+    }
+  }
+  
   return features;
 }
 
