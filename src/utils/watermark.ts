@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Add watermark to images using Canvas API
  */
@@ -134,7 +135,7 @@ export const addWatermark = async (
     // Convert to base64 as PNG to preserve transparency
     return canvas.toDataURL('image/png');
   } catch (error) {
-    console.error('Error adding watermark:', error);
+    logger.error('Error adding watermark:', error);
     throw error;
   }
 };

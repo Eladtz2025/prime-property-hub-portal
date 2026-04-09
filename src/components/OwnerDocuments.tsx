@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { FileText, Upload, Download, Trash2, Plus, Loader2 } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface Property {
   property_id: string;
@@ -132,7 +133,7 @@ export const OwnerDocuments: React.FC<OwnerDocumentsProps> = ({ properties }) =>
       setDocumentType('');
       refetch();
     } catch (error) {
-      console.error('Error uploading document:', error);
+      logger.error('Error uploading document:', error);
       toast.error('שגיאה בהעלאת המסמך');
     } finally {
       setIsUploading(false);
@@ -169,7 +170,7 @@ export const OwnerDocuments: React.FC<OwnerDocumentsProps> = ({ properties }) =>
       toast.success('המסמך נמחק בהצלחה');
       refetch();
     } catch (error) {
-      console.error('Error deleting document:', error);
+      logger.error('Error deleting document:', error);
       toast.error('שגיאה במחיקת המסמך');
     }
   };

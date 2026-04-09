@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Clock, Plus, Trash2, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 interface ScheduleTimeEditorProps {
   category: string;
@@ -82,7 +83,7 @@ export const ScheduleTimeEditor: React.FC<ScheduleTimeEditorProps> = ({
         });
 
         if (cronError) {
-          console.warn(`Failed to update cron ${jobName}:`, cronError);
+          logger.warn(`Failed to update cron ${jobName}:`, cronError);
         }
       }
     },

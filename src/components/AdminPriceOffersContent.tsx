@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import TemplateSelector from '@/components/price-offer/templates/TemplateSelector';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+import { logger } from '@/utils/logger';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -51,7 +52,7 @@ const AdminPriceOffersContent = () => {
       if (error) throw error;
       setOffers(data || []);
     } catch (error) {
-      console.error('Error fetching offers:', error);
+      logger.error('Error fetching offers:', error);
       toast.error('שגיאה בטעינת הצעות מחיר');
     } finally {
       setLoading(false);
@@ -131,7 +132,7 @@ const AdminPriceOffersContent = () => {
       toast.success('ההצעה שוכפלה בהצלחה');
       navigate(`/admin-dashboard/price-offers/edit/${newOffer.id}`);
     } catch (error) {
-      console.error('Error duplicating offer:', error);
+      logger.error('Error duplicating offer:', error);
       toast.error('שגיאה בשכפול ההצעה');
     }
   };
@@ -150,7 +151,7 @@ const AdminPriceOffersContent = () => {
       toast.success('ההצעה נמחקה בהצלחה');
       fetchOffers();
     } catch (error) {
-      console.error('Error deleting offer:', error);
+      logger.error('Error deleting offer:', error);
       toast.error('שגיאה במחיקת ההצעה');
     } finally {
       setDeleteId(null);
@@ -192,7 +193,7 @@ const AdminPriceOffersContent = () => {
       toast.success('הצעה נוצרה מתבנית בהצלחה');
       navigate(`/admin-dashboard/price-offers/edit/${newOffer.id}`);
     } catch (error) {
-      console.error('Error creating from template:', error);
+      logger.error('Error creating from template:', error);
       toast.error('שגיאה ביצירת הצעה מתבנית');
     }
   };

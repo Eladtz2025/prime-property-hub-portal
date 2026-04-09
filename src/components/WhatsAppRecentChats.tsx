@@ -6,6 +6,7 @@ import { MessageCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { logger } from '@/utils/logger';
 
 interface WhatsAppMessage {
   id: string;
@@ -72,7 +73,7 @@ export const WhatsAppRecentChats: React.FC = () => {
       convs.sort((a, b) => new Date(b.lastTime).getTime() - new Date(a.lastTime).getTime());
       setConversations(convs);
     } catch (err) {
-      console.error('Error loading messages:', err);
+      logger.error('Error loading messages:', err);
     } finally {
       setLoading(false);
     }

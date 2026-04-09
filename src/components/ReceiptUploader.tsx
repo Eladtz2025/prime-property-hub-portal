@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Upload, File, Image, Trash2, Eye, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import { logger } from '@/utils/logger';
 
 interface ReceiptUploaderProps {
   recordId?: string;
@@ -110,7 +111,7 @@ export const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
       });
 
     } catch (error) {
-      console.error('Error uploading file:', error);
+      logger.error('Error uploading file:', error);
       toast({
         title: "שגיאה בהעלאת הקובץ",
         description: "אנא נסה שוב",
@@ -139,7 +140,7 @@ export const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
         description: "הקובץ הוסר מהמערכת",
       });
     } catch (error) {
-      console.error('Error deleting file:', error);
+      logger.error('Error deleting file:', error);
       toast({
         title: "שגיאה במחיקת הקובץ",
         description: "אנא נסה שוב",

@@ -20,6 +20,7 @@ import { UnifiedScoutSettings } from './UnifiedScoutSettings';
 import { useBackfillProgressJina } from '@/hooks/useBackfillProgressJina';
 import { ScheduleTimeEditor } from './checks/ScheduleTimeEditor';
 import { PendingPropertiesDialog } from './checks/PendingPropertiesDialog';
+import { logger } from '@/utils/logger';
 
 
 // Logic description component
@@ -411,7 +412,7 @@ export const ChecksDashboard: React.FC = () => {
     mutationFn: async () => {
       supabase.functions.invoke('detect-duplicates', {
         body: { reset: true }
-      }).catch(err => console.error('Dedup trigger error:', err));
+      }).catch(err => logger.error('Dedup trigger error:', err));
       return { fired: true };
     },
     onSuccess: () => {

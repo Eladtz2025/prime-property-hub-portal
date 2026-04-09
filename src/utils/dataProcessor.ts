@@ -1,4 +1,5 @@
 import { Property } from '../types/property';
+import { logger } from '@/utils/logger';
 
 export const fixPhoneNumber = (phone: string): string => {
   if (!phone || phone === 'nan' || phone === '—') return '';
@@ -44,7 +45,7 @@ export const processPropertiesData = async (): Promise<Property[]> => {
       notes: property.notes
     }));
   } catch (error) {
-    console.error('Error loading properties:', error);
+    logger.error('Error loading properties:', error);
     return [];
   }
 };

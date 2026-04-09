@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import {
+import { logger } from '@/utils/logger';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -111,7 +112,7 @@ export default function AdminCustomers() {
       toast.success('ההתאמות הופעלו - ניתן לעקוב בהיסטוריית הסריקות');
       fetchCustomers();
     } catch (error) {
-      console.error('Match all error:', error);
+      logger.error('Match all error:', error);
       toast.error('שגיאה בהתאמת לקוחות');
     } finally {
       setIsMatchingAll(false);
@@ -136,7 +137,7 @@ export default function AdminCustomers() {
       toast.success(`חישוב מחדש הופעל: ${data.total_properties || 0} נכסים ב-${data.batches_triggered || 0} batches`);
       fetchCustomers();
     } catch (error) {
-      console.error('Reset matches error:', error);
+      logger.error('Reset matches error:', error);
       toast.error('שגיאה בחישוב מחדש');
     } finally {
       setIsMatchingAll(false);
@@ -150,7 +151,7 @@ export default function AdminCustomers() {
       toast.success('ההתאמות לנכסים שלנו עודכנו');
       fetchCustomers();
     } catch (error) {
-      console.error('Scan own properties error:', error);
+      logger.error('Scan own properties error:', error);
       toast.error('שגיאה בסריקת נכסים');
     } finally {
       setIsScanningOwn(false);

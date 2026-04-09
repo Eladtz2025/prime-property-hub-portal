@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export interface Appointment {
   id: string;
@@ -68,7 +69,7 @@ export const useAppointments = (propertyId?: string) => {
       toast.success('הפגישה נוספה בהצלחה');
     },
     onError: (error) => {
-      console.error('Error adding appointment:', error);
+      logger.error('Error adding appointment:', error);
       toast.error('שגיאה בהוספת הפגישה');
     }
   });
@@ -91,7 +92,7 @@ export const useAppointments = (propertyId?: string) => {
       toast.success('הפגישה עודכנה בהצלחה');
     },
     onError: (error) => {
-      console.error('Error updating appointment:', error);
+      logger.error('Error updating appointment:', error);
       toast.error('שגיאה בעדכון הפגישה');
     }
   });
@@ -111,7 +112,7 @@ export const useAppointments = (propertyId?: string) => {
       toast.success('הפגישה בוטלה');
     },
     onError: (error) => {
-      console.error('Error cancelling appointment:', error);
+      logger.error('Error cancelling appointment:', error);
       toast.error('שגיאה בביטול הפגישה');
     }
   });
@@ -131,7 +132,7 @@ export const useAppointments = (propertyId?: string) => {
       toast.success('הפגישה נמחקה');
     },
     onError: (error) => {
-      console.error('Error deleting appointment:', error);
+      logger.error('Error deleting appointment:', error);
       toast.error('שגיאה במחיקת הפגישה');
     }
   });

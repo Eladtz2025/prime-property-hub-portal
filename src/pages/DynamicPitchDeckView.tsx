@@ -6,6 +6,7 @@ import { usePitchDeckBySlug } from "@/hooks/usePitchDecks";
 import { PitchDeckSlide, SlideType } from "@/types/pitch-deck";
 import { ViewErrorBoundary } from "@/components/pitch-deck/ViewErrorBoundary";
 import {
+import { logger } from '@/utils/logger';
   DynamicTitleSlide,
   DynamicPropertySlide,
   DynamicFeaturesSlide,
@@ -176,11 +177,11 @@ const DynamicPitchDeckView = () => {
             />
           );
         default:
-          console.warn('Unknown slide type:', slide.slide_type);
+          logger.warn('Unknown slide type:', slide.slide_type);
           return <div className="flex items-center justify-center h-full text-white">Unknown slide type: {slide.slide_type}</div>;
       }
     } catch (error) {
-      console.error('Error rendering slide:', slide.slide_type, slide.id, error);
+      logger.error('Error rendering slide:', slide.slide_type, slide.id, error);
       return (
         <div className="flex items-center justify-center h-full text-white bg-red-900/50">
           <p>Error loading slide: {slide.slide_type}</p>

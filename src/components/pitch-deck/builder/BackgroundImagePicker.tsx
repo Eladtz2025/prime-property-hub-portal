@@ -8,6 +8,7 @@ import { Upload, Check, Loader2, ChevronLeft, ChevronRight, Wand2 } from 'lucide
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { PhotoStudioDialog } from '@/components/photo-studio/PhotoStudioDialog';
+import { logger } from '@/utils/logger';
 
 interface BackgroundImagePickerProps {
   propertyId?: string;
@@ -72,7 +73,7 @@ const BackgroundImagePicker = ({ propertyId, value, onChange }: BackgroundImageP
       onChange(publicUrl);
       toast.success('התמונה הועלתה בהצלחה');
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       toast.error('שגיאה בהעלאת התמונה');
     } finally {
       setIsUploading(false);

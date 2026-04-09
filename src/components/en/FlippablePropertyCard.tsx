@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logger } from '@/utils/logger';
 
 interface FlippablePropertyCardProps {
   title: string;
@@ -55,14 +56,14 @@ export const FlippablePropertyCard = ({
       });
 
       if (notifyError) {
-        console.error('Error notifying admins:', notifyError);
+        logger.error('Error notifying admins:', notifyError);
       }
 
       toast.success("We'll contact you soon about " + title);
       setFormData({ name: "", phone: "", email: "", message: "" });
       setIsFlipped(false);
     } catch (error) {
-      console.error('Error submitting inquiry:', error);
+      logger.error('Error submitting inquiry:', error);
       toast.error("Failed to submit inquiry. Please try again.");
     }
   };

@@ -38,6 +38,7 @@ import { he } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { downloadBrokerageFormPDF } from '@/lib/brokerage-pdf-generator';
 import {
+import { logger } from '@/utils/logger';
   Sheet,
   SheetContent,
   SheetDescription,
@@ -179,7 +180,7 @@ export const BrokerageFormsMobileList: React.FC = () => {
       });
       toast.success('הקובץ הורד בהצלחה');
     } catch (error) {
-      console.error('Error downloading PDF:', error);
+      logger.error('Error downloading PDF:', error);
       toast.error('שגיאה בהורדת הקובץ');
     } finally {
       setDownloadingFormId(null);

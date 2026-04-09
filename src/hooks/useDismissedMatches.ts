@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from '@/utils/logger';
 
 interface DismissMatchParams {
   leadId: string;
@@ -41,7 +42,7 @@ export const useDismissMatch = () => {
       toast({ title: 'הנכס הוסתר', description: 'הנכס לא יופיע יותר בתוצאות' });
     },
     onError: (error) => {
-      console.error('Error dismissing match:', error);
+      logger.error('Error dismissing match:', error);
       toast({ title: 'שגיאה', description: 'לא ניתן להסתיר את הנכס', variant: 'destructive' });
     },
   });
@@ -73,7 +74,7 @@ export const useRestoreMatch = () => {
       toast({ title: 'הנכס שוחזר', description: 'הנכס יופיע שוב בתוצאות' });
     },
     onError: (error) => {
-      console.error('Error restoring match:', error);
+      logger.error('Error restoring match:', error);
       toast({ title: 'שגיאה', description: 'לא ניתן לשחזר את הנכס', variant: 'destructive' });
     },
   });

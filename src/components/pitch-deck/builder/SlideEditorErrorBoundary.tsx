@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface SlideEditorErrorBoundaryState {
   hasError: boolean;
@@ -30,7 +31,7 @@ export class SlideEditorErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('SlideEditor Error:', {
+    logger.error('SlideEditor Error:', {
       slideType: this.props.slideType,
       slideId: this.props.slideId,
       error: error.message,

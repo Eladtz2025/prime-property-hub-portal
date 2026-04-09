@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Building2, Maximize2, Layers, Home, Car, ArrowUpDown, Shield, Package } from "lucide-react";
 import { PublicProjectUnit, PublicUnitsTable, getUnitsSummary } from "@/components/PublicUnitsTable";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { logger } from '@/utils/logger';
 
 interface NewDevelopmentCardProps {
   id: string;
@@ -94,7 +95,7 @@ export const NewDevelopmentCard = ({
       setFormData({ name: "", phone: "", email: "", message: "" });
       setIsFlipped(false);
     } catch (error) {
-      console.error("Error submitting inquiry:", error);
+      logger.error("Error submitting inquiry:", error);
       toast.error(labels.errorMsg);
     } finally {
       setSubmitting(false);

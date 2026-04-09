@@ -15,6 +15,7 @@ import { Home, CheckCircle2, Loader2, ChevronDown, ListChecks, MapPin, Building2
 import { z } from 'zod';
 import { cn } from '@/lib/utils';
 import { getPhoneSuffix } from '@/utils/phoneNormalization';
+import { logger } from '@/utils/logger';
 
 // English label mappings (values stay Hebrew for DB compatibility)
 const CITIES_EN: { value: string; label: string }[] = [
@@ -456,7 +457,7 @@ export default function ClientIntakePageEN() {
       toast.success('Details submitted successfully!');
 
     } catch (error) {
-      console.error('Error submitting form:', error);
+      logger.error('Error submitting form:', error);
       toast.error('Error submitting the form, please try again');
     } finally {
       setIsSubmitting(false);

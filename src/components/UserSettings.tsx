@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User, Phone, Mail, Save, Award, CreditCard, MapPin, Shield, CheckCircle, Clock, AlertCircle, MessageCircle } from 'lucide-react';
 import { validateField, phoneSchema, israeliIdSchema, FormErrors, FormTouched } from '@/utils/formValidation';
+import { logger } from '@/utils/logger';
 
 type FormFields = 'phone' | 'id_number';
 
@@ -117,7 +118,7 @@ export const UserSettings: React.FC = () => {
         description: "השינויים נשמרו במערכת",
       });
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error updating profile:', error);
       toast({
         title: "שגיאה בעדכון הפרטים",
         description: "אנא נסה שוב מאוחר יותר",

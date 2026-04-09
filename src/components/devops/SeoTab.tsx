@@ -7,6 +7,7 @@ import { Search, CheckCircle, XCircle, AlertTriangle, ExternalLink, Copy, Histor
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SeoHistoryChart } from "./SeoHistoryChart";
+import { logger } from '@/utils/logger';
 
 interface SeoIssue {
   severity: 'critical' | 'warning' | 'info';
@@ -197,7 +198,7 @@ export const SeoTab: React.FC = () => {
       if (error) throw error;
       setHistory(data || []);
     } catch (error) {
-      console.error('Error loading history:', error);
+      logger.error('Error loading history:', error);
     } finally {
       setLoadingHistory(false);
     }
@@ -213,7 +214,7 @@ export const SeoTab: React.FC = () => {
       });
 
       if (error) {
-        console.warn(`Rendered check failed for ${page.path}, falling back to simple check`);
+        logger.warn(`Rendered check failed for ${page.path}, falling back to simple check`);
         // Fallback to simple version
         const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke('check-seo', {
           body: { url }
@@ -224,7 +225,7 @@ export const SeoTab: React.FC = () => {
       
       return data?.result || null;
     } catch (error) {
-      console.error(`Error checking ${page.path}:`, error);
+      logger.error(`Error checking ${page.path}:`, error);
       return null;
     }
   };
@@ -248,7 +249,7 @@ export const SeoTab: React.FC = () => {
         toast.success('ניתוח AI הושלם - הפרומפטים המאוחדים מוכנים');
       }
     } catch (error) {
-      console.error('Error analyzing with AI:', error);
+      logger.error('Error analyzing with AI:', error);
       toast.error('שגיאה בניתוח AI');
     } finally {
       setAnalyzingWithAi(false);
@@ -266,7 +267,7 @@ export const SeoTab: React.FC = () => {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error saving to history:', error);
+      logger.error('Error saving to history:', error);
     }
   };
 

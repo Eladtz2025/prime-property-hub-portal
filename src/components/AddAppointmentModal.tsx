@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Property } from '@/types/property';
 import { validateField, phoneSchema, requiredNameSchema, FormErrors, FormTouched } from '@/utils/formValidation';
+import { logger } from '@/utils/logger';
 
 interface EditableAppointment {
   id: string;
@@ -166,7 +167,7 @@ export const AddAppointmentModal: React.FC<AddAppointmentModalProps> = ({
       onSuccess?.();
       handleClose();
     } catch (error) {
-      console.error('Error adding appointment:', error);
+      logger.error('Error adding appointment:', error);
       toast.error(isEditMode ? 'שגיאה בעדכון הפגישה' : 'שגיאה בהוספת הפגישה');
     } finally {
       setIsLoading(false);

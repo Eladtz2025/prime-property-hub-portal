@@ -18,6 +18,7 @@ import { brokerSharingTranslations, BrokerSharingLanguage } from '@/lib/broker-s
 import { getBrokerSharingValidationSchema, sanitizeBrokerSharingInput } from '@/utils/brokerSharingFormValidation';
 import { generateBrokerSharingPDF, BrokerSharingFormData } from '@/lib/broker-sharing-pdf-generator';
 import { BUSINESS_INFO } from '@/constants/business';
+import { logger } from '@/utils/logger';
 
 const BrokerSharingFormPage = () => {
   const [searchParams] = useSearchParams();
@@ -86,7 +87,7 @@ const BrokerSharingFormPage = () => {
       setFormDate(String(formData.form_date || format(new Date(), 'yyyy-MM-dd')));
       setPrimaryBrokerSignature(String(formData.primary_broker_signature || ''));
     } catch (error) {
-      console.error('Error loading form data:', error);
+      logger.error('Error loading form data:', error);
       toast.error(t.errorLoadingForm);
     } finally {
       setLoading(false);
@@ -191,7 +192,7 @@ const BrokerSharingFormPage = () => {
       setFormSubmitted(true);
       toast.success(t.formSaved);
     } catch (error) {
-      console.error('Error saving form:', error);
+      logger.error('Error saving form:', error);
       toast.error(t.errorSavingForm);
     } finally {
       setSaving(false);
@@ -231,7 +232,7 @@ const BrokerSharingFormPage = () => {
       await navigator.clipboard.writeText(link);
       toast.success(t.linkCopied);
     } catch (error) {
-      console.error('Error creating link:', error);
+      logger.error('Error creating link:', error);
       toast.error(t.errorCreatingLink);
     } finally {
       setSaving(false);
@@ -245,7 +246,7 @@ const BrokerSharingFormPage = () => {
       const fileName = `broker-sharing-${secondaryBrokerName.replace(/\s+/g, '-')}-${formDate}.pdf`;
       pdf.save(fileName);
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast.error('שגיאה ביצירת ה-PDF');
     }
   };

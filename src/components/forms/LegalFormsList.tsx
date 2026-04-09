@@ -12,6 +12,7 @@ import { generateExclusivityPDF } from '@/lib/exclusivity-pdf-generator';
 import { generateBrokerSharingPDF } from '@/lib/broker-sharing-pdf-generator';
 import { BUSINESS_INFO } from '@/constants/business';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 interface LegalForm {
   id: string;
@@ -94,7 +95,7 @@ export const LegalFormsList = ({ formType, hideHeader = false }: LegalFormsListP
       if (error) throw error;
       setForms(data || []);
     } catch (error) {
-      console.error('Error fetching legal forms:', error);
+      logger.error('Error fetching legal forms:', error);
       toast.error('שגיאה בטעינת הטפסים');
     } finally {
       setLoading(false);
@@ -201,7 +202,7 @@ export const LegalFormsList = ({ formType, hideHeader = false }: LegalFormsListP
         toast.error('סוג טופס לא נתמך עדיין');
       }
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast.error('שגיאה ביצירת ה-PDF');
     } finally {
       setDownloadingId(null);

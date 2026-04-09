@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gauge, Smartphone, Monitor, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logger } from '@/utils/logger';
 
 interface PerformanceMetric {
   value: number;
@@ -60,7 +61,7 @@ export const PerformanceTab: React.FC = () => {
       if (error) throw error;
       return data?.result || data;
     } catch (error) {
-      console.error(`Error checking ${page.path}:`, error);
+      logger.error(`Error checking ${page.path}:`, error);
       return null;
     }
   };

@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import type { PropertyWithTenant } from '@/types/owner-portal';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 interface QuickRentPaymentModalProps {
   property: PropertyWithTenant;
@@ -97,7 +98,7 @@ export const QuickRentPaymentModal: React.FC<QuickRentPaymentModalProps> = ({
       onSuccess();
       onClose();
     } catch (error) {
-      console.error('Error recording payment:', error);
+      logger.error('Error recording payment:', error);
       toast({
         title: "שגיאה",
         description: "לא הצלחנו לרשום את התשלום",

@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
 import { SaveToPropertyDialog } from './SaveToPropertyDialog';
 import { validateFileSize, createPreviewUrl, downloadImage, roomTypeTranslations, styleTranslations } from './utils';
+import { logger } from '@/utils/logger';
 
 type StagingMode = 'add' | 'replace';
 
@@ -174,7 +175,7 @@ export const VirtualStagingTab: React.FC = () => {
         toast.success('העיצוב הושלם בהצלחה!');
       }
     } catch (error: any) {
-      console.error('Error processing staging:', error);
+      logger.error('Error processing staging:', error);
       toast.error(error.message || 'שגיאה בעיבוד התמונה');
     } finally {
       setIsProcessing(false);

@@ -11,6 +11,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { ScoutedPropertyCard } from "./PropertyMatchCard";
+import { logger } from '@/utils/logger';
 
 interface CustomerMatchesCellProps {
   customerId: string;
@@ -122,7 +123,7 @@ export const CustomerMatchesCell = ({
       toast({ title: 'התאמה הושלמה', description: 'ההתאמות עודכנו בהצלחה' });
       onRefresh();
     } catch (error) {
-      console.error('Match error:', error);
+      logger.error('Match error:', error);
       toast({ title: 'שגיאה', description: 'לא ניתן להתאים נכסים', variant: 'destructive' });
     } finally {
       setIsMatching(false);

@@ -1,4 +1,5 @@
 import { Property } from '../types/property';
+import { logger } from '@/utils/logger';
 
 const STORAGE_KEY = 'property_updates';
 
@@ -8,7 +9,7 @@ export const savePropertyToStorage = async (property: Property): Promise<void> =
     existingUpdates[property.id] = property;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(existingUpdates));
   } catch (error) {
-    console.error('Error saving property to storage:', error);
+    logger.error('Error saving property to storage:', error);
     throw error;
   }
 };
@@ -17,7 +18,7 @@ export const loadPropertiesFromStorage = (): Record<string, Property> => {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   } catch (error) {
-    console.error('Error loading properties from storage:', error);
+    logger.error('Error loading properties from storage:', error);
     return {};
   }
 };

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 
 export type TaskType = 'daily' | 'weekly';
 
@@ -38,7 +39,7 @@ export const usePriorityTasks = (taskType: TaskType = 'weekly') => {
       if (error) throw error;
       setTasks((data || []) as PriorityTask[]);
     } catch (error) {
-      console.error('Error fetching tasks:', error);
+      logger.error('Error fetching tasks:', error);
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +76,7 @@ export const usePriorityTasks = (taskType: TaskType = 'weekly') => {
       toast({ title: 'משימה נוספה בהצלחה' });
       return data;
     } catch (error) {
-      console.error('Error adding task:', error);
+      logger.error('Error adding task:', error);
       toast({ title: 'שגיאה בהוספת משימה', variant: 'destructive' });
     }
   };
@@ -96,7 +97,7 @@ export const usePriorityTasks = (taskType: TaskType = 'weekly') => {
         return a.priority - b.priority;
       }));
     } catch (error) {
-      console.error('Error updating task:', error);
+      logger.error('Error updating task:', error);
       toast({ title: 'שגיאה בעדכון משימה', variant: 'destructive' });
     }
   };
@@ -125,7 +126,7 @@ export const usePriorityTasks = (taskType: TaskType = 'weekly') => {
       setTasks(prev => prev.filter(task => task.id !== id));
       toast({ title: 'משימה נמחקה' });
     } catch (error) {
-      console.error('Error deleting task:', error);
+      logger.error('Error deleting task:', error);
       toast({ title: 'שגיאה במחיקת משימה', variant: 'destructive' });
     }
   };

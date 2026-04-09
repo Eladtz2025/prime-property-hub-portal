@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useActivityLogger } from './useActivityLogger';
 import { useToast } from '@/hooks/use-toast';
 import { Property } from '@/types/property';
+import { logger } from '@/utils/logger';
 
 interface SendWhatsAppParams {
   phone: string;
@@ -68,7 +69,7 @@ ${property.status === 'vacant' ? 'הבנתי שהנכס פנוי כרגע.' : ''
       });
 
       if (error) {
-        console.error('WhatsApp send error:', error);
+        logger.error('WhatsApp send error:', error);
         const errorMsg = error.message || "אירעה שגיאה לא צפויה";
         const isNotConnected = errorMsg.includes('WhatsApp לא מחובר');
         toast({
@@ -113,7 +114,7 @@ ${property.status === 'vacant' ? 'הבנתי שהנכס פנוי כרגע.' : ''
         return { success: false, error: "Failed to send message" };
       }
     } catch (error) {
-      console.error('WhatsApp send error:', error);
+      logger.error('WhatsApp send error:', error);
       const errorMessage = error instanceof Error ? error.message : 'שגיאה לא צפויה';
       
       toast({

@@ -67,6 +67,7 @@ import { useScoutSettings, useUpdateScoutSetting, defaultSettings } from '@/hook
 import { LiveScanProgress } from './LiveScanProgress';
 
 import { BrokerClassificationDialog } from './BrokerClassificationDialog';
+import { logger } from '@/utils/logger';
 
 // Scout Config types
 interface ScoutConfig {
@@ -359,7 +360,7 @@ export const UnifiedScoutSettings: React.FC<{ triggerFunction?: string }> = ({ t
       try {
         await runConfigMutation.mutateAsync(configId);
       } catch (error) {
-        console.error(`Failed to run config ${configId}:`, error);
+        logger.error(`Failed to run config ${configId}:`, error);
       }
     }
     
@@ -392,7 +393,7 @@ export const UnifiedScoutSettings: React.FC<{ triggerFunction?: string }> = ({ t
           await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000)); // 5 minutes
         }
       } catch (error) {
-        console.error(`Failed to run ${config.name}:`, error);
+        logger.error(`Failed to run ${config.name}:`, error);
         toast.error(`שגיאה בהפעלת ${config.name}`);
       }
     }
@@ -528,7 +529,7 @@ export const UnifiedScoutSettings: React.FC<{ triggerFunction?: string }> = ({ t
       queryClient.invalidateQueries({ queryKey: ['active-scout-runs'] });
     },
     onError: (error) => {
-      console.error('Match error:', error);
+      logger.error('Match error:', error);
       toast.error('שגיאה בהפעלת חישוב התאמות');
     }
   });
@@ -1579,7 +1580,7 @@ export const UnifiedScoutSettings: React.FC<{ triggerFunction?: string }> = ({ t
                     toast.success(`עודכנו ${data?.updated || 0} לקוחות`);
                     queryClient.invalidateQueries({ queryKey: ['contact-leads'] });
                   } catch (err) {
-                    console.error('Refresh error:', err);
+                    logger.error('Refresh error:', err);
                     toast.error('שגיאה בעדכון');
                   } finally {
                     setIsRefreshingEligibility(false);

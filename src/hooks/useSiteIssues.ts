@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export interface SiteIssue {
   id: string;
@@ -31,7 +32,7 @@ export const useSiteIssues = () => {
       if (error) throw error;
       setIssues(data as SiteIssue[]);
     } catch (error) {
-      console.error('Error fetching site issues:', error);
+      logger.error('Error fetching site issues:', error);
       toast.error('שגיאה בטעינת הבעיות');
     } finally {
       setIsLoading(false);
@@ -71,7 +72,7 @@ export const useSiteIssues = () => {
       toast.success('הבעיה נוספה בהצלחה');
       return data;
     } catch (error) {
-      console.error('Error adding issue:', error);
+      logger.error('Error adding issue:', error);
       toast.error('שגיאה בהוספת הבעיה');
       return null;
     }
@@ -96,7 +97,7 @@ export const useSiteIssues = () => {
       ));
       toast.success('הסטטוס עודכן');
     } catch (error) {
-      console.error('Error updating status:', error);
+      logger.error('Error updating status:', error);
       toast.error('שגיאה בעדכון הסטטוס');
     }
   };
@@ -113,7 +114,7 @@ export const useSiteIssues = () => {
       setIssues(prev => prev.filter(issue => issue.id !== id));
       toast.success('הבעיה נמחקה');
     } catch (error) {
-      console.error('Error deleting issue:', error);
+      logger.error('Error deleting issue:', error);
       toast.error('שגיאה במחיקת הבעיה');
     }
   };
@@ -135,7 +136,7 @@ export const useSiteIssues = () => {
 
       return data.publicUrl;
     } catch (error) {
-      console.error('Error uploading image:', error);
+      logger.error('Error uploading image:', error);
       toast.error('שגיאה בהעלאת התמונה');
       return null;
     }

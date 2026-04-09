@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format, isToday, isYesterday } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { CheckCircle, XCircle, Loader2, Calendar, ChevronDown, ChevronLeft, Clock, AlertTriangle, RefreshCw, Calculator, Timer } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface PageStat {
   page: number;
@@ -113,7 +114,7 @@ export const ScoutRunHistory: React.FC = () => {
         });
       
       if (error) {
-        console.error('Error fetching match counts:', error);
+        logger.error('Error fetching match counts:', error);
         return {};
       }
       

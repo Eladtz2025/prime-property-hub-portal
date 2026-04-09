@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { enhancedToast } from '@/components/ui/toast-enhanced';
+import { logger } from '@/utils/logger';
 
 /**
  * Triggers an automatic scan for a project with a tracking URL.
@@ -23,7 +24,7 @@ export async function triggerAutoScan(propertyId: string) {
       title: 'סריקת פרויקט',
     });
   } catch (err: any) {
-    console.error('Auto scan failed:', err);
+    logger.error('Auto scan failed:', err);
     enhancedToast.error('הסריקה נכשלה, ניתן להפעיל ידנית מאוחר יותר', {
       title: 'שגיאה בסריקה',
     });

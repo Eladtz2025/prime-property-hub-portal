@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Building2, Loader2, Check, ImagePlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 interface Property {
   id: string;
@@ -67,7 +68,7 @@ export const SaveToPropertyDialog: React.FC<SaveToPropertyDialogProps> = ({
       setProperties(data || []);
       setFilteredProperties(data || []);
     } catch (error: any) {
-      console.error('Error fetching properties:', error);
+      logger.error('Error fetching properties:', error);
       toast.error('שגיאה בטעינת הנכסים');
     } finally {
       setIsLoading(false);
@@ -132,7 +133,7 @@ export const SaveToPropertyDialog: React.FC<SaveToPropertyDialogProps> = ({
       
       onClose();
     } catch (error: any) {
-      console.error('Error saving image:', error);
+      logger.error('Error saving image:', error);
       toast.error(error.message || 'שגיאה בשמירת התמונה');
     } finally {
       setIsSaving(false);

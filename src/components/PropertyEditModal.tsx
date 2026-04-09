@@ -19,6 +19,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Languages, Loader2, AlertCircle } from 'lucide-react';
 import { phoneSchema, emailSchema, validateField } from '@/utils/formValidation';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 interface PropertyEditModalProps {
   property: Property;
@@ -116,7 +117,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
         }));
       }
     } catch (error) {
-      console.error('Error loading English fields:', error);
+      logger.error('Error loading English fields:', error);
     }
   };
 
@@ -154,7 +155,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
         description: direction === 'he-en' ? "הטקסט תורגם לאנגלית" : "הטקסט תורגם לעברית"
       });
     } catch (error: any) {
-      console.error('Translation error:', error);
+      logger.error('Translation error:', error);
       toast({
         title: "שגיאה בתרגום",
         description: error.message,
@@ -180,7 +181,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
         }));
       }
     } catch (error) {
-      console.error('Error loading show_on_website flag:', error);
+      logger.error('Error loading show_on_website flag:', error);
     }
   };
 
@@ -194,7 +195,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
         .order('order_index', { ascending: true });
 
       if (error) {
-        console.error('❌ Error loading images:', error);
+        logger.error('❌ Error loading images:', error);
         return;
       }
 
@@ -226,7 +227,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
         }));
       }
     } catch (error) {
-      console.error('❌ Error loading property images:', error);
+      logger.error('❌ Error loading property images:', error);
     }
   };
 
@@ -366,7 +367,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           .eq('property_id', formData.id);
 
         if (deleteError) {
-          console.error('❌ Error deleting old images:', deleteError);
+          logger.error('❌ Error deleting old images:', deleteError);
         }
 
         // Insert new images
@@ -392,7 +393,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                 .upload(fileName, blob);
 
               if (uploadError) {
-                console.error('❌ Storage upload error:', uploadError);
+                logger.error('❌ Storage upload error:', uploadError);
                 continue;
               }
 
@@ -404,7 +405,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
               imageUrl = publicUrl;
               
             } catch (uploadError) {
-              console.error('❌ Error uploading image:', uploadError);
+              logger.error('❌ Error uploading image:', uploadError);
               continue;
             }
           }
@@ -424,7 +425,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
             .insert(imageData);
 
           if (imageError) {
-            console.error('❌ Error saving image to DB:', imageError);
+            logger.error('❌ Error saving image to DB:', imageError);
           } else {
             
           }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export interface BusinessExpense {
   id: string;
@@ -31,7 +32,7 @@ export const useBusinessExpenses = () => {
       if (error) throw error;
       setExpenses((data as BusinessExpense[]) || []);
     } catch (error) {
-      console.error('Error fetching expenses:', error);
+      logger.error('Error fetching expenses:', error);
     } finally {
       setLoading(false);
     }
@@ -49,7 +50,7 @@ export const useBusinessExpenses = () => {
       toast.success('ההוצאה נוספה בהצלחה');
       fetchExpenses();
     } catch (error) {
-      console.error('Error adding expense:', error);
+      logger.error('Error adding expense:', error);
       toast.error('שגיאה בהוספת הוצאה');
     }
   };
@@ -64,7 +65,7 @@ export const useBusinessExpenses = () => {
       toast.success('ההוצאה עודכנה');
       fetchExpenses();
     } catch (error) {
-      console.error('Error updating expense:', error);
+      logger.error('Error updating expense:', error);
       toast.error('שגיאה בעדכון');
     }
   };
@@ -79,7 +80,7 @@ export const useBusinessExpenses = () => {
       toast.success('ההוצאה נמחקה');
       fetchExpenses();
     } catch (error) {
-      console.error('Error deleting expense:', error);
+      logger.error('Error deleting expense:', error);
       toast.error('שגיאה במחיקה');
     }
   };

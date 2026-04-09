@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, Upload, Download, Trash2, Loader2, File, FileImage, FileCheck } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { logger } from '@/utils/logger';
 
 interface PropertyDocument {
   id: string;
@@ -79,7 +80,7 @@ export const PropertyDocuments: React.FC<PropertyDocumentsProps> = ({ propertyId
       if (error) throw error;
       setDocuments(data || []);
     } catch (error: any) {
-      console.error('Error loading documents:', error);
+      logger.error('Error loading documents:', error);
       toast({
         title: "שגיאה בטעינת מסמכים",
         description: error.message,
@@ -131,7 +132,7 @@ export const PropertyDocuments: React.FC<PropertyDocumentsProps> = ({ propertyId
       
       loadDocuments();
     } catch (error: any) {
-      console.error('Error uploading document:', error);
+      logger.error('Error uploading document:', error);
       toast({
         title: "שגיאה בהעלאת מסמך",
         description: error.message,
@@ -172,7 +173,7 @@ export const PropertyDocuments: React.FC<PropertyDocumentsProps> = ({ propertyId
       
       loadDocuments();
     } catch (error: any) {
-      console.error('Error deleting document:', error);
+      logger.error('Error deleting document:', error);
       toast({
         title: "שגיאה במחיקת מסמך",
         description: error.message,

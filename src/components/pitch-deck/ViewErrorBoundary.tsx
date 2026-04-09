@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface ViewErrorBoundaryState {
   hasError: boolean;
@@ -24,7 +25,7 @@ export class ViewErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('PitchDeck View Error:', error, errorInfo);
+    logger.error('PitchDeck View Error:', error, errorInfo);
   }
 
   handleRetry = () => {

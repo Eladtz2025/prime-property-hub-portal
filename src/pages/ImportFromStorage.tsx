@@ -5,6 +5,7 @@ import { Upload, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { logger } from '@/utils/logger';
 
 interface ImportStats {
   total: number;
@@ -22,17 +23,17 @@ const ImportFromStorage = () => {
     setStats(null);
     
     try {
-      console.log('🚀 Starting import from storage...');
+      logger.info('🚀 Starting import from storage...');
       toast.info('מתחיל ייבוא מהקובץ...');
 
       const { data, error } = await supabase.functions.invoke('import-from-json');
 
       if (error) {
-        console.error('❌ Error calling function:', error);
+        logger.error('❌ Error calling function:', error);
         throw error;
       }
 
-      console.log('✅ Import completed:', data);
+      logger.info('✅ Import completed:', data);
       
       if (data.success) {
         setStats(data.stats);
@@ -46,7 +47,7 @@ const ImportFromStorage = () => {
       }
       
     } catch (error) {
-      console.error('❌ Error importing:', error);
+      logger.error('❌ Error importing:', error);
       toast.error(`שגיאה בייבוא: ${error.message}`);
     } finally {
       setIsImporting(false);

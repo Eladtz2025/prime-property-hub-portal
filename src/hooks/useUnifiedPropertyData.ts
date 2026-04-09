@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Property } from '@/types/property';
+import { logger } from '@/utils/logger';
 
 interface UnifiedProperty {
   address: string;
@@ -56,7 +57,7 @@ export const useUnifiedPropertyData = () => {
           transformToProperty(property, index)
         );
       } catch (error) {
-        console.error('Error loading unified properties:', error);
+        logger.error('Error loading unified properties:', error);
         throw error;
       }
     },

@@ -25,6 +25,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { createPropertyInvitation } from '@/lib/owner-portal';
 import type { DatabaseProperty, PropertyInvitation } from '@/types/owner-portal';
+import { logger } from '@/utils/logger';
 
 interface PropertyWithSelected extends DatabaseProperty {
   selected?: boolean;
@@ -66,7 +67,7 @@ export const PropertyInvitationManager: React.FC = () => {
       setProperties((propertiesData || []) as PropertyWithSelected[]);
       setInvitations(invitationsData || []);
     } catch (error) {
-      console.error('Error loading data:', error);
+      logger.error('Error loading data:', error);
       toast({
         title: "שגיאה",
         description: "שגיאה בטעינת הנתונים",
@@ -132,7 +133,7 @@ export const PropertyInvitationManager: React.FC = () => {
         await loadData();
       }
     } catch (error) {
-      console.error('Error creating invitation:', error);
+      logger.error('Error creating invitation:', error);
       toast({
         title: "שגיאה",
         description: "שגיאה ביצירת ההזמנה",
@@ -152,7 +153,7 @@ export const PropertyInvitationManager: React.FC = () => {
         description: "קישור ההזמנה הועתק ללוח",
       });
     } catch (error) {
-      console.error('Error copying to clipboard:', error);
+      logger.error('Error copying to clipboard:', error);
     }
   };
 

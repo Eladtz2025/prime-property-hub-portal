@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { ImageLightbox } from './ImageLightbox';
 import { SaveToPropertyDialog } from './SaveToPropertyDialog';
 import { downloadImage, roomTypeTranslations, styleTranslations } from './utils';
+import { logger } from '@/utils/logger';
 
 const roomTypes = [
   { value: 'living_room', label: 'סלון' },
@@ -98,7 +99,7 @@ export const ImageGenerationTab: React.FC = () => {
         toast.success('התמונה נוצרה בהצלחה!');
       }
     } catch (error: any) {
-      console.error('Error generating image:', error);
+      logger.error('Error generating image:', error);
       toast.error(error.message || 'שגיאה ביצירת התמונה');
     } finally {
       setIsGenerating(false);
