@@ -25,7 +25,7 @@ export class ViewErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    logger.error('PitchDeck View Error:', error, errorInfo);
+    logger.error('PitchDeck View Error:', error);
   }
 
   handleRetry = () => {

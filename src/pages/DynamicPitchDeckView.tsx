@@ -181,7 +181,7 @@ const DynamicPitchDeckView = () => {
           return <div className="flex items-center justify-center h-full text-white">Unknown slide type: {slide.slide_type}</div>;
       }
     } catch (error) {
-      logger.error('Error rendering slide:', slide.slide_type, slide.id, error);
+      logger.error(`Error rendering slide ${slide.slide_type} (${slide.id}):`, error);
       return (
         <div className="flex items-center justify-center h-full text-white bg-red-900/50">
           <p>Error loading slide: {slide.slide_type}</p>

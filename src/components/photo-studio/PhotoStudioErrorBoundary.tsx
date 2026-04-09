@@ -25,7 +25,7 @@ export class PhotoStudioErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    logger.error(`PhotoStudio ${this.props.tabName} error:`, error, errorInfo);
+    logger.error(`PhotoStudio ${this.props.tabName} error:`, error);
   }
 
   handleReset = () => {

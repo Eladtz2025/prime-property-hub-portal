@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getRestrictedCorsHeaders, handleCorsOptions } from '../_shared/cors.ts';
 
 // These are the deleted properties from the migration
 // 12 empty "רחוב" properties + 22 duplicates
@@ -71,9 +67,9 @@ const PROPERTIES_TO_RESTORE = [
 ];
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const corsHeaders = getRestrictedCorsHeaders(req);
+  const optionsResponse = handleCorsOptions(req);
+  if (optionsResponse) return optionsResponse;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

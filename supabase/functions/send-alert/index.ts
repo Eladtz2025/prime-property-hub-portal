@@ -1,8 +1,4 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
+import { getRestrictedCorsHeaders, handleCorsOptions } from '../_shared/cors.ts';
 interface AlertPayload {
   severity: 'critical' | 'warning' | 'info';
   title: string;
@@ -12,9 +8,9 @@ interface AlertPayload {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsHeaders = getRestrictedCorsHeaders(req);
+  const optionsResponse = handleCorsOptions(req);
+  if (optionsResponse) return optionsResponse;
 
   try {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
