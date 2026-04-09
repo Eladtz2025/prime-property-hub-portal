@@ -708,12 +708,21 @@ Deno.serve(async (req) => {
         // Entry date
         const entryDateInfo = extractEntryDateInfo(markdown, prop.source);
         
-        // Features merge
+        // Features merge — backfill overrides scout for explicit boolean values
         const existingFeatures = (prop.features || {}) as Record<string, any>;
         const existingIsEmpty = !prop.features || Object.keys(prop.features).length === 0;
-        const hasNewFeatures = Object.keys(features).some(key => features[key as keyof PropertyFeatures] === true);
+        const hasNewFeatures = Object.keys(features).some(key => {
+          const val = features[key as keyof PropertyFeatures];
+          return val === true || val === false;
+        });
         
-        const mergedFeatures = { ...existingFeatures, ...features };
+        const mergedFeatures = { ...existingFeatures };
+        // Backfill always wins for explicit boolean values
+        for (const [key, value] of Object.entries(features)) {
+          if (value === true || value === false) {
+            mergedFeatures[key] = value;
+          }
+        }
         
         if (entryDateInfo.entry_date && !existingFeatures.entry_date) {
           mergedFeatures.entry_date = entryDateInfo.entry_date;
@@ -723,10 +732,11 @@ Deno.serve(async (req) => {
         }
         
         // Negative inference: if backfill succeeded and feature wasn't found, mark as false
+        // Apply even if existing was true from scout (scout could be wrong)
         const inferFalse = ['elevator', 'parking', 'balcony', 'mamad', 'yard', 'roof', 'storage', 'pets'];
         for (const key of inferFalse) {
-          if ((mergedFeatures as any)[key] !== true && !(existingFeatures as any)[key]) {
-            (mergedFeatures as any)[key] = false;
+          if (mergedFeatures[key] !== true) {
+            mergedFeatures[key] = false;
           }
         }
         

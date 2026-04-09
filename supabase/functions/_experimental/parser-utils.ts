@@ -714,8 +714,12 @@ export function mergeFeatures(...featureSets: PropertyFeatures[]): PropertyFeatu
   for (const features of featureSets) {
     if (!features) continue;
     for (const [key, value] of Object.entries(features)) {
-      if (value === true) {
-        (merged as any)[key] = true;
+      if (value === true || value === false) {
+        // Explicit value (true or false) always overrides undefined
+        // true overrides false (if feature is found in any source, keep it)
+        if ((merged as any)[key] === undefined || value === true) {
+          (merged as any)[key] = value;
+        }
       }
     }
   }
