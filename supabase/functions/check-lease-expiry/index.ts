@@ -15,8 +15,8 @@ const ADMINS = [
   },
   { 
     id: '0c79f27c-bd27-4bf5-8f47-7e1b5e12c9b9', 
-    name: 'טלי',
-    phone: '972542284477' 
+    name: 'אלעד',
+    phone: '972545503055' 
   }
 ];
 

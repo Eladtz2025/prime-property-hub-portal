@@ -88,7 +88,7 @@ const HebrewHeader = () => {
             {/* Left (RTL): Phone + Mail + Hamburger */}
             <div className="flex items-center gap-3 md:gap-4 z-10">
               <a
-                href="tel:+972542284477"
+                href="tel:+972545503055"
                 className="p-2 transition-all duration-300 hover:scale-110"
                 style={{ color: iconColor, filter: iconFilter }}
                 aria-label="התקשרו אלינו"
@@ -152,7 +152,7 @@ const HebrewHeader = () => {
             <div className="flex flex-wrap items-center justify-center gap-4 text-white/50 text-xs md:text-sm tracking-wide">
               <a href="mailto:citymarketlv@gmail.com" className="hover:text-white/80 transition-colors">citymarketlv@gmail.com</a>
               <span className="hidden md:inline">·</span>
-              <a href="tel:+972542284477" className="hover:text-white/80 transition-colors">טלי: 054-228-4477</a>
+              <a href="tel:+972545503055" className="hover:text-white/80 transition-colors">אלעד: 054-550-3055</a>
             </div>
           </div>
         </div>

@@ -125,8 +125,8 @@ const EnglishFooter = () => {
             <ul className="space-y-3 font-montserrat text-sm text-background/70">
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
-                <a href="tel:0542284477" className="hover:text-background transition-colors">
-                  054-228-4477
+                <a href="tel:0545503055" className="hover:text-background transition-colors">
+                  054-550-3055
                 </a>
               </li>
               <li className="flex items-center gap-2">

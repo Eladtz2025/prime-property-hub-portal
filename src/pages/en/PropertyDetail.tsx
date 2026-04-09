@@ -51,7 +51,7 @@ const EnglishPropertyDetail = () => {
 
   const handleCall = () => {
     const agentPhone = property?.agent?.phone;
-    const phone = agentPhone || '0542284477';
+    const phone = agentPhone || '0545503055';
     window.location.href = `tel:${phone}`;
   };
 
