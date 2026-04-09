@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import HebrewHeader from '@/components/he/Header';
 import HebrewFooter from '@/components/he/Footer';
 import FullScreenHero from '@/components/FullScreenHero';
@@ -19,6 +19,7 @@ import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from '@/component
 const USE_REAL_DATA = true;
 
 const Sales = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [cityFilter, setCityFilter] = useState('all');
   const [roomsFilter, setRoomsFilter] = useState('all');
@@ -168,7 +169,7 @@ const Sales = () => {
           {filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => (
-              <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate(`/he/property/${property.id}`)}>
                   <div className="aspect-video relative">
                     <img
                       src={property.image || '/images/sales-villa.jpg'}
