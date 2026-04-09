@@ -350,6 +350,7 @@ export const useSupabasePropertyData = () => {
     
     // Mutations
     addProperty: addPropertyMutation.mutate,
+    addPropertyAsync: addPropertyMutation.mutateAsync,
     updateProperty: updatePropertyMutation.mutate,
     deleteProperty: deletePropertyMutation.mutate,
     isAddingProperty: addPropertyMutation.isPending,

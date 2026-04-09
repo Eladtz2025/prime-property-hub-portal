@@ -32,7 +32,15 @@ import { cn } from '@/lib/utils';
 interface AddPropertyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPropertyAdded: (property: Omit<Property, 'id'>) => void;
+  onPropertyAdded: (property: Omit<Property, 'id'>) => Promise<string>;
+}
+
+type OwnerSourceType = 'manual' | 'existing_owner' | 'existing_broker';
+
+interface ExistingOwner {
+  ownerName: string;
+  ownerPhone: string;
+  ownerEmail: string;
 }
 
 export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
@@ -102,6 +110,53 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const { toast } = useToast();
   const [errors, setErrors] = useState<{ ownerPhone?: string; ownerEmail?: string; tenantPhone?: string }>({});
   const [touched, setTouched] = useState<{ ownerPhone?: boolean; ownerEmail?: boolean; tenantPhone?: boolean }>({});
+  const [ownerSource, setOwnerSource] = useState<OwnerSourceType>('manual');
+
+  // Load existing owners (distinct from properties table)
+  const { data: existingOwners = [] } = useQuery({
+    queryKey: ['existing-owners'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('owner_name, owner_phone, owner_email')
+        .not('owner_name', 'is', null)
+        .not('owner_name', 'eq', '');
+      
+      if (error) throw error;
+      
+      // Deduplicate by name+phone
+      const seen = new Set<string>();
+      const unique: ExistingOwner[] = [];
+      for (const row of data || []) {
+        const key = `${row.owner_name}-${row.owner_phone || ''}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push({
+            ownerName: row.owner_name || '',
+            ownerPhone: row.owner_phone || '',
+            ownerEmail: row.owner_email || '',
+          });
+        }
+      }
+      return unique.sort((a, b) => a.ownerName.localeCompare(b.ownerName, 'he'));
+    },
+    enabled: isOpen,
+  });
+
+  // Load existing brokers
+  const { data: existingBrokers = [] } = useQuery({
+    queryKey: ['existing-brokers-for-modal'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('brokers')
+        .select('id, name, phone, office_name')
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isOpen,
+  });
 
   const handleFieldBlur = (field: 'ownerPhone' | 'ownerEmail' | 'tenantPhone') => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -256,46 +311,34 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         lastUpdated: new Date().toISOString()
       };
 
-      onPropertyAdded(newProperty);
+      const propertyId = await onPropertyAdded(newProperty);
       
       // Save images if uploaded
-      if (uploadedImages.length > 0) {
-        const { data: properties } = await supabase
-          .from('properties')
-          .select('id')
-          .eq('address', formData.address.trim())
-          .eq('city', formData.city)
-          .order('created_at', { ascending: false })
-          .limit(1);
+      if (uploadedImages.length > 0 && propertyId) {
+        const imageInserts = uploadedImages.map((img, index) => ({
+          property_id: propertyId,
+          image_url: img.url,
+          order_index: index,
+          is_main: img.isPrimary,
+          alt_text: img.name
+        }));
 
-        if (properties && properties.length > 0) {
-          const propertyId = properties[0].id;
-          
-          const imageInserts = uploadedImages.map((img, index) => ({
-            property_id: propertyId,
-            image_url: img.url,
-            order_index: index,
-            is_main: img.isPrimary,
-            alt_text: img.name
-          }));
+        const { error: imageError } = await supabase
+          .from('property_images')
+          .insert(imageInserts);
 
-          const { error: imageError } = await supabase
-            .from('property_images')
-            .insert(imageInserts);
-
-          if (imageError) {
-            logger.error('Error saving images:', imageError, 'AddPropertyModal');
-            toast({
-              title: "שגיאה בשמירת תמונות",
-              description: "הנכס נשמר אך התמונות לא נשמרו",
-              variant: "destructive"
-            });
-          } else {
-            toast({
-              title: "הצלחה!",
-              description: `הנכס נוסף עם ${uploadedImages.length} תמונות`,
-            });
-          }
+        if (imageError) {
+          logger.error('Error saving images:', imageError, 'AddPropertyModal');
+          toast({
+            title: "שגיאה בשמירת תמונות",
+            description: "הנכס נשמר אך התמונות לא נשמרו",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "הצלחה!",
+            description: `הנכס נוסף עם ${uploadedImages.length} תמונות`,
+          });
         }
       } else {
         toast({
@@ -346,6 +389,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         notes: ''
       });
       setUploadedImages([]);
+      setOwnerSource('manual');
       
     } catch (error) {
       logger.error('Error adding property:', error, 'AddPropertyModal');
@@ -742,6 +786,85 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             <AccordionItem value="owner">
               <AccordionTrigger>👤 פרטי הבעלים</AccordionTrigger>
               <AccordionContent className="space-y-4 pt-4">
+                {/* Owner Source Selection */}
+                <div>
+                  <Label>מקור פרטי הבעלים</Label>
+                  <Select value={ownerSource} onValueChange={(value: OwnerSourceType) => {
+                    setOwnerSource(value);
+                    // Clear owner fields when switching source
+                    if (value !== 'manual') {
+                      setFormData(prev => ({ ...prev, ownerName: '', ownerPhone: '', ownerEmail: '' }));
+                    }
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual">הכנסה ידנית</SelectItem>
+                      <SelectItem value="existing_owner">בחירת בעלים קיים</SelectItem>
+                      <SelectItem value="existing_broker">בחירת מתווך קיים</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Existing Owner Picker */}
+                {ownerSource === 'existing_owner' && (
+                  <div>
+                    <Label>בחר בעלים</Label>
+                    <Select onValueChange={(value) => {
+                      const owner = existingOwners.find(o => `${o.ownerName}-${o.ownerPhone}` === value);
+                      if (owner) {
+                        setFormData(prev => ({
+                          ...prev,
+                          ownerName: owner.ownerName,
+                          ownerPhone: owner.ownerPhone,
+                          ownerEmail: owner.ownerEmail,
+                        }));
+                      }
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר מהרשימה..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {existingOwners.map((owner) => (
+                          <SelectItem key={`${owner.ownerName}-${owner.ownerPhone}`} value={`${owner.ownerName}-${owner.ownerPhone}`}>
+                            {owner.ownerName} {owner.ownerPhone ? `(${owner.ownerPhone})` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Existing Broker Picker */}
+                {ownerSource === 'existing_broker' && (
+                  <div>
+                    <Label>בחר מתווך</Label>
+                    <Select onValueChange={(value) => {
+                      const broker = existingBrokers.find(b => b.id === value);
+                      if (broker) {
+                        setFormData(prev => ({
+                          ...prev,
+                          ownerName: broker.name,
+                          ownerPhone: broker.phone,
+                          ownerEmail: '',
+                        }));
+                      }
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר מתווך מהרשימה..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {existingBrokers.map((broker) => (
+                          <SelectItem key={broker.id} value={broker.id}>
+                            {broker.name} {broker.office_name ? `(${broker.office_name})` : ''} — {broker.phone}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div>
                   <Label htmlFor="ownerName">שם הבעלים *</Label>
                   <Input

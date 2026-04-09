@@ -89,6 +89,7 @@ export const Properties: React.FC = memo(() => {
     properties, 
     isLoading,
     addProperty,
+    addPropertyAsync,
     updateProperty, 
     deleteProperty,
     isUpdatingProperty,
@@ -842,9 +843,10 @@ export const Properties: React.FC = memo(() => {
         <AddPropertyModal
           isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
-          onPropertyAdded={(newProperty) => {
-            addProperty(newProperty);
+          onPropertyAdded={async (newProperty) => {
+            const result = await addPropertyAsync(newProperty);
             setShowAddModal(false);
+            return result.id;
           }}
         />
 

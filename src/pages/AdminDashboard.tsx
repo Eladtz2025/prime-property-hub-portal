@@ -16,15 +16,17 @@ const AdminDashboard = memo(() => {
   const { 
     properties, 
     isLoading, 
-    addProperty, 
+    addProperty,
+    addPropertyAsync,
     isAddingProperty 
   } = usePropertyData();
   
   const { data: stats } = usePropertyStats(properties);
 
-  const handlePropertyAdded = (newProperty: any) => {
-    addProperty(newProperty);
+  const handlePropertyAdded = async (newProperty: any) => {
+    const result = await addPropertyAsync(newProperty);
     setShowAddPropertyModal(false);
+    return result.id;
   };
   
   // Generate alerts from properties data
