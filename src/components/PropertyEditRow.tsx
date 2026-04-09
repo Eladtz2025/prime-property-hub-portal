@@ -191,6 +191,16 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = ({
           isFurnished: (img as any).is_furnished || false,
         }));
 
+        // Normalize: ensure only one image is marked as primary
+        let foundPrimary = false;
+        images.forEach(img => {
+          if (img.isPrimary && !foundPrimary) {
+            foundPrimary = true;
+          } else if (img.isPrimary) {
+            img.isPrimary = false;
+          }
+        });
+
         setFormData(prev => ({
           ...prev,
           images
