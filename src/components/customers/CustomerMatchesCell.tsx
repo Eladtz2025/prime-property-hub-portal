@@ -222,6 +222,20 @@ export const CustomerMatchesCell = ({
     );
   }
 
+  // Build rejection tooltip content
+  const rejectionTooltipContent = rejectionSummary ? (() => {
+    const sortedReasons = Object.entries(rejectionSummary.reasons)
+      .sort(([, a], [, b]) => b - a);
+    return (
+      <div className="text-right space-y-1" dir="rtl">
+        <p className="font-medium">{rejectionSummary.total_rejected} נכסים נדחו:</p>
+        {sortedReasons.map(([reason, count]) => (
+          <p key={reason} className="text-xs">• {reason} — {count}</p>
+        ))}
+      </div>
+    );
+  })() : null;
+
   return (
     <>
     <Dialog>
@@ -242,6 +256,20 @@ export const CustomerMatchesCell = ({
             )}
           </div>
         </DialogTrigger>
+        {rejectionSummary && rejectionSummary.total_rejected > 0 && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="h-5 w-5 bg-destructive/15 text-destructive rounded-full text-[10px] flex items-center justify-center cursor-help font-medium shrink-0">
+                  !
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                {rejectionTooltipContent}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
         <Button 
           size="sm" 
           variant="ghost" 
