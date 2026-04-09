@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import EnglishHeader from "@/components/en/Header";
 import EnglishFooter from "@/components/en/Footer";
-import FullScreenHero from "@/components/FullScreenHero";
+
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import { Card } from '@/components/ui/card';
@@ -80,11 +80,6 @@ const EnglishSales = () => {
       ]} />
       <EnglishHeader />
       
-      <FullScreenHero
-        title="Apartments for Sale in Tel Aviv"
-        backgroundImage="/images/sales-villa.jpg"
-        minHeight="100vh"
-      />
 
       {/* Properties Grid */}
       <section className="py-12 bg-muted">

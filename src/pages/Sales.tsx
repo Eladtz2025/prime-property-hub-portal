@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import HebrewHeader from '@/components/he/Header';
 import HebrewFooter from '@/components/he/Footer';
-import FullScreenHero from '@/components/FullScreenHero';
+
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -145,12 +145,6 @@ const Sales = () => {
       ]} />
       <HebrewHeader />
       
-      {/* Hero Section */}
-      <FullScreenHero
-        title="דירות למכירה בתל אביב"
-        backgroundImage="/images/sales-villa.jpg"
-        minHeight="100vh"
-      />
 
       {/* Properties Grid */}
       <section className="py-12 bg-muted">

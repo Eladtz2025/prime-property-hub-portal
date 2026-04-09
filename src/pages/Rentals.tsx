@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import HebrewHeader from '@/components/he/Header';
 import HebrewFooter from '@/components/he/Footer';
-import FullScreenHero from '@/components/FullScreenHero';
+
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -171,12 +171,6 @@ const Rentals = () => {
       ]} />
       <HebrewHeader />
       
-      {/* Hero Section */}
-      <FullScreenHero
-        title="דירות להשכרה בתל אביב"
-        backgroundImage="/images/rental-interior.jpg"
-        minHeight="100vh"
-      />
 
       {/* Properties Grid */}
       <section className="py-12 bg-muted">
