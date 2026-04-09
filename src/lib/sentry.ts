@@ -1,10 +1,11 @@
 import * as Sentry from '@sentry/react';
+import { logger } from '@/utils/logger';
 
 export const initSentry = () => {
   const dsn = import.meta.env.VITE_SENTRY_DSN;
   
   if (!dsn) {
-    console.log('[Sentry] No DSN configured, Sentry disabled');
+    logger.info('[Sentry] No DSN configured, Sentry disabled');
     return;
   }
 
