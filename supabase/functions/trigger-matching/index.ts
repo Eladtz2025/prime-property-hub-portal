@@ -163,13 +163,25 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
     }));
   }
 
-  console.log(`✅ Lead ${leadId} re-matched: ${updatedCount} properties matched`);
+  // Save rejection summary to lead
+  const rejectionSummary = totalRejected > 0 
+    ? { total_rejected: totalRejected, reasons: rejectionCounts }
+    : null;
+  
+  await supabase
+    .from('contact_leads')
+    .update({ rejection_summary: rejectionSummary })
+    .eq('id', leadId);
+
+  console.log(`✅ Lead ${leadId} re-matched: ${updatedCount} properties matched, ${totalRejected} rejected`);
 
   return new Response(JSON.stringify({
     success: true,
     lead_id: leadId,
     properties_checked: properties?.length || 0,
-    matches_updated: updatedCount
+    matches_updated: updatedCount,
+    total_rejected: totalRejected,
+    rejection_summary: rejectionSummary
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
