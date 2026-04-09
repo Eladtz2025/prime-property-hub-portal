@@ -403,7 +403,7 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
             property_id: formData.id,
             image_url: imageUrl,
             alt_text: image.name || 'תמונת נכס',
-            is_main: image.isPrimary || i === 0,
+            is_main: image.isPrimary === true,
             order_index: i,
             is_furnished: image.isFurnished || false,
           };
