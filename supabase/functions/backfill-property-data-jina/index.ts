@@ -708,12 +708,21 @@ Deno.serve(async (req) => {
         // Entry date
         const entryDateInfo = extractEntryDateInfo(markdown, prop.source);
         
-        // Features merge
+        // Features merge — backfill overrides scout for explicit boolean values
         const existingFeatures = (prop.features || {}) as Record<string, any>;
         const existingIsEmpty = !prop.features || Object.keys(prop.features).length === 0;
-        const hasNewFeatures = Object.keys(features).some(key => features[key as keyof PropertyFeatures] === true);
+        const hasNewFeatures = Object.keys(features).some(key => {
+          const val = features[key as keyof PropertyFeatures];
+          return val === true || val === false;
+        });
         
-        const mergedFeatures = { ...existingFeatures, ...features };
+        const mergedFeatures = { ...existingFeatures };
+        // Backfill always wins for explicit boolean values
+        for (const [key, value] of Object.entries(features)) {
+          if (value === true || value === false) {
+            mergedFeatures[key] = value;
+          }
+        }
         
         if (entryDateInfo.entry_date && !existingFeatures.entry_date) {
           mergedFeatures.entry_date = entryDateInfo.entry_date;
@@ -723,10 +732,11 @@ Deno.serve(async (req) => {
         }
         
         // Negative inference: if backfill succeeded and feature wasn't found, mark as false
+        // Apply even if existing was true from scout (scout could be wrong)
         const inferFalse = ['elevator', 'parking', 'balcony', 'mamad', 'yard', 'roof', 'storage', 'pets'];
         for (const key of inferFalse) {
-          if ((mergedFeatures as any)[key] !== true && !(existingFeatures as any)[key]) {
-            (mergedFeatures as any)[key] = false;
+          if (mergedFeatures[key] !== true) {
+            mergedFeatures[key] = false;
           }
         }
         
@@ -1147,69 +1157,82 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
   }
 
   // === Non-homeless sources: existing logic ===
-  const hasFeature = (positivePatterns: RegExp[], negativePatterns: RegExp[] = []): boolean => {
+  // Returns: true (positive found), false (negative found), null (not mentioned)
+  const detectFeature = (positivePatterns: RegExp[], negativePatterns: RegExp[] = []): boolean | null => {
     for (const neg of negativePatterns) { if (neg.test(text)) return false; }
     for (const pos of positivePatterns) { if (pos.test(text)) return true; }
-    return false;
+    return null;
   };
 
-  if (hasFeature(
+  const balconyResult = detectFeature(
     [/יש\s*מרפסת/i, /כולל\s*מרפסת/i, /עם\s*מרפסת/i, /מרפסת\s*(שמש|גדולה|מרווחת|יפה|קטנה|רחבה)/i, /\bמרפסת\b.*מ"ר/i, /\d+\s*מרפס[תו]ת/i, /מרפסות/i, /\bמרפסת\b/],
-    [/אין\s*מרפסת/i, /ללא\s*מרפסת/i, /בלי\s*מרפסת/i]
-  )) features.balcony = true;
+    [/אין\s*מרפסת/i, /ללא\s*מרפסת/i, /בלי\s*מרפסת/i, /מרפסת\s*:?\s*(?:אין|לא|ללא)/i]
+  );
+  if (balconyResult !== null) features.balcony = balconyResult;
 
-  if (hasFeature(
+  const yardResult = detectFeature(
     [/יש\s*(חצר|גינה)/i, /כולל\s*(חצר|גינה)/i, /עם\s*(חצר|גינה)/i, /\b(חצר|גינה)\s*(פרטית|גדולה|ירוקה|משותפת)/i, /גן\s*פרטי/i, /דירת\s*גן/i, /גינה\s*פרטית/i, /\bדשא\b/i, /\bפטיו\b/i, /\bחצר\b/],
-    [/אין\s*(חצר|גינה)/i, /ללא\s*(חצר|גינה)/i, /בלי\s*(חצר|גינה)/i]
-  )) features.yard = true;
+    [/אין\s*(חצר|גינה)/i, /ללא\s*(חצר|גינה)/i, /בלי\s*(חצר|גינה)/i, /(חצר|גינה)\s*:?\s*(?:אין|לא|ללא)/i]
+  );
+  if (yardResult !== null) features.yard = yardResult;
 
-  if (hasFeature(
+  const elevatorResult = detectFeature(
     [/יש\s*מעלית/i, /כולל\s*מעלית/i, /עם\s*מעלית/i, /בניין\s*עם\s*מעלית/i, /מעלית\s*שבת/i, /\d+\s*מעליות/i, /[-•]\s*מעלית/, /מעלית/],
-    [/אין\s*מעלית/i, /ללא\s*מעלית/i, /בלי\s*מעלית/i, /בלעדי\s*מעלית/i]
-  )) features.elevator = true;
+    [/אין\s*מעלית/i, /ללא\s*מעלית/i, /בלי\s*מעלית/i, /בלעדי\s*מעלית/i, /מעלית\s*:?\s*(?:אין|לא|ללא)/i]
+  );
+  if (elevatorResult !== null) features.elevator = elevatorResult;
 
-  if (hasFeature(
+  const parkingResult = detectFeature(
     [/יש\s*חניה/i, /כולל\s*חניה/i, /עם\s*חניה/i, /חניה\s*(פרטית|בטאבו|בבניין|בחניון|מקורה|תת\s*קרקעית)/i, /מקום\s*חניה/i, /חנייה/, /\d+\s*חניות/i, /חניון/i, /\bחניה\b/],
-    [/אין\s*חניה/i, /ללא\s*חניה/i, /בלי\s*חניה/i]
-  )) features.parking = true;
+    [/אין\s*חניה/i, /ללא\s*חניה/i, /בלי\s*חניה/i, /חניי?ה\s*:?\s*(?:אין|לא|ללא)/i]
+  );
+  if (parkingResult !== null) features.parking = parkingResult;
 
-  if (hasFeature(
+  const mamadResult = detectFeature(
     [/יש\s*ממ["״]?ד/i, /כולל\s*ממ["״]?ד/i, /עם\s*ממ["״]?ד/i, /ממ["״]ד/, /\bממד\b/, /מרחב\s*מוגן/i, /חדר\s*ביטחון/i, /ממ["״]?ד\s*צמוד/i, /ממ["״]?ד\s*קומתי/i],
-    [/אין\s*ממ["״]?ד/i, /ללא\s*ממ["״]?ד/i, /בלי\s*ממ["״]?ד/i]
-  )) features.mamad = true;
+    [/אין\s*ממ["״]?ד/i, /ללא\s*ממ["״]?ד/i, /בלי\s*ממ["״]?ד/i, /ממ["״]?ד\s*:?\s*(?:אין|לא|ללא)/i]
+  );
+  if (mamadResult !== null) features.mamad = mamadResult;
 
-  if (hasFeature(
+  const storageResult = detectFeature(
     [/יש\s*מחסן/i, /כולל\s*מחסן/i, /עם\s*מחסן/i, /\bמחסן\b\s*(פרטי|גדול|בבניין)/i, /מחסן\s*ו?חניה/i],
-    [/אין\s*מחסן/i, /ללא\s*מחסן/i]
-  )) features.storage = true;
+    [/אין\s*מחסן/i, /ללא\s*מחסן/i, /מחסן\s*:?\s*(?:אין|לא|ללא)/i]
+  );
+  if (storageResult !== null) features.storage = storageResult;
 
-  if (hasFeature(
+  const roofResult = detectFeature(
     [/גג\s*(פרטי|צמוד|מרווח)/i, /גישה\s*לגג/i, /פנטהאו[זס]/i, /דירת\s*גג/i], []
-  )) features.roof = true;
+  );
+  if (roofResult !== null) features.roof = roofResult;
 
-  if (hasFeature(
+  const airconResult = detectFeature(
     [/יש\s*מזגנ?/i, /כולל\s*מזגנ?/i, /עם\s*מזגנ?/i, /מזגנים/i, /מיזוג\s*(אוויר|מרכזי)/i, /מיזוג\s*בכל/i],
-    [/אין\s*מזגנ?/i, /ללא\s*מזגנ?/i]
-  )) features.aircon = true;
+    [/אין\s*מזגנ?/i, /ללא\s*מזגנ?/i, /מזגנ?\s*:?\s*(?:אין|לא|ללא)/i, /מיזוג\s*:?\s*(?:אין|לא|ללא)/i]
+  );
+  if (airconResult !== null) features.aircon = airconResult;
 
-  if (hasFeature(
+  const renovatedResult = detectFeature(
     [/משופצ[תת]/i, /שיפוץ\s*(יסודי|מלא|חדש)/i, /לאחר\s*שיפוץ/i, /חדש\s*מהניילון/i, /שופץ\s*(לאחרונה|ב\d{4})/i], []
-  )) features.renovated = true;
+  );
+  if (renovatedResult !== null) features.renovated = renovatedResult;
 
-  if (hasFeature(
+  const furnishedResult = detectFeature(
     [/מרוהט[תת]?\s*(במלואה|חלקית)?/i, /כולל\s*ריהוט/i, /עם\s*ריהוט/i, /ריהוט\s*(מלא|חלקי)/i],
     [/לא\s*מרוהט/i, /ללא\s*ריהוט/i, /ריק[הה]?\s*מריהוט/i]
-  )) features.furnished = true;
+  );
+  if (furnishedResult !== null) features.furnished = furnishedResult;
 
-  if (hasFeature(
+  const accessibleResult = detectFeature(
     [/נגיש\s+לנכים/i, /מותאם\s+לנכים/i, /גישה\s+לכיסא\s+גלגלים/i, /נגישות\s+לנכים/i, /דירה\s+נגישה/i],
     [/נגישות\s*לאתר/i, /תנאי\s*נגישות/i, /הצהרת\s*נגישות/i]
-  )) features.accessible = true;
+  );
+  if (accessibleResult !== null) features.accessible = accessibleResult;
 
-  if (hasFeature(
+  const petsResult = detectFeature(
     [/מותר\s*(חיות|בע"ח)/i, /חיות\s*מחמד\s*(מותר|אפשר)/i, /ידידותי\s*לחיות/i, /pet\s*friendly/i],
     [/אסור\s*חיות/i, /ללא\s*חיות/i, /לא\s*מותר\s*חיות/i]
-  )) features.pets = true;
+  );
+  if (petsResult !== null) features.pets = petsResult;
 
   return features;
 }
