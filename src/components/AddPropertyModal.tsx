@@ -32,7 +32,15 @@ import { cn } from '@/lib/utils';
 interface AddPropertyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPropertyAdded: (property: Omit<Property, 'id'>) => void;
+  onPropertyAdded: (property: Omit<Property, 'id'>) => Promise<string>;
+}
+
+type OwnerSourceType = 'manual' | 'existing_owner' | 'existing_broker';
+
+interface ExistingOwner {
+  ownerName: string;
+  ownerPhone: string;
+  ownerEmail: string;
 }
 
 export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
