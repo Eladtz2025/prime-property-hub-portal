@@ -40,6 +40,8 @@ export interface MemorandumFormData {
 }
 
 export async function generateMemorandumPDF(formData: MemorandumFormData): Promise<jsPDF> {
+  const { default: html2canvas } = await import('html2canvas');
+  const { default: jsPDF } = await import('jspdf');
   const t = memorandumTranslations[formData.language];
   const isRTL = formData.language === 'he';
   const formDate = format(new Date(formData.form_date), 'dd/MM/yyyy', { locale: he });

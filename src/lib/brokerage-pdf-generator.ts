@@ -21,6 +21,8 @@ interface BrokerageFormData {
 }
 
 export async function generateBrokerageFormPDF(formData: BrokerageFormData): Promise<jsPDF> {
+  const { default: html2canvas } = await import('html2canvas');
+  const { default: jsPDF } = await import('jspdf');
   const t = brokerageFormTranslations.he;
   const properties = formData.properties || [];
   const formDate = format(new Date(formData.form_date), 'dd/MM/yyyy', { locale: he });

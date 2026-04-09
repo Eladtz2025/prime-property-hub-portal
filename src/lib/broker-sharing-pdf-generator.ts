@@ -39,6 +39,8 @@ export interface BrokerSharingFormData {
 }
 
 export async function generateBrokerSharingPDF(formData: BrokerSharingFormData): Promise<jsPDF> {
+  const { default: html2canvas } = await import('html2canvas');
+  const { default: jsPDF } = await import('jspdf');
   const t = brokerSharingTranslations[formData.language];
   const isRTL = formData.language === 'he';
   const formDate = format(new Date(formData.form_date), 'dd/MM/yyyy', { locale: he });

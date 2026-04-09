@@ -42,6 +42,8 @@ export interface ExclusivityFormData {
 }
 
 export async function generateExclusivityPDF(formData: ExclusivityFormData): Promise<jsPDF> {
+  const { default: html2canvas } = await import('html2canvas');
+  const { default: jsPDF } = await import('jspdf');
   const t = exclusivityTranslations[formData.language];
   const isRTL = formData.language === 'he';
   const formDate = format(new Date(formData.form_date), 'dd/MM/yyyy', { locale: he });
