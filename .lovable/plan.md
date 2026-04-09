@@ -1,50 +1,44 @@
 
 
-## תיקון בעיית 2 תמונות ראשיות
+## החלפת צדדים — גלריה ופרטים בדף נכס (עברית)
 
-### הבעיה
-ב-DB של מאזה 31 יש **2 תמונות** עם `is_main: true` (index 0 ו-index 8) — שאריות מהבאג הקודם (`|| i === 0`). התיקון הקודם מנע יצירת כפילויות **חדשות**, אבל:
+### מצב נוכחי (Desktop, שורות 324-331)
+בלאוט RTL, הגריד מציב את האלמנט הראשון (גלריה, `col-span-2`) בצד **ימין** ואת הפרטים בצד **שמאל**.
 
-1. **נתונים ישנים** — הכפילויות שכבר נשמרו ב-DB לא תוקנו
-2. **טעינה ללא נורמליזציה** — כשפותחים עריכה, שתי התמונות נטענות כ-`isPrimary: true`. גם אם המשתמש לוחץ על כוכב חדש, התמונה הראשונה (index 0) נשארת primary כי היא כבר הייתה כזו ב-DB
+### השינוי
+החלפת הסדר: הפרטים יהיו **ראשונים** בגריד (ימין ב-RTL, `col-span-1`) והגלריה **שנייה** (שמאל ב-RTL, `col-span-2`).
 
-### הפתרון — 2 חלקים
+### קובץ: `src/pages/PropertyDetailPage.tsx` (שורות ~324-331)
 
-**חלק 1: נורמליזציה בטעינה**
-ב-`PropertyEditRow.tsx` וב-`PropertyEditModal.tsx` — אחרי מיפוי התמונות מ-DB, לוודא שרק תמונה **אחת** מסומנת כראשית (הראשונה שנמצאה עם `is_main: true`):
-
-```typescript
-// אחרי ה-map
-let foundPrimary = false;
-images.forEach(img => {
-  if (img.isPrimary && !foundPrimary) {
-    foundPrimary = true;
-  } else if (img.isPrimary) {
-    img.isPrimary = false;
-  }
-});
+**לפני:**
+```
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  <!-- Gallery (col-span-2) - RIGHT in RTL -->
+  <div className="lg:col-span-2 order-1 lg:order-1">
+    <ImageCarousel ... />
+  </div>
+  <!-- Details (col-span-1) - LEFT in RTL -->
+  <div className="space-y-6 order-2 lg:order-2">
 ```
 
-**חלק 2: ניקוי נתונים קיימים**
-Migration שמתקנת את כל הנכסים שיש להם יותר מתמונה ראשית אחת — משאירה רק את זו עם ה-`order_index` הגבוה ביותר (הבחירה האחרונה של המשתמש):
-
-```sql
-UPDATE property_images SET is_main = false
-WHERE id IN (
-  SELECT id FROM (
-    SELECT id, ROW_NUMBER() OVER (
-      PARTITION BY property_id ORDER BY order_index DESC
-    ) as rn
-    FROM property_images WHERE is_main = true
-  ) sub WHERE rn > 1
-);
+**אחרי:**
+```
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  <!-- Details (col-span-1) - RIGHT in RTL -->
+  <div className="space-y-6 order-2 lg:order-1">
+    ...details...
+  </div>
+  <!-- Gallery (col-span-2) - LEFT in RTL -->
+  <div className="lg:col-span-2 order-1 lg:order-2">
+    <ImageCarousel ... />
+  </div>
 ```
 
-### קבצים שמשתנים
-1. `src/components/PropertyEditRow.tsx` — נורמליזציה בטעינה
-2. `src/components/PropertyEditModal.tsx` — נורמליזציה בטעינה
-3. **Migration חדשה** — ניקוי כפילויות קיימות
+הפרטים עוברים **לפני** הגלריה ב-DOM (כך שב-RTL הם מופיעים מימין), והגלריה עוברת שמאלה. ב-Mobile הסדר נשמר עם `order` (גלריה ראשונה, פרטים אחריה).
 
-### סיכון
-**אפסי** — ניקוי נתונים + הגנה בקוד
+### קובץ שמשתנה
+- `src/pages/PropertyDetailPage.tsx` — החלפת סדר הבלוקים בגריד Desktop
+
+### מה לא משתנה
+- תוכן הפרטים, הגלריה, Mobile layout, Header/Footer
 
