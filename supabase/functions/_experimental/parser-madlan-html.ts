@@ -354,7 +354,7 @@ function parseHtmlCard(cardHtml: string, propertyType: 'rent' | 'sale'): ParsedP
     property_type: propertyType,
     is_private: isPrivate,
     entry_date: null,
-    features: {},
+    features: extractFeatures(cardText),
     raw_text: cardText.substring(0, 500)
   };
 }
