@@ -160,6 +160,11 @@ export const SocialPostComposer: React.FC = () => {
       toast({ title: 'אינסטגרם מחייב לפחות תמונה אחת', variant: 'destructive' });
       return false;
     }
+    // Instagram max 10 images
+    if (platforms.instagram && imageUrls.length > 10) {
+      toast({ title: 'אינסטגרם מאפשר עד 10 תמונות בלבד', description: `נבחרו ${imageUrls.length} תמונות — יש להסיר ${imageUrls.length - 10}`, variant: 'destructive' });
+      return false;
+    }
     if (action === 'schedule' && !scheduleDate) {
       toast({ title: 'יש לבחור תאריך לתזמון', variant: 'destructive' });
       return false;
@@ -333,22 +338,27 @@ export const SocialPostComposer: React.FC = () => {
                   </Button>
                 </div>
                 {imageUrls.length > 0 && (
-                  <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mt-2">
-                    {imageUrls.map((url, i) => (
-                      <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted">
-                        <img src={url} alt="" className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => removeImage(i)}
-                          className="absolute top-1 left-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                        {i === 0 && (
-                          <Badge className="absolute bottom-1 right-1 text-[8px] px-1 py-0">ראשית</Badge>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    {platforms.instagram && imageUrls.length > 10 && (
+                      <p className="text-xs text-destructive mt-1">⚠️ אינסטגרם מאפשר עד 10 תמונות — נבחרו {imageUrls.length}</p>
+                    )}
+                    <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mt-2">
+                      {imageUrls.map((url, i) => (
+                        <div key={i} className={cn("relative group aspect-square rounded-lg overflow-hidden border bg-muted", platforms.instagram && i >= 10 ? "border-destructive opacity-50" : "border-border")}>
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => removeImage(i)}
+                            className="absolute top-1 left-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                          {i === 0 && (
+                            <Badge className="absolute bottom-1 right-1 text-[8px] px-1 py-0">ראשית</Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
 

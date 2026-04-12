@@ -3,17 +3,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ExternalLink, RefreshCw, Trash2, Clock, CheckCircle, XCircle, FileText, Send } from 'lucide-react';
+import { ExternalLink, RefreshCw, Trash2, Clock, CheckCircle, XCircle, FileText, Send, Copy } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useSocialPosts, useDeleteSocialPost, useUpdateSocialPost, usePublishPost } from '@/hooks/useSocialPosts';
 import { ConfirmDialog } from './ConfirmDialog';
 
-const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }> = {
+const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode; className?: string }> = {
   draft: { label: 'טיוטא', variant: 'outline', icon: <FileText className="h-3 w-3" /> },
   scheduled: { label: 'מתוזמן', variant: 'secondary', icon: <Clock className="h-3 w-3" /> },
   publishing: { label: 'בתהליך', variant: 'default', icon: <Send className="h-3 w-3" /> },
   published: { label: 'פורסם', variant: 'default', icon: <CheckCircle className="h-3 w-3" /> },
+  ready_to_copy: { label: 'מוכן להעתקה', variant: 'outline', icon: <FileText className="h-3 w-3" />, className: 'border-orange-400 text-orange-600 bg-orange-50' },
   failed: { label: 'נכשל', variant: 'destructive', icon: <XCircle className="h-3 w-3" /> },
 };
 
@@ -24,6 +27,7 @@ const PLATFORM_LABEL: Record<string, string> = {
 };
 
 export const SocialPostsList: React.FC = () => {
+  const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState('all');
   const [platformFilter, setPlatformFilter] = useState('all');
   const { data: posts, isLoading } = useSocialPosts(statusFilter, platformFilter);
@@ -90,7 +94,7 @@ export const SocialPostsList: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm line-clamp-2 leading-snug">{post.content_text?.slice(0, 80) || '—'}</p>
-                        <Badge variant={statusInfo.variant} className="text-[10px] shrink-0 gap-1">
+                        <Badge variant={statusInfo.variant} className={cn("text-[10px] shrink-0 gap-1", statusInfo.className)}>
                           {statusInfo.icon}
                           {statusInfo.label}
                         </Badge>
@@ -109,6 +113,15 @@ export const SocialPostsList: React.FC = () => {
                       
                       {/* Actions */}
                       <div className="flex items-center gap-1 mt-2">
+                        {post.status === 'ready_to_copy' && (
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-orange-400 text-orange-600" onClick={() => {
+                            navigator.clipboard.writeText(post.content_text || '');
+                            toast({ title: 'הטקסט הועתק ללוח!' });
+                          }}>
+                            <Copy className="h-3 w-3" />
+                            העתק טקסט
+                          </Button>
+                        )}
                         {post.status === 'failed' && (
                           <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setRetryConfirm(post.id)}>
                             <RefreshCw className="h-3 w-3" />
