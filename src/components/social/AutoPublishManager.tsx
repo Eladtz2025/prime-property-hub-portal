@@ -90,7 +90,7 @@ export const AutoPublishManager: React.FC = () => {
   const { data: facebookGroups } = useFacebookGroups();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [previewQueueId, setPreviewQueueId] = useState<string | null>(null);
-  const [logOpen, setLogOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(true);
 
   // Unified form state
   const [editingId, setEditingId] = useState<string | null>(null);
