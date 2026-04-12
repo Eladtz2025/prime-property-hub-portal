@@ -1,31 +1,31 @@
 
 
-## תוכנית: הוספת cron job ובדיקת שעת פרסום ל-auto-publish
+## תיקון: פרסום כפול בתבניות אוטומטיות
 
-### בעיה כפולה
-1. **אין cron job** שמפעיל את `auto-publish` — התבנית לעולם לא תרוץ
-2. **הפונקציה לא בודקת `publish_time`** — אם הייתה רצה, הייתה מפרסמת בכל הפעלה ולא רק בשעה 13:15
+### שורש הבעיה
+בקוד `auto-publish/index.ts`, בדיקת `frequency_days` מופעלת רק כש-`freqDays > 1`:
+```typescript
+if (queue.last_published_at && freqDays > 1) { ... }
+```
+כש-frequency הוא 1 (יומי), הבדיקה נדלגת לגמרי — אז כל הפעלה בחלון ה-10 דקות מפרסמת שוב.
 
-### תיקונים
+### תיקון
+**קובץ: `supabase/functions/auto-publish/index.ts`**
 
-**1. הוספת בדיקת `publish_time` בתחילת הלולאה** (`auto-publish/index.ts`)
-- לפני בדיקת `frequency_days`, בדיקה: אם לתבנית מוגדר `publish_time`, השוואה לשעה הנוכחית בזמן ישראל
-- אם ההפרש גדול מ-10 דקות — skip
-- כך הפונקציה יכולה לרוץ כל 5 דקות ולפרסם רק כשמגיע הזמן הנכון
+1. **הסרת התנאי `freqDays > 1`** — תמיד לבדוק `last_published_at`, גם כש-frequency הוא 1
+2. **הוספת בדיקת "כבר פורסם היום"** — אם `frequency_days` הוא 1, בדיקה שלא פורסם באותו יום (Israel time), לא רק לפי מספר ימים
 
-**2. יצירת cron job** (INSERT ישיר, לא מיגרציה)
-- הפעלת `auto-publish` כל 5 דקות: `*/5 * * * *`
-- באותו סגנון כמו `social-scheduler-every-5-min` הקיים
-
-### לוגיקת הזמן
+לוגיקה מתוקנת:
 ```text
-publish_time = "13:15"
-Israel time now = "13:17"  → diff = 2 min → PUBLISH
-Israel time now = "13:28"  → diff = 13 min → SKIP
-Israel time now = "09:00"  → diff = 255 min → SKIP
+if last_published_at exists:
+  if freqDays == 1:
+    check if last publish was TODAY (Israel time) → skip
+  else:
+    check if enough days passed → skip if not
 ```
 
-### סיכון: נמוך
-- הבדיקה מוסיפה שכבת הגנה — גם אם ה-cron רץ כל 5 דקות, הפרסום יקרה רק פעם ביום בשעה הנכונה
-- `last_published_at` מונע כפילויות נוספות
+3. **Deploy** מחדש של הפונקציה
+
+### תיקון משני: בדיקת שגיאת "Invalid parameter"
+2 מתוך 3 הפרסומים נכשלו עם "Invalid parameter" — צריך לבדוק בלוגים של `social-publish` אם זה קשור ל-`is_private` בפוסטים מסוג property_listing.
 
