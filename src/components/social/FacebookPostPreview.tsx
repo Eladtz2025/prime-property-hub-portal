@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, ThumbsUp, MessageCircle, Share2, MoreHorizontal, Camera, Smile, Gift, Lock, Info, Sticker, Image, Type } from 'lucide-react';
+import { Globe, ThumbsUp, MessageCircle, Share2, MoreHorizontal, Camera, Smile, Lock, Info, Sticker, Image, Type } from 'lucide-react';
 
 const MAX_LINES = 3;
 const MAX_CHARS = 300;
