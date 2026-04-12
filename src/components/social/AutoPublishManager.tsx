@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-// Used for history section
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Bot, ChevronDown, Trash2, Edit2, Building2, Newspaper, Clock, Facebook, Instagram, Eye, RotateCcw, Send, Save, Image, X, CalendarDays, Lock } from 'lucide-react';
