@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, ThumbsUp, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
+import { Globe, ThumbsUp, MessageCircle, Share2, MoreHorizontal, Camera, Smile, Gift } from 'lucide-react';
 
 const MAX_LINES = 3;
 const MAX_CHARS = 300;
@@ -9,7 +9,7 @@ const TextWithSeeMore: React.FC<{ text: string }> = ({ text }) => {
 
   if (!text) {
     return (
-      <div className="text-[15px] text-[#65676b] whitespace-pre-wrap leading-[1.3333]" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+      <div className="text-[15px] text-[#b0b3b8] whitespace-pre-wrap leading-[1.3333]" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
         הטקסט שלך יופיע כאן...
       </div>
     );
@@ -20,7 +20,7 @@ const TextWithSeeMore: React.FC<{ text: string }> = ({ text }) => {
 
   if (!isTooLong || expanded) {
     return (
-      <div className="text-[15px] text-[#050505] dark:text-[#e4e6eb] whitespace-pre-wrap leading-[1.3333]" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+      <div className="text-[15px] text-[#e4e6eb] whitespace-pre-wrap leading-[1.3333]" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
         {text}
       </div>
     );
@@ -29,11 +29,11 @@ const TextWithSeeMore: React.FC<{ text: string }> = ({ text }) => {
   const truncated = lines.slice(0, MAX_LINES).join('\n').slice(0, MAX_CHARS);
 
   return (
-    <div className="text-[15px] text-[#050505] dark:text-[#e4e6eb] whitespace-pre-wrap leading-[1.3333]" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+    <div className="text-[15px] text-[#e4e6eb] whitespace-pre-wrap leading-[1.3333]" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
       {truncated}{'... '}
       <button
         onClick={() => setExpanded(true)}
-        className="text-[#65676b] dark:text-[#b0b3b8] hover:underline font-normal"
+        className="text-[#b0b3b8] hover:underline font-normal"
       >
         See more
       </button>
@@ -47,7 +47,6 @@ interface FacebookPostPreviewProps {
   imageUrls?: string[];
   pageName?: string;
   pageAvatarUrl?: string;
-  // Link Card (OG) props
   linkUrl?: string;
   linkTitle?: string;
   linkDescription?: string;
@@ -67,12 +66,10 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
 }) => {
   const hasLinkCard = !!linkUrl && !!linkImage;
   const hasImages = !hasLinkCard && imageUrls.length > 0;
-
-  // Always show the actual website domain, not the Supabase function URL
   const linkDomain = linkUrl ? 'CTMARKETPROPERTIES.COM' : '';
 
   return (
-    <div className="max-w-[500px] mx-auto rounded-lg bg-white dark:bg-[#242526] shadow-md border border-[#dddfe2] dark:border-[#3a3b3c] overflow-hidden" dir="rtl">
+    <div className="max-w-[500px] mx-auto rounded-lg bg-[#242526] shadow-md border border-[#3a3b3c] overflow-hidden" dir="rtl">
       {/* Header */}
       <div className="px-4 pt-3 pb-2 flex items-start gap-2.5">
         {pageAvatarUrl ? (
@@ -85,27 +82,30 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-[13px] font-semibold text-[#050505] dark:text-[#e4e6eb] hover:underline cursor-pointer">
+              <span className="text-[13px] font-semibold text-[#e4e6eb] hover:underline cursor-pointer">
                 {pageName}
               </span>
-              <div className="flex items-center gap-1 text-[12px] text-[#65676b] dark:text-[#b0b3b8]">
+              <div className="text-[12px] text-[#b0b3b8] leading-tight">
+                Published by CityMarketPropertiesWebsite
+              </div>
+              <div className="flex items-center gap-1 text-[12px] text-[#b0b3b8]">
                 <span>עכשיו</span>
                 <span>·</span>
                 <Globe className="h-3 w-3" />
               </div>
             </div>
-            <button className="p-1 rounded-full hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] text-[#65676b] dark:text-[#b0b3b8]">
+            <button className="p-1 rounded-full hover:bg-[#3a3b3c] text-[#b0b3b8]">
               <MoreHorizontal className="h-5 w-5" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Body text with "See more" truncation like real Facebook */}
+      {/* Body text */}
       <div className="px-4 pb-2">
         <TextWithSeeMore text={text} />
         {hashtags && (
-          <div className="mt-1 text-[15px] text-[#216fdb] dark:text-[#75b7ff]" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+          <div className="mt-1 text-[15px] text-[#75b7ff]" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
             {hashtags}
           </div>
         )}
@@ -113,23 +113,23 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
 
       {/* Link Card (OG Preview) */}
       {hasLinkCard && (
-      <div className="border-b border-[#dddfe2] dark:border-[#3a3b3c] cursor-pointer">
+        <div className="border-b border-[#3a3b3c] cursor-pointer">
           <div className="relative overflow-hidden">
-            <img 
-              src={linkImage} 
-              alt={linkTitle || ''} 
+            <img
+              src={linkImage}
+              alt={linkTitle || ''}
               className="w-full object-cover aspect-[1.91/1]"
             />
           </div>
-          <div className="bg-[#f0f2f5] dark:bg-[#3a3b3c] px-3 py-2" dir={/[\u0590-\u05FF]/.test(linkTitle?.charAt(0) || '') ? 'rtl' : 'ltr'}>
-            <div className={`text-[12px] text-[#65676b] dark:text-[#b0b3b8] uppercase tracking-wide ${/[\u0590-\u05FF]/.test(linkTitle?.charAt(0) || '') ? 'text-right' : 'text-left'}`} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+          <div className="bg-[#3a3b3c] px-3 py-2" dir="ltr">
+            <div className="text-[12px] text-[#b0b3b8] uppercase tracking-wide text-left" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
               {linkDomain}
             </div>
-            <div className={`text-[15px] font-semibold text-[#050505] dark:text-[#e4e6eb] leading-tight mt-0.5 line-clamp-2 ${/[\u0590-\u05FF]/.test(linkTitle?.charAt(0) || '') ? 'text-right' : 'text-left'}`} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+            <div className="text-[15px] font-semibold text-[#e4e6eb] leading-tight mt-0.5 line-clamp-2" dir={/[\u0590-\u05FF]/.test(linkTitle?.charAt(0) || '') ? 'rtl' : 'ltr'} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
               {linkTitle}
             </div>
             {linkDescription && (
-              <div className={`text-[14px] text-[#65676b] dark:text-[#b0b3b8] leading-tight mt-0.5 line-clamp-1 ${/[\u0590-\u05FF]/.test(linkDescription?.charAt(0) || '') ? 'text-right' : 'text-left'}`} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              <div className="text-[14px] text-[#b0b3b8] leading-tight mt-0.5 line-clamp-1" dir={/[\u0590-\u05FF]/.test(linkDescription?.charAt(0) || '') ? 'rtl' : 'ltr'} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
                 {linkDescription}
               </div>
             )}
@@ -175,35 +175,36 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
         </div>
       )}
 
-      {/* Reactions summary */}
-      <div className="px-4 py-1.5 flex items-center justify-between text-[13px] text-[#65676b] dark:text-[#b0b3b8] border-b border-[#dddfe2] dark:border-[#3a3b3c]">
-        <div className="flex items-center gap-1">
-          <div className="flex -space-x-1 rtl:space-x-reverse">
-            <span className="w-[18px] h-[18px] rounded-full bg-[#1877F2] flex items-center justify-center text-[10px]">👍</span>
-            <span className="w-[18px] h-[18px] rounded-full bg-[#f0716b] flex items-center justify-center text-[10px]">❤️</span>
-          </div>
-          <span className="text-[13px]">24</span>
-        </div>
-        <div className="flex gap-3">
-          <span>3 תגובות</span>
-          <span>1 שיתופים</span>
-        </div>
+      {/* Action buttons — icons only like real Facebook */}
+      <div className="px-2 py-1 flex items-center justify-around border-t border-[#3a3b3c]">
+        <button className="flex items-center justify-center px-4 py-[6px] rounded-md hover:bg-[#3a3b3c] text-[#b0b3b8] transition-colors">
+          <ThumbsUp className="h-5 w-5" />
+        </button>
+        <button className="flex items-center justify-center px-4 py-[6px] rounded-md hover:bg-[#3a3b3c] text-[#b0b3b8] transition-colors">
+          <MessageCircle className="h-5 w-5" />
+        </button>
+        <button className="flex items-center justify-center px-4 py-[6px] rounded-md hover:bg-[#3a3b3c] text-[#b0b3b8] transition-colors">
+          <Share2 className="h-5 w-5" />
+        </button>
       </div>
 
-      {/* Action buttons */}
-      <div className="px-2 py-1 flex items-center justify-around">
-        <button className="flex items-center gap-1.5 px-4 py-[6px] rounded-md hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] text-[#65676b] dark:text-[#b0b3b8] text-[15px] font-semibold transition-colors">
-          <ThumbsUp className="h-5 w-5" />
-          <span>לייק</span>
-        </button>
-        <button className="flex items-center gap-1.5 px-4 py-[6px] rounded-md hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] text-[#65676b] dark:text-[#b0b3b8] text-[15px] font-semibold transition-colors">
-          <MessageCircle className="h-5 w-5" />
-          <span>תגובה</span>
-        </button>
-        <button className="flex items-center gap-1.5 px-4 py-[6px] rounded-md hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] text-[#65676b] dark:text-[#b0b3b8] text-[15px] font-semibold transition-colors">
-          <Share2 className="h-5 w-5" />
-          <span>שיתוף</span>
-        </button>
+      {/* Comment row */}
+      <div className="px-3 py-2 border-t border-[#3a3b3c] flex items-center gap-2">
+        {pageAvatarUrl ? (
+          <img src={pageAvatarUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1877F2] to-[#0d6efd] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
+            {pageName.substring(0, 2)}
+          </div>
+        )}
+        <div className="flex-1 bg-[#3a3b3c] rounded-full px-3 py-1.5 flex items-center justify-between">
+          <span className="text-[13px] text-[#b0b3b8]">Comment as {pageName.split(' ').slice(0, 3).join(' ')}...</span>
+          <div className="flex items-center gap-1.5 text-[#b0b3b8]">
+            <Smile className="h-4 w-4" />
+            <Camera className="h-4 w-4" />
+            <Gift className="h-4 w-4" />
+          </div>
+        </div>
       </div>
     </div>
   );

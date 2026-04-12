@@ -25,6 +25,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { HashtagGroupSelector } from './HashtagGroupSelector';
 import { FacebookPostPreview } from './FacebookPostPreview';
 import { Checkbox } from '@/components/ui/checkbox';
+import cityMarketLogo from '@/assets/city-market-icon.png';
 
 const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -948,6 +949,7 @@ export const AutoPublishManager: React.FC = () => {
                       linkDescription={postStyle === 'photos' ? undefined : linkDescription}
                       linkImage={postStyle === 'photos' ? undefined : linkImage}
                       pageName="דירות להשכרה ומכירה בת״א סיטי מרקט נכסים"
+                      pageAvatarUrl={cityMarketLogo}
                     />
                   );
                 })()}
