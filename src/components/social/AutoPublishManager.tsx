@@ -779,17 +779,17 @@ export const AutoPublishManager: React.FC = () => {
                         <Label className="text-xs font-medium">
                           תמונות {platforms.instagram && <span className="text-muted-foreground">(חובה באינסטגרם)</span>}
                         </Label>
-                        <div className="flex gap-2 mt-1">
+                        <div className="flex flex-row-reverse gap-2 mt-1">
+                          <Button size="sm" variant="outline" onClick={addImageUrl} disabled={!newImageUrl}>
+                            <Image className="h-3.5 w-3.5" />
+                          </Button>
                           <Input
                             value={newImageUrl}
                             onChange={e => setNewImageUrl(e.target.value)}
                             placeholder="הזן URL של תמונה"
-                            dir="ltr"
-                            className="text-sm flex-1"
+                            dir="rtl"
+                            className="text-sm flex-1 text-right"
                           />
-                          <Button size="sm" variant="outline" onClick={addImageUrl} disabled={!newImageUrl}>
-                            <Image className="h-3.5 w-3.5" />
-                          </Button>
                         </div>
                         {imageUrls.length > 0 && (
                           <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mt-2">
