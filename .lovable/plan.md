@@ -1,27 +1,38 @@
 
-## תוכנית: התאמת התצוגה המקדימה לפייסבוק אמיתי
 
-### הבדלים שזוהו וייושמו
+## תוכנית: תיקון 3 בעיות במערכת הפרסום
 
-| # | הבדל | שינוי |
-|---|---|---|
-| 1 | **רקע כהה** | הפוסט יהיה תמיד ב-dark mode (#242526) — כמו שנראה בפייסבוק |
-| 2 | **אווטאר הדף** | הוספת לוגו City Market האמיתי כ-`pageAvatarUrl` (כבר קיים בפרויקט) |
-| 3 | **שורת משנה** | הוספת "Published by CityMarketPropertiesWebsite" מתחת לשם הדף |
-| 4 | **"...See more"** | שינוי ל-"...See more" עם נקודות לפני (כמו בפייסבוק אמיתי) |
-| 5 | **כפתורי פעולה** | אייקונים בלבד (👍 💬 ↗️) ללא טקסט — כמו בפייסבוק |
-| 6 | **הסרת שורת Reactions** | הסרת "24 לייקים, 3 תגובות" — לא מופיע בצילום |
-| 7 | **הוספת שורת Comment** | הוספת "Comment as דירות להשכרה..." עם אייקוני emoji/GIF למטה |
-| 8 | **Link Card alignment** | הדומיין תמיד שמאל (LTR), הכותרת RTL — כמו בפייסבוק |
+### 1. הגבלת 10 תמונות באינסטגרם ב-UI
+**קובץ:** `src/components/social/SocialPostComposer.tsx`
+- הוספת בדיקה ב-`validateBeforeSave`: אם `platforms.instagram && imageUrls.length > 10` — הצגת toast שגיאה
+- הוספת הודעה ויזואלית ליד גלריית התמונות כשהכמות עוברת 10
 
-### קובץ שישתנה
-**`src/components/social/FacebookPostPreview.tsx`** — עדכון כולל של הרכיב:
-- Force dark theme (רקע #242526, טקסט #e4e6eb)
-- הוספת subtitle "Published by CityMarketPropertiesWebsite"
-- כפתורים כאייקונים בלבד
-- הסרת Reactions row, הוספת Comment row
-- Link card: domain תמיד LTR
+### 2. סטטוס "מוכן להעתקה" לפוסטים בקבוצות Facebook
+**קובץ:** `supabase/functions/social-publish/index.ts` (שורות 244-255)
+- שינוי הסטטוס מ-`published` ל-`ready_to_copy` (סטטוס חדש)
 
-**`src/components/social/AutoPublishManager.tsx`** — העברת `pageAvatarUrl` עם הלוגו האמיתי
+**קובץ:** `src/components/social/SocialPostsList.tsx`
+- הוספת תצוגה ייחודית לסטטוס `ready_to_copy` — badge בצבע כתום עם הטקסט "מוכן להעתקה" + כפתור העתקה
 
-### סיכון: **אפסי** — שינויים ויזואליים בלבד ברכיב התצוגה המקדימה.
+### 3. Polling ל-Instagram Reels במקום המתנה קבועה
+**קובץ:** `supabase/functions/social-publish/index.ts` (שורות 130-140)
+- החלפת `setTimeout(10000)` בלולאת polling שבודקת את סטטוס ה-media container כל 3 שניות (עד 60 שניות)
+- Polling מול `GET /{container_id}?fields=status_code` — ממתין ל-`FINISHED` או מחזיר שגיאה ב-`ERROR`
+
+### פרטים טכניים
+
+**Reels polling:**
+```text
+loop (max 20 iterations, 3s apart):
+  GET /{container_id}?fields=status_code
+  if status_code == "FINISHED" → proceed to publish
+  if status_code == "ERROR" → return error
+  else → wait 3s
+timeout → return error "Video processing timeout"
+```
+
+**סטטוס ready_to_copy — migration נדרש:**
+- הוספת `ready_to_copy` לרשימת הסטטוסים המותרים (אם יש enum/check constraint), או שימוש ישיר אם הטבלה מבוססת text
+
+### סיכון: **נמוך** — שינויים ממוקדים בולידציה, סטטוס, ו-polling.
+
