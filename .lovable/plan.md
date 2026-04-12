@@ -1,28 +1,31 @@
 
 
-## תוכנית: הוספת אפשרות "פרסום פרטי" לתבניות אוטומטיות
+## תוכנית: הוספת cron job ובדיקת שעת פרסום ל-auto-publish
 
-### מצב נוכחי
-הצ'קבוקס "פרטי" מוצג רק במצב `one_time` + פייסבוק. בתבניות אוטומטיות (`property_rotation` / `article_oneshot`) אין אפשרות להגדיר פרסום פרטי.
+### בעיה כפולה
+1. **אין cron job** שמפעיל את `auto-publish` — התבנית לעולם לא תרוץ
+2. **הפונקציה לא בודקת `publish_time`** — אם הייתה רצה, הייתה מפרסמת בכל הפעלה ולא רק בשעה 13:15
 
-### שינויים נדרשים
+### תיקונים
 
-**1. מיגרציה — הוספת עמודת `is_private` לטבלת `auto_publish_queues`**
-```sql
-ALTER TABLE auto_publish_queues ADD COLUMN is_private boolean NOT NULL DEFAULT false;
+**1. הוספת בדיקת `publish_time` בתחילת הלולאה** (`auto-publish/index.ts`)
+- לפני בדיקת `frequency_days`, בדיקה: אם לתבנית מוגדר `publish_time`, השוואה לשעה הנוכחית בזמן ישראל
+- אם ההפרש גדול מ-10 דקות — skip
+- כך הפונקציה יכולה לרוץ כל 5 דקות ולפרסם רק כשמגיע הזמן הנכון
+
+**2. יצירת cron job** (INSERT ישיר, לא מיגרציה)
+- הפעלת `auto-publish` כל 5 דקות: `*/5 * * * *`
+- באותו סגנון כמו `social-scheduler-every-5-min` הקיים
+
+### לוגיקת הזמן
+```text
+publish_time = "13:15"
+Israel time now = "13:17"  → diff = 2 min → PUBLISH
+Israel time now = "13:28"  → diff = 13 min → SKIP
+Israel time now = "09:00"  → diff = 255 min → SKIP
 ```
 
-**2. UI — הצגת הצ'קבוקס בכל המצבים** (`AutoPublishManager.tsx`)
-- הסרת התנאי `mode === 'one_time'` מהצ'קבוקס "פרטי"
-- התנאי יישאר `platforms.facebook` בלבד (פרסום פרטי רלוונטי רק לפייסבוק)
-- שמירת הערך ב-queue בעת יצירת/עריכת תבנית
-
-**3. Edge Function — העברת `is_private` בפרסום אוטומטי** (`auto-publish/index.ts`)
-- בשתי הפונקציות `handlePropertyRotation` ו-`handleArticleOneshot`: קריאת `queue.is_private` והעברתו ל-`social-publish` בגוף הבקשה
-- שורה 162-163: `body: { post_id: post.id, is_private: queue.is_private }`
-- שורה 264-265: אותו דבר
-
 ### סיכון: נמוך
-- עמודה חדשה עם ברירת מחדל `false` — לא משנה התנהגות קיימת
-- הפונקציה `social-publish` כבר תומכת ב-`is_private`
+- הבדיקה מוסיפה שכבת הגנה — גם אם ה-cron רץ כל 5 דקות, הפרסום יקרה רק פעם ביום בשעה הנכונה
+- `last_published_at` מונע כפילויות נוספות
 
