@@ -1,38 +1,29 @@
 
 
-## תוכנית: תיקון 3 בעיות במערכת הפרסום
+## תוכנית: התאמות נוספות לתצוגה המקדימה של פייסבוק
 
-### 1. הגבלת 10 תמונות באינסטגרם ב-UI
-**קובץ:** `src/components/social/SocialPostComposer.tsx`
-- הוספת בדיקה ב-`validateBeforeSave`: אם `platforms.instagram && imageUrls.length > 10` — הצגת toast שגיאה
-- הוספת הודעה ויזואלית ליד גלריית התמונות כשהכמות עוברת 10
+### הבדלים שזוהו בין הצילום לקוד הנוכחי
 
-### 2. סטטוס "מוכן להעתקה" לפוסטים בקבוצות Facebook
-**קובץ:** `supabase/functions/social-publish/index.ts` (שורות 244-255)
-- שינוי הסטטוס מ-`published` ל-`ready_to_copy` (סטטוס חדש)
+| # | הבדל | מצב נוכחי | נדרש |
+|---|---|---|---|
+| 1 | **שם הדף** | "דירות להשכרה ומכירה בת״א סיטי מרקט נכסים" | "דירות להשכרה ומכירה בת"א סיטי מרקט נכסים" (ללא ״ — עם ") |
+| 2 | **תאריך ופרטיות** | "עכשיו · 🌐" | "April 9 at 12:38 PM · 🔒" — צריך להוסיף תאריך דינמי + אייקון מנעול (פוסט לא ציבורי) |
+| 3 | **"See more" מיקום** | בסוף הטקסט, באותה שורה | בצילום: "See more ...?" — ה-"See more" מופיע בשורה נפרדת, מיושר לשמאל |
+| 4 | **כפתור ℹ️ על התמונה** | לא קיים | בצילום יש כפתור "i" (info) בפינה הימנית-תחתונה של התמונה |
+| 5 | **"See insights" + "Create ad"** | לא קיים | שורה עם "See insights" (כחול) משמאל ו-"Create ad" (כפתור) מימין — מתחת ל-Link Card |
+| 6 | **כפתורי Comment row** | Smile, Camera, Gift | בצילום: 5 אייקונים — Smile, Sticker, Camera, GIF, ועוד אחד |
+| 7 | **Link Card — ללא description** | מציג description | בצילום ה-Link Card מציג רק domain + title, ללא description |
+| 8 | **כפתורי פעולה** | `justify-around` | בצילום: הכפתורים מיושרים לשמאל (start), לא מפוזרים |
 
-**קובץ:** `src/components/social/SocialPostsList.tsx`
-- הוספת תצוגה ייחודית לסטטוס `ready_to_copy` — badge בצבע כתום עם הטקסט "מוכן להעתקה" + כפתור העתקה
+### שינויים בקובץ `FacebookPostPreview.tsx`
 
-### 3. Polling ל-Instagram Reels במקום המתנה קבועה
-**קובץ:** `supabase/functions/social-publish/index.ts` (שורות 130-140)
-- החלפת `setTimeout(10000)` בלולאת polling שבודקת את סטטוס ה-media container כל 3 שניות (עד 60 שניות)
-- Polling מול `GET /{container_id}?fields=status_code` — ממתין ל-`FINISHED` או מחזיר שגיאה ב-`ERROR`
+1. **Header**: הוספת תאריך דינמי (prop `publishedAt?`) + אייקון Lock במקום Globe כשהפוסט לא ציבורי (prop `isPublic?`)
+2. **"See more"**: העברה לשורה נפרדת, יישור שמאל
+3. **Info button**: הוספת כפתור "ℹ️" בפינה ימנית-תחתונה של תמונת ה-Link Card
+4. **"See insights" row**: הוספת שורה עם "See insights" ו-"Create ad" מתחת ל-Link Card (כמו בממשק מנהל דף)
+5. **Action buttons**: יישור לשמאל (`justify-start`) במקום `justify-around`
+6. **Comment icons**: עדכון ל-5 אייקונים כמו בצילום (Smile, Sticker, Camera, GIF, נוסף)
+7. **Link Card**: הסתרת description כברירת מחדל (או הצגה רק אם קיים ורלוונטי)
 
-### פרטים טכניים
-
-**Reels polling:**
-```text
-loop (max 20 iterations, 3s apart):
-  GET /{container_id}?fields=status_code
-  if status_code == "FINISHED" → proceed to publish
-  if status_code == "ERROR" → return error
-  else → wait 3s
-timeout → return error "Video processing timeout"
-```
-
-**סטטוס ready_to_copy — migration נדרש:**
-- הוספת `ready_to_copy` לרשימת הסטטוסים המותרים (אם יש enum/check constraint), או שימוש ישיר אם הטבלה מבוססת text
-
-### סיכון: **נמוך** — שינויים ממוקדים בולידציה, סטטוס, ו-polling.
+### סיכון: **אפסי** — שינויים ויזואליים בלבד ברכיב Preview.
 
