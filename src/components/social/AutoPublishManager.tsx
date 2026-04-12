@@ -927,6 +927,17 @@ export const AutoPublishManager: React.FC = () => {
                     }
                   }
                   
+                  // Fallback: if one_time mode and no property selected, use first property as demo
+                  if (mode === 'one_time' && (!selectedPropertyId || selectedPropertyId === 'free') && properties.length) {
+                    const demoProp = properties[0];
+                    previewText = fillPropertyPlaceholders(contentText || DEFAULT_PROPERTY_TEMPLATE, demoProp);
+                    if (postStyle === 'link') {
+                      buildLinkCard(demoProp);
+                    } else {
+                      previewImages = demoProp.property_images?.slice(0, 4).map(img => img.image_url) || [];
+                    }
+                  }
+                  
                   return (
                     <FacebookPostPreview
                       text={previewText}
