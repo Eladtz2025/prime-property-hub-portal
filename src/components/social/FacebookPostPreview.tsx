@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, ThumbsUp, MessageCircle, Share2, MoreHorizontal, Camera, Smile, Gift } from 'lucide-react';
+import { Globe, ThumbsUp, MessageCircle, Share2, MoreHorizontal, Camera, Smile, Gift, Lock, Info, Sticker, Image, Type } from 'lucide-react';
 
 const MAX_LINES = 3;
 const MAX_CHARS = 300;
@@ -31,6 +31,7 @@ const TextWithSeeMore: React.FC<{ text: string }> = ({ text }) => {
   return (
     <div className="text-[15px] text-[#e4e6eb] whitespace-pre-wrap leading-[1.3333]" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
       {truncated}{'... '}
+      <br />
       <button
         onClick={() => setExpanded(true)}
         className="text-[#b0b3b8] hover:underline font-normal"
@@ -51,22 +52,33 @@ interface FacebookPostPreviewProps {
   linkTitle?: string;
   linkDescription?: string;
   linkImage?: string;
+  publishedAt?: Date;
+  isPublic?: boolean;
 }
 
 export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
   text,
   hashtags,
   imageUrls = [],
-  pageName = 'דירות להשכרה ומכירה בת״א סיטי מרקט נכסים',
+  pageName = 'דירות להשכרה ומכירה בת"א סיטי מרקט נכסים',
   pageAvatarUrl,
   linkUrl,
   linkTitle,
   linkDescription,
   linkImage,
+  publishedAt,
+  isPublic = false,
 }) => {
   const hasLinkCard = !!linkUrl && !!linkImage;
   const hasImages = !hasLinkCard && imageUrls.length > 0;
   const linkDomain = linkUrl ? 'CTMARKETPROPERTIES.COM' : '';
+
+  const formatDate = (date?: Date) => {
+    if (!date) return 'עכשיו';
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) +
+      ' at ' +
+      date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
 
   return (
     <div className="max-w-[500px] mx-auto rounded-lg bg-[#242526] shadow-md border border-[#3a3b3c] overflow-hidden" dir="rtl">
@@ -89,9 +101,13 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
                 Published by CityMarketPropertiesWebsite
               </div>
               <div className="flex items-center gap-1 text-[12px] text-[#b0b3b8]">
-                <span>עכשיו</span>
+                <span>{formatDate(publishedAt)}</span>
                 <span>·</span>
-                <Globe className="h-3 w-3" />
+                {isPublic ? (
+                  <Globe className="h-3 w-3" />
+                ) : (
+                  <Lock className="h-3 w-3" />
+                )}
               </div>
             </div>
             <button className="p-1 rounded-full hover:bg-[#3a3b3c] text-[#b0b3b8]">
@@ -120,6 +136,10 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
               alt={linkTitle || ''}
               className="w-full object-cover aspect-[1.91/1]"
             />
+            {/* Info button overlay */}
+            <button className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white">
+              <Info className="h-3.5 w-3.5" />
+            </button>
           </div>
           <div className="bg-[#3a3b3c] px-3 py-2" dir="ltr">
             <div className="text-[12px] text-[#b0b3b8] uppercase tracking-wide text-left" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
@@ -128,11 +148,6 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
             <div className="text-[15px] font-semibold text-[#e4e6eb] leading-tight mt-0.5 line-clamp-2" dir={/[\u0590-\u05FF]/.test(linkTitle?.charAt(0) || '') ? 'rtl' : 'ltr'} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
               {linkTitle}
             </div>
-            {linkDescription && (
-              <div className="text-[14px] text-[#b0b3b8] leading-tight mt-0.5 line-clamp-1" dir={/[\u0590-\u05FF]/.test(linkDescription?.charAt(0) || '') ? 'rtl' : 'ltr'} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
-                {linkDescription}
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -175,8 +190,18 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
         </div>
       )}
 
-      {/* Action buttons — icons only like real Facebook */}
-      <div className="px-2 py-1 flex items-center justify-around border-t border-[#3a3b3c]">
+      {/* See insights + Create ad row (admin view) */}
+      <div className="px-4 py-2 flex items-center justify-between border-t border-[#3a3b3c]" dir="ltr">
+        <button className="text-[13px] text-[#2d88ff] font-semibold hover:underline">
+          See insights
+        </button>
+        <button className="text-[13px] text-[#e4e6eb] font-semibold bg-[#3a3b3c] hover:bg-[#4e4f50] px-3 py-1 rounded-md">
+          Create ad
+        </button>
+      </div>
+
+      {/* Action buttons — icons only, left-aligned */}
+      <div className="px-2 py-1 flex items-center justify-start gap-1 border-t border-[#3a3b3c]">
         <button className="flex items-center justify-center px-4 py-[6px] rounded-md hover:bg-[#3a3b3c] text-[#b0b3b8] transition-colors">
           <ThumbsUp className="h-5 w-5" />
         </button>
@@ -201,8 +226,10 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
           <span className="text-[13px] text-[#b0b3b8]">Comment as {pageName.split(' ').slice(0, 3).join(' ')}...</span>
           <div className="flex items-center gap-1.5 text-[#b0b3b8]">
             <Smile className="h-4 w-4" />
+            <Sticker className="h-4 w-4" />
             <Camera className="h-4 w-4" />
-            <Gift className="h-4 w-4" />
+            <Image className="h-4 w-4" />
+            <Type className="h-4 w-4" />
           </div>
         </div>
       </div>
