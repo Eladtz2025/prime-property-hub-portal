@@ -930,7 +930,7 @@ export const AutoPublishManager: React.FC = () => {
                   // Fallback: if one_time mode and no property selected, use first property as demo
                   if (mode === 'one_time' && (!selectedPropertyId || selectedPropertyId === 'free') && properties.length) {
                     const demoProp = properties[0];
-                    previewText = fillPropertyPlaceholders(contentText || templateText, demoProp);
+                    previewText = fillPropertyPlaceholders(contentText || DEFAULT_PROPERTY_TEMPLATE, demoProp);
                     if (postStyle === 'link') {
                       buildLinkCard(demoProp);
                     } else {
