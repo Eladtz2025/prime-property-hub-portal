@@ -828,7 +828,7 @@ export const AutoPublishManager: React.FC = () => {
                       </Popover>
                       <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-24 text-xs h-7" dir="ltr" />
                     </>
-                  )
+                  )}
                   {mode === 'one_time' && platforms.facebook && (
                     <label className="flex items-center gap-1.5 cursor-pointer mr-2">
                       <Checkbox checked={isPrivatePost} onCheckedChange={(checked) => setIsPrivatePost(!!checked)} />
