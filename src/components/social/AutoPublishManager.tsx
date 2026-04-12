@@ -479,7 +479,7 @@ export const AutoPublishManager: React.FC = () => {
       {/* Inline Form — always visible */}
       <Card className="border-primary/20">
           <CardContent className="pt-3 pb-3 space-y-2">
-            {/* Row 1: All controls in one line */}
+            {/* Row 1: Type, Property/Name, Template */}
             <div className="flex flex-wrap items-center gap-2">
               <Select value={mode === 'one_time' ? 'one_time' : queueType === 'article_oneshot' ? 'auto_articles' : 'auto_properties'} onValueChange={(v) => {
                   if (v === 'one_time') {
@@ -513,20 +513,7 @@ export const AutoPublishManager: React.FC = () => {
                 <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-8 text-xs w-[140px]" placeholder="שם התבנית" />
               )}
 
-              {mode === 'recurring' && queueType === 'property_rotation' && (
-                <Select value={propertyFilter} onValueChange={(v) => setPropertyFilter(v as 'all' | 'rental' | 'sale')}>
-                  <SelectTrigger className="h-8 text-xs w-[110px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">הכל</SelectItem>
-                    <SelectItem value="rental">השכרה</SelectItem>
-                    <SelectItem value="sale">מכירה</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-
-              {/* One-time: Property & Template inline */}
+              {/* One-time: Property & Template */}
               {mode === 'one_time' && (
                 <>
                   <Select value={selectedPropertyId} onValueChange={handleSelectProperty}>
@@ -573,9 +560,11 @@ export const AutoPublishManager: React.FC = () => {
                   </Select>
                 </>
               )}
+            </div>
 
-              {/* Platform buttons inline */}
-              <div className="flex gap-1.5 items-center border-r border-border pr-2 mr-1">
+            {/* Row 2: Platforms, Target, Filter */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex gap-1.5 items-center">
                 <Button
                   type="button"
                   variant={platforms.facebook ? 'default' : 'outline'}
@@ -596,15 +585,29 @@ export const AutoPublishManager: React.FC = () => {
                 </Button>
               </div>
 
-              {/* Publish target inline */}
               {platforms.facebook && (
-                <div className="flex gap-1.5 items-center">
+                <div className="flex gap-1.5 items-center border-r border-border pr-2 mr-1">
                   <Button type="button" size="sm" variant={publishTarget === 'page' ? 'default' : 'outline'} className="text-xs h-7 px-2" onClick={() => setPublishTarget('page')}>
                     עמוד
                   </Button>
                   <Button type="button" size="sm" variant={publishTarget === 'groups' ? 'default' : 'outline'} className="text-xs h-7 px-2" onClick={() => setPublishTarget('groups')}>
                     קבוצות
                   </Button>
+                </div>
+              )}
+
+              {mode === 'recurring' && queueType === 'property_rotation' && (
+                <div className="border-r border-border pr-2 mr-1">
+                  <Select value={propertyFilter} onValueChange={(v) => setPropertyFilter(v as 'all' | 'rental' | 'sale')}>
+                    <SelectTrigger className="h-7 text-xs w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">הכל</SelectItem>
+                      <SelectItem value="rental">השכרה</SelectItem>
+                      <SelectItem value="sale">מכירה</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>
