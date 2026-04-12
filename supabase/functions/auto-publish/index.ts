@@ -32,6 +32,20 @@ Deno.serve(async (req) => {
 
     for (const queue of queues) {
       try {
+        // Check publish_time — only publish within a 10-minute window of the scheduled time (Israel time)
+        const publishTime = queue.publish_time as string;
+        if (publishTime) {
+          const nowIsrael = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
+          const [schedHour, schedMin] = publishTime.split(':').map(Number);
+          const nowMinutes = nowIsrael.getHours() * 60 + nowIsrael.getMinutes();
+          const schedMinutes = schedHour * 60 + schedMin;
+          const diff = Math.abs(nowMinutes - schedMinutes);
+          if (diff > 10) {
+            results.push({ queue: queue.name, skipped: true, reason: `Not in time window: now=${nowIsrael.getHours()}:${String(nowIsrael.getMinutes()).padStart(2,'0')}, scheduled=${publishTime}` });
+            continue;
+          }
+        }
+
         // Check frequency_days — skip if not enough days passed
         const freqDays = queue.frequency_days || 1;
         if (queue.last_published_at && freqDays > 1) {
