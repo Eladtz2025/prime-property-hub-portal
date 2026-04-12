@@ -962,6 +962,19 @@ export const AutoPublishManager: React.FC = () => {
           </CardContent>
         </Card>
 
+      {/* היסטוריית פרסום — standalone section below form */}
+      <Collapsible open={logOpen} onOpenChange={setLogOpen}>
+        <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors text-xs text-muted-foreground">
+          <span>היסטוריית פרסום</span>
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${logOpen ? 'rotate-180' : ''}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="max-h-[250px] overflow-y-auto mt-1 border rounded-md">
+            <SocialPostsList />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
       {/* Existing templates */}
       {isLoading && <p className="text-xs text-muted-foreground px-1">טוען...</p>}
 
