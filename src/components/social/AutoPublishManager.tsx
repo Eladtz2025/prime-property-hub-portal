@@ -954,7 +954,20 @@ export const AutoPublishManager: React.FC = () => {
                   );
                 })()}
               </div>
-            </div>
+              </div>
+
+            {/* היסטוריית פרסום — compact inside main card */}
+            <Collapsible open={logOpen} onOpenChange={setLogOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full px-1 py-1 rounded bg-muted/30 hover:bg-muted/50 transition-colors text-[11px] text-muted-foreground mt-3">
+                <span>היסטוריית פרסום</span>
+                <ChevronDown className={`h-3 w-3 transition-transform ${logOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="max-h-[200px] overflow-y-auto mt-1">
+                  <AutoPublishLog />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </CardContent>
         </Card>
 
@@ -1092,16 +1105,6 @@ export const AutoPublishManager: React.FC = () => {
         );
       })}
 
-      {/* Log */}
-      <Collapsible open={logOpen} onOpenChange={setLogOpen}>
-        <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-xs text-muted-foreground">
-          <span>היסטוריית פרסום</span>
-          <ChevronDown className={`h-3 w-3 transition-transform ${logOpen ? 'rotate-180' : ''}`} />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pt-2">
-          <AutoPublishLog />
-        </CollapsibleContent>
-      </Collapsible>
 
       {/* Delete confirmation */}
       <ConfirmDialog

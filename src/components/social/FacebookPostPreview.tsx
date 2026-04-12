@@ -81,7 +81,7 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
   };
 
   return (
-    <div className="max-w-[500px] mx-auto rounded-lg bg-[#242526] shadow-md border border-[#3a3b3c] overflow-hidden" dir="rtl">
+    <div className="max-w-[500px] rounded-lg bg-[#242526] shadow-md border border-[#3a3b3c] overflow-hidden" dir="rtl">
       {/* Header */}
       <div className="px-4 pt-3 pb-2 flex items-start gap-2.5">
         {pageAvatarUrl ? (
