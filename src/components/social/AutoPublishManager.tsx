@@ -635,9 +635,9 @@ export const AutoPublishManager: React.FC = () => {
             )}
 
             {/* Two-column layout: form right, preview left */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-3">
               {/* Right column — form controls */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {mode === 'recurring' && (
                   <div className="flex items-center gap-2">
                     <Select value={formFrequencyDays} onValueChange={setFormFrequencyDays}>
@@ -679,7 +679,7 @@ export const AutoPublishManager: React.FC = () => {
                     value={contentText}
                     onChange={e => setContentText(e.target.value)}
                     placeholder={mode === 'recurring' ? 'תבנית הפוסט שתפורסם אוטומטית...' : 'כתוב את תוכן הפוסט...'}
-                    className="min-h-[80px] text-sm"
+                    className="min-h-[60px] text-sm"
                     dir="rtl"
                   />
                   <div className="flex items-center justify-between mt-1">
@@ -857,7 +857,7 @@ export const AutoPublishManager: React.FC = () => {
 
                 {/* היסטוריית פרסום — compact inside form column */}
                 <Collapsible open={logOpen} onOpenChange={setLogOpen}>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full px-1 py-1 rounded bg-muted/30 hover:bg-muted/50 transition-colors text-[11px] text-muted-foreground mt-3">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full px-1 py-0.5 rounded bg-muted/30 hover:bg-muted/50 transition-colors text-[11px] text-muted-foreground mt-2">
                     <span>היסטוריית פרסום</span>
                     <ChevronDown className={`h-3 w-3 transition-transform ${logOpen ? 'rotate-180' : ''}`} />
                   </CollapsibleTrigger>
@@ -870,7 +870,7 @@ export const AutoPublishManager: React.FC = () => {
               </div>
 
               {/* Left column — Facebook Preview (sticky) */}
-              <div className="lg:sticky lg:top-0 self-start flex justify-end">
+              <div className="lg:sticky lg:top-0 self-start flex items-start justify-center">
                 {(() => {
                   let previewText = contentText;
                   let previewImages: string[] = imageUrls;
