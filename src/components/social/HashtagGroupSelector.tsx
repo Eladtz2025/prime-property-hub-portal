@@ -85,8 +85,8 @@ export const HashtagGroupSelector: React.FC<Props> = ({ value, onChange }) => {
 
   return (
     <div className="space-y-2">
-      {/* Group chips */}
-      <div className="flex flex-wrap gap-1">
+      {/* Group chips + manual add inline */}
+      <div className="flex flex-wrap gap-1 items-center">
         {groups.map(g => (
           <Button
             key={g.id}
@@ -109,6 +109,19 @@ export const HashtagGroupSelector: React.FC<Props> = ({ value, onChange }) => {
         >
           <Settings2 className="h-3 w-3" />
         </Button>
+        <div className="flex gap-0.5 items-center">
+          <Input
+            value={manualTag}
+            onChange={e => setManualTag(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addManual())}
+            placeholder="+ האשטג"
+            className="text-xs h-6 w-24"
+            dir="ltr"
+          />
+          <Button type="button" size="sm" variant="outline" className="h-6 px-1.5" onClick={addManual} disabled={!manualTag.trim()}>
+            <Plus className="h-3 w-3" />
+          </Button>
+        </div>
       </div>
 
       {/* Selected tags */}
@@ -124,21 +137,6 @@ export const HashtagGroupSelector: React.FC<Props> = ({ value, onChange }) => {
           ))}
         </div>
       )}
-
-      {/* Manual add */}
-      <div className="flex gap-1">
-        <Input
-          value={manualTag}
-          onChange={e => setManualTag(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addManual())}
-          placeholder="הוסף האשטג..."
-          className="text-xs h-7 flex-1"
-          dir="ltr"
-        />
-        <Button type="button" size="sm" variant="outline" className="h-7 px-2" onClick={addManual} disabled={!manualTag.trim()}>
-          <Plus className="h-3 w-3" />
-        </Button>
-      </div>
 
       <HashtagGroupsEditor
         open={editorOpen}

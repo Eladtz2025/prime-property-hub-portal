@@ -101,7 +101,7 @@ export const AutoPublishManager: React.FC = () => {
   const [formName, setFormName] = useState('');
   const [contentText, setContentText] = useState('');
   const [hashtags, setHashtags] = useState('');
-  const [platforms, setPlatforms] = useState({ facebook: true, instagram: false });
+  const [platforms, setPlatforms] = useState({ facebook: true, instagram: true });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
 
@@ -583,7 +583,7 @@ export const AutoPublishManager: React.FC = () => {
                   className={cn("gap-1 h-7 text-xs px-2", platforms.facebook && "bg-[#1877F2] hover:bg-[#1877F2]/90")}
                   onClick={() => setPlatforms(p => ({ ...p, facebook: !p.facebook }))}
                 >
-                  <Facebook className="h-3 w-3" /> FB
+                  <Facebook className="h-3 w-3" /> Facebook
                 </Button>
                 <Button
                   type="button"
@@ -592,7 +592,7 @@ export const AutoPublishManager: React.FC = () => {
                   className={cn("gap-1 h-7 text-xs px-2", platforms.instagram && "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90")}
                   onClick={() => setPlatforms(p => ({ ...p, instagram: !p.instagram }))}
                 >
-                  <Instagram className="h-3 w-3" /> IG
+                  <Instagram className="h-3 w-3" /> Instagram
                 </Button>
               </div>
 
@@ -811,26 +811,24 @@ export const AutoPublishManager: React.FC = () => {
                   </div>
                 )}
 
-                {/* Schedule (one-time) — inline */}
-                {mode === 'one_time' && (
-                  <div className="flex items-center gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-xs h-7">
-                          <CalendarDays className="h-3 w-3 ml-1" />
-                          {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : 'תאריך'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="p-3 pointer-events-auto" disabled={date => date < new Date()} />
-                      </PopoverContent>
-                    </Popover>
-                    <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-24 text-xs h-7" dir="ltr" />
-                  </div>
-                )}
-
-                {/* Actions — inline */}
+                {/* Schedule + Actions — single row */}
                 <div className="flex flex-wrap items-center gap-2 pt-2">
+                  {mode === 'one_time' && (
+                    <>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-xs h-7">
+                            <CalendarDays className="h-3 w-3 ml-1" />
+                            {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : 'תאריך'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="p-3 pointer-events-auto" disabled={date => date < new Date()} />
+                        </PopoverContent>
+                      </Popover>
+                      <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-24 text-xs h-7" dir="ltr" />
+                    </>
+                  )}
                   {mode === 'one_time' && platforms.facebook && (
                     <label className="flex items-center gap-1.5 cursor-pointer mr-2">
                       <Checkbox checked={isPrivatePost} onCheckedChange={(checked) => setIsPrivatePost(!!checked)} />
@@ -872,7 +870,7 @@ export const AutoPublishManager: React.FC = () => {
               </div>
 
               {/* Left column — Facebook Preview (sticky) */}
-              <div className="lg:sticky lg:top-4 self-start flex justify-end">
+              <div className="lg:sticky lg:top-0 self-start flex justify-end">
                 {(() => {
                   let previewText = contentText;
                   let previewImages: string[] = imageUrls;
