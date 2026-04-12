@@ -133,8 +133,24 @@ async function publishToInstagram(
       const createData = await createRes.json();
       if (createData.error) return { success: false, error: createData.error.message };
 
-      // Wait for processing
-      await new Promise(r => setTimeout(r, 10000));
+      // Poll for processing completion instead of fixed wait
+      const containerId = createData.id;
+      let processingDone = false;
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 3000));
+        const statusRes = await fetch(`${GRAPH_API}/${containerId}?fields=status_code&access_token=${accessToken}`);
+        const statusData = await statusRes.json();
+        if (statusData.status_code === 'FINISHED') {
+          processingDone = true;
+          break;
+        }
+        if (statusData.status_code === 'ERROR') {
+          return { success: false, error: 'Instagram video processing failed' };
+        }
+      }
+      if (!processingDone) {
+        return { success: false, error: 'Instagram video processing timeout (60s)' };
+      }
 
       const publishRes = await fetch(`${GRAPH_API}/${igUserId}/media_publish`, {
         method: 'POST',
@@ -243,7 +259,7 @@ Deno.serve(async (req) => {
     // Facebook group posts are semi-automatic — just mark as ready
     if (post.platform === 'facebook_group') {
       await supabase.from('social_posts').update({
-        status: 'published',
+        status: 'ready_to_copy',
         published_at: new Date().toISOString(),
       }).eq('id', post_id);
 
