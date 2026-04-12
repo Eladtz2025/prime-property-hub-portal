@@ -865,7 +865,7 @@ export const AutoPublishManager: React.FC = () => {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="max-h-[200px] overflow-y-auto mt-1">
-                      <AutoPublishLog />
+                      <SocialPostsList />
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
