@@ -27,6 +27,7 @@ const PLATFORM_LABEL: Record<string, string> = {
 };
 
 export const SocialPostsList: React.FC = () => {
+  const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState('all');
   const [platformFilter, setPlatformFilter] = useState('all');
   const { data: posts, isLoading } = useSocialPosts(statusFilter, platformFilter);
@@ -112,6 +113,15 @@ export const SocialPostsList: React.FC = () => {
                       
                       {/* Actions */}
                       <div className="flex items-center gap-1 mt-2">
+                        {post.status === 'ready_to_copy' && (
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-orange-400 text-orange-600" onClick={() => {
+                            navigator.clipboard.writeText(post.content_text || '');
+                            toast({ title: 'הטקסט הועתק ללוח!' });
+                          }}>
+                            <Copy className="h-3 w-3" />
+                            העתק טקסט
+                          </Button>
+                        )}
                         {post.status === 'failed' && (
                           <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setRetryConfirm(post.id)}>
                             <RefreshCw className="h-3 w-3" />
