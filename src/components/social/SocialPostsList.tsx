@@ -9,11 +9,12 @@ import { he } from 'date-fns/locale';
 import { useSocialPosts, useDeleteSocialPost, useUpdateSocialPost, usePublishPost } from '@/hooks/useSocialPosts';
 import { ConfirmDialog } from './ConfirmDialog';
 
-const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }> = {
+const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode; className?: string }> = {
   draft: { label: 'טיוטא', variant: 'outline', icon: <FileText className="h-3 w-3" /> },
   scheduled: { label: 'מתוזמן', variant: 'secondary', icon: <Clock className="h-3 w-3" /> },
   publishing: { label: 'בתהליך', variant: 'default', icon: <Send className="h-3 w-3" /> },
   published: { label: 'פורסם', variant: 'default', icon: <CheckCircle className="h-3 w-3" /> },
+  ready_to_copy: { label: 'מוכן להעתקה', variant: 'outline', icon: <FileText className="h-3 w-3" />, className: 'border-orange-400 text-orange-600 bg-orange-50' },
   failed: { label: 'נכשל', variant: 'destructive', icon: <XCircle className="h-3 w-3" /> },
 };
 
@@ -90,7 +91,7 @@ export const SocialPostsList: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm line-clamp-2 leading-snug">{post.content_text?.slice(0, 80) || '—'}</p>
-                        <Badge variant={statusInfo.variant} className="text-[10px] shrink-0 gap-1">
+                        <Badge variant={statusInfo.variant} className={cn("text-[10px] shrink-0 gap-1", statusInfo.className)}>
                           {statusInfo.icon}
                           {statusInfo.label}
                         </Badge>
