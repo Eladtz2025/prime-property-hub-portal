@@ -259,6 +259,7 @@ export type Database = {
           hashtags: string | null
           id: string
           is_active: boolean
+          is_private: boolean
           last_published_at: string | null
           name: string
           next_publish_day: number | null
@@ -279,6 +280,7 @@ export type Database = {
           hashtags?: string | null
           id?: string
           is_active?: boolean
+          is_private?: boolean
           last_published_at?: string | null
           name: string
           next_publish_day?: number | null
@@ -299,6 +301,7 @@ export type Database = {
           hashtags?: string | null
           id?: string
           is_active?: boolean
+          is_private?: boolean
           last_published_at?: string | null
           name?: string
           next_publish_day?: number | null

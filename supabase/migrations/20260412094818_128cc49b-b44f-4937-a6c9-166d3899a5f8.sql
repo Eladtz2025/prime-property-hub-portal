@@ -1,0 +1,1 @@
+ALTER TABLE auto_publish_queues ADD COLUMN is_private boolean NOT NULL DEFAULT false;
