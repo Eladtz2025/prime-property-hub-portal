@@ -20,7 +20,7 @@ import { useAutoPublishQueues, useSaveAutoPublishQueue, useToggleAutoPublishQueu
 import { useCreateSocialPost, usePublishPost, useSocialTemplates, useSocialAccounts, useFacebookGroups } from '@/hooks/useSocialPosts';
 import { useToast } from '@/hooks/use-toast';
 import { AutoPublishArticles } from './AutoPublishArticles';
-import { AutoPublishLog } from './AutoPublishLog';
+import { SocialPostsList } from './SocialPostsList';
 import { ConfirmDialog } from './ConfirmDialog';
 import { HashtagGroupSelector } from './HashtagGroupSelector';
 import { FacebookPostPreview } from './FacebookPostPreview';
@@ -865,7 +865,7 @@ export const AutoPublishManager: React.FC = () => {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="max-h-[200px] overflow-y-auto mt-1">
-                      <AutoPublishLog />
+                      <SocialPostsList />
                     </div>
                   </CollapsibleContent>
                 </Collapsible>

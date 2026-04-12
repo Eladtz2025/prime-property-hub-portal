@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { SocialAccountSetup } from './SocialAccountSetup';
-import { SocialPostsList } from './SocialPostsList';
+
 import { SocialToolsPanel } from './SocialToolsPanel';
 import { AutoPublishManager } from './AutoPublishManager';
 import { useSocialAccounts, useSocialPosts } from '@/hooks/useSocialPosts';
@@ -86,7 +86,6 @@ export const SocialDashboard: React.FC = () => {
       </div>
 
       <AutoPublishManager />
-      <SocialPostsList />
       <SocialToolsPanel />
 
       {/* Settings Sheet */}
