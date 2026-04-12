@@ -1,37 +1,29 @@
 
-## תוכנית: תיקון cron job של התאמות (matching)
 
-### שורש הבעיה
+## תוכנית: עדכון סטטוס 39 נכסים שלא ניתנים להתאמה
 
-ה-cron job `match-leads-job` (רץ ב-05:00 UTC / 08:00 ישראל) משתמש ב-**anon key hardcoded** — בדיוק אותה בעיה שתיקנו עכשיו ב-dedup. אין אף log בפונקציה `trigger-matching`, מה שאומר שהקריאה נכשלת בשקט.
-
-41 נכסים בסטטוס `new` ממתינים כי ההתאמה לא רצה.
+### מצב נוכחי
+39 נכסים בסטטוס `new` שלא יעברו התאמה לעולם:
+- **6** בלי מחיר (price NULL או 0)
+- **34** כפילויות לא ראשיות (is_primary_listing = false)
+- **1** חופף (גם בלי מחיר וגם לא ראשי)
 
 ### תיקון
-
-מיגרציה אחת — החלפת ה-cron job:
+עדכון סטטוס מ-`new` ל-`checked` עבור שתי הקבוצות — כך הם לא יראו כ"ממתינים להתאמה":
 
 ```sql
-SELECT cron.unschedule('match-leads-job');
+-- נכסים בלי מחיר
+UPDATE scouted_properties 
+SET status = 'checked' 
+WHERE status = 'new' AND is_active = true AND (price IS NULL OR price = 0);
 
-SELECT cron.schedule(
-  'daily-matching',
-  '0 5 * * *',
-  $$
-  SELECT net.http_post(
-    url := current_setting('supabase.supabase_url') || '/functions/v1/trigger-matching',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('supabase.service_role_key')
-    ),
-    body := '{"send_whatsapp": true}'::jsonb,
-    timeout_milliseconds := 120000
-  ) AS request_id;
-  $$
-);
+-- כפילויות לא ראשיות
+UPDATE scouted_properties 
+SET status = 'checked' 
+WHERE status = 'new' AND is_active = true AND is_primary_listing = false;
 ```
 
-### אחרי התיקון
-אפעיל את הפונקציה ידנית כדי לטפל ב-41 הנכסים הממתינים.
+### סיכון: אפסי
+- לא משנה מבנה, רק נתונים
+- אם יתווסף מחיר או הנכס יהפוך לראשי, ההתאמה הבאה תעדכן את הסטטוס חזרה
 
-### סיכון: אפסי — החלפת cron בלבד, הפונקציה לא משתנה
