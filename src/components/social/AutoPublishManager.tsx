@@ -949,6 +949,7 @@ export const AutoPublishManager: React.FC = () => {
                       linkDescription={postStyle === 'photos' ? undefined : linkDescription}
                       linkImage={postStyle === 'photos' ? undefined : linkImage}
                       pageName="דירות להשכרה ומכירה בת״א סיטי מרקט נכסים"
+                      pageAvatarUrl={cityMarketLogo}
                     />
                   );
                 })()}
