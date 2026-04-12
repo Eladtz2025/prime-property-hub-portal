@@ -20,7 +20,7 @@ import { useAutoPublishQueues, useSaveAutoPublishQueue, useToggleAutoPublishQueu
 import { useCreateSocialPost, usePublishPost, useSocialTemplates, useSocialAccounts, useFacebookGroups } from '@/hooks/useSocialPosts';
 import { useToast } from '@/hooks/use-toast';
 import { AutoPublishArticles } from './AutoPublishArticles';
-import { AutoPublishLog } from './AutoPublishLog';
+import { SocialPostsList } from './SocialPostsList';
 import { ConfirmDialog } from './ConfirmDialog';
 import { HashtagGroupSelector } from './HashtagGroupSelector';
 import { FacebookPostPreview } from './FacebookPostPreview';
