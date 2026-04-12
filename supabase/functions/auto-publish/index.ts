@@ -160,7 +160,7 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     if (postErr) throw postErr;
 
     const { data: publishResult, error: publishErr } = await supabase.functions.invoke('social-publish', {
-      body: { post_id: post.id },
+      body: { post_id: post.id, is_private: !!queue.is_private },
     });
 
     await supabase.from('auto_publish_log').insert({
@@ -262,7 +262,7 @@ async function handleArticleOneshot(supabase: ReturnType<typeof createClient>, q
     if (postErr) throw postErr;
 
     const { data: publishResult, error: publishErr } = await supabase.functions.invoke('social-publish', {
-      body: { post_id: post.id },
+      body: { post_id: post.id, is_private: !!queue.is_private },
     });
 
     await supabase.from('auto_publish_log').insert({

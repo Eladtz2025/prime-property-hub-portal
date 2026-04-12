@@ -184,6 +184,7 @@ export const AutoPublishManager: React.FC = () => {
     const target = (queue as any).publish_target as { type: string; group_ids?: string[] } | null;
     setPublishTarget((target?.type as 'page' | 'groups') || 'page');
     setSelectedGroupIds(target?.group_ids || []);
+    setIsPrivatePost(!!(queue as any).is_private);
   };
 
   // Property selection for one-time posts
@@ -320,6 +321,7 @@ export const AutoPublishManager: React.FC = () => {
       publish_target: platforms.facebook 
         ? (publishTarget === 'groups' ? { type: 'groups', group_ids: selectedGroupIds } : { type: 'page' })
         : { type: 'page' },
+      is_private: isPrivatePost,
     }, {
       onSuccess: () => {
         resetForm();
@@ -829,7 +831,7 @@ export const AutoPublishManager: React.FC = () => {
                       <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-24 text-xs h-7" dir="ltr" />
                     </>
                   )}
-                  {mode === 'one_time' && platforms.facebook && (
+                  {platforms.facebook && (
                     <label className="flex items-center gap-1.5 cursor-pointer mr-2">
                       <Checkbox checked={isPrivatePost} onCheckedChange={(checked) => setIsPrivatePost(!!checked)} />
                       <Lock className="h-3 w-3 text-muted-foreground" />
