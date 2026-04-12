@@ -1,31 +1,16 @@
 
 
-## תיקון: פרסום כפול בתבניות אוטומטיות
+## תיקון: איפוס נתוני התבנית
 
-### שורש הבעיה
-בקוד `auto-publish/index.ts`, בדיקת `frequency_days` מופעלת רק כש-`freqDays > 1`:
-```typescript
-if (queue.last_published_at && freqDays > 1) { ... }
-```
-כש-frequency הוא 1 (יומי), הבדיקה נדלגת לגמרי — אז כל הפעלה בחלון ה-10 דקות מפרסמת שוב.
+### הבעיה
+התבנית פרסמה 3 פעמים לפני התיקון, ולכן:
+- `current_index` הוא 3 במקום 0 או 1
+- `last_published_at` מצביע על הפרסום הכפול
 
-### תיקון
-**קובץ: `supabase/functions/auto-publish/index.ts`**
+### פעולה
+1. **איפוס `current_index` ל-0** ו-**איפוס `last_published_at` ל-null** בטבלת `auto_publish_queues` עבור התבנית הזו — כך מחר היא תתחיל מהדירה הראשונה ותפרסם כרגיל
+2. **מחיקת הפוסטים הכפולים** שנוצרו מהפרסום המשולש (אם קיימים בטבלת `social_posts`) כדי שההיסטוריה תהיה נקייה
 
-1. **הסרת התנאי `freqDays > 1`** — תמיד לבדוק `last_published_at`, גם כש-frequency הוא 1
-2. **הוספת בדיקת "כבר פורסם היום"** — אם `frequency_days` הוא 1, בדיקה שלא פורסם באותו יום (Israel time), לא רק לפי מספר ימים
-
-לוגיקה מתוקנת:
-```text
-if last_published_at exists:
-  if freqDays == 1:
-    check if last publish was TODAY (Israel time) → skip
-  else:
-    check if enough days passed → skip if not
-```
-
-3. **Deploy** מחדש של הפונקציה
-
-### תיקון משני: בדיקת שגיאת "Invalid parameter"
-2 מתוך 3 הפרסומים נכשלו עם "Invalid parameter" — צריך לבדוק בלוגים של `social-publish` אם זה קשור ל-`is_private` בפוסטים מסוג property_listing.
+### סיכון: אפס
+שינוי נתונים בלבד, ללא שינוי קוד
 
