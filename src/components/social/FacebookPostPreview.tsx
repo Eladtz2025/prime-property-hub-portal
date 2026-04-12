@@ -35,7 +35,7 @@ const TextWithSeeMore: React.FC<{ text: string }> = ({ text }) => {
         onClick={() => setExpanded(true)}
         className="text-[#65676b] dark:text-[#b0b3b8] hover:underline font-normal"
       >
-        קרא עוד
+        See more
       </button>
     </div>
   );
@@ -58,7 +58,7 @@ export const FacebookPostPreview: React.FC<FacebookPostPreviewProps> = ({
   text,
   hashtags,
   imageUrls = [],
-  pageName = 'PrimeProperty',
+  pageName = 'דירות להשכרה ומכירה בת״א סיטי מרקט נכסים',
   pageAvatarUrl,
   linkUrl,
   linkTitle,
