@@ -1,26 +1,43 @@
 
 
-## תוכנית: תיקון RLS על טבלת scout_runs — היסטוריית סריקות לא מוצגת
+## תוכנית: תיקון cron job של כפילויות
 
 ### שורש הבעיה
 
-טבלת `scout_runs` מוגדרת עם RLS מופעל, אבל יש רק פוליסה אחת: **"Service role can manage scout_runs"** (ALL, qual: true). אין פוליסה ל-`authenticated` users, כך שכשה-UI שולח שאילתה מהדפדפן (כמשתמש מחובר), הוא מקבל 0 תוצאות.
-
-הנתונים עצמם קיימים ותקינים — כל הסריקות רצו כרגיל (אתמול 11/4, היום 12/4). **הבעיה היא רק הצגה.**
+ה-cron job `cleanup-orphan-duplicates-hourly` קורא ל-`detect-duplicates` באמצעות `net.http_post`, אבל בלוגים אין אף קריאה לפונקציה. הסיבה הסבירה ביותר: ה-cron משתמש ב-**anon key** ב-Authorization header, אבל ייתכן שה-`net.http_post` נכשל בשקט (timeout, DNS, או בעיית רשת פנימית).
 
 ### תיקון
 
-הוספת מיגרציה עם RLS policy ל-SELECT על `scout_runs` עבור admin/super_admin/manager — בדיוק כמו הפוליסה הקיימת על `scout_configs`:
+1. **מיגרציה לעדכון ה-cron** — שינוי ה-Authorization header מ-anon key ל-service_role_key (דרך `current_setting('supabase.service_role_key')` שזמין ב-postgres):
 
 ```sql
-CREATE POLICY "Admins can view scout runs"
-ON public.scout_runs
-FOR SELECT
-TO authenticated
-USING (get_current_user_role() IN ('super_admin', 'admin', 'manager'));
+SELECT cron.unschedule('cleanup-orphan-duplicates-hourly');
+
+SELECT cron.schedule(
+  'daily-dedup-scan',
+  '0 1 * * *',
+  $$
+  SELECT net.http_post(
+    url := current_setting('supabase.supabase_url') || '/functions/v1/detect-duplicates',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || current_setting('supabase.service_role_key')
+    ),
+    body := '{}'::jsonb,
+    timeout_milliseconds := 120000
+  ) AS request_id;
+  $$
+);
 ```
 
-### השפעה
-- ה-dialog של "היסטוריית סריקות" יתחיל להציג את כל הריצות
-- אפס סיכון — הוספת פוליסה בלבד, לא משנה שום לוגיקה
+2. **גם לתקן את שם הג'וב** — השם `cleanup-orphan-duplicates-hourly` מטעה (הוא רץ יומית, לא שעתי), נשנה ל-`daily-dedup-scan`.
+
+### למה service_role_key?
+
+כל ה-cron jobs האחרים במערכת (availability, matching, scout, backfill) משתמשים בדפוס `current_setting('supabase.service_role_key')` שהוא הגישה הנכונה — מפתח דינמי שלא hardcoded. ה-cron של הכפילויות הוא היחיד שמשתמש ב-anon key hardcoded.
+
+### סיכון: נמוך מאוד
+- החלפת cron job בלבד
+- הפונקציה עצמה לא משתנה
+- תוצאה: הכפילויות ירוצו כל לילה ב-04:00 ישראל כמתוכנן
 
