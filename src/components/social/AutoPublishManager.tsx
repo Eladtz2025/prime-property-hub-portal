@@ -479,7 +479,7 @@ export const AutoPublishManager: React.FC = () => {
       {/* Inline Form — always visible */}
       <Card className="border-primary/20">
           <CardContent className="pt-3 pb-3 space-y-2">
-            {/* Row 1: All controls in one line */}
+            {/* Row 1: Type, Property/Name, Template */}
             <div className="flex flex-wrap items-center gap-2">
               <Select value={mode === 'one_time' ? 'one_time' : queueType === 'article_oneshot' ? 'auto_articles' : 'auto_properties'} onValueChange={(v) => {
                   if (v === 'one_time') {
@@ -513,20 +513,7 @@ export const AutoPublishManager: React.FC = () => {
                 <Input value={formName} onChange={e => setFormName(e.target.value)} className="h-8 text-xs w-[140px]" placeholder="שם התבנית" />
               )}
 
-              {mode === 'recurring' && queueType === 'property_rotation' && (
-                <Select value={propertyFilter} onValueChange={(v) => setPropertyFilter(v as 'all' | 'rental' | 'sale')}>
-                  <SelectTrigger className="h-8 text-xs w-[110px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">הכל</SelectItem>
-                    <SelectItem value="rental">השכרה</SelectItem>
-                    <SelectItem value="sale">מכירה</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-
-              {/* One-time: Property & Template inline */}
+              {/* One-time: Property & Template */}
               {mode === 'one_time' && (
                 <>
                   <Select value={selectedPropertyId} onValueChange={handleSelectProperty}>
@@ -573,9 +560,11 @@ export const AutoPublishManager: React.FC = () => {
                   </Select>
                 </>
               )}
+            </div>
 
-              {/* Platform buttons inline */}
-              <div className="flex gap-1.5 items-center border-r border-border pr-2 mr-1">
+            {/* Row 2: Platforms, Target, Filter */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex gap-1.5 items-center">
                 <Button
                   type="button"
                   variant={platforms.facebook ? 'default' : 'outline'}
@@ -596,15 +585,29 @@ export const AutoPublishManager: React.FC = () => {
                 </Button>
               </div>
 
-              {/* Publish target inline */}
               {platforms.facebook && (
-                <div className="flex gap-1.5 items-center">
+                <div className="flex gap-1.5 items-center border-r border-border pr-2 mr-1">
                   <Button type="button" size="sm" variant={publishTarget === 'page' ? 'default' : 'outline'} className="text-xs h-7 px-2" onClick={() => setPublishTarget('page')}>
                     עמוד
                   </Button>
                   <Button type="button" size="sm" variant={publishTarget === 'groups' ? 'default' : 'outline'} className="text-xs h-7 px-2" onClick={() => setPublishTarget('groups')}>
                     קבוצות
                   </Button>
+                </div>
+              )}
+
+              {mode === 'recurring' && queueType === 'property_rotation' && (
+                <div className="border-r border-border pr-2 mr-1">
+                  <Select value={propertyFilter} onValueChange={(v) => setPropertyFilter(v as 'all' | 'rental' | 'sale')}>
+                    <SelectTrigger className="h-7 text-xs w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">הכל</SelectItem>
+                      <SelectItem value="rental">השכרה</SelectItem>
+                      <SelectItem value="sale">מכירה</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>
@@ -635,7 +638,7 @@ export const AutoPublishManager: React.FC = () => {
             )}
 
             {/* Two-column layout: form right, preview left */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-3">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-3">
               {/* Right column — form controls */}
               <div className="space-y-1.5">
                 {mode === 'recurring' && (
@@ -679,7 +682,7 @@ export const AutoPublishManager: React.FC = () => {
                     value={contentText}
                     onChange={e => setContentText(e.target.value)}
                     placeholder={mode === 'recurring' ? 'תבנית הפוסט שתפורסם אוטומטית...' : 'כתוב את תוכן הפוסט...'}
-                    className="min-h-[60px] text-sm"
+                    className="min-h-[100px] text-sm"
                     dir="rtl"
                   />
                   <div className="flex items-center justify-between mt-1">
@@ -811,13 +814,13 @@ export const AutoPublishManager: React.FC = () => {
                   </div>
                 )}
 
-                {/* Schedule + Actions — single row */}
-                <div className="flex flex-wrap items-center gap-2 pt-2">
+                {/* Schedule + Actions — single row with clear separation */}
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
                   {mode === 'one_time' && (
                     <>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" size="sm" className="text-xs h-7">
+                          <Button variant="outline" size="sm" className="text-xs h-8">
                             <CalendarDays className="h-3 w-3 ml-1" />
                             {scheduleDate ? format(scheduleDate, 'dd/MM/yyyy', { locale: he }) : 'תאריך'}
                           </Button>
@@ -826,7 +829,7 @@ export const AutoPublishManager: React.FC = () => {
                           <Calendar mode="single" selected={scheduleDate} onSelect={setScheduleDate} className="p-3 pointer-events-auto" disabled={date => date < new Date()} />
                         </PopoverContent>
                       </Popover>
-                      <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-24 text-xs h-7" dir="ltr" />
+                      <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-24 text-xs h-8" dir="ltr" />
                     </>
                   )}
                   {mode === 'one_time' && platforms.facebook && (
@@ -836,37 +839,26 @@ export const AutoPublishManager: React.FC = () => {
                       <span className="text-[11px]">פרטי</span>
                     </label>
                   )}
+                  <div className="flex-1" />
                   {mode === 'one_time' ? (
-                    <>
-                      <Button size="sm" onClick={() => handleActionClick('publish')} disabled={createPost.isPending || publishPost.isPending} className="gap-1 h-7 text-xs">
-                        <Send className="h-3 w-3" /> {isPrivatePost ? 'פרסם פרטי' : 'פרסם'}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleActionClick('schedule')} disabled={createPost.isPending} className="gap-1 h-7 text-xs">
-                        <Clock className="h-3 w-3" /> תזמן
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleActionClick('draft')} disabled={createPost.isPending} className="gap-1 h-7 text-xs">
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => handleActionClick('draft')} disabled={createPost.isPending} className="gap-1 h-8 text-xs">
                         <Save className="h-3 w-3" /> טיוטא
                       </Button>
-                    </>
+                      <Button size="sm" variant="outline" onClick={() => handleActionClick('schedule')} disabled={createPost.isPending} className="gap-1 h-8 text-xs">
+                        <Clock className="h-3 w-3" /> תזמן
+                      </Button>
+                      <Button size="sm" onClick={() => handleActionClick('publish')} disabled={createPost.isPending || publishPost.isPending} className="gap-1 h-8 text-xs">
+                        <Send className="h-3 w-3" /> {isPrivatePost ? 'פרסם פרטי' : 'פרסם'}
+                      </Button>
+                    </div>
                   ) : (
-                    <Button size="sm" onClick={handleSaveTemplate} disabled={saveQueue.isPending} className="gap-1 h-7 text-xs">
+                    <Button size="sm" onClick={handleSaveTemplate} disabled={saveQueue.isPending} className="gap-1 h-8 text-xs">
                       <Save className="h-3 w-3" /> {saveQueue.isPending ? 'שומר...' : editingId ? 'עדכן תבנית' : 'שמור תבנית'}
                     </Button>
                   )}
                 </div>
 
-                {/* היסטוריית פרסום — compact inside form column */}
-                <Collapsible open={logOpen} onOpenChange={setLogOpen}>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full px-1 py-0.5 rounded bg-muted/30 hover:bg-muted/50 transition-colors text-[11px] text-muted-foreground mt-2">
-                    <span>היסטוריית פרסום</span>
-                    <ChevronDown className={`h-3 w-3 transition-transform ${logOpen ? 'rotate-180' : ''}`} />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="max-h-[200px] overflow-y-auto mt-1">
-                      <SocialPostsList />
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
               </div>
 
               {/* Left column — Facebook Preview (sticky) */}
@@ -968,6 +960,19 @@ export const AutoPublishManager: React.FC = () => {
               </div>
           </CardContent>
         </Card>
+
+      {/* היסטוריית פרסום — standalone section below form */}
+      <Collapsible open={logOpen} onOpenChange={setLogOpen}>
+        <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors text-xs text-muted-foreground">
+          <span>היסטוריית פרסום</span>
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${logOpen ? 'rotate-180' : ''}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="max-h-[250px] overflow-y-auto mt-1 border rounded-md">
+            <SocialPostsList />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Existing templates */}
       {isLoading && <p className="text-xs text-muted-foreground px-1">טוען...</p>}
