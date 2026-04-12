@@ -1,36 +1,25 @@
 
 
-## תוכנית: תצוגה מקדימה עם נתוני דוגמה כברירת מחדל
+## תוכנית: שיפור התצוגה המקדימה להתאמה לפוסט אמיתי בפייסבוק
 
 ### הבעיה
-כשלא נבחרה דירה, התצוגה המקדימה של פייסבוק מציגה טקסט ריק/עם placeholders וללא תמונה — נראה "שבור" וקטן.
+התצוגה המקדימה נראית ריקה/קטנה כשלא נבחרה דירה, ולא מתאימה למראה האמיתי של הפוסט בפייסבוק (כפי שנראה בצילום המסך).
 
-### הפתרון
-בבלוק ה-preview (שורות 862-941 ב-`AutoPublishManager.tsx`), כשאין נכס נבחר ב-`one_time` mode — נשתמש בנכס הראשון מרשימת `properties` כנתוני דוגמה. כך התצוגה תראה מלאה ומציאותית מהרגע הראשון, וכשהמשתמש בוחר נכס — הנתונים מתעדכנים לנכס שנבחר.
+### מה נשנה
 
-### שינויים
+**קובץ 1: `AutoPublishManager.tsx`**
+- נוודא שה-fallback (נכס ראשון כדוגמה) עובד נכון — ייתכן שהבעיה היא ש-`contentText` מאותחל ריק וה-`postStyle` הוא `link` אבל ה-`linkImage` לא מגיע
+- נעביר `pageName` ו-`pageAvatarUrl` ל-`FacebookPostPreview` — עם השם האמיתי של הדף ("דירות להשכרה ומכירה בת״א סיטי מרקט נכסים") ולוגו
 
-**קובץ: `src/components/social/AutoPublishManager.tsx`**
+**קובץ 2: `FacebookPostPreview.tsx`**
+- עדכון ברירת המחדל של `pageName` לשם הדף האמיתי
+- הוספת "See more" באנגלית (כמו בצילום) במקום "קרא עוד"
+- וידוא שהתצוגה נראית מלאה ומציאותית גם עם נתוני דוגמה
 
-אחרי הבלוק של `mode === 'one_time'` (שורה 913-928), נוסיף fallback:
+### פרטים טכניים
+- ב-`AutoPublishManager`: הבעיה העיקרית היא שה-fallback demo לא מעביר את `linkImage` כראוי כשה-`postStyle` הוא `link`, כי `getMainImage` תלוי בנתוני properties שנטענים async. נוסיף בדיקה שהנתונים קיימים ונבנה link card תקין
+- ב-`FacebookPostPreview`: נשנה את ברירת המחדל של `pageName` ל-"דירות להשכרה ומכירה בת״א סיטי מרקט נכסים"
+- נעדכן את ה-`TextWithSeeMore` להציג "See more" כמו בפייסבוק האמיתי
 
-```
-// Fallback: if one_time mode and no property selected, use first property as demo
-if (mode === 'one_time' && (!selectedPropertyId || selectedPropertyId === 'free') && properties.length) {
-  const demoProp = properties[0];
-  previewText = fillPropertyPlaceholders(contentText || defaultTemplate, demoProp);
-  if (postStyle === 'link') {
-    buildLinkCard(demoProp);
-  } else {
-    previewImages = demoProp.property_images?.slice(0, 4).map(img => img.image_url) || [];
-  }
-}
-```
-
-כך:
-- ברגע שהעמוד נטען, התצוגה מציגה דירה אמיתית מהמאגר
-- ברגע שהמשתמש בוחר דירה, היא מתעדכנת לנכס שנבחר
-- אם אין נכסים בכלל, נשאר ה-placeholder הנוכחי
-
-### סיכון: **אפסי** — רק הוספת fallback לתצוגה, ללא שינוי בלוגיקת הפרסום.
+### סיכון: **אפסי** — שינויים ויזואליים בלבד בתצוגה מקדימה.
 
