@@ -859,7 +859,7 @@ export const AutoPublishManager: React.FC = () => {
               </div>
 
               {/* Left column — Facebook Preview (sticky) */}
-              <div className="lg:sticky lg:top-4 self-start">
+              <div className="lg:sticky lg:top-4 self-start flex justify-end">
                 {(() => {
                   let previewText = contentText;
                   let previewImages: string[] = imageUrls;
@@ -953,21 +953,22 @@ export const AutoPublishManager: React.FC = () => {
                     />
                   );
                 })()}
-              </div>
-              </div>
-
-            {/* היסטוריית פרסום — compact inside main card */}
-            <Collapsible open={logOpen} onOpenChange={setLogOpen}>
-              <CollapsibleTrigger className="flex items-center justify-between w-full px-1 py-1 rounded bg-muted/30 hover:bg-muted/50 transition-colors text-[11px] text-muted-foreground mt-3">
-                <span>היסטוריית פרסום</span>
-                <ChevronDown className={`h-3 w-3 transition-transform ${logOpen ? 'rotate-180' : ''}`} />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="max-h-[200px] overflow-y-auto mt-1">
-                  <AutoPublishLog />
                 </div>
-              </CollapsibleContent>
-            </Collapsible>
+
+                {/* היסטוריית פרסום — compact inside form column */}
+                <Collapsible open={logOpen} onOpenChange={setLogOpen}>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full px-1 py-1 rounded bg-muted/30 hover:bg-muted/50 transition-colors text-[11px] text-muted-foreground mt-3">
+                    <span>היסטוריית פרסום</span>
+                    <ChevronDown className={`h-3 w-3 transition-transform ${logOpen ? 'rotate-180' : ''}`} />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="max-h-[200px] overflow-y-auto mt-1">
+                      <AutoPublishLog />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+              </div>
           </CardContent>
         </Card>
 
