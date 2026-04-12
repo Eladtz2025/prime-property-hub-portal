@@ -48,12 +48,27 @@ Deno.serve(async (req) => {
 
         // Check frequency_days — skip if not enough days passed
         const freqDays = queue.frequency_days || 1;
-        if (queue.last_published_at && freqDays > 1) {
-          const lastPub = new Date(queue.last_published_at);
-          const daysSince = (Date.now() - lastPub.getTime()) / (1000 * 60 * 60 * 24);
-          if (daysSince < freqDays - 0.5) {
-            results.push({ queue: queue.name, skipped: true, reason: `Only ${daysSince.toFixed(1)} days since last publish, need ${freqDays}` });
-            continue;
+        if (queue.last_published_at) {
+          if (freqDays <= 1) {
+            // Daily: check if already published today (Israel time)
+            const lastPub = new Date(queue.last_published_at);
+            const lastPubIsrael = new Date(lastPub.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
+            const nowIsraelForFreq = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
+            if (
+              lastPubIsrael.getFullYear() === nowIsraelForFreq.getFullYear() &&
+              lastPubIsrael.getMonth() === nowIsraelForFreq.getMonth() &&
+              lastPubIsrael.getDate() === nowIsraelForFreq.getDate()
+            ) {
+              results.push({ queue: queue.name, skipped: true, reason: 'Already published today' });
+              continue;
+            }
+          } else {
+            const lastPub = new Date(queue.last_published_at);
+            const daysSince = (Date.now() - lastPub.getTime()) / (1000 * 60 * 60 * 24);
+            if (daysSince < freqDays - 0.5) {
+              results.push({ queue: queue.name, skipped: true, reason: `Only ${daysSince.toFixed(1)} days since last publish, need ${freqDays}` });
+              continue;
+            }
           }
         }
 
