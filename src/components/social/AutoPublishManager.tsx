@@ -1087,7 +1087,7 @@ export const AutoPublishManager: React.FC = () => {
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <RotateCcw className="h-2.5 w-2.5" />
-                      סבב {cycleInfo.cycle} · הבאה: דירה {cycleInfo.currentIdx || cycleInfo.totalProps}/{cycleInfo.totalProps}
+                      סבב {cycleInfo.cycle} · פורסמו: {cycleInfo.currentIdx}/{cycleInfo.totalProps}
                     </span>
                     {queue.last_published_at && (
                       <span>אחרון: {new Date(queue.last_published_at).toLocaleDateString('he-IL')}</span>
