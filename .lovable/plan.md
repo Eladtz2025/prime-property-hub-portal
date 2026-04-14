@@ -1,29 +1,39 @@
 
 
-## תיקון: כפתור עריכה לא עובד + הוספת בחירת סגנון פרסום לתבניות
+## הוספת רשימת סבב נכסים — מי פורסם, מתי, ומי הבא
 
-### בעיה 1: לחיצה על העיפרון לא עושה כלום
-הפונקציה `openEditQueue` ממלאת את שדות הטופס, אבל הטופס נמצא למעלה בדף — בלי גלילה אליו, המשתמש לא רואה שום שינוי.
+### מה נוסיף
+בתוך כל כרטיס תבנית מסוג `property_rotation`, תוצג רשימת נכסים שלמה שמציגה:
+- **סדר הסבב** — כל הנכסים המסוננים לפי סוג (השכרה/מכירה) בסדר הפרסום
+- **סטטוס לכל נכס**: ✅ פורסם (+ תאריך), ⏭️ הבא בתור, 🔜 עתידי
+- הנכס הנוכחי (הבא בתור) מודגש
 
-**תיקון**: הוספת `scrollIntoView` לטופס אחרי לחיצה על עריכה (ref על ה-Card של הטופס).
-
-### בעיה 2: אין אפשרות לבחור בין פרסום כקישור לפרסום כתמונות בתבניות אוטומטיות
-כרגע הבחירה link/photos קיימת רק בפוסט חד-פעמי. תבניות אוטומטיות תמיד שולחות תמונות (ב-backend).
-
-**תיקון**:
-1. הוספת שדה `post_style` לטופס התבנית (recurring + property_rotation)
-2. שמירת `post_style` ב-DB (דרך ה-mutation הקיים — השדה כבר גמיש)
-3. שחזור `post_style` ב-`openEditQueue`
-4. ב-backend (`auto-publish/index.ts`): אם `post_style === 'link'` — לא לשלוח תמונות ב-`image_urls`, אלא לתת ל-Facebook ליצור Link Card מה-URL
-
-### קבצים לשינוי
-- `src/components/social/AutoPublishManager.tsx` — scroll + הצגת בורר סגנון בתבנית
-- `src/hooks/useAutoPublish.ts` — הוספת `post_style` ל-mutation type
-- `supabase/functions/auto-publish/index.ts` — התאמת הלוגיקה לפי post_style
-- מיגרציה — הוספת עמודת `post_style` לטבלת `auto_publish_queues`
+### איך זה ייראה
+```text
+┌─────────────────────────────────────┐
+│  📋 סדר פרסום (סבב 1)              │
+│  ✅ זלטופולסקי 19 — 13/04          │
+│  ⏭️ דיזנגוף 50 — הבא בתור          │  ← מודגש
+│  🔜 רוטשילד 22                      │
+│  🔜 אלנבי 100                       │
+└─────────────────────────────────────┘
+```
 
 ### פרטים טכניים
-- עמודה חדשה: `post_style TEXT DEFAULT 'photos'` (ערכים: `'link'` / `'photos'`)
-- ב-backend כשה-style הוא `link`: ה-`image_urls` יישלח ריק ל-social_posts, וה-content יכלול את הלינק — פייסבוק ייצור Link Card אוטומטית
-- ב-preview: כש-`post_style === 'link'` — להשתמש ב-`FacebookPostPreview` עם `linkUrl`/`linkImage` במקום `imageUrls`
+
+**1. `src/hooks/useAutoPublish.ts`**
+- הרחבת `useAutoPublishLog` כדי לטעון גם `property_id` ופרטי הנכס: `properties(address, neighborhood, city)`
+- הוספת hook חדש `useQueuePublishHistory(queueId)` שמחזיר את הלוג של תור ספציפי עם פרטי נכסים
+
+**2. `src/components/social/AutoPublishManager.tsx`**
+- הוספת רכיב Collapsible חדש בתוך כרטיס ה-queue (אחרי ה-progress bar, לפני ה-preview)
+- הרכיב יציג את כל הנכסים המסוננים (`getFilteredProperties`) בסדר האינדקס שלהם
+- לכל נכס: בדיקה ב-log אם כבר פורסם (לפי `property_id`) → הצגת תאריך
+- נכס שה-`current_index` שלו תואם → מסומן כ"הבא בתור"
+- נכסים עתידיים → מסומנים כ"ממתין"
+- ברירת מחדל: סגור (Collapsible), עם כפתור "📋 סדר פרסום" לפתיחה
+
+### קבצים לשינוי
+- `src/hooks/useAutoPublish.ts` — hook חדש לטעינת לוג עם נכסים
+- `src/components/social/AutoPublishManager.tsx` — רכיב רשימת הסבב
 
