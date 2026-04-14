@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bot, ChevronDown, Trash2, Edit2, Building2, Newspaper, Clock, Facebook, Instagram, Eye, RotateCcw, Send, Save, Image, X, CalendarDays, Lock, Globe } from 'lucide-react';
+import { Bot, ChevronDown, Trash2, Edit2, Building2, Newspaper, Clock, Facebook, Instagram, Eye, RotateCcw, Send, Save, Image, X, CalendarDays, Lock, Globe, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -325,7 +325,7 @@ export const AutoPublishManager: React.FC = () => {
       template_text: contentText,
       hashtags,
       publish_time: formTimes[0] || formTime,
-      publish_times: formTimes,
+      publish_times: formTimes as any,
       frequency_days: parseInt(formFrequencyDays),
       frequency: parseInt(formFrequencyDays) >= 7 ? 'weekly' : 'daily',
       property_filter: queueType === 'property_rotation' ? propertyFilter : undefined,
