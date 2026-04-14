@@ -626,7 +626,7 @@ export const AutoPublishManager: React.FC = () => {
                             );
                           }}
                         />
-                        <span>{group.name}</span>
+                        <span>{group.group_name}</span>
                       </label>
                     ))}
                   </div>
