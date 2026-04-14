@@ -103,7 +103,6 @@ Deno.serve(async (req) => {
           const result = await handleArticleOneshot(supabase, queue);
           results.push({ queue: queue.name, ...result });
         }
-        }
       } catch (e) {
         const errMsg = e instanceof Error ? e.message : 'Unknown error';
         console.error(`Queue ${queue.name} error:`, errMsg);
