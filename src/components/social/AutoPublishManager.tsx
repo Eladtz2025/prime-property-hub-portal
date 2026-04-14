@@ -1131,10 +1131,37 @@ export const AutoPublishManager: React.FC = () => {
                     const previewText = buildPreviewText(queue);
                     const propertyLink = `https://www.ctmarketproperties.com/property/${nextProp.id}`;
                     const fullText = `${previewText}\n\n${propertyLink}`;
+                    const queuePostStyle = (queue as any).post_style || 'photos';
                     const images = ((nextProp as any).property_images || [])
                       .filter((img: any) => img.show_on_website !== false && img.image_url)
                       .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
                       .map((img: any) => img.image_url);
+
+                    if (queuePostStyle === 'link') {
+                      const typeLabel = nextProp.property_type === 'sale' ? 'למכירה' : 'להשכרה';
+                      const price = nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : '';
+                      const descParts: string[] = [];
+                      if (nextProp.rooms) descParts.push(`🛏️ ${nextProp.rooms} חד'`);
+                      if (nextProp.property_size) descParts.push(`📐 ${nextProp.property_size} מ"ר`);
+                      if (nextProp.floor != null) descParts.push(`🏢 קומה ${nextProp.floor}`);
+                      if (price) descParts.push(`💰 ${price}`);
+                      descParts.push(`📍 ${nextProp.neighborhood || nextProp.city || ''}`);
+                      return (
+                        <div className="mt-1">
+                          <FacebookPostPreview
+                            text={fullText}
+                            hashtags={queue.hashtags as string || ''}
+                            linkUrl={propertyLink}
+                            linkTitle={`${typeLabel}: ${nextProp.address || 'נכס'}`}
+                            linkDescription={descParts.join(' | ')}
+                            linkImage={images[0]}
+                            pageAvatarUrl={cityMarketLogo}
+                            isPublic={!(queue.is_private as boolean)}
+                          />
+                        </div>
+                      );
+                    }
+
                     return (
                       <div className="mt-1">
                         <FacebookPostPreview
