@@ -6,7 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Pencil, ExternalLink, Users2 } from 'lucide-react';
+
+const GROUP_CATEGORIES = ['השכרה', 'מכירה', 'שותפים', 'כללי'] as const;
 import { useFacebookGroups, useSaveFacebookGroup, useDeleteFacebookGroup } from '@/hooks/useSocialPosts';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -148,8 +151,17 @@ export const FacebookGroupsManager: React.FC = () => {
               <Input value={groupUrl} onChange={e => setGroupUrl(e.target.value)} placeholder="https://facebook.com/groups/..." dir="ltr" />
             </div>
             <div>
-              <Label className="text-xs">קטגוריה (אופציונלי)</Label>
-              <Input value={category} onChange={e => setCategory(e.target.value)} placeholder="נדל״ן, כללי..." />
+              <Label className="text-xs">קטגוריה</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="בחר קטגוריה..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {GROUP_CATEGORIES.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label className="text-xs">הערות (אופציונלי)</Label>
