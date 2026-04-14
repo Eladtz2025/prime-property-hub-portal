@@ -35,6 +35,7 @@ export function useSaveAutoPublishQueue() {
       publish_target?: { type: string; group_ids?: string[] };
       is_private?: boolean;
       post_style?: string;
+      publish_times?: string[];
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
