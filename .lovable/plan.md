@@ -1,48 +1,29 @@
 
-מטרת התיקון
 
-התצוגה המקדימה של התור לא נבנית היום כמו הפוסט האמיתי:
-- ב-`AutoPublishManager.tsx` היא מציגה רק `buildPreviewText(queue)` בתוך בלוק טקסט פשוט
-- היא לא משתמשת ב-`FacebookPostPreview`
-- היא לא מוסיפה את לינק הנכס שה-backend מוסיף אוטומטית
-- הנתונים של `useWebsiteProperties` חלקיים מדי, ולכן אי אפשר להציג באמת את הנכס הבא
+## תיקון: כפתור עריכה לא עובד + הוספת בחירת סגנון פרסום לתבניות
 
-מה אשנה
+### בעיה 1: לחיצה על העיפרון לא עושה כלום
+הפונקציה `openEditQueue` ממלאת את שדות הטופס, אבל הטופס נמצא למעלה בדף — בלי גלילה אליו, המשתמש לא רואה שום שינוי.
 
-1. `src/hooks/useAutoPublish.ts`
-- ארחיב את `useWebsiteProperties()` כדי לטעון גם:
-  - `description`
-  - `property_images(image_url, order_index, show_on_website)`
-- אסיר את `!inner` כדי שה-UI יעבוד על אותה רשימת נכסים כמו ה-backend, גם אם לנכס אין תמונות
+**תיקון**: הוספת `scrollIntoView` לטופס אחרי לחיצה על עריכה (ref על ה-Card של הטופס).
 
-2. `src/components/social/AutoPublishManager.tsx`
-- אוסיף helper ייעודי ל-preview של תור אוטומטי, שיבנה את הפוסט הבא בדיוק מה-`nextProp`
-- ה-helper:
-  - ימלא placeholders מה-template
-  - יוסיף בסוף את לינק הנכס כמו ב-`auto-publish`
-  - יאסוף את התמונות הציבוריות של אותו נכס לפי `order_index`
-- אחליף את בלוק ה-text preview ב-`FacebookPostPreview`, כדי לראות איך הפוסט הבא באמת ייראה
-- אם אין לנכס תמונות, ה-preview יוצג כטקסט בלבד; אם יש, יופיע פוסט מלא עם תמונות
+### בעיה 2: אין אפשרות לבחור בין פרסום כקישור לפרסום כתמונות בתבניות אוטומטיות
+כרגע הבחירה link/photos קיימת רק בפוסט חד-פעמי. תבניות אוטומטיות תמיד שולחות תמונות (ב-backend).
 
-3. התאמת התצוגה ל"הבא בתור"
-- אשאיר את שורת הסיכום העליונה (`הבא בתור: כתובת, אזור, מחיר`)
-- ה-preview שמתחתיה יבוסס על אותו `nextProp` בדיוק, כדי שלא יהיה מצב שהכותרת אומרת נכס אחד וה-preview מציג משהו אחר
+**תיקון**:
+1. הוספת שדה `post_style` לטופס התבנית (recurring + property_rotation)
+2. שמירת `post_style` ב-DB (דרך ה-mutation הקיים — השדה כבר גמיש)
+3. שחזור `post_style` ב-`openEditQueue`
+4. ב-backend (`auto-publish/index.ts`): אם `post_style === 'link'` — לא לשלוח תמונות ב-`image_urls`, אלא לתת ל-Facebook ליצור Link Card מה-URL
 
-פרטים טכניים
+### קבצים לשינוי
+- `src/components/social/AutoPublishManager.tsx` — scroll + הצגת בורר סגנון בתבנית
+- `src/hooks/useAutoPublish.ts` — הוספת `post_style` ל-mutation type
+- `supabase/functions/auto-publish/index.ts` — התאמת הלוגיקה לפי post_style
+- מיגרציה — הוספת עמודת `post_style` לטבלת `auto_publish_queues`
 
-```text
-היום:
-queue card -> buildPreviewText(queue) -> div טקסט פשוט
+### פרטים טכניים
+- עמודה חדשה: `post_style TEXT DEFAULT 'photos'` (ערכים: `'link'` / `'photos'`)
+- ב-backend כשה-style הוא `link`: ה-`image_urls` יישלח ריק ל-social_posts, וה-content יכלול את הלינק — פייסבוק ייצור Link Card אוטומטית
+- ב-preview: כש-`post_style === 'link'` — להשתמש ב-`FacebookPostPreview` עם `linkUrl`/`linkImage` במקום `imageUrls`
 
-אחרי התיקון:
-queue card -> buildQueuePreview(queue)
-           -> text + property link + property images
-           -> FacebookPostPreview
-```
-
-הערת התאמה חשובה:
-בפרסום האוטומטי עצמו ה-backend מפרסם פוסט תמונות + לינק בתוך הטקסט (לא Link Card נפרד), לכן גם ה-preview יתאים לפורמט הזה כדי לשקף נאמנה איך הפוסט הבא באמת ייראה.
-
-קבצים שיושפעו
-- `src/hooks/useAutoPublish.ts`
-- `src/components/social/AutoPublishManager.tsx`
