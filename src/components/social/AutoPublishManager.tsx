@@ -163,6 +163,7 @@ export const AutoPublishManager: React.FC = () => {
     setScheduleTime('10:00');
     setFormFrequencyDays('1');
     setFormTime('10:00');
+    setFormTimes(['10:00']);
     setQueueType('property_rotation');
     setPropertyFilter('all');
     setPublishTarget('page');
@@ -185,6 +186,8 @@ export const AutoPublishManager: React.FC = () => {
     setPlatforms({ facebook: qPlatforms.includes('facebook_page'), instagram: qPlatforms.includes('instagram') });
     setFormFrequencyDays(String((queue as any).frequency_days || 1));
     setFormTime(queue.publish_time as string || '10:00');
+    const qTimes = (queue as any).publish_times as string[] | null;
+    setFormTimes(qTimes && qTimes.length > 0 ? qTimes : [queue.publish_time as string || '10:00']);
     setPropertyFilter(((queue as any).property_filter as 'all' | 'rental' | 'sale') || 'all');
     const target = (queue as any).publish_target as { type: string; group_ids?: string[] } | null;
     setPublishTarget((target?.type as 'page' | 'groups') || 'page');
@@ -321,7 +324,8 @@ export const AutoPublishManager: React.FC = () => {
       platforms: platformsList,
       template_text: contentText,
       hashtags,
-      publish_time: formTime,
+      publish_time: formTimes[0] || formTime,
+      publish_times: formTimes,
       frequency_days: parseInt(formFrequencyDays),
       frequency: parseInt(formFrequencyDays) >= 7 ? 'weekly' : 'daily',
       property_filter: queueType === 'property_rotation' ? propertyFilter : undefined,
@@ -684,7 +688,52 @@ export const AutoPublishManager: React.FC = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-8 text-xs w-24" />
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {formTimes.map((t, i) => (
+                          <div key={i} className="flex items-center gap-0.5">
+                            <Input
+                              type="time"
+                              value={t}
+                              onChange={e => {
+                                const updated = [...formTimes];
+                                updated[i] = e.target.value;
+                                setFormTimes(updated);
+                                if (i === 0) setFormTime(e.target.value);
+                              }}
+                              className="h-8 text-xs w-24"
+                            />
+                            {formTimes.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-destructive"
+                                onClick={() => {
+                                  const updated = formTimes.filter((_, j) => j !== i);
+                                  setFormTimes(updated);
+                                  setFormTime(updated[0]);
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-[11px] gap-0.5 px-1.5"
+                          onClick={() => setFormTimes([...formTimes, '18:00'])}
+                        >
+                          <Plus className="h-3 w-3" />שעה
+                        </Button>
+                      </div>
+                      {formTimes.length > 1 && (
+                        <span className="text-[10px] text-muted-foreground">כל שעה מפרסמת דירה אחרת בסבב</span>
+                      )}
+                    </div>
                    </div>
                  )}
 
