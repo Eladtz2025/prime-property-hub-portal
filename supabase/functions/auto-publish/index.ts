@@ -151,9 +151,10 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     .replace(/{price}/g, property.monthly_rent ? `₪${Number(property.monthly_rent).toLocaleString()}` : '')
     .replace(/{description}/g, property.description || '');
 
-  // Append property link
+  // Build property link
   const propertyLink = `https://www.ctmarketproperties.com/property/${property.id}`;
-  const postTextWithLink = `${postText}\n\n${propertyLink}`;
+  // For link-style posts, don't embed the URL in the text — it will appear as an OG Link Card
+  const postTextWithLink = (queue.post_style === 'link') ? postText : `${postText}\n\n${propertyLink}`;
 
     const hashtags = (queue.hashtags as string) || '';
   const platforms = (queue.platforms as string[]) || ['facebook_page'];
@@ -181,6 +182,8 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
         content_text: postTextWithLink,
         hashtags,
         image_urls: imageUrls,
+        // For link-style posts, pass the URL so social-publish sends it as a Link Card
+        ...(queue.post_style === 'link' ? { link_url: propertyLink } : {}),
         status: 'scheduled',
         property_id: property.id,
         created_by: queue.created_by,
