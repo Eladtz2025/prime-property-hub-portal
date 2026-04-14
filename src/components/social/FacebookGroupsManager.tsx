@@ -59,11 +59,12 @@ export const FacebookGroupsManager: React.FC = () => {
       toast({ title: 'שם וקישור חובה', variant: 'destructive' });
       return;
     }
+    const finalCategory = isCustomCategory ? customCategory : category;
     await saveMutation.mutateAsync({
       ...(editId ? { id: editId } : {}),
       group_name: groupName,
       group_url: groupUrl,
-      category: category || undefined,
+      category: finalCategory || undefined,
       notes: notes || undefined,
     });
     setDialogOpen(false);
