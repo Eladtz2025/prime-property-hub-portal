@@ -131,13 +131,19 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
 
   const { data: images } = await supabase
     .from('property_images')
-    .select('image_url')
+    .select('image_url, is_main, order_index')
     .eq('property_id', property.id)
     .eq('show_on_website', true)
     .order('order_index', { ascending: true })
     .limit(10);
 
-  const imageUrls = (queue.post_style === 'link') ? [] : (images?.map((img: { image_url: string }) => img.image_url) || []);
+  // Put main image first so it's the primary/cover image
+  const sortedImages = images || [];
+  const mainImg = sortedImages.find((img: any) => img.is_main);
+  const otherImgs = sortedImages.filter((img: any) => !img.is_main);
+  const orderedImages = mainImg ? [mainImg, ...otherImgs] : sortedImages;
+
+  const imageUrls = (queue.post_style === 'link') ? [] : orderedImages.map((img: any) => img.image_url);
 
   const templateText = (queue.template_text as string) || '{address} - {price}';
   const postText = templateText

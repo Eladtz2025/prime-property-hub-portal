@@ -1138,12 +1138,17 @@ export const AutoPublishManager: React.FC = () => {
                   {isPreviewOpen && (() => {
                     const previewText = buildPreviewText(queue);
                     const propertyLink = `https://www.ctmarketproperties.com/property/${nextProp.id}`;
-                    const fullText = `${previewText}\n\n${propertyLink}`;
                     const queuePostStyle = (queue as any).post_style || 'photos';
-                    const images = ((nextProp as any).property_images || [])
-                      .filter((img: any) => img.show_on_website !== false && img.image_url)
-                      .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
-                      .map((img: any) => img.image_url);
+                    // For link-style posts, don't embed URL in text — it appears as OG Link Card
+                    const fullText = queuePostStyle === 'link' ? previewText : `${previewText}\n\n${propertyLink}`;
+                    const sortedImages = ((nextProp as any).property_images || [])
+                      .filter((img: any) => img.show_on_website !== false && img.image_url);
+                    // Put main image first, then sort by order_index
+                    const mainImage = sortedImages.find((img: any) => img.is_main);
+                    const otherImages = sortedImages
+                      .filter((img: any) => !img.is_main)
+                      .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
+                    const images = (mainImage ? [mainImage, ...otherImages] : otherImages).map((img: any) => img.image_url);
 
                     if (queuePostStyle === 'link') {
                       const typeLabel = nextProp.property_type === 'sale' ? 'למכירה' : 'להשכרה';
