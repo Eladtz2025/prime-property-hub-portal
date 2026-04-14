@@ -192,13 +192,16 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
       body: { post_id: post.id, is_private: !!queue.is_private },
     });
 
+    const publishFailed = publishErr || (publishResult && publishResult.success === false);
+    const publishError = publishErr?.message || publishResult?.error || null;
+
     await supabase.from('auto_publish_log').insert({
       queue_id: queue.id,
       property_id: property.id,
       social_post_id: post.id,
       platforms: [platform],
-      status: publishErr ? 'failed' : 'published',
-      error_message: publishErr?.message || publishResult?.error || null,
+      status: publishFailed ? 'failed' : 'published',
+      error_message: publishError,
     });
   }
 
@@ -294,13 +297,16 @@ async function handleArticleOneshot(supabase: ReturnType<typeof createClient>, q
       body: { post_id: post.id, is_private: !!queue.is_private },
     });
 
+    const publishFailed = publishErr || (publishResult && publishResult.success === false);
+    const publishError = publishErr?.message || publishResult?.error || null;
+
     await supabase.from('auto_publish_log').insert({
       queue_id: queue.id,
       item_id: article.id,
       social_post_id: post.id,
       platforms: [platform],
-      status: publishErr ? 'failed' : 'published',
-      error_message: publishErr?.message || publishResult?.error || null,
+      status: publishFailed ? 'failed' : 'published',
+      error_message: publishError,
     });
   }
 
