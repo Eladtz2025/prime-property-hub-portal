@@ -182,6 +182,8 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
         content_text: postTextWithLink,
         hashtags,
         image_urls: imageUrls,
+        // For link-style posts, pass the URL so social-publish sends it as a Link Card
+        ...(queue.post_style === 'link' ? { link_url: propertyLink } : {}),
         status: 'scheduled',
         property_id: property.id,
         created_by: queue.created_by,
