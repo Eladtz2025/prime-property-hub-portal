@@ -25,7 +25,7 @@ export const RotationList: React.FC<RotationListProps> = ({ queueId, filteredPro
   const publishMap = new Map<string, string>();
   if (logs) {
     for (const log of logs) {
-      if (log.property_id && log.status === 'success' && !publishMap.has(log.property_id)) {
+      if (log.property_id && log.status === 'published' && !publishMap.has(log.property_id)) {
         publishMap.set(log.property_id, log.published_at);
       }
     }

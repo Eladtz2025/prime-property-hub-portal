@@ -20,7 +20,7 @@ async function publishToFacebookPage(
   isPrivate?: boolean
 ): Promise<PublishResult> {
   try {
-    const privacyParam = isPrivate ? { privacy: JSON.stringify({ value: 'SELF' }) } : {};
+    const privacyParam = isPrivate ? { privacy: { value: 'SELF' } } : {};
     // Video post
     if (videoUrl) {
       const res = await fetch(`${GRAPH_API}/${pageId}/videos`, {
@@ -66,7 +66,7 @@ async function publishToFacebookPage(
       const res = await fetch(`${GRAPH_API}/${pageId}/photos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: imageUrls[0], message: text, access_token: accessToken }),
+        body: JSON.stringify({ url: imageUrls[0], message: text, access_token: accessToken, ...privacyParam }),
       });
       const data = await res.json();
       if (data.error) return { success: false, error: data.error.message };

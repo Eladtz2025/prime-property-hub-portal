@@ -39,8 +39,9 @@ Deno.serve(async (req) => {
           const [schedHour, schedMin] = publishTime.split(':').map(Number);
           const nowMinutes = nowIsrael.getHours() * 60 + nowIsrael.getMinutes();
           const schedMinutes = schedHour * 60 + schedMin;
-          const diff = Math.abs(nowMinutes - schedMinutes);
-          if (diff > 10) {
+          // Only publish AFTER scheduled time, within a 10-minute window
+          const diff = nowMinutes - schedMinutes;
+          if (diff < 0 || diff > 10) {
             results.push({ queue: queue.name, skipped: true, reason: `Not in time window: now=${nowIsrael.getHours()}:${String(nowIsrael.getMinutes()).padStart(2,'0')}, scheduled=${publishTime}` });
             continue;
           }
@@ -169,6 +170,8 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     }
   }
 
+  let hadSuccess = false;
+
   for (const { platform, group_id } of effectivePlatforms) {
     const { data: post, error: postErr } = await supabase
       .from('social_posts')
@@ -195,6 +198,8 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     const publishFailed = publishErr || (publishResult && publishResult.success === false);
     const publishError = publishErr?.message || publishResult?.error || null;
 
+    if (!publishFailed) hadSuccess = true;
+
     await supabase.from('auto_publish_log').insert({
       queue_id: queue.id,
       property_id: property.id,
@@ -205,14 +210,17 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     });
   }
 
-  const nextIndex = (currentIndex + 1) >= properties.length ? 0 : currentIndex + 1;
-  await supabase
-    .from('auto_publish_queues')
-    .update({
-      current_index: nextIndex,
-      last_published_at: new Date().toISOString(),
-    })
-    .eq('id', queue.id);
+  // Only advance index and update last_published_at if at least one platform succeeded
+  if (hadSuccess) {
+    const nextIndex = (currentIndex + 1) >= properties.length ? 0 : currentIndex + 1;
+    await supabase
+      .from('auto_publish_queues')
+      .update({
+        current_index: nextIndex,
+        last_published_at: new Date().toISOString(),
+      })
+      .eq('id', queue.id);
+  }
 
   return {
     published: true,
