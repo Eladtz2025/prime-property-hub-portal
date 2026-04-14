@@ -181,7 +181,7 @@ export const FacebookGroupsManager: React.FC = () => {
                   <SelectValue placeholder="בחר קטגוריה..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {GROUP_CATEGORIES.map(cat => (
+                  {allCategories.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
                   <SelectItem value="__custom__">אחר — יצירת קטגוריה</SelectItem>
