@@ -268,6 +268,7 @@ export type Database = {
           property_filter: string
           publish_target: Json
           publish_time: string
+          publish_times: string[] | null
           queue_type: string
           template_text: string
           updated_at: string
@@ -290,6 +291,7 @@ export type Database = {
           property_filter?: string
           publish_target?: Json
           publish_time?: string
+          publish_times?: string[] | null
           queue_type: string
           template_text?: string
           updated_at?: string
@@ -312,6 +314,7 @@ export type Database = {
           property_filter?: string
           publish_target?: Json
           publish_time?: string
+          publish_times?: string[] | null
           queue_type?: string
           template_text?: string
           updated_at?: string
