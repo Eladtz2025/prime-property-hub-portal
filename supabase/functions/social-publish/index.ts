@@ -306,7 +306,15 @@ Deno.serve(async (req) => {
     const fullText = post.hashtags
       ? `${post.content_text || ''}\n\n${post.hashtags}`
       : (post.content_text || '');
-    const imageUrls = (post.image_urls as string[]) || [];
+    const rawImageUrls = (post.image_urls as string[]) || [];
+
+    // Filter out video files from image URLs — Facebook /photos endpoint rejects them
+    const videoExtensions = /\.(mov|mp4|avi|webm|mkv)$/i;
+    const imageUrls = rawImageUrls.filter(url => !videoExtensions.test(url));
+    const videoFromImages = rawImageUrls.find(url => videoExtensions.test(url));
+
+    // Use explicit video_url, or fall back to video found in image_urls
+    const effectiveVideoUrl = post.video_url || (imageUrls.length === 0 ? videoFromImages : undefined);
 
     let result: PublishResult;
 
@@ -316,7 +324,7 @@ Deno.serve(async (req) => {
         account.access_token,
         fullText,
         imageUrls,
-        post.video_url,
+        effectiveVideoUrl,
         post.link_url,
         is_private
       );
@@ -337,7 +345,7 @@ Deno.serve(async (req) => {
         account.access_token,
         fullText,
         imageUrls,
-        post.video_url
+        effectiveVideoUrl
       );
     }
 
