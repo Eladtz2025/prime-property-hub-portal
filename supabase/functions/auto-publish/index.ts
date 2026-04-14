@@ -243,9 +243,9 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     });
   }
 
-  // Only advance index and update last_published_at if at least one platform succeeded
+  let nextIndex = currentIndex;
   if (hadSuccess) {
-    const nextIndex = (currentIndex + 1) >= properties.length ? 0 : currentIndex + 1;
+    nextIndex = (currentIndex + 1) >= properties.length ? 0 : currentIndex + 1;
     await supabase
       .from('auto_publish_queues')
       .update({
