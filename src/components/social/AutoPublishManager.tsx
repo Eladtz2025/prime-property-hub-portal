@@ -137,9 +137,10 @@ export const AutoPublishManager: React.FC = () => {
     const load = async () => {
       const { data } = await supabase
         .from('properties')
-        .select('id, address, city, rooms, property_size, floor, neighborhood, monthly_rent, current_market_value, description, property_type, property_images!inner(id, image_url, is_main, order_index)')
+        .select('id, address, city, rooms, property_size, floor, neighborhood, monthly_rent, current_market_value, description, property_type, property_images!inner(id, image_url, is_main, order_index, show_on_website)')
         .eq('show_on_website', true)
         .eq('status', 'vacant')
+        .eq('property_images.show_on_website', true)
         .order('created_at', { ascending: false })
         .limit(100);
       setProperties(data || []);
@@ -1050,6 +1051,15 @@ export const AutoPublishManager: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-sm font-medium">{queue.name}</span>
+                    {queue.is_private ? (
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-orange-400 text-orange-600 gap-0.5">
+                        <Lock className="h-2 w-2" />פרטי
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-green-400 text-green-600 gap-0.5">
+                        <Globe className="h-2 w-2" />ציבורי
+                      </Badge>
+                    )}
                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                       <span className="flex items-center gap-0.5">
                         <Clock className="h-2.5 w-2.5" />
