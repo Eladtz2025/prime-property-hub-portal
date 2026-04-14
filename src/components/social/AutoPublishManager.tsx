@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -169,6 +169,8 @@ export const AutoPublishManager: React.FC = () => {
     setSelectedPhotoIndexes([]);
   };
 
+  const formRef = useRef<HTMLDivElement>(null);
+
   const openEditQueue = (queue: Record<string, unknown>) => {
     setEditingId(queue.id as string);
     setMode('recurring');
@@ -185,6 +187,8 @@ export const AutoPublishManager: React.FC = () => {
     setPublishTarget((target?.type as 'page' | 'groups') || 'page');
     setSelectedGroupIds(target?.group_ids || []);
     setIsPrivatePost(!!(queue as any).is_private);
+    setPostStyle(((queue as any).post_style as 'link' | 'photos') || 'photos');
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   };
 
   // Property selection for one-time posts
@@ -322,6 +326,7 @@ export const AutoPublishManager: React.FC = () => {
         ? (publishTarget === 'groups' ? { type: 'groups', group_ids: selectedGroupIds } : { type: 'page' })
         : { type: 'page' },
       is_private: isPrivatePost,
+      post_style: queueType === 'property_rotation' ? postStyle : undefined,
     }, {
       onSuccess: () => {
         resetForm();
@@ -488,7 +493,7 @@ export const AutoPublishManager: React.FC = () => {
       </div>
 
       {/* Inline Form — always visible */}
-      <Card className="border-primary/20">
+      <Card className="border-primary/20" ref={formRef}>
           <CardContent className="pt-3 pb-3 space-y-2">
             {/* Row 1: All controls in one line */}
             <div className="flex flex-wrap items-center gap-2">
