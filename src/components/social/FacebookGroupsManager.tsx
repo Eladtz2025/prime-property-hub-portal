@@ -35,6 +35,8 @@ export const FacebookGroupsManager: React.FC = () => {
     setGroupName('');
     setGroupUrl('');
     setCategory('');
+    setIsCustomCategory(false);
+    setCustomCategory('');
     setNotes('');
     setDialogOpen(true);
   };
