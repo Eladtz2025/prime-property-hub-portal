@@ -1097,7 +1097,14 @@ export const AutoPublishManager: React.FC = () => {
                 </div>
               )}
 
-              {/* Article stats */}
+              {/* Rotation list */}
+              {queue.queue_type === 'property_rotation' && queue.is_active && (
+                <RotationList
+                  queueId={queue.id}
+                  filteredProperties={getFilteredProperties(queue)}
+                  currentIndex={(queue.current_index as number) || 0}
+                />
+              )}
               {queue.queue_type === 'article_oneshot' && (
                 <div className="text-[10px] text-muted-foreground flex items-center gap-2">
                   {queue.last_published_at && (
