@@ -1,27 +1,23 @@
 
 
-## תיקון: תצוגת "הבא בתור" ומונה דירות לא מסוננים לפי סוג נכס
+## תיקון: קטגוריות מותאמות אישית לא מופיעות בבחירה
 
 ### הבעיה
-הפונקציות `getNextProperty` ו-`getCycleInfo` ב-`AutoPublishManager.tsx` משתמשות ב-`websiteProperties` שמביא את **כל** הנכסים (שכירות + מכירה). אבל ה-backend (`auto-publish/index.ts`) מסנן נכון לפי `property_filter` של התבנית.
+ה-Select בדיאלוג הוספת/עריכת קבוצה מציג רק את הקטגוריות הקבועות (`השכרה`, `מכירה`, `שותפים`, `כללי`). קטגוריות שנוצרו דרך "אחר" לא מופיעות ברשימה כשמוסיפים/עורכים קבוצה אחרת.
 
-לכן:
-- **"2/12"** — מציג 12 נכסים כולל מכירה, במקום רק נכסים להשכרה
-- **"הבא בתור: דירה למכירה"** — בוחר נכס מהרשימה הלא-מסוננת
+### תיקון — קובץ אחד: `FacebookGroupsManager.tsx`
 
-### תיקון — קובץ אחד: `AutoPublishManager.tsx`
+בתוך ה-Select, במקום להציג רק `GROUP_CATEGORIES`, נמזג גם קטגוריות קיימות מה-DB:
 
-1. **`getNextProperty(queue)`** — לסנן את `websiteProperties` לפי `queue.property_filter` לפני בחירת הנכס:
-   ```ts
-   const filtered = websiteProperties.filter(p => 
-     filter === 'all' || p.property_type === filter
-   );
-   ```
+```ts
+const existingCustomCategories = [...new Set(
+  groups?.map(g => g.category).filter(Boolean).filter(c => !GROUP_CATEGORIES.includes(c))
+)] as string[];
 
-2. **`getCycleInfo(queue)`** — אותו סינון, כך ש-`totalProps` ו-`currentIdx` יהיו מבוססים על הנכסים המסוננים בלבד
+const allCategories = [...GROUP_CATEGORIES, ...existingCustomCategories];
+```
 
-3. **`buildPreviewText(queue)`** — ישתמש ב-`getNextProperty` שכבר מסנן, אז יתוקן אוטומטית
+ואז ב-SelectContent נרנדר את `allCategories` במקום `GROUP_CATEGORIES` בלבד. הקטגוריות המותאמות יופיעו מתחת לקבועות, לפני אפשרות "אחר".
 
-### סיכון: אפס
-שינוי תצוגה בלבד, ללא שינוי ב-DB או בלוגיקת הפרסום בפועל.
+שינוי קטן — שורות 177-180 + הוספת חישוב הקטגוריות.
 
