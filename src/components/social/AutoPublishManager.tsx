@@ -682,10 +682,21 @@ export const AutoPublishManager: React.FC = () => {
                       </SelectContent>
                     </Select>
                     <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-8 text-xs w-24" />
+                   </div>
+                 )}
+
+                {/* Post style toggle for recurring property templates */}
+                {mode === 'recurring' && queueType === 'property_rotation' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">סגנון:</span>
+                    <Button type="button" size="sm" variant={postStyle === 'link' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => setPostStyle('link')}>
+                      🔗 קישור
+                    </Button>
+                    <Button type="button" size="sm" variant={postStyle === 'photos' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => setPostStyle('photos')}>
+                      🖼️ תמונות
+                    </Button>
                   </div>
                 )}
-
-                {/* Text */}
                 <div>
                   {mode === 'recurring' && queueType === 'property_rotation' && (
                     <div className="flex gap-1.5 flex-wrap mb-1">
