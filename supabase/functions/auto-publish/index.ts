@@ -32,44 +32,67 @@ Deno.serve(async (req) => {
 
     for (const queue of queues) {
       try {
-        // Check publish_time — only publish within a 10-minute window of the scheduled time (Israel time)
-        const publishTime = queue.publish_time as string;
-        if (publishTime) {
-          const nowIsrael = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
-          const [schedHour, schedMin] = publishTime.split(':').map(Number);
-          const nowMinutes = nowIsrael.getHours() * 60 + nowIsrael.getMinutes();
-          const schedMinutes = schedHour * 60 + schedMin;
-          // Only publish AFTER scheduled time, within a 10-minute window
-          const diff = nowMinutes - schedMinutes;
-          if (diff < 0 || diff > 10) {
-            results.push({ queue: queue.name, skipped: true, reason: `Not in time window: now=${nowIsrael.getHours()}:${String(nowIsrael.getMinutes()).padStart(2,'0')}, scheduled=${publishTime}` });
+        // Determine all publish times for this queue
+        const publishTimes: string[] = (queue.publish_times as string[] | null)?.length
+          ? (queue.publish_times as string[])
+          : (queue.publish_time ? [queue.publish_time as string] : []);
+
+        if (publishTimes.length === 0) {
+          results.push({ queue: queue.name, skipped: true, reason: 'No publish times configured' });
+          continue;
+        }
+
+        const nowIsrael = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
+        const nowMinutes = nowIsrael.getHours() * 60 + nowIsrael.getMinutes();
+
+        // Find which time slot is currently active (within 10-minute window after scheduled time)
+        const activeTimeIndex = publishTimes.findIndex(t => {
+          const [h, m] = t.split(':').map(Number);
+          const diff = nowMinutes - (h * 60 + m);
+          return diff >= 0 && diff <= 10;
+        });
+
+        if (activeTimeIndex === -1) {
+          results.push({ queue: queue.name, skipped: true, reason: `Not in any time window. Times: ${publishTimes.join(', ')}` });
+          continue;
+        }
+
+        // Check frequency_days for non-daily schedules
+        const freqDays = queue.frequency_days || 1;
+        if (freqDays > 1 && queue.last_published_at) {
+          const lastPub = new Date(queue.last_published_at as string);
+          const daysSince = (Date.now() - lastPub.getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSince < freqDays - 0.5) {
+            results.push({ queue: queue.name, skipped: true, reason: `Only ${daysSince.toFixed(1)} days since last publish, need ${freqDays}` });
             continue;
           }
         }
 
-        // Check frequency_days — skip if not enough days passed
-        const freqDays = queue.frequency_days || 1;
-        if (queue.last_published_at) {
-          if (freqDays <= 1) {
-            // Daily: check if already published today (Israel time)
-            const lastPub = new Date(queue.last_published_at);
-            const lastPubIsrael = new Date(lastPub.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
-            const nowIsraelForFreq = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
-            if (
-              lastPubIsrael.getFullYear() === nowIsraelForFreq.getFullYear() &&
-              lastPubIsrael.getMonth() === nowIsraelForFreq.getMonth() &&
-              lastPubIsrael.getDate() === nowIsraelForFreq.getDate()
-            ) {
-              results.push({ queue: queue.name, skipped: true, reason: 'Already published today' });
-              continue;
-            }
-          } else {
-            const lastPub = new Date(queue.last_published_at);
-            const daysSince = (Date.now() - lastPub.getTime()) / (1000 * 60 * 60 * 24);
-            if (daysSince < freqDays - 0.5) {
-              results.push({ queue: queue.name, skipped: true, reason: `Only ${daysSince.toFixed(1)} days since last publish, need ${freqDays}` });
-              continue;
-            }
+        // For daily frequency, count how many successful publishes happened today for this queue
+        if (freqDays <= 1) {
+          const todayStart = new Date(nowIsrael);
+          todayStart.setHours(0, 0, 0, 0);
+          // Convert back to UTC for DB query
+          const todayStartUtc = new Date(todayStart.toLocaleString('en-US', { timeZone: 'UTC' }));
+          
+          const { data: todayLogs } = await supabase
+            .from('auto_publish_log')
+            .select('id, published_at')
+            .eq('queue_id', queue.id)
+            .eq('status', 'published')
+            .gte('published_at', todayStart.toISOString());
+
+          const publishedToday = todayLogs?.length || 0;
+
+          // Count how many time slots have passed (including the current one)
+          const slotsPassedSoFar = publishTimes.filter(t => {
+            const [h, m] = t.split(':').map(Number);
+            return nowMinutes >= (h * 60 + m);
+          }).length;
+
+          if (publishedToday >= slotsPassedSoFar) {
+            results.push({ queue: queue.name, skipped: true, reason: `Already published ${publishedToday}/${slotsPassedSoFar} slots today` });
+            continue;
           }
         }
 
@@ -219,9 +242,9 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     });
   }
 
-  // Only advance index and update last_published_at if at least one platform succeeded
+  let nextIndex = currentIndex;
   if (hadSuccess) {
-    const nextIndex = (currentIndex + 1) >= properties.length ? 0 : currentIndex + 1;
+    nextIndex = (currentIndex + 1) >= properties.length ? 0 : currentIndex + 1;
     await supabase
       .from('auto_publish_queues')
       .update({
