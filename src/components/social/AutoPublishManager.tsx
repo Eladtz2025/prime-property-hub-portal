@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { useAutoPublishQueues, useSaveAutoPublishQueue, useToggleAutoPublishQueue, useDeleteAutoPublishQueue, useWebsiteProperties } from '@/hooks/useAutoPublish';
+import { useAutoPublishQueues, useSaveAutoPublishQueue, useToggleAutoPublishQueue, useDeleteAutoPublishQueue, useWebsiteProperties, useQueuePublishHistory } from '@/hooks/useAutoPublish';
 import { useCreateSocialPost, usePublishPost, useSocialTemplates, useSocialAccounts, useFacebookGroups } from '@/hooks/useSocialPosts';
 import { useToast } from '@/hooks/use-toast';
 import { AutoPublishArticles } from './AutoPublishArticles';
