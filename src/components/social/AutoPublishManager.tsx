@@ -426,15 +426,24 @@ export const AutoPublishManager: React.FC = () => {
   };
 
   // Queue helpers
+  const getFilteredProperties = (queue: Record<string, unknown>) => {
+    if (!websiteProperties || websiteProperties.length === 0) return [];
+    const filter = (queue.property_filter as string) || 'all';
+    if (filter === 'all') return websiteProperties;
+    return websiteProperties.filter(p => p.property_type === filter);
+  };
+
   const getNextProperty = (queue: Record<string, unknown>) => {
-    if (!websiteProperties || websiteProperties.length === 0) return null;
+    const filtered = getFilteredProperties(queue);
+    if (filtered.length === 0) return null;
     const idx = (queue.current_index as number) || 0;
-    return websiteProperties[idx >= websiteProperties.length ? 0 : idx];
+    return filtered[idx >= filtered.length ? 0 : idx];
   };
 
   const getCycleInfo = (queue: Record<string, unknown>) => {
-    if (!websiteProperties || websiteProperties.length === 0) return null;
-    const totalProps = websiteProperties.length;
+    const filtered = getFilteredProperties(queue);
+    if (filtered.length === 0) return null;
+    const totalProps = filtered.length;
     const currentIdx = ((queue.current_index as number) || 0) % totalProps;
     const totalPublished = (queue.current_index as number) || 0;
     const cycle = Math.floor(totalPublished / totalProps) + 1;
