@@ -960,7 +960,11 @@ export const AutoPublishManager: React.FC = () => {
                     const sampleProp = filteredProps[0];
                     if (sampleProp) {
                       previewText = fillPropertyPlaceholders(contentText, sampleProp);
-                      buildLinkCard(sampleProp);
+                      if (postStyle === 'link') {
+                        buildLinkCard(sampleProp);
+                      } else {
+                        previewImages = sampleProp.property_images?.slice(0, 4).map((img: any) => img.image_url) || [];
+                      }
                     }
                   }
                   
