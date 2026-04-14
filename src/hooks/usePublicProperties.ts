@@ -62,6 +62,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           .from('properties')
           .select(`
             id,
+            property_number,
             title,
             title_en,
             address,
