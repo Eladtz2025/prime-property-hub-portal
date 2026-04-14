@@ -45,7 +45,9 @@ const EnglishPropertyDetail = () => {
     const phone = agentPhone 
       ? agentPhone.replace(/^0/, '972').replace(/\D/g, '') 
       : '972545503055';
-    const message = `שלום אנו מתעניינים לגבי הדירה ב${translatedTitle}`;
+    const recordNum = property?.record_number ? `#${property.record_number}` : '';
+    const propertyUrl = `https://www.ctmarketproperties.com/property/${property?.id || ''}`;
+    const message = `Hi, I'd love to hear more about property ${recordNum} 🏠\n${propertyUrl}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
