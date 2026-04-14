@@ -25,6 +25,8 @@ export const FacebookGroupsManager: React.FC = () => {
   const [groupName, setGroupName] = useState('');
   const [groupUrl, setGroupUrl] = useState('');
   const [category, setCategory] = useState('');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategory, setCustomCategory] = useState('');
   const [notes, setNotes] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -33,6 +35,8 @@ export const FacebookGroupsManager: React.FC = () => {
     setGroupName('');
     setGroupUrl('');
     setCategory('');
+    setIsCustomCategory(false);
+    setCustomCategory('');
     setNotes('');
     setDialogOpen(true);
   };
@@ -41,7 +45,11 @@ export const FacebookGroupsManager: React.FC = () => {
     setEditId(g.id);
     setGroupName(g.group_name);
     setGroupUrl(g.group_url);
-    setCategory(g.category || '');
+    const cat = g.category || '';
+    const isPredefined = GROUP_CATEGORIES.includes(cat as any);
+    setCategory(isPredefined ? cat : (cat ? '__custom__' : ''));
+    setIsCustomCategory(!isPredefined && !!cat);
+    setCustomCategory(!isPredefined ? cat : '');
     setNotes(g.notes || '');
     setDialogOpen(true);
   };
@@ -51,11 +59,12 @@ export const FacebookGroupsManager: React.FC = () => {
       toast({ title: 'שם וקישור חובה', variant: 'destructive' });
       return;
     }
+    const finalCategory = isCustomCategory ? customCategory : category;
     await saveMutation.mutateAsync({
       ...(editId ? { id: editId } : {}),
       group_name: groupName,
       group_url: groupUrl,
-      category: category || undefined,
+      category: finalCategory || undefined,
       notes: notes || undefined,
     });
     setDialogOpen(false);
@@ -152,7 +161,16 @@ export const FacebookGroupsManager: React.FC = () => {
             </div>
             <div>
               <Label className="text-xs">קטגוריה</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={isCustomCategory ? '__custom__' : category} onValueChange={(val) => {
+                if (val === '__custom__') {
+                  setIsCustomCategory(true);
+                  setCategory('__custom__');
+                } else {
+                  setIsCustomCategory(false);
+                  setCustomCategory('');
+                  setCategory(val);
+                }
+              }}>
                 <SelectTrigger className="h-9 text-sm">
                   <SelectValue placeholder="בחר קטגוריה..." />
                 </SelectTrigger>
@@ -160,8 +178,17 @@ export const FacebookGroupsManager: React.FC = () => {
                   {GROUP_CATEGORIES.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
+                  <SelectItem value="__custom__">אחר — יצירת קטגוריה</SelectItem>
                 </SelectContent>
               </Select>
+              {isCustomCategory && (
+                <Input
+                  className="mt-2"
+                  value={customCategory}
+                  onChange={e => setCustomCategory(e.target.value)}
+                  placeholder="שם קטגוריה חדשה..."
+                />
+              )}
             </div>
             <div>
               <Label className="text-xs">הערות (אופציונלי)</Label>
