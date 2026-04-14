@@ -462,7 +462,7 @@ export const AutoPublishManager: React.FC = () => {
       .replace(/{size}/g, nextProp.property_size?.toString() || '')
       .replace(/{floor}/g, nextProp.floor?.toString() || '')
       .replace(/{price}/g, nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : '')
-      .replace(/{description}/g, '')
+      .replace(/{description}/g, (nextProp as any).description || '')
       .replace(/{property_type}/g, nextProp.property_type === 'sale' ? 'מכירה' : 'השכרה');
   };
 
@@ -1107,14 +1107,26 @@ export const AutoPublishManager: React.FC = () => {
                       </Button>
                     </div>
                   </div>
-                  {isPreviewOpen && (
-                    <div className="bg-card border rounded-md p-3 text-xs whitespace-pre-wrap leading-relaxed">
-                      {buildPreviewText(queue)}
-                      {queue.hashtags && (
-                        <div className="mt-2 text-primary/70 text-[10px]">{queue.hashtags}</div>
-                      )}
-                    </div>
-                  )}
+                  {isPreviewOpen && (() => {
+                    const previewText = buildPreviewText(queue);
+                    const propertyLink = `https://www.ctmarketproperties.com/property/${nextProp.id}`;
+                    const fullText = `${previewText}\n\n${propertyLink}`;
+                    const images = ((nextProp as any).property_images || [])
+                      .filter((img: any) => img.show_on_website !== false && img.image_url)
+                      .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
+                      .map((img: any) => img.image_url);
+                    return (
+                      <div className="mt-1">
+                        <FacebookPostPreview
+                          text={fullText}
+                          hashtags={queue.hashtags as string || ''}
+                          imageUrls={images}
+                          pageAvatarUrl={cityMarketLogo}
+                          isPublic={!(queue.is_private as boolean)}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
