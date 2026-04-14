@@ -462,7 +462,7 @@ export const AutoPublishManager: React.FC = () => {
       .replace(/{size}/g, nextProp.property_size?.toString() || '')
       .replace(/{floor}/g, nextProp.floor?.toString() || '')
       .replace(/{price}/g, nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : '')
-      .replace(/{description}/g, '')
+      .replace(/{description}/g, (nextProp as any).description || '')
       .replace(/{property_type}/g, nextProp.property_type === 'sale' ? 'מכירה' : 'השכרה');
   };
 
