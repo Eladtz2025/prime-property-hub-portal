@@ -1,0 +1,1 @@
+ALTER TABLE public.auto_publish_queues ADD COLUMN post_style TEXT NOT NULL DEFAULT 'photos';

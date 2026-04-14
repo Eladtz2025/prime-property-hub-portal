@@ -136,7 +136,7 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
     .order('order_index', { ascending: true })
     .limit(10);
 
-  const imageUrls = images?.map((img: { image_url: string }) => img.image_url) || [];
+  const imageUrls = (queue.post_style === 'link') ? [] : (images?.map((img: { image_url: string }) => img.image_url) || []);
 
   const templateText = (queue.template_text as string) || '{address} - {price}';
   const postText = templateText

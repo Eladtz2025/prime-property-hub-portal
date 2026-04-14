@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -169,6 +169,8 @@ export const AutoPublishManager: React.FC = () => {
     setSelectedPhotoIndexes([]);
   };
 
+  const formRef = useRef<HTMLDivElement>(null);
+
   const openEditQueue = (queue: Record<string, unknown>) => {
     setEditingId(queue.id as string);
     setMode('recurring');
@@ -185,6 +187,8 @@ export const AutoPublishManager: React.FC = () => {
     setPublishTarget((target?.type as 'page' | 'groups') || 'page');
     setSelectedGroupIds(target?.group_ids || []);
     setIsPrivatePost(!!(queue as any).is_private);
+    setPostStyle(((queue as any).post_style as 'link' | 'photos') || 'photos');
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   };
 
   // Property selection for one-time posts
@@ -322,6 +326,7 @@ export const AutoPublishManager: React.FC = () => {
         ? (publishTarget === 'groups' ? { type: 'groups', group_ids: selectedGroupIds } : { type: 'page' })
         : { type: 'page' },
       is_private: isPrivatePost,
+      post_style: queueType === 'property_rotation' ? postStyle : undefined,
     }, {
       onSuccess: () => {
         resetForm();
@@ -488,7 +493,7 @@ export const AutoPublishManager: React.FC = () => {
       </div>
 
       {/* Inline Form — always visible */}
-      <Card className="border-primary/20">
+      <Card className="border-primary/20" ref={formRef}>
           <CardContent className="pt-3 pb-3 space-y-2">
             {/* Row 1: All controls in one line */}
             <div className="flex flex-wrap items-center gap-2">
@@ -677,10 +682,21 @@ export const AutoPublishManager: React.FC = () => {
                       </SelectContent>
                     </Select>
                     <Input type="time" value={formTime} onChange={e => setFormTime(e.target.value)} className="h-8 text-xs w-24" />
+                   </div>
+                 )}
+
+                {/* Post style toggle for recurring property templates */}
+                {mode === 'recurring' && queueType === 'property_rotation' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">סגנון:</span>
+                    <Button type="button" size="sm" variant={postStyle === 'link' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => setPostStyle('link')}>
+                      🔗 קישור
+                    </Button>
+                    <Button type="button" size="sm" variant={postStyle === 'photos' ? 'default' : 'outline'} className="text-xs h-7 gap-1 px-2" onClick={() => setPostStyle('photos')}>
+                      🖼️ תמונות
+                    </Button>
                   </div>
                 )}
-
-                {/* Text */}
                 <div>
                   {mode === 'recurring' && queueType === 'property_rotation' && (
                     <div className="flex gap-1.5 flex-wrap mb-1">
@@ -944,7 +960,11 @@ export const AutoPublishManager: React.FC = () => {
                     const sampleProp = filteredProps[0];
                     if (sampleProp) {
                       previewText = fillPropertyPlaceholders(contentText, sampleProp);
-                      buildLinkCard(sampleProp);
+                      if (postStyle === 'link') {
+                        buildLinkCard(sampleProp);
+                      } else {
+                        previewImages = sampleProp.property_images?.slice(0, 4).map((img: any) => img.image_url) || [];
+                      }
                     }
                   }
                   
@@ -1111,10 +1131,37 @@ export const AutoPublishManager: React.FC = () => {
                     const previewText = buildPreviewText(queue);
                     const propertyLink = `https://www.ctmarketproperties.com/property/${nextProp.id}`;
                     const fullText = `${previewText}\n\n${propertyLink}`;
+                    const queuePostStyle = (queue as any).post_style || 'photos';
                     const images = ((nextProp as any).property_images || [])
                       .filter((img: any) => img.show_on_website !== false && img.image_url)
                       .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
                       .map((img: any) => img.image_url);
+
+                    if (queuePostStyle === 'link') {
+                      const typeLabel = nextProp.property_type === 'sale' ? 'למכירה' : 'להשכרה';
+                      const price = nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : '';
+                      const descParts: string[] = [];
+                      if (nextProp.rooms) descParts.push(`🛏️ ${nextProp.rooms} חד'`);
+                      if (nextProp.property_size) descParts.push(`📐 ${nextProp.property_size} מ"ר`);
+                      if (nextProp.floor != null) descParts.push(`🏢 קומה ${nextProp.floor}`);
+                      if (price) descParts.push(`💰 ${price}`);
+                      descParts.push(`📍 ${nextProp.neighborhood || nextProp.city || ''}`);
+                      return (
+                        <div className="mt-1">
+                          <FacebookPostPreview
+                            text={fullText}
+                            hashtags={queue.hashtags as string || ''}
+                            linkUrl={propertyLink}
+                            linkTitle={`${typeLabel}: ${nextProp.address || 'נכס'}`}
+                            linkDescription={descParts.join(' | ')}
+                            linkImage={images[0]}
+                            pageAvatarUrl={cityMarketLogo}
+                            isPublic={!(queue.is_private as boolean)}
+                          />
+                        </div>
+                      );
+                    }
+
                     return (
                       <div className="mt-1">
                         <FacebookPostPreview

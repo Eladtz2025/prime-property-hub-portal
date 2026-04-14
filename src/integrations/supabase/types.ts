@@ -264,6 +264,7 @@ export type Database = {
           name: string
           next_publish_day: number | null
           platforms: Json
+          post_style: string
           property_filter: string
           publish_target: Json
           publish_time: string
@@ -285,6 +286,7 @@ export type Database = {
           name: string
           next_publish_day?: number | null
           platforms?: Json
+          post_style?: string
           property_filter?: string
           publish_target?: Json
           publish_time?: string
@@ -306,6 +308,7 @@ export type Database = {
           name?: string
           next_publish_day?: number | null
           platforms?: Json
+          post_style?: string
           property_filter?: string
           publish_target?: Json
           publish_time?: string
