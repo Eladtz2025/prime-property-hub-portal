@@ -1,16 +1,47 @@
 
 
-## תיקון: איפוס נתוני התבנית
+## תיקון: cron jobs של dedup ו-matching נכשלים
 
-### הבעיה
-התבנית פרסמה 3 פעמים לפני התיקון, ולכן:
-- `current_index` הוא 3 במקום 0 או 1
-- `last_published_at` מצביע על הפרסום הכפול
+### מה מצאתי (בדיקה בפועל)
 
-### פעולה
-1. **איפוס `current_index` ל-0** ו-**איפוס `last_published_at` ל-null** בטבלת `auto_publish_queues` עבור התבנית הזו — כך מחר היא תתחיל מהדירה הראשונה ותפרסם כרגיל
-2. **מחיקת הפוסטים הכפולים** שנוצרו מהפרסום המשולש (אם קיימים בטבלת `social_posts`) כדי שההיסטוריה תהיה נקייה
+בדקתי את ה-cron jobs ואת לוגי הריצות:
+
+- **Job 32 (daily-dedup-scan)** ו-**Job 33 (daily-matching)** נכשלים כל יום עם:
+  ```
+  ERROR: unrecognized configuration parameter "supabase.supabase_url"
+  ```
+- בדקתי גם את `current_setting('supabase.url')` ו-`current_setting('supabase.service_role_key')` — **שניהם מחזירים NULL** בסביבה הזו
+- לעומת זאת, **Jobs שעובדים** (backfill, availability) משתמשים ב-URL ומפתח anon **קשיחים** (hardcoded)
+- שתי הפונקציות מוגדרות עם `verify_jwt = false` — אז מפתח anon מספיק
+
+### מסקנה
+הגישה של `current_setting(...)` לא עובדת בכלל בסביבה הזו. צריך לעבור ל-hardcoded URL + anon key — בדיוק כמו שאר ה-jobs שעובדים.
+
+### תיקון
+מיגרציה אחת שמעדכנת את שני ה-jobs:
+
+**Job 32 (daily-dedup-scan):**
+```sql
+SELECT cron.alter_job(
+  job_id := 32,
+  command := $$
+    SELECT net.http_post(
+      url := 'https://jswumsdymlooeobrxict.supabase.co/functions/v1/detect-duplicates',
+      headers := '{"Content-Type":"application/json","Authorization":"Bearer eyJhbGci...9mM"}'::jsonb,
+      body := '{}'::jsonb,
+      timeout_milliseconds := 120000
+    ) AS request_id;
+  $$
+);
+```
+
+**Job 33 (daily-matching):** — אותו pattern עם URL של `trigger-matching`
+
+### למה זה יעבוד
+- זה **בדיוק** אותו pattern כמו jobs 24, 26, 30 שעובדים כבר חודשים
+- URL קשיח + anon key קשיח — ללא תלות ב-`current_setting` שלא עובד
+- `verify_jwt = false` מאפשר anon key
 
 ### סיכון: אפס
-שינוי נתונים בלבד, ללא שינוי קוד
+שינוי cron job configuration בלבד, ללא שינוי קוד.
 
