@@ -1066,7 +1066,7 @@ export const AutoPublishManager: React.FC = () => {
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <RotateCcw className="h-2.5 w-2.5" />
-                      סבב {cycleInfo.cycle} · דירה {cycleInfo.currentIdx + 1}/{cycleInfo.totalProps}
+                      סבב {cycleInfo.cycle} · הבאה: דירה {cycleInfo.currentIdx || cycleInfo.totalProps}/{cycleInfo.totalProps}
                     </span>
                     {queue.last_published_at && (
                       <span>אחרון: {new Date(queue.last_published_at).toLocaleDateString('he-IL')}</span>
@@ -1103,10 +1103,6 @@ export const AutoPublishManager: React.FC = () => {
                         <Eye className="h-2.5 w-2.5" />
                         {isPreviewOpen ? 'הסתר' : 'תצוגה מקדימה'}
                       </Button>
-                    </div>
-                    <div className="font-medium">
-                      {nextProp.address}, {nextProp.neighborhood || nextProp.city}
-                      {nextProp.monthly_rent && <span className="text-primary mr-1.5">₪{Number(nextProp.monthly_rent).toLocaleString()}</span>}
                     </div>
                   </div>
                   {isPreviewOpen && (
