@@ -455,7 +455,7 @@ export const AutoPublishManager: React.FC = () => {
     if (!nextProp) return 'אין דירות זמינות';
     const template = (queue.template_text as string) || '{neighborhood}, {city}';
     return template
-      .replace(/{address}/g, nextProp.neighborhood || nextProp.city || '')
+      .replace(/{address}/g, nextProp.address || nextProp.neighborhood || '')
       .replace(/{city}/g, nextProp.city || '')
       .replace(/{neighborhood}/g, nextProp.neighborhood || '')
       .replace(/{rooms}/g, nextProp.rooms?.toString() || '')
@@ -1093,7 +1093,9 @@ export const AutoPublishManager: React.FC = () => {
                 <div className="space-y-1">
                   <div className="bg-muted/40 rounded-md px-2.5 py-2 text-[11px]">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-muted-foreground font-medium">הבא בתור:</span>
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        הבא בתור: {nextProp.address}, {nextProp.neighborhood || nextProp.city} — {nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : ''}
+                      </span>
                       <Button
                         size="sm"
                         variant="ghost"
