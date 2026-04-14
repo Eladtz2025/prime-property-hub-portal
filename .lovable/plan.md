@@ -1,39 +1,26 @@
 
 
-## הוספת רשימת סבב נכסים — מי פורסם, מתי, ומי הבא
+## תיקון: "דירה 2/5" במקום "דירה 1/5"
 
-### מה נוסיף
-בתוך כל כרטיס תבנית מסוג `property_rotation`, תוצג רשימת נכסים שלמה שמציגה:
-- **סדר הסבב** — כל הנכסים המסוננים לפי סוג (השכרה/מכירה) בסדר הפרסום
-- **סטטוס לכל נכס**: ✅ פורסם (+ תאריך), ⏭️ הבא בתור, 🔜 עתידי
-- הנכס הנוכחי (הבא בתור) מודגש
+### הבעיה
+`current_index` ב-DB מצביע על הנכס **הבא** לפרסום. אחרי שפורסמה דירה 1 (אינדקס 0), ה-`current_index` עולה ל-1. השורה מציגה `currentIdx || totalProps` = 1, ואז כותבת "הבאה: דירה 2/5" (כי 1+1=2 במונחי תצוגה).
 
-### איך זה ייראה
-```text
-┌─────────────────────────────────────┐
-│  📋 סדר פרסום (סבב 1)              │
-│  ✅ זלטופולסקי 19 — 13/04          │
-│  ⏭️ דיזנגוף 50 — הבא בתור          │  ← מודגש
-│  🔜 רוטשילד 22                      │
-│  🔜 אלנבי 100                       │
-└─────────────────────────────────────┘
+אבל הדירה הזו עדיין לא פורסמה — היא רק **הבאה בתור**. הטקסט "הבאה" נכון, אבל המספר צריך להיות 1/5 (דירה אחת פורסמה) ולא 2/5.
+
+### תיקון
+קובץ: `src/components/social/AutoPublishManager.tsx`
+
+**שורה 1090** — שינוי מ:
+```
+סבב {cycleInfo.cycle} · הבאה: דירה {cycleInfo.currentIdx || cycleInfo.totalProps}/{cycleInfo.totalProps}
+```
+ל:
+```
+סבב {cycleInfo.cycle} · פורסמו: {cycleInfo.currentIdx}/{cycleInfo.totalProps}
 ```
 
-### פרטים טכניים
+כך שהמספר ישקף כמה דירות **כבר פורסמו** בסבב הנוכחי (currentIdx = מספר הדירות שפורסמו, כי ה-index מתקדם אחרי כל פרסום). גם ה-progress bar כבר מחושב נכון על בסיס `currentIdx`.
 
-**1. `src/hooks/useAutoPublish.ts`**
-- הרחבת `useAutoPublishLog` כדי לטעון גם `property_id` ופרטי הנכס: `properties(address, neighborhood, city)`
-- הוספת hook חדש `useQueuePublishHistory(queueId)` שמחזיר את הלוג של תור ספציפי עם פרטי נכסים
-
-**2. `src/components/social/AutoPublishManager.tsx`**
-- הוספת רכיב Collapsible חדש בתוך כרטיס ה-queue (אחרי ה-progress bar, לפני ה-preview)
-- הרכיב יציג את כל הנכסים המסוננים (`getFilteredProperties`) בסדר האינדקס שלהם
-- לכל נכס: בדיקה ב-log אם כבר פורסם (לפי `property_id`) → הצגת תאריך
-- נכס שה-`current_index` שלו תואם → מסומן כ"הבא בתור"
-- נכסים עתידיים → מסומנים כ"ממתין"
-- ברירת מחדל: סגור (Collapsible), עם כפתור "📋 סדר פרסום" לפתיחה
-
-### קבצים לשינוי
-- `src/hooks/useAutoPublish.ts` — hook חדש לטעינת לוג עם נכסים
-- `src/components/social/AutoPublishManager.tsx` — רכיב רשימת הסבב
+### קובץ לשינוי
+- `src/components/social/AutoPublishManager.tsx` — שורה 1090 בלבד
 
