@@ -62,6 +62,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           .from('properties')
           .select(`
             id,
+            property_number,
             title,
             title_en,
             address,
@@ -112,6 +113,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
         // Transform data to match the interface
         const transformedProperties: PublicProperty[] = (propertiesWithImages || []).map(property => ({
           id: property.id,
+          property_number: property.property_number,
           title: property.title || `${property.rooms} חדרים ${property.address}`,
           title_en: property.title_en,
           address: property.address,
