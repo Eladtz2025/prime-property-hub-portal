@@ -25,6 +25,8 @@ export const FacebookGroupsManager: React.FC = () => {
   const [groupName, setGroupName] = useState('');
   const [groupUrl, setGroupUrl] = useState('');
   const [category, setCategory] = useState('');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategory, setCustomCategory] = useState('');
   const [notes, setNotes] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
