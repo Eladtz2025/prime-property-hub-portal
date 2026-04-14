@@ -11,12 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bot, ChevronDown, Trash2, Edit2, Building2, Newspaper, Clock, Facebook, Instagram, Eye, RotateCcw, Send, Save, Image, X, CalendarDays, Lock, List } from 'lucide-react';
+import { Bot, ChevronDown, Trash2, Edit2, Building2, Newspaper, Clock, Facebook, Instagram, Eye, RotateCcw, Send, Save, Image, X, CalendarDays, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { useAutoPublishQueues, useSaveAutoPublishQueue, useToggleAutoPublishQueue, useDeleteAutoPublishQueue, useWebsiteProperties, useQueuePublishHistory } from '@/hooks/useAutoPublish';
+import { useAutoPublishQueues, useSaveAutoPublishQueue, useToggleAutoPublishQueue, useDeleteAutoPublishQueue, useWebsiteProperties } from '@/hooks/useAutoPublish';
 import { useCreateSocialPost, usePublishPost, useSocialTemplates, useSocialAccounts, useFacebookGroups } from '@/hooks/useSocialPosts';
 import { useToast } from '@/hooks/use-toast';
 import { AutoPublishArticles } from './AutoPublishArticles';
@@ -25,6 +25,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { HashtagGroupSelector } from './HashtagGroupSelector';
 import { FacebookPostPreview } from './FacebookPostPreview';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RotationList } from './RotationList';
 import cityMarketLogo from '@/assets/city-market-icon.png';
 
 const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
