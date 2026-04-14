@@ -1113,7 +1113,9 @@ export const AutoPublishManager: React.FC = () => {
                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                       <span className="flex items-center gap-0.5">
                         <Clock className="h-2.5 w-2.5" />
-                        {queue.publish_time}
+                        {((queue as any).publish_times as string[] | null)?.length > 1
+                          ? ((queue as any).publish_times as string[]).join(' · ')
+                          : queue.publish_time}
                       </span>
                       <span>·</span>
                       <span>{getFrequencyLabel(freqDays)}</span>
