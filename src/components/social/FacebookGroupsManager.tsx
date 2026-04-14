@@ -70,6 +70,12 @@ export const FacebookGroupsManager: React.FC = () => {
     setDialogOpen(false);
   };
 
+  const existingCustomCategories = [...new Set(
+    groups?.map(g => g.category).filter(Boolean).filter(c => !(GROUP_CATEGORIES as readonly string[]).includes(c))
+  )] as string[];
+
+  const allCategories = [...GROUP_CATEGORIES, ...existingCustomCategories];
+
   return (
     <>
       <Card>
