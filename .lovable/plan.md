@@ -1,18 +1,24 @@
 
 
-## תיקון: עיגולים ללא שם בבחירת קבוצות
+## קטגוריות לקבוצות פייסבוק — בחירה לפי קטגוריה בתבנית פרסום
 
-### הבעיה
-בקומפוננטת `AutoPublishManager.tsx`, שורה 629, כתוב:
-```tsx
-<span>{group.name}</span>
-```
-אבל השדה בטבלה הוא `group_name`, לא `name`. לכן ה-span ריק ורואים רק את ה-checkbox (העיגולים).
+### מה ישתנה
 
-### תיקון
-**קובץ: `src/components/social/AutoPublishManager.tsx`**, שורה 629:
+**1. FacebookGroupsManager — שדה קטגוריה עם בחירה מוגדרת מראש**
+- במקום שדה טקסט חופשי לקטגוריה, נוסיף Select עם אופציות קבועות: `השכרה`, `מכירה`, `שותפים`, `כללי` (+ אפשרות "אחר" להקלדה חופשית)
+- אין שינוי DB — השדה `category` כבר קיים בטבלה
 
-שינוי `group.name` ל-`group.group_name`
+**2. AutoPublishManager — בחירה לפי קטגוריה במקום קבוצות בודדות**
+- במקום רשימת checkboxes של כל הקבוצות, נציג chips/checkboxes של הקטגוריות הקיימות (לפי מה שמוגדר בקבוצות)
+- בחירת קטגוריה = בחירת כל הקבוצות שמשויכות אליה
+- ה-`selectedGroupIds` ימומש מתוך הקטגוריות שנבחרו — כל הקבוצות באותה קטגוריה ייכללו אוטומטית
 
-תיקון של שורה אחת בלבד.
+### קבצים לשינוי
+- `src/components/social/FacebookGroupsManager.tsx` — Select במקום Input לשדה קטגוריה
+- `src/components/social/AutoPublishManager.tsx` — לוגיקת בחירה לפי קטגוריה (שורות 615-637)
+
+### פרטים טכניים
+- נחלץ את הקטגוריות הייחודיות מ-`facebookGroups` בזמן ריצה: `[...new Set(groups.map(g => g.category).filter(Boolean))]`
+- בבחירת קטגוריה, נחשב את ה-group IDs המתאימים ונעדכן את `selectedGroupIds`
+- נשמור state של `selectedCategories` ונגזור ממנו את ה-group IDs
 
