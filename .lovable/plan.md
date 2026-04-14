@@ -1,19 +1,27 @@
 
 
-## הוספת אפשרות ליצור קטגוריה מותאמת אישית
+## תיקון: תצוגת "הבא בתור" ומונה דירות לא מסוננים לפי סוג נכס
 
-### מה ישתנה
+### הבעיה
+הפונקציות `getNextProperty` ו-`getCycleInfo` ב-`AutoPublishManager.tsx` משתמשות ב-`websiteProperties` שמביא את **כל** הנכסים (שכירות + מכירה). אבל ה-backend (`auto-publish/index.ts`) מסנן נכון לפי `property_filter` של התבנית.
 
-**קובץ: `src/components/social/FacebookGroupsManager.tsx`**
+לכן:
+- **"2/12"** — מציג 12 נכסים כולל מכירה, במקום רק נכסים להשכרה
+- **"הבא בתור: דירה למכירה"** — בוחר נכס מהרשימה הלא-מסוננת
 
-בדיאלוג הוספה/עריכה של קבוצה, נוסיף אופציה "אחר..." בתוך ה-Select של הקטגוריות. כשבוחרים "אחר...", יופיע שדה Input להקלדת שם קטגוריה חדשה.
+### תיקון — קובץ אחד: `AutoPublishManager.tsx`
 
-- נוסיף `SelectItem` עם value `__custom__` ותווית "אחר — יצירת קטגוריה"
-- כשנבחר `__custom__`, מוצג Input לקטגוריה חופשית
-- ה-state `category` מתעדכן לפי מה שהמשתמש מקליד
-- הקטגוריות החדשות נשמרות ישירות בשדה `category` של הקבוצה (אין צורך בטבלה נפרדת)
-- ב-AutoPublishManager הקטגוריות החדשות יופיעו אוטומטית כי הן נגזרות מ-`facebookGroups`
+1. **`getNextProperty(queue)`** — לסנן את `websiteProperties` לפי `queue.property_filter` לפני בחירת הנכס:
+   ```ts
+   const filtered = websiteProperties.filter(p => 
+     filter === 'all' || p.property_type === filter
+   );
+   ```
 
-### שינוי יחיד — קובץ אחד
-`FacebookGroupsManager.tsx` — שורות 153-164 (אזור ה-Select של קטגוריה)
+2. **`getCycleInfo(queue)`** — אותו סינון, כך ש-`totalProps` ו-`currentIdx` יהיו מבוססים על הנכסים המסוננים בלבד
+
+3. **`buildPreviewText(queue)`** — ישתמש ב-`getNextProperty` שכבר מסנן, אז יתוקן אוטומטית
+
+### סיכון: אפס
+שינוי תצוגה בלבד, ללא שינוי ב-DB או בלוגיקת הפרסום בפועל.
 
