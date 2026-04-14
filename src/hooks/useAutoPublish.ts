@@ -177,6 +177,22 @@ export function useAutoPublishLog(queueId?: string) {
   });
 }
 
+export function useQueuePublishHistory(queueId?: string) {
+  return useQuery({
+    queryKey: ['queue-publish-history', queueId],
+    enabled: !!queueId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('auto_publish_log')
+        .select('id, property_id, published_at, status')
+        .eq('queue_id', queueId!)
+        .order('published_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 // ─── Properties for preview ───
 
 export function useWebsiteProperties() {
