@@ -45,7 +45,11 @@ export const FacebookGroupsManager: React.FC = () => {
     setEditId(g.id);
     setGroupName(g.group_name);
     setGroupUrl(g.group_url);
-    setCategory(g.category || '');
+    const cat = g.category || '';
+    const isPredefined = GROUP_CATEGORIES.includes(cat as any);
+    setCategory(isPredefined ? cat : (cat ? '__custom__' : ''));
+    setIsCustomCategory(!isPredefined && !!cat);
+    setCustomCategory(!isPredefined ? cat : '');
     setNotes(g.notes || '');
     setDialogOpen(true);
   };
