@@ -70,6 +70,12 @@ export const FacebookGroupsManager: React.FC = () => {
     setDialogOpen(false);
   };
 
+  const existingCustomCategories = [...new Set(
+    groups?.map(g => g.category).filter(Boolean).filter(c => !(GROUP_CATEGORIES as readonly string[]).includes(c))
+  )] as string[];
+
+  const allCategories = [...GROUP_CATEGORIES, ...existingCustomCategories];
+
   return (
     <>
       <Card>
@@ -175,7 +181,7 @@ export const FacebookGroupsManager: React.FC = () => {
                   <SelectValue placeholder="בחר קטגוריה..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {GROUP_CATEGORIES.map(cat => (
+                  {allCategories.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
                   <SelectItem value="__custom__">אחר — יצירת קטגוריה</SelectItem>
