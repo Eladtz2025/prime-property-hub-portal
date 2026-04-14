@@ -121,6 +121,7 @@ export const AutoPublishManager: React.FC = () => {
   // Recurring fields
   const [formFrequencyDays, setFormFrequencyDays] = useState('1');
   const [formTime, setFormTime] = useState('10:00');
+  const [formTimes, setFormTimes] = useState<string[]>(['10:00']);
   const [propertyFilter, setPropertyFilter] = useState<'all' | 'rental' | 'sale'>('all');
   const [publishTarget, setPublishTarget] = useState<'page' | 'groups'>('page');
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
