@@ -161,7 +161,16 @@ export const FacebookGroupsManager: React.FC = () => {
             </div>
             <div>
               <Label className="text-xs">קטגוריה</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={isCustomCategory ? '__custom__' : category} onValueChange={(val) => {
+                if (val === '__custom__') {
+                  setIsCustomCategory(true);
+                  setCategory('__custom__');
+                } else {
+                  setIsCustomCategory(false);
+                  setCustomCategory('');
+                  setCategory(val);
+                }
+              }}>
                 <SelectTrigger className="h-9 text-sm">
                   <SelectValue placeholder="בחר קטגוריה..." />
                 </SelectTrigger>
@@ -169,8 +178,17 @@ export const FacebookGroupsManager: React.FC = () => {
                   {GROUP_CATEGORIES.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
+                  <SelectItem value="__custom__">אחר — יצירת קטגוריה</SelectItem>
                 </SelectContent>
               </Select>
+              {isCustomCategory && (
+                <Input
+                  className="mt-2"
+                  value={customCategory}
+                  onChange={e => setCustomCategory(e.target.value)}
+                  placeholder="שם קטגוריה חדשה..."
+                />
+              )}
             </div>
             <div>
               <Label className="text-xs">הערות (אופציונלי)</Label>
