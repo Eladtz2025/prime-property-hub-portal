@@ -1,47 +1,36 @@
 
 
-## תיקון: cron jobs של dedup ו-matching נכשלים
+## תיקון: סינון קבצי וידאו מתמונות בפרסום
 
-### מה מצאתי (בדיקה בפועל)
+### שורש הבעיה
+ב-`social-publish/index.ts`, הפונקציה `publishToFacebookPage` מעלה את כל ה-`image_urls` ל-`/photos` endpoint — אבל אם יש ביניהם קובץ `.MOV`/`.mp4`, פייסבוק דוחה אותו עם "Invalid parameter".
 
-בדקתי את ה-cron jobs ואת לוגי הריצות:
+הנכס הנוכחי מכיל קובץ `nlmktd.MOV` ברשימת התמונות.
 
-- **Job 32 (daily-dedup-scan)** ו-**Job 33 (daily-matching)** נכשלים כל יום עם:
-  ```
-  ERROR: unrecognized configuration parameter "supabase.supabase_url"
-  ```
-- בדקתי גם את `current_setting('supabase.url')` ו-`current_setting('supabase.service_role_key')` — **שניהם מחזירים NULL** בסביבה הזו
-- לעומת זאת, **Jobs שעובדים** (backfill, availability) משתמשים ב-URL ומפתח anon **קשיחים** (hardcoded)
-- שתי הפונקציות מוגדרות עם `verify_jwt = false` — אז מפתח anon מספיק
+### תיקון (קובץ אחד)
+**`supabase/functions/social-publish/index.ts`**
 
-### מסקנה
-הגישה של `current_setting(...)` לא עובדת בכלל בסביבה הזו. צריך לעבור ל-hardcoded URL + anon key — בדיוק כמו שאר ה-jobs שעובדים.
+1. **סינון URLs** — לפני הפרסום, לסנן מ-`imageUrls` כל URL שמסתיים ב-`.mov`, `.mp4`, `.avi`, `.webm` (case-insensitive). רק URLs של תמונות (.jpg, .png, .webp וכו') יעברו ל-`/photos`.
 
-### תיקון
-מיגרציה אחת שמעדכנת את שני ה-jobs:
+2. **שיפור משני**: אם נמצא URL של וידאו וגם תמונות — להתעלם מהוידאו (כי פוסט עם תמונות מרובות לא תומך בוידאו מעורב בפייסבוק). אם יש רק וידאו בלי תמונות — להשתמש ב-video endpoint.
 
-**Job 32 (daily-dedup-scan):**
-```sql
-SELECT cron.alter_job(
-  job_id := 32,
-  command := $$
-    SELECT net.http_post(
-      url := 'https://jswumsdymlooeobrxict.supabase.co/functions/v1/detect-duplicates',
-      headers := '{"Content-Type":"application/json","Authorization":"Bearer eyJhbGci...9mM"}'::jsonb,
-      body := '{}'::jsonb,
-      timeout_milliseconds := 120000
-    ) AS request_id;
-  $$
-);
+### קוד מתוכנן
+```typescript
+// At the start of publishToFacebookPage, filter out video files
+const videoExtensions = /\.(mov|mp4|avi|webm|mkv)$/i;
+const filteredImages = imageUrls.filter(url => !videoExtensions.test(url));
+const videoFromImages = imageUrls.find(url => videoExtensions.test(url));
+
+// If no images left but we have a video, publish as video
+if (filteredImages.length === 0 && videoFromImages) {
+  // use video endpoint with videoFromImages
+}
+// Otherwise use filteredImages instead of imageUrls
 ```
 
-**Job 33 (daily-matching):** — אותו pattern עם URL של `trigger-matching`
+### תיקון משני: עדכון הלוג
+ב-`auto-publish/index.ts`, הסטטוס בלוג מבוסס על `publishErr` (שגיאת invoke) ולא על תוצאת הפרסום בפועל — לכן ב-13 באפריל הלוג מראה "published" למרות שהפוסט נכשל. נתקן גם את זה.
 
-### למה זה יעבוד
-- זה **בדיוק** אותו pattern כמו jobs 24, 26, 30 שעובדים כבר חודשים
-- URL קשיח + anon key קשיח — ללא תלות ב-`current_setting` שלא עובד
-- `verify_jwt = false` מאפשר anon key
-
-### סיכון: אפס
-שינוי cron job configuration בלבד, ללא שינוי קוד.
+### סיכון: נמוך
+שינוי לוגיקה בלבד, ללא שינוי מבנה DB.
 
