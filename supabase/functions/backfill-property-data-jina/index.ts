@@ -772,6 +772,10 @@ Deno.serve(async (req) => {
 
         if (!dry_run) {
           updates.backfill_status = 'completed';
+          // Save raw markdown for debugging (truncated to 10KB)
+          if (markdown && markdown.length > 100) {
+            updates.raw_text = markdown.substring(0, 10000);
+          }
           const { error: updateError } = await supabase
             .from('scouted_properties')
             .update(updates)
@@ -1122,68 +1126,135 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
   const features: PropertyFeatures = {};
   const text = isolatePropertyDescription(markdown, source);
 
-  // === Madlan: detect ✅/❌ or V/X markers in "מפרט מלא" section ===
+  // === Madlan: cross-reference "יתרונות הנכס" (confirmed true) vs "מפרט מלא" (full list) ===
+  // Jina strips ✅/✕ markers so we can't tell true/false from "מפרט מלא" alone.
+  // Strategy:
+  //   - "יתרונות הנכס" = only features the property HAS → true
+  //   - "מידע נוסף על הנכס" = extra data that confirms features (e.g. "מרפסת 12 מ"ר")
+  //   - "מפרט מלא" = full list of ALL features (both has and hasn't)
+  //   - Feature in advantages OR info → true
+  //   - Feature in spec but NOT in advantages/info → false
+  //   - Feature not mentioned anywhere → null (unknown)
   if (source === 'madlan') {
-    // Check both "יתרונות הנכס" and "מפרט מלא" sections
-    // In Madlan markdown: features are simply LISTED — presence = true, absence = false
-    const specMatch = markdown.match(/מפרט מלא([\s\S]*?)(?:##|מידע נוסף|צור קשר|$)/i);
+    // Guard: if markdown is too short, WAF likely blocked the content — skip features entirely
+    if (markdown.length < 500) {
+      console.log(`⚠️ Madlan markdown too short (${markdown.length} chars), skipping feature extraction`);
+      return features;
+    }
+
     const advantagesMatch = markdown.match(/יתרונות הנכס([\s\S]*?)(?:##|תיאור הנכס|מפרט מלא|מידע נוסף|$)/i);
-    const combinedSpec = (specMatch ? specMatch[1] : '') + '\n' + (advantagesMatch ? advantagesMatch[1] : '');
+    const specMatch = markdown.match(/מפרט מלא([\s\S]*?)(?:##|מידע נוסף|צור קשר|חשוב לדעת|צעד ראשון|$)/i);
+    const infoMatch = markdown.match(/מידע נוסף על הנכס([\s\S]*?)(?:##|יצירת קשר|צור קשר|חשוב לדעת|$)/i);
     
-    if (combinedSpec.length > 20) {
-      const madlanFeatures: Array<{ key: keyof PropertyFeatures; pattern: RegExp }> = [
-        { key: 'parking',  pattern: /חניי?ה/i },
-        { key: 'elevator', pattern: /מעלית/i },
-        { key: 'mamad',    pattern: /ממ[""״]?ד/i },
-        { key: 'balcony',  pattern: /מרפסת/i },
-        { key: 'storage',  pattern: /מחסן/i },
-        { key: 'aircon',   pattern: /מיזוג/i },
-        { key: 'yard',     pattern: /חצר|גינה/i },
-        { key: 'roof',     pattern: /גג/i },
+    const advantages = advantagesMatch ? advantagesMatch[1] : '';
+    const spec = specMatch ? specMatch[1] : '';
+    const info = infoMatch ? infoMatch[1] : '';
+    
+    // Need at least one section to extract features
+    if (advantages.length > 5 || spec.length > 20) {
+      const madlanFeatures: Array<{ key: keyof PropertyFeatures; pattern: RegExp; infoPattern?: RegExp }> = [
+        { key: 'parking',    pattern: /חניי?ה/i },
+        { key: 'elevator',   pattern: /מעלית/i },
+        { key: 'mamad',      pattern: /ממ[""״׳']?ד/i },
+        { key: 'balcony',    pattern: /מרפסת/i, infoPattern: /מרפסת\s*\d+\s*מ/i },
+        { key: 'storage',    pattern: /מחסן/i },
+        { key: 'aircon',     pattern: /מיזוג/i },
+        { key: 'yard',       pattern: /חצר|גינה/i },
+        { key: 'roof',       pattern: /גג\b/i },
         { key: 'accessible', pattern: /נגיש/i },
       ];
 
-      for (const { key, pattern } of madlanFeatures) {
-        if (pattern.test(combinedSpec)) {
+      for (const { key, pattern, infoPattern } of madlanFeatures) {
+        const inAdvantages = pattern.test(advantages);
+        const inInfo = infoPattern ? infoPattern.test(info) : false;
+        const inSpec = pattern.test(spec);
+        
+        if (inAdvantages || inInfo) {
+          // Confirmed present — either in advantages or info section
           features[key] = true;
-        } else {
+        } else if (inSpec) {
+          // Listed in full spec but NOT in advantages/info → absent
           features[key] = false;
         }
+        // Not mentioned anywhere → leave as undefined (null/unknown)
       }
       
-      console.log(`🏢 Madlan list-based features:`, JSON.stringify(features));
-      return features; // Madlan spec is authoritative, no need for keyword fallback
+      console.log(`🏢 Madlan cross-ref features (adv=${advantages.length}ch, spec=${spec.length}ch, info=${info.length}ch):`, JSON.stringify(features));
+      return features;
+    } else {
+      console.log(`⚠️ Madlan: no advantages/spec sections found, falling through to keyword detection`);
     }
   }
 
-  // === Homeless: bold = feature exists, plain only = UNKNOWN (not false) ===
+  // === Homeless: features listed in "מאפייני הנכס" section as SVG+text ===
+  // In Jina markdown: ![Image](*.svg)featureName — only present features are listed
+  // So: found in section → true, not found → null (unknown)
   if (source === 'homeless') {
-    const homelessFeatureMap: Array<{ key: keyof PropertyFeatures; boldPatterns: RegExp[]; negativePatterns: RegExp[] }> = [
-      { key: 'balcony',  boldPatterns: [/\*\*מרפסת\*\*/], negativePatterns: [] },
-      { key: 'yard',     boldPatterns: [/\*\*(חצר|גינה)\*\*/, /\*\*גינה\*\*/], negativePatterns: [] },
-      { key: 'elevator', boldPatterns: [/\*\*מעלית\*\*/], negativePatterns: [] },
-      { key: 'parking',  boldPatterns: [/\*\*חניי?ה\*\*/, /\*\*חניה\*\*/], negativePatterns: [/חניה\s*ציבורית/i, /חניה\s*משותפת/i] },
-      { key: 'mamad',    boldPatterns: [/\*\*ממ"?ד\*\*/], negativePatterns: [] },
-      { key: 'storage',  boldPatterns: [/\*\*מחסן\*\*/], negativePatterns: [] },
-      { key: 'aircon',   boldPatterns: [/\*\*מזגנ?\*\*/, /\*\*מיזוג\*\*/], negativePatterns: [] },
-      { key: 'roof',     boldPatterns: [/\*\*גג\*\*/], negativePatterns: [] },
+    // Extract the "מאפייני הנכס" section
+    const propsMatch = markdown.match(/מאפייני הנכס([\s\S]*?)(?:###|##|קומה:|מ"ר:|כניסה:|הצגת מספר|איש קשר|עוד מודעות|$)/i);
+    const propsSection = propsMatch ? propsMatch[1] : '';
+    
+    // Also check the description text
+    const combinedText = propsSection + '\n' + text;
+    
+    const homelessFeatureMap: Array<{ key: keyof PropertyFeatures; patterns: RegExp[]; negativePatterns: RegExp[] }> = [
+      { key: 'balcony',    patterns: [/מרפסת/i], negativePatterns: [] },
+      { key: 'yard',       patterns: [/חצר|גינה/i], negativePatterns: [] },
+      { key: 'elevator',   patterns: [/מעלית/i], negativePatterns: [] },
+      { key: 'parking',    patterns: [/חניי?ה/i], negativePatterns: [/חניה\s*ציבורית/i, /חניה\s*משותפת/i] },
+      { key: 'mamad',      patterns: [/ממ["״]?ד/i], negativePatterns: [] },
+      { key: 'storage',    patterns: [/מחסן/i], negativePatterns: [] },
+      { key: 'aircon',     patterns: [/מזגנ|מיזוג/i], negativePatterns: [] },
+      { key: 'roof',       patterns: [/גג\b/i], negativePatterns: [] },
+      { key: 'accessible', patterns: [/נגיש/i], negativePatterns: [] },
+      { key: 'renovated',  patterns: [/משופצ/i], negativePatterns: [] },
+      { key: 'pets',       patterns: [/חיות מחמד/i], negativePatterns: [] },
     ];
 
-    for (const { key, boldPatterns, negativePatterns } of homelessFeatureMap) {
-      // Check negatives first
-      if (negativePatterns.some(p => p.test(text))) {
+    for (const { key, patterns, negativePatterns } of homelessFeatureMap) {
+      if (negativePatterns.some(p => p.test(combinedText))) {
         features[key] = false;
         continue;
       }
-      const isBold = boldPatterns.some(p => p.test(text));
-      if (isBold) {
+      if (patterns.some(p => p.test(combinedText))) {
         features[key] = true;
       }
-      // If not bold → leave undefined (null/unknown), NOT false
+      // Not mentioned → leave undefined (null/unknown)
     }
 
-    console.log(`🏠 Homeless bold-based features:`, JSON.stringify(features));
+    console.log(`🏠 Homeless section-based features (section=${propsSection.length}ch):`, JSON.stringify(features));
     return features;
+  }
+
+  // === Yad2: "מה יש בנכס" section lists only present features ===
+  if (source === 'yad2') {
+    const yad2Match = markdown.match(/מה יש בנכס([\s\S]*?)(?:##|הדרך לבית|בנק מזרחי|מחשבון|מחיר למ"ר|$)/i);
+    const yad2Section = yad2Match ? yad2Match[1] : '';
+    
+    if (yad2Section.length > 10) {
+      const yad2Features: Array<{ key: keyof PropertyFeatures; pattern: RegExp }> = [
+        { key: 'parking',    pattern: /חניי?ה|חניות/i },
+        { key: 'elevator',   pattern: /מעלית/i },
+        { key: 'mamad',      pattern: /ממ["״]?ד/i },
+        { key: 'balcony',    pattern: /מרפסת/i },
+        { key: 'storage',    pattern: /מחסן/i },
+        { key: 'aircon',     pattern: /מיזוג|מזגנ/i },
+        { key: 'yard',       pattern: /חצר|גינה/i },
+        { key: 'roof',       pattern: /גג\b/i },
+        { key: 'accessible', pattern: /נגיש|גישה לנכים/i },
+        { key: 'renovated',  pattern: /משופצ/i },
+      ];
+
+      for (const { key, pattern } of yad2Features) {
+        if (pattern.test(yad2Section)) {
+          features[key] = true;
+        }
+        // Yad2 only lists present features — absence means unknown, not false
+      }
+      
+      console.log(`🟠 Yad2 section-based features (section=${yad2Section.length}ch):`, JSON.stringify(features));
+      return features;
+    }
   }
 
   // === Non-homeless/non-madlan-spec sources: keyword detection ===
