@@ -1197,7 +1197,7 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
       { key: 'balcony',    patterns: [/מרפסת/i], negativePatterns: [/מרפסת\s*:?\s*(אין|ללא|לא)/i, /אין\s*מרפסת/i, /ללא\s*מרפסת/i] },
       { key: 'yard',       patterns: [/חצר|גינה/i], negativePatterns: [/(חצר|גינה)\s*:?\s*(אין|ללא|לא)/i, /אין\s*(חצר|גינה)/i, /ללא\s*(חצר|גינה)/i] },
       { key: 'elevator',   patterns: [/מעלית/i], negativePatterns: [/מעלית\s*:?\s*(אין|ללא|לא)/i, /אין\s*מעלית/i, /ללא\s*מעלית/i] },
-      { key: 'parking',    patterns: [/חניי?ה/i], negativePatterns: [/חניי?ה\s*:?\s*(אין|ללא|לא)/i, /אין\s*חניי?ה/i, /ללא\s*חניי?ה/i] },
+      { key: 'parking',    patterns: [/חניי?ה/i], negativePatterns: [/חניי?ה\s*:?\s*(אין|ללא|לא|ציבורית|ברחוב)/i, /אין\s*חניי?ה/i, /ללא\s*חניי?ה/i] },
       { key: 'mamad',      patterns: [/ממ["״]?ד/i], negativePatterns: [/ממ["״]?ד\s*:?\s*(אין|ללא|לא)/i, /אין\s*ממ["״]?ד/i, /ללא\s*ממ["״]?ד/i] },
       { key: 'storage',    patterns: [/מחסן/i], negativePatterns: [/מחסן\s*:?\s*(אין|ללא|לא)/i, /אין\s*מחסן/i, /ללא\s*מחסן/i] },
       { key: 'roof',       patterns: [/גג\b/i], negativePatterns: [] },
@@ -1213,8 +1213,10 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
       }
       if (patterns.some(p => p.test(sectionText))) {
         features[key] = true;
+      } else if (propsSection.length > 20) {
+        // Homeless lists ALL features — if not mentioned, it's absent
+        features[key] = false;
       }
-      // Not mentioned → leave undefined (null/unknown)
     }
 
     console.log(`🏠 Homeless section-based features (section=${propsSection.length}ch):`, JSON.stringify(features));
