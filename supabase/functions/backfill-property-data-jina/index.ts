@@ -441,7 +441,71 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        console.log(`\n🔍 Processing (Jina): ${prop.source_url}`);
+        console.log(`\n🔍 Processing: ${prop.source_url}`);
+
+        // ===== HOMELESS: Direct HTML fetch (no Jina needed) =====
+        if (prop.source === 'homeless') {
+          try {
+            const detailResult = await fetchHomelessDetailFeatures(prop.source_url);
+            if (detailResult && Object.keys(detailResult.features).length > 0) {
+              const existingFeatures = (prop.features || {}) as Record<string, any>;
+              const mergedFeatures = { ...existingFeatures, ...detailResult.features };
+              
+              const updates: Record<string, any> = {
+                features: mergedFeatures,
+                backfill_status: 'completed',
+              };
+              if (detailResult.size && !prop.size) {
+                updates.size = detailResult.size;
+                batchStats.fields_updated.size++;
+              }
+              if (detailResult.floor !== undefined && !prop.floor) {
+                updates.floor = detailResult.floor;
+                batchStats.fields_updated.floor++;
+              }
+
+              if (!dry_run) {
+                await supabase.from('scouted_properties').update(updates).eq('id', prop.id);
+              }
+
+              successCount++;
+              batchStats.features_updated++;
+              batchStats.total_processed++;
+              await saveRecentItem({
+                address: prop.address || prop.title,
+                neighborhood: prop.neighborhood,
+                source: prop.source,
+                source_url: prop.source_url,
+                status: 'ok',
+                fields_updated: Object.keys(updates).filter(k => k !== 'backfill_status' && k !== 'features'),
+                timestamp: new Date().toISOString(),
+              });
+              console.log(`✅ Homeless direct: ${JSON.stringify(detailResult.features)}`);
+            } else {
+              // Detail page couldn't be parsed
+              failCount++;
+              batchStats.scrape_failed++;
+              batchStats.total_processed++;
+              await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+              await saveRecentItem({
+                address: prop.address || prop.title,
+                neighborhood: prop.neighborhood,
+                source: prop.source,
+                source_url: prop.source_url,
+                status: 'scrape_failed',
+                timestamp: new Date().toISOString(),
+              });
+            }
+          } catch (homelessError) {
+            console.error(`❌ Homeless direct fetch error:`, homelessError);
+            failCount++;
+            batchStats.scrape_failed++;
+            batchStats.total_processed++;
+            await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+          }
+          await new Promise(r => setTimeout(r, 500));
+          continue; // Skip Jina path for homeless
+        }
 
         // ===== JINA SCRAPE with 45s property-level timeout =====
         const propertyController = new AbortController();
