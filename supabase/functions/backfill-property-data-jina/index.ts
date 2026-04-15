@@ -1128,35 +1128,84 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
   const features: PropertyFeatures = {};
   const text = isolatePropertyDescription(markdown, source);
 
-  // === Homeless: bold = feature exists, non-bold = feature doesn't exist ===
+  // === Madlan: detect ✅/❌ or V/X markers in "מפרט מלא" section ===
+  if (source === 'madlan') {
+    const specMatch = markdown.match(/מפרט מלא([\s\S]*?)(?:##|מידע נוסף|צור קשר|$)/i);
+    if (specMatch) {
+      const specText = specMatch[1];
+      
+      // Madlan spec format: feature name followed by ✅/✓/V (yes) or ❌/✗/X (no)
+      // Also handle reverse: ✅/❌ before feature name
+      const madlanFeatures: Array<{ key: keyof PropertyFeatures; patterns: RegExp[] }> = [
+        { key: 'parking',  patterns: [/חניי?ה/] },
+        { key: 'elevator', patterns: [/מעלית/] },
+        { key: 'mamad',    patterns: [/ממ["״]?ד|מרחב\s*מוגן/] },
+        { key: 'balcony',  patterns: [/מרפסת/] },
+        { key: 'storage',  patterns: [/מחסן/] },
+        { key: 'aircon',   patterns: [/מיזוג|מזגנ?/] },
+        { key: 'yard',     patterns: [/חצר|גינה/] },
+        { key: 'roof',     patterns: [/גג/] },
+        { key: 'accessible', patterns: [/נגיש|סורגים/] },
+      ];
+
+      for (const { key, patterns } of madlanFeatures) {
+        for (const p of patterns) {
+          // Check for: "feature ✅" or "✅ feature" or "feature ✓" etc.
+          const positiveAfter = new RegExp(`${p.source}[^\\n]{0,10}[✅✓Vv]`, 'i');
+          const positiveBefore = new RegExp(`[✅✓Vv][^\\n]{0,10}${p.source}`, 'i');
+          const negativeAfter = new RegExp(`${p.source}[^\\n]{0,10}[❌✗Xx]`, 'i');
+          const negativeBefore = new RegExp(`[❌✗Xx][^\\n]{0,10}${p.source}`, 'i');
+          
+          if (positiveAfter.test(specText) || positiveBefore.test(specText)) {
+            features[key] = true;
+            break;
+          } else if (negativeAfter.test(specText) || negativeBefore.test(specText)) {
+            features[key] = false;
+            break;
+          }
+        }
+      }
+      
+      // If we found any features from spec section, trust it as authoritative
+      const specFeaturesFound = Object.keys(features).length;
+      if (specFeaturesFound > 0) {
+        console.log(`🏢 Madlan spec-based features (${specFeaturesFound} found):`, JSON.stringify(features));
+        // Still check description for features not in spec
+      }
+    }
+  }
+
+  // === Homeless: bold = feature exists, plain only = UNKNOWN (not false) ===
   if (source === 'homeless') {
-    const homelessFeatureMap: Array<{ key: keyof PropertyFeatures; boldPatterns: RegExp[]; plainPatterns: RegExp[] }> = [
-      { key: 'balcony',  boldPatterns: [/\*\*מרפסת\*\*/], plainPatterns: [/(?<!\*\*)מרפסת(?!\*\*)/] },
-      { key: 'yard',     boldPatterns: [/\*\*(חצר|גינה)\*\*/, /\*\*גינה\*\*/], plainPatterns: [/(?<!\*\*)(חצר|גינה)(?!\*\*)/] },
-      { key: 'elevator', boldPatterns: [/\*\*מעלית\*\*/], plainPatterns: [/(?<!\*\*)מעלית(?!\*\*)/] },
-      { key: 'parking',  boldPatterns: [/\*\*חניי?ה\*\*/, /\*\*חניה\*\*/], plainPatterns: [/(?<!\*\*)חניי?ה(?!\*\*)/, /(?<!\*\*)חניה(?!\*\*)/] },
-      { key: 'mamad',    boldPatterns: [/\*\*ממ"?ד\*\*/], plainPatterns: [/(?<!\*\*)ממ"?ד(?!\*\*)/] },
-      { key: 'storage',  boldPatterns: [/\*\*מחסן\*\*/], plainPatterns: [/(?<!\*\*)מחסן(?!\*\*)/] },
-      { key: 'aircon',   boldPatterns: [/\*\*מזגנ?\*\*/, /\*\*מיזוג\*\*/], plainPatterns: [/(?<!\*\*)מזגנ?(?!\*\*)/, /(?<!\*\*)מיזוג(?!\*\*)/] },
-      { key: 'roof',     boldPatterns: [/\*\*גג\*\*/], plainPatterns: [/(?<!\*\*)גג(?!\*\*)/] },
+    const homelessFeatureMap: Array<{ key: keyof PropertyFeatures; boldPatterns: RegExp[]; negativePatterns: RegExp[] }> = [
+      { key: 'balcony',  boldPatterns: [/\*\*מרפסת\*\*/], negativePatterns: [] },
+      { key: 'yard',     boldPatterns: [/\*\*(חצר|גינה)\*\*/, /\*\*גינה\*\*/], negativePatterns: [] },
+      { key: 'elevator', boldPatterns: [/\*\*מעלית\*\*/], negativePatterns: [] },
+      { key: 'parking',  boldPatterns: [/\*\*חניי?ה\*\*/, /\*\*חניה\*\*/], negativePatterns: [/חניה\s*ציבורית/i, /חניה\s*משותפת/i] },
+      { key: 'mamad',    boldPatterns: [/\*\*ממ"?ד\*\*/], negativePatterns: [] },
+      { key: 'storage',  boldPatterns: [/\*\*מחסן\*\*/], negativePatterns: [] },
+      { key: 'aircon',   boldPatterns: [/\*\*מזגנ?\*\*/, /\*\*מיזוג\*\*/], negativePatterns: [] },
+      { key: 'roof',     boldPatterns: [/\*\*גג\*\*/], negativePatterns: [] },
     ];
 
-    for (const { key, boldPatterns, plainPatterns } of homelessFeatureMap) {
+    for (const { key, boldPatterns, negativePatterns } of homelessFeatureMap) {
+      // Check negatives first
+      if (negativePatterns.some(p => p.test(text))) {
+        features[key] = false;
+        continue;
+      }
       const isBold = boldPatterns.some(p => p.test(text));
-      const isPlain = plainPatterns.some(p => p.test(text));
       if (isBold) {
         features[key] = true;
-      } else if (isPlain) {
-        features[key] = false;
       }
-      // If neither found — leave undefined (as before)
+      // If not bold → leave undefined (null/unknown), NOT false
     }
 
     console.log(`🏠 Homeless bold-based features:`, JSON.stringify(features));
     return features;
   }
 
-  // === Non-homeless sources: existing logic ===
+  // === Non-homeless/non-madlan-spec sources: keyword detection ===
   // Returns: true (positive found), false (negative found), null (not mentioned)
   const detectFeature = (positivePatterns: RegExp[], negativePatterns: RegExp[] = []): boolean | null => {
     for (const neg of negativePatterns) { if (neg.test(text)) return false; }
@@ -1164,52 +1213,69 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     return null;
   };
 
-  const balconyResult = detectFeature(
-    [/יש\s*מרפסת/i, /כולל\s*מרפסת/i, /עם\s*מרפסת/i, /מרפסת\s*(שמש|גדולה|מרווחת|יפה|קטנה|רחבה)/i, /\bמרפסת\b.*מ"ר/i, /\d+\s*מרפס[תו]ת/i, /מרפסות/i, /\bמרפסת\b/],
-    [/אין\s*מרפסת/i, /ללא\s*מרפסת/i, /בלי\s*מרפסת/i, /מרפסת\s*:?\s*(?:אין|לא|ללא)/i]
-  );
-  if (balconyResult !== null) features.balcony = balconyResult;
+  // Only apply keyword detection for features NOT already found by Madlan spec
+  if (features.balcony === undefined) {
+    const balconyResult = detectFeature(
+      [/יש\s*מרפסת/i, /כולל\s*מרפסת/i, /עם\s*מרפסת/i, /מרפסת\s*(שמש|גדולה|מרווחת|יפה|קטנה|רחבה)/i, /\bמרפסת\b.*מ"ר/i, /\d+\s*מרפס[תו]ת/i, /מרפסות/i],
+      [/אין\s*מרפסת/i, /ללא\s*מרפסת/i, /בלי\s*מרפסת/i, /מרפסת\s*:?\s*(?:אין|לא|ללא)/i]
+    );
+    if (balconyResult !== null) features.balcony = balconyResult;
+  }
 
-  const yardResult = detectFeature(
-    [/יש\s*(חצר|גינה)/i, /כולל\s*(חצר|גינה)/i, /עם\s*(חצר|גינה)/i, /\b(חצר|גינה)\s*(פרטית|גדולה|ירוקה|משותפת)/i, /גן\s*פרטי/i, /דירת\s*גן/i, /גינה\s*פרטית/i, /\bדשא\b/i, /\bפטיו\b/i, /\bחצר\b/],
-    [/אין\s*(חצר|גינה)/i, /ללא\s*(חצר|גינה)/i, /בלי\s*(חצר|גינה)/i, /(חצר|גינה)\s*:?\s*(?:אין|לא|ללא)/i]
-  );
-  if (yardResult !== null) features.yard = yardResult;
+  if (features.yard === undefined) {
+    const yardResult = detectFeature(
+      [/יש\s*(חצר|גינה)/i, /כולל\s*(חצר|גינה)/i, /עם\s*(חצר|גינה)/i, /\b(חצר|גינה)\s*(פרטית|גדולה|ירוקה|משותפת)/i, /גן\s*פרטי/i, /דירת\s*גן/i, /גינה\s*פרטית/i, /\bדשא\b/i, /\bפטיו\b/i],
+      [/אין\s*(חצר|גינה)/i, /ללא\s*(חצר|גינה)/i, /בלי\s*(חצר|גינה)/i, /(חצר|גינה)\s*:?\s*(?:אין|לא|ללא)/i]
+    );
+    if (yardResult !== null) features.yard = yardResult;
+  }
 
-  const elevatorResult = detectFeature(
-    [/יש\s*מעלית/i, /כולל\s*מעלית/i, /עם\s*מעלית/i, /בניין\s*עם\s*מעלית/i, /מעלית\s*שבת/i, /\d+\s*מעליות/i, /[-•]\s*מעלית/, /מעלית/],
-    [/אין\s*מעלית/i, /ללא\s*מעלית/i, /בלי\s*מעלית/i, /בלעדי\s*מעלית/i, /מעלית\s*:?\s*(?:אין|לא|ללא)/i]
-  );
-  if (elevatorResult !== null) features.elevator = elevatorResult;
+  if (features.elevator === undefined) {
+    const elevatorResult = detectFeature(
+      [/יש\s*מעלית/i, /כולל\s*מעלית/i, /עם\s*מעלית/i, /בניין\s*עם\s*מעלית/i, /מעלית\s*שבת/i, /\d+\s*מעליות/i, /[-•]\s*מעלית/],
+      [/אין\s*מעלית/i, /ללא\s*מעלית/i, /בלי\s*מעלית/i, /בלעדי\s*מעלית/i, /מעלית\s*:?\s*(?:אין|לא|ללא)/i]
+    );
+    if (elevatorResult !== null) features.elevator = elevatorResult;
+  }
 
-  const parkingResult = detectFeature(
-    [/יש\s*חניה/i, /כולל\s*חניה/i, /עם\s*חניה/i, /חניה\s*(פרטית|בטאבו|בבניין|בחניון|מקורה|תת\s*קרקעית)/i, /מקום\s*חניה/i, /חנייה/, /\d+\s*חניות/i, /חניון/i, /\bחניה\b/],
-    [/אין\s*חניה/i, /ללא\s*חניה/i, /בלי\s*חניה/i, /חניי?ה\s*:?\s*(?:אין|לא|ללא)/i]
-  );
-  if (parkingResult !== null) features.parking = parkingResult;
+  if (features.parking === undefined) {
+    const parkingResult = detectFeature(
+      [/יש\s*חניה/i, /כולל\s*חניה/i, /עם\s*חניה/i, /חניה\s*(פרטית|בטאבו|בבניין|בחניון|מקורה|תת\s*קרקעית)/i, /מקום\s*חניה/i, /חנייה\s*(פרטית|בטאבו|בבניין)/i, /\d+\s*חניות/i, /חניון\s*(פרטי|בבניין)/i],
+      [/אין\s*חניה/i, /ללא\s*חניה/i, /בלי\s*חניה/i, /חניי?ה\s*:?\s*(?:אין|לא|ללא)/i, /חניה\s*ציבורית/i, /חניה\s*משותפת/i, /חניותללא/i]
+    );
+    if (parkingResult !== null) features.parking = parkingResult;
+  }
 
-  const mamadResult = detectFeature(
-    [/יש\s*ממ["״]?ד/i, /כולל\s*ממ["״]?ד/i, /עם\s*ממ["״]?ד/i, /ממ["״]ד/, /\bממד\b/, /מרחב\s*מוגן/i, /חדר\s*ביטחון/i, /ממ["״]?ד\s*צמוד/i, /ממ["״]?ד\s*קומתי/i],
-    [/אין\s*ממ["״]?ד/i, /ללא\s*ממ["״]?ד/i, /בלי\s*ממ["״]?ד/i, /ממ["״]?ד\s*:?\s*(?:אין|לא|ללא)/i]
-  );
-  if (mamadResult !== null) features.mamad = mamadResult;
+  if (features.mamad === undefined) {
+    const mamadResult = detectFeature(
+      [/יש\s*ממ["״]?ד/i, /כולל\s*ממ["״]?ד/i, /עם\s*ממ["״]?ד/i, /ממ["״]ד/, /\bממד\b/, /מרחב\s*מוגן/i, /חדר\s*ביטחון/i, /ממ["״]?ד\s*צמוד/i, /ממ["״]?ד\s*קומתי/i],
+      [/אין\s*ממ["״]?ד/i, /ללא\s*ממ["״]?ד/i, /בלי\s*ממ["״]?ד/i, /ממ["״]?ד\s*:?\s*(?:אין|לא|ללא)/i]
+    );
+    if (mamadResult !== null) features.mamad = mamadResult;
+  }
 
-  const storageResult = detectFeature(
-    [/יש\s*מחסן/i, /כולל\s*מחסן/i, /עם\s*מחסן/i, /\bמחסן\b\s*(פרטי|גדול|בבניין)/i, /מחסן\s*ו?חניה/i],
-    [/אין\s*מחסן/i, /ללא\s*מחסן/i, /מחסן\s*:?\s*(?:אין|לא|ללא)/i]
-  );
-  if (storageResult !== null) features.storage = storageResult;
+  if (features.storage === undefined) {
+    const storageResult = detectFeature(
+      [/יש\s*מחסן/i, /כולל\s*מחסן/i, /עם\s*מחסן/i, /\bמחסן\b\s*(פרטי|גדול|בבניין)/i, /מחסן\s*ו?חניה/i],
+      [/אין\s*מחסן/i, /ללא\s*מחסן/i, /מחסן\s*:?\s*(?:אין|לא|ללא)/i]
+    );
+    if (storageResult !== null) features.storage = storageResult;
+  }
 
-  const roofResult = detectFeature(
-    [/גג\s*(פרטי|צמוד|מרווח)/i, /גישה\s*לגג/i, /פנטהאו[זס]/i, /דירת\s*גג/i], []
-  );
-  if (roofResult !== null) features.roof = roofResult;
+  if (features.roof === undefined) {
+    const roofResult = detectFeature(
+      [/גג\s*(פרטי|צמוד|מרווח)/i, /גישה\s*לגג/i, /פנטהאו[זס]/i, /דירת\s*גג/i], []
+    );
+    if (roofResult !== null) features.roof = roofResult;
+  }
 
-  const airconResult = detectFeature(
-    [/יש\s*מזגנ?/i, /כולל\s*מזגנ?/i, /עם\s*מזגנ?/i, /מזגנים/i, /מיזוג\s*(אוויר|מרכזי)/i, /מיזוג\s*בכל/i],
-    [/אין\s*מזגנ?/i, /ללא\s*מזגנ?/i, /מזגנ?\s*:?\s*(?:אין|לא|ללא)/i, /מיזוג\s*:?\s*(?:אין|לא|ללא)/i]
-  );
-  if (airconResult !== null) features.aircon = airconResult;
+  if (features.aircon === undefined) {
+    const airconResult = detectFeature(
+      [/יש\s*מזגנ?/i, /כולל\s*מזגנ?/i, /עם\s*מזגנ?/i, /מזגנים/i, /מיזוג\s*(אוויר|מרכזי)/i, /מיזוג\s*בכל/i],
+      [/אין\s*מזגנ?/i, /ללא\s*מזגנ?/i, /מזגנ?\s*:?\s*(?:אין|לא|ללא)/i, /מיזוג\s*:?\s*(?:אין|לא|ללא)/i]
+    );
+    if (airconResult !== null) features.aircon = airconResult;
+  }
 
   const renovatedResult = detectFeature(
     [/משופצ[תת]/i, /שיפוץ\s*(יסודי|מלא|חדש)/i, /לאחר\s*שיפוץ/i, /חדש\s*מהניילון/i, /שופץ\s*(לאחרונה|ב\d{4})/i], []
@@ -1222,11 +1288,13 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
   );
   if (furnishedResult !== null) features.furnished = furnishedResult;
 
-  const accessibleResult = detectFeature(
-    [/נגיש\s+לנכים/i, /מותאם\s+לנכים/i, /גישה\s+לכיסא\s+גלגלים/i, /נגישות\s+לנכים/i, /דירה\s+נגישה/i],
-    [/נגישות\s*לאתר/i, /תנאי\s*נגישות/i, /הצהרת\s*נגישות/i]
-  );
-  if (accessibleResult !== null) features.accessible = accessibleResult;
+  if (features.accessible === undefined) {
+    const accessibleResult = detectFeature(
+      [/נגיש\s+לנכים/i, /מותאם\s+לנכים/i, /גישה\s+לכיסא\s+גלגלים/i, /נגישות\s+לנכים/i, /דירה\s+נגישה/i],
+      [/נגישות\s*לאתר/i, /תנאי\s*נגישות/i, /הצהרת\s*נגישות/i]
+    );
+    if (accessibleResult !== null) features.accessible = accessibleResult;
+  }
 
   const petsResult = detectFeature(
     [/מותר\s*(חיות|בע"ח)/i, /חיות\s*מחמד\s*(מותר|אפשר)/i, /ידידותי\s*לחיות/i, /pet\s*friendly/i],
