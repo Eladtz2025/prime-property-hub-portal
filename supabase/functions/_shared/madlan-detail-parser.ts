@@ -104,28 +104,60 @@ function parseDetailHtml(html: string): MadlanDetailResult | null {
  * Extract from JSON-LD additionalProperty (PropertyValue with כן/לא).
  */
 function extractFromJsonLd(html: string, result: MadlanDetailResult): void {
-  // Find JSON-LD script(s) - may be in <head>
-  const jsonLdRegex = /<script\s+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g;
-  let match;
-  while ((match = jsonLdRegex.exec(html)) !== null) {
+  // Use indexOf instead of regex for large HTML (2-3MB)
+  const ldMarker = 'application/ld+json';
+  let searchFrom = 0;
+  
+  while (true) {
+    const markerIdx = html.indexOf(ldMarker, searchFrom);
+    if (markerIdx < 0) break;
+    
+    // Find the opening > of this script tag
+    const tagOpen = html.indexOf('>', markerIdx);
+    if (tagOpen < 0) break;
+    
+    // Find </script> after it
+    const scriptClose = html.indexOf('</script>', tagOpen);
+    if (scriptClose < 0) break;
+    
+    const jsonContent = html.substring(tagOpen + 1, scriptClose).trim();
+    searchFrom = scriptClose + 9;
+    
+    if (jsonContent.length < 10) continue;
+    
     try {
-      const data = JSON.parse(match[1]);
+      const data = JSON.parse(jsonContent);
       processJsonLd(Array.isArray(data) ? data : [data], result);
+      console.log(`📋 JSON-LD: parsed ${jsonContent.length} chars, features so far: ${Object.keys(result.features).length}`);
     } catch (e) {
-      // Try to find array of JSON-LD objects
-      continue;
+      console.warn(`⚠️ JSON-LD parse failed for ${jsonContent.length} chars`);
     }
   }
 
-  // Also check for inline JSON in the HTML containing additionalProperty
-  const inlineMatch = html.match(/"additionalProperty"\s*:\s*\[([\s\S]*?)\]/);
-  if (inlineMatch && Object.keys(result.features).length === 0) {
-    try {
-      const props = JSON.parse(`[${inlineMatch[1]}]`);
-      for (const prop of props) {
-        mapPropertyValue(prop?.name, prop?.value, result);
+  // Fallback: search for additionalProperty array using indexOf
+  if (Object.keys(result.features).length === 0) {
+    const apIdx = html.indexOf('"additionalProperty"');
+    if (apIdx >= 0) {
+      const arrayStart = html.indexOf('[', apIdx);
+      if (arrayStart >= 0 && arrayStart - apIdx < 20) {
+        // Find matching ]
+        let depth = 0;
+        let i = arrayStart;
+        for (; i < html.length && i < arrayStart + 5000; i++) {
+          if (html[i] === '[') depth++;
+          if (html[i] === ']') { depth--; if (depth === 0) break; }
+        }
+        if (depth === 0) {
+          try {
+            const props = JSON.parse(html.substring(arrayStart, i + 1));
+            for (const prop of props) {
+              mapPropertyValue(prop?.name, prop?.value, result);
+            }
+            console.log(`📋 additionalProperty fallback: ${props.length} props, features: ${Object.keys(result.features).length}`);
+          } catch (e) { /* ignore */ }
+        }
       }
-    } catch (e) { /* ignore */ }
+    }
   }
 }
 
