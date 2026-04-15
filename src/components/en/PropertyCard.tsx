@@ -58,7 +58,7 @@ export const PropertyCard = ({
           </h3>
           <div className="flex items-center text-muted-foreground gap-2">
             <MapPin className="w-4 h-4" />
-            <span className="font-montserrat text-sm">{removeAddressNumber(address)}</span>
+            <span className="font-montserrat text-sm">{address}</span>
           </div>
         </div>
 

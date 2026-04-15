@@ -129,8 +129,8 @@ const Rentals = () => {
     : mockProperties;
 
   const filteredProperties = properties.filter((property) => {
-    const matchesSearch = property.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         property.city?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = ((property as any).neighborhood || property.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         property.title?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCity = cityFilter === 'all' || property.city === cityFilter;
     const matchesRooms = roomsFilter === 'all' || property.rooms?.toString() === roomsFilter;
     const matchesPrice = !maxPrice || (property.monthly_rent && property.monthly_rent <= parseFloat(maxPrice));
