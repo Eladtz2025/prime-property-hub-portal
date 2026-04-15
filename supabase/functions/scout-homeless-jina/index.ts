@@ -50,6 +50,7 @@ async function scrapeHomelessWithJina(url: string, maxRetries = 2, timeoutSecond
 import { saveProperty } from "../_shared/property-helpers.ts";
 import { parseHomelessHtml } from "../_experimental/parser-homeless.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
+import { fetchHomelessDetailFeatures } from "../_shared/homeless-detail-parser.ts";
 
 /**
  * Edge Function for scraping Homeless using Jina Reader - SINGLE PAGE MODE
