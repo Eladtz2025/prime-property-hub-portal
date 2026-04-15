@@ -1226,6 +1226,37 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     return features;
   }
 
+  // === Yad2: "מה יש בנכס" section lists only present features ===
+  if (source === 'yad2') {
+    const yad2Match = markdown.match(/מה יש בנכס([\s\S]*?)(?:##|הדרך לבית|בנק מזרחי|מחשבון|מחיר למ"ר|$)/i);
+    const yad2Section = yad2Match ? yad2Match[1] : '';
+    
+    if (yad2Section.length > 10) {
+      const yad2Features: Array<{ key: keyof PropertyFeatures; pattern: RegExp }> = [
+        { key: 'parking',    pattern: /חניי?ה|חניות/i },
+        { key: 'elevator',   pattern: /מעלית/i },
+        { key: 'mamad',      pattern: /ממ["״]?ד/i },
+        { key: 'balcony',    pattern: /מרפסת/i },
+        { key: 'storage',    pattern: /מחסן/i },
+        { key: 'aircon',     pattern: /מיזוג|מזגנ/i },
+        { key: 'yard',       pattern: /חצר|גינה/i },
+        { key: 'roof',       pattern: /גג\b/i },
+        { key: 'accessible', pattern: /נגיש|גישה לנכים/i },
+        { key: 'renovated',  pattern: /משופצ/i },
+      ];
+
+      for (const { key, pattern } of yad2Features) {
+        if (pattern.test(yad2Section)) {
+          features[key] = true;
+        }
+        // Yad2 only lists present features — absence means unknown, not false
+      }
+      
+      console.log(`🟠 Yad2 section-based features (section=${yad2Section.length}ch):`, JSON.stringify(features));
+      return features;
+    }
+  }
+
   // === Non-homeless/non-madlan-spec sources: keyword detection ===
   // Returns: true (positive found), false (negative found), null (not mentioned)
   const detectFeature = (positivePatterns: RegExp[], negativePatterns: RegExp[] = []): boolean | null => {
