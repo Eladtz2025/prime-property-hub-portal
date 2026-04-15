@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Home, Bath, Square, Building2, TrendingUp, Shield, Users, Award } from 'lucide-react';
 import { usePublicProperties } from '@/hooks/usePublicProperties';
 import { Helmet } from "react-helmet";
-import { removeAddressNumber } from '@/lib/utils';
+
 import HreflangMeta from '@/components/seo/HreflangMeta';
 import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from '@/components/seo/SchemaOrg';
 
@@ -103,8 +103,8 @@ const Sales = () => {
     : mockProperties;
 
   const filteredProperties = properties.filter((property) => {
-    const matchesSearch = property.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         property.city?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = ((property as any).neighborhood || property.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         property.title?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCity = cityFilter === 'all' || property.city === cityFilter;
     const matchesRooms = roomsFilter === 'all' || property.rooms?.toString() === roomsFilter;
     const matchesPrice = !maxPrice || (property.price && property.price <= parseFloat(maxPrice));

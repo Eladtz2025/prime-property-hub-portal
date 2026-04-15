@@ -19,8 +19,8 @@ const Management = () => {
   const { data: properties, isLoading } = usePublicProperties({ propertyType: 'management' });
 
   const filteredProperties = (properties || []).filter((property) => {
-    const matchesSearch = property.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         property.city?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (property.neighborhood || property.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         property.title?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -104,8 +104,8 @@ const Management = () => {
               {filteredProperties.map((property) => (
                 <FlippablePropertyCard
                   key={property.id}
-                  title={property.title || `${property.rooms} חדרים ${property.address}`}
-                  location={property.address || ''}
+                  title={property.title || `${property.rooms} חדרים ב${property.neighborhood || property.city}`}
+                  location={property.neighborhood || property.city || ''}
                   price={property.show_management_badge ? 'ניהול מלא' : 'ניהול נכסים'}
                   imageUrl={property.images?.[0]?.image_url || '/images/properties/building-management-1.jpg'}
                   type={property.property_size ? `${property.property_size} מ²` : undefined}

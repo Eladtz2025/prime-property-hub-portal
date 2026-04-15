@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Home, MapPin, Ruler, BedDouble, Bath, Car, MoveUp, TreePine, Trees } from "lucide-react";
-import { removeAddressNumber } from "@/lib/utils";
+
 
 interface PropertyCardProps {
   id: string;
@@ -58,7 +58,7 @@ export const PropertyCard = ({
           </h3>
           <div className="flex items-center text-muted-foreground gap-2">
             <MapPin className="w-4 h-4" />
-            <span className="font-montserrat text-sm">{removeAddressNumber(address)}</span>
+            <span className="font-montserrat text-sm">{address}</span>
           </div>
         </div>
 

@@ -13,7 +13,7 @@ import { usePublicProperty } from '@/hooks/usePublicProperty';
 import { Skeleton } from '@/components/ui/skeleton';
 import HebrewFooter from '@/components/he/Footer';
 import HebrewHeader from '@/components/he/Header';
-import { removeAddressNumber } from '@/lib/utils';
+
 import { Helmet } from 'react-helmet';
 
 const PropertyDetailPage = () => {
@@ -61,7 +61,7 @@ const PropertyDetailPage = () => {
     const url = window.location.href;
     const shareData = {
       title: property?.title || 'נכס להשכרה/למכירה',
-      text: `${property?.title} - ${property?.address}, ${property?.city}`,
+      text: `${property?.title} - ${property?.neighborhood || property?.city}`,
       url: url,
     };
 
@@ -197,7 +197,7 @@ const PropertyDetailPage = () => {
             <h1 className="text-2xl font-bold mb-3 text-right">{property.title}</h1>
             <Badge className="mb-3 bg-primary/10 text-primary border-primary/20">{getPropertyTypeLabel()}</Badge>
             <div className="flex items-center gap-2 text-muted-foreground">
-              <span>{removeAddressNumber(property.address)}, {property.city}</span>
+              <span>{property.neighborhood || property.city}</span>
               <MapPin className="h-5 w-5" />
             </div>
           </div>
@@ -333,7 +333,7 @@ const PropertyDetailPage = () => {
               </div>
               <h1 className="text-2xl font-bold mb-2 text-right">{property.title}</h1>
               <div className="flex items-center gap-2 text-muted-foreground mb-4 flex-row-reverse">
-                <span className="text-base">{removeAddressNumber(property.address)}, {property.city}</span>
+                <span className="text-base">{property.neighborhood || property.city}</span>
                 <MapPin className="h-4 w-4" />
               </div>
             </div>
