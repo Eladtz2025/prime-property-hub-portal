@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Home, Bath, Square, MessageCircle, Building, Settings, CheckCircle, Star, Users, TrendingUp } from 'lucide-react';
 import { usePublicProperties } from '@/hooks/usePublicProperties';
 import { Helmet } from "react-helmet";
-import { removeAddressNumber } from '@/lib/utils';
+
 import HreflangMeta from '@/components/seo/HreflangMeta';
 import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from '@/components/seo/SchemaOrg';
 

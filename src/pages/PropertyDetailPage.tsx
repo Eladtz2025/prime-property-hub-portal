@@ -13,7 +13,7 @@ import { usePublicProperty } from '@/hooks/usePublicProperty';
 import { Skeleton } from '@/components/ui/skeleton';
 import HebrewFooter from '@/components/he/Footer';
 import HebrewHeader from '@/components/he/Header';
-import { removeAddressNumber } from '@/lib/utils';
+
 import { Helmet } from 'react-helmet';
 
 const PropertyDetailPage = () => {

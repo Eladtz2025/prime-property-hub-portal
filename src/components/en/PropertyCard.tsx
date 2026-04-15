@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Home, MapPin, Ruler, BedDouble, Bath, Car, MoveUp, TreePine, Trees } from "lucide-react";
-import { removeAddressNumber } from "@/lib/utils";
+
 
 interface PropertyCardProps {
   id: string;
