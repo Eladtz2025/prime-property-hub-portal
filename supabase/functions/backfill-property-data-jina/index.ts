@@ -4,6 +4,7 @@ import { fetchCategorySettings, isPastEndTime } from '../_shared/settings.ts';
 import { isProcessEnabled } from '../_shared/process-flags.ts';
 import { getNeighborhoodConfig } from '../_shared/locations.ts';
 import { normalizeNeighborhoodToValue } from '../_experimental/street-lookup.ts';
+import { fetchHomelessDetailFeatures } from '../_shared/homeless-detail-parser.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
