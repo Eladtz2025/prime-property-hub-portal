@@ -1206,7 +1206,6 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
         { key: 'yard',       pattern: /חצר|גינה/i },
         { key: 'roof',       pattern: /גג\b/i },
         { key: 'accessible', pattern: /נגיש|גישה לנכים/i },
-        { key: 'renovated',  pattern: /משופצ/i },
       ];
 
       for (const { key, pattern } of yad2Features) {
@@ -1217,8 +1216,11 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
       }
       
       console.log(`🟠 Yad2 section-based features (section=${yad2Section.length}ch):`, JSON.stringify(features));
-      return features;
+    } else {
+      console.log(`⚠️ Yad2: no "מה יש בנכס" section found — skipping feature extraction (no guessing)`);
     }
+    // Always return here for Yad2 — never fall through to keyword guessing
+    return features;
   }
 
   // === Non-homeless/non-madlan-spec sources: keyword detection ===
