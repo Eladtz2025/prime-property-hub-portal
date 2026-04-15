@@ -74,7 +74,6 @@ interface PropertyFeatures {
   mamad?: boolean;
   storage?: boolean;
   roof?: boolean;
-  aircon?: boolean;
   renovated?: boolean;
   furnished?: boolean;
   accessible?: boolean;
@@ -1158,7 +1157,6 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
         { key: 'mamad',      pattern: /ממ[""״׳']?ד/i },
         { key: 'balcony',    pattern: /מרפסת/i, infoPattern: /מרפסת\s*\d+\s*מ/i },
         { key: 'storage',    pattern: /מחסן/i },
-        { key: 'aircon',     pattern: /מיזוג/i },
         { key: 'yard',       pattern: /חצר|גינה/i },
         { key: 'roof',       pattern: /גג\b/i },
         { key: 'accessible', pattern: /נגיש/i },
@@ -1167,16 +1165,14 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
       for (const { key, pattern, infoPattern } of madlanFeatures) {
         const inAdvantages = pattern.test(advantages);
         const inInfo = infoPattern ? infoPattern.test(info) : false;
-        const inSpec = pattern.test(spec);
         
         if (inAdvantages || inInfo) {
           // Confirmed present — either in advantages or info section
           features[key] = true;
-        } else if (inSpec) {
-          // Listed in full spec but NOT in advantages/info → absent
-          features[key] = false;
         }
-        // Not mentioned anywhere → leave as undefined (null/unknown)
+        // Feature in spec but NOT in advantages/info → leave as undefined (null/unknown)
+        // Jina strips ✅/✕ markers so we can't tell true/false from spec alone
+        // Not mentioned anywhere → also leave as undefined (null/unknown)
       }
       
       console.log(`🏢 Madlan cross-ref features (adv=${advantages.length}ch, spec=${spec.length}ch, info=${info.length}ch):`, JSON.stringify(features));
@@ -1198,13 +1194,12 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     const combinedText = propsSection + '\n' + text;
     
     const homelessFeatureMap: Array<{ key: keyof PropertyFeatures; patterns: RegExp[]; negativePatterns: RegExp[] }> = [
-      { key: 'balcony',    patterns: [/מרפסת/i], negativePatterns: [] },
-      { key: 'yard',       patterns: [/חצר|גינה/i], negativePatterns: [] },
-      { key: 'elevator',   patterns: [/מעלית/i], negativePatterns: [] },
-      { key: 'parking',    patterns: [/חניי?ה/i], negativePatterns: [/חניה\s*ציבורית/i, /חניה\s*משותפת/i] },
-      { key: 'mamad',      patterns: [/ממ["״]?ד/i], negativePatterns: [] },
-      { key: 'storage',    patterns: [/מחסן/i], negativePatterns: [] },
-      { key: 'aircon',     patterns: [/מזגנ|מיזוג/i], negativePatterns: [] },
+      { key: 'balcony',    patterns: [/מרפסת/i], negativePatterns: [/מרפסת\s*:?\s*(אין|ללא|לא)/i, /אין\s*מרפסת/i, /ללא\s*מרפסת/i] },
+      { key: 'yard',       patterns: [/חצר|גינה/i], negativePatterns: [/(חצר|גינה)\s*:?\s*(אין|ללא|לא)/i, /אין\s*(חצר|גינה)/i, /ללא\s*(חצר|גינה)/i] },
+      { key: 'elevator',   patterns: [/מעלית/i], negativePatterns: [/מעלית\s*:?\s*(אין|ללא|לא)/i, /אין\s*מעלית/i, /ללא\s*מעלית/i] },
+      { key: 'parking',    patterns: [/חניי?ה/i], negativePatterns: [/חניי?ה\s*:?\s*(אין|ללא|לא)/i, /אין\s*חניי?ה/i, /ללא\s*חניי?ה/i, /חניה\s*ציבורית/i, /חניה\s*משותפת/i] },
+      { key: 'mamad',      patterns: [/ממ["״]?ד/i], negativePatterns: [/ממ["״]?ד\s*:?\s*(אין|ללא|לא)/i, /אין\s*ממ["״]?ד/i, /ללא\s*ממ["״]?ד/i] },
+      { key: 'storage',    patterns: [/מחסן/i], negativePatterns: [/מחסן\s*:?\s*(אין|ללא|לא)/i, /אין\s*מחסן/i, /ללא\s*מחסן/i] },
       { key: 'roof',       patterns: [/גג\b/i], negativePatterns: [] },
       { key: 'accessible', patterns: [/נגיש/i], negativePatterns: [] },
       { key: 'renovated',  patterns: [/משופצ/i], negativePatterns: [] },
@@ -1238,7 +1233,6 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
         { key: 'mamad',      pattern: /ממ["״]?ד/i },
         { key: 'balcony',    pattern: /מרפסת/i },
         { key: 'storage',    pattern: /מחסן/i },
-        { key: 'aircon',     pattern: /מיזוג|מזגנ/i },
         { key: 'yard',       pattern: /חצר|גינה/i },
         { key: 'roof',       pattern: /גג\b/i },
         { key: 'accessible', pattern: /נגיש|גישה לנכים/i },
@@ -1321,13 +1315,7 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     if (roofResult !== null) features.roof = roofResult;
   }
 
-  if (features.aircon === undefined) {
-    const airconResult = detectFeature(
-      [/יש\s*מזגנ?/i, /כולל\s*מזגנ?/i, /עם\s*מזגנ?/i, /מזגנים/i, /מיזוג\s*(אוויר|מרכזי)/i, /מיזוג\s*בכל/i],
-      [/אין\s*מזגנ?/i, /ללא\s*מזגנ?/i, /מזגנ?\s*:?\s*(?:אין|לא|ללא)/i, /מיזוג\s*:?\s*(?:אין|לא|ללא)/i]
-    );
-    if (airconResult !== null) features.aircon = airconResult;
-  }
+  // aircon removed — not relevant for this project
 
   const renovatedResult = detectFeature(
     [/משופצ[תת]/i, /שיפוץ\s*(יסודי|מלא|חדש)/i, /לאחר\s*שיפוץ/i, /חדש\s*מהניילון/i, /שופץ\s*(לאחרונה|ב\d{4})/i], []
