@@ -1124,48 +1124,35 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
 
   // === Madlan: detect ✅/❌ or V/X markers in "מפרט מלא" section ===
   if (source === 'madlan') {
+    // Check both "יתרונות הנכס" and "מפרט מלא" sections
+    // In Madlan markdown: features are simply LISTED — presence = true, absence = false
     const specMatch = markdown.match(/מפרט מלא([\s\S]*?)(?:##|מידע נוסף|צור קשר|$)/i);
-    if (specMatch) {
-      const specText = specMatch[1];
-      
-      // Madlan spec format: feature name followed by ✅/✓/V (yes) or ❌/✗/X (no)
-      // Also handle reverse: ✅/❌ before feature name
-      const madlanFeatures: Array<{ key: keyof PropertyFeatures; patterns: RegExp[] }> = [
-        { key: 'parking',  patterns: [/חניי?ה/] },
-        { key: 'elevator', patterns: [/מעלית/] },
-        { key: 'mamad',    patterns: [/ממ["״]?ד|מרחב\s*מוגן/] },
-        { key: 'balcony',  patterns: [/מרפסת/] },
-        { key: 'storage',  patterns: [/מחסן/] },
-        { key: 'aircon',   patterns: [/מיזוג|מזגנ?/] },
-        { key: 'yard',     patterns: [/חצר|גינה/] },
-        { key: 'roof',     patterns: [/גג/] },
-        { key: 'accessible', patterns: [/נגיש|סורגים/] },
+    const advantagesMatch = markdown.match(/יתרונות הנכס([\s\S]*?)(?:##|תיאור הנכס|מפרט מלא|מידע נוסף|$)/i);
+    const combinedSpec = (specMatch ? specMatch[1] : '') + '\n' + (advantagesMatch ? advantagesMatch[1] : '');
+    
+    if (combinedSpec.length > 20) {
+      const madlanFeatures: Array<{ key: keyof PropertyFeatures; pattern: RegExp }> = [
+        { key: 'parking',  pattern: /חניי?ה/i },
+        { key: 'elevator', pattern: /מעלית/i },
+        { key: 'mamad',    pattern: /ממ[""״]?ד/i },
+        { key: 'balcony',  pattern: /מרפסת/i },
+        { key: 'storage',  pattern: /מחסן/i },
+        { key: 'aircon',   pattern: /מיזוג/i },
+        { key: 'yard',     pattern: /חצר|גינה/i },
+        { key: 'roof',     pattern: /גג/i },
+        { key: 'accessible', pattern: /נגיש/i },
       ];
 
-      for (const { key, patterns } of madlanFeatures) {
-        for (const p of patterns) {
-          // Check for: "feature ✅" or "✅ feature" or "feature ✓" etc.
-          const positiveAfter = new RegExp(`${p.source}[^\\n]{0,10}[✅✓Vv]`, 'i');
-          const positiveBefore = new RegExp(`[✅✓Vv][^\\n]{0,10}${p.source}`, 'i');
-          const negativeAfter = new RegExp(`${p.source}[^\\n]{0,10}[❌✗Xx]`, 'i');
-          const negativeBefore = new RegExp(`[❌✗Xx][^\\n]{0,10}${p.source}`, 'i');
-          
-          if (positiveAfter.test(specText) || positiveBefore.test(specText)) {
-            features[key] = true;
-            break;
-          } else if (negativeAfter.test(specText) || negativeBefore.test(specText)) {
-            features[key] = false;
-            break;
-          }
+      for (const { key, pattern } of madlanFeatures) {
+        if (pattern.test(combinedSpec)) {
+          features[key] = true;
+        } else {
+          features[key] = false;
         }
       }
       
-      // If we found any features from spec section, trust it as authoritative
-      const specFeaturesFound = Object.keys(features).length;
-      if (specFeaturesFound > 0) {
-        console.log(`🏢 Madlan spec-based features (${specFeaturesFound} found):`, JSON.stringify(features));
-        // Still check description for features not in spec
-      }
+      console.log(`🏢 Madlan list-based features:`, JSON.stringify(features));
+      return features; // Madlan spec is authoritative, no need for keyword fallback
     }
   }
 
