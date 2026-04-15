@@ -599,6 +599,98 @@ Deno.serve(async (req) => {
           continue; // Skip Jina path for madlan
         }
 
+        // ===== YAD2: Direct API (no Jina needed) =====
+        if (prop.source === 'yad2') {
+          try {
+            const detailResult = await fetchYad2DetailFeatures(prop.source_url);
+            if (detailResult && Object.keys(detailResult.features).length > 0) {
+              const existingFeatures = (prop.features || {}) as Record<string, any>;
+              const mergedFeatures = { ...existingFeatures, ...detailResult.features };
+              
+              const updates: Record<string, any> = {
+                features: mergedFeatures,
+                backfill_status: 'completed',
+              };
+              const fieldsUpdated: string[] = [];
+
+              if (detailResult.size && !prop.size) {
+                updates.size = detailResult.size;
+                batchStats.fields_updated.size++;
+                fieldsUpdated.push('size');
+              }
+              if (detailResult.floor !== undefined && prop.floor === null) {
+                updates.floor = detailResult.floor;
+                batchStats.fields_updated.floor++;
+                fieldsUpdated.push('floor');
+              }
+              if (detailResult.rooms && !prop.rooms) {
+                updates.rooms = detailResult.rooms;
+                batchStats.fields_updated.rooms++;
+                fieldsUpdated.push('rooms');
+              }
+              if (detailResult.price && !prop.price) {
+                updates.price = detailResult.price;
+                batchStats.fields_updated.price++;
+                fieldsUpdated.push('price');
+              }
+
+              // Classify broker from adType if is_private is still unknown
+              let brokerResult: string | null = null;
+              if (prop.is_private === null && detailResult.adType) {
+                if (detailResult.adType === 'private') {
+                  updates.is_private = true;
+                  brokerResult = 'private (from Yad2 API adType)';
+                  batchStats.broker_classified++;
+                } else if (detailResult.adType === 'agency') {
+                  updates.is_private = false;
+                  brokerResult = 'broker (from Yad2 API adType)';
+                  batchStats.broker_classified++;
+                }
+              }
+
+              if (!dry_run) {
+                await supabase.from('scouted_properties').update(updates).eq('id', prop.id);
+              }
+
+              successCount++;
+              batchStats.features_updated++;
+              batchStats.total_processed++;
+              await saveRecentItem({
+                address: prop.address || prop.title,
+                neighborhood: prop.neighborhood,
+                source: prop.source,
+                source_url: prop.source_url,
+                status: 'ok',
+                fields_updated: fieldsUpdated,
+                broker_result: brokerResult,
+                timestamp: new Date().toISOString(),
+              });
+              console.log(`✅ Yad2 API: ${Object.keys(detailResult.features).length} features, fields: ${fieldsUpdated.join(',') || 'none'}`);
+            } else {
+              failCount++;
+              batchStats.scrape_failed++;
+              batchStats.total_processed++;
+              await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+              await saveRecentItem({
+                address: prop.address || prop.title,
+                neighborhood: prop.neighborhood,
+                source: prop.source,
+                source_url: prop.source_url,
+                status: 'scrape_failed',
+                timestamp: new Date().toISOString(),
+              });
+            }
+          } catch (yad2Error) {
+            console.error(`❌ Yad2 API error:`, yad2Error);
+            failCount++;
+            batchStats.scrape_failed++;
+            batchStats.total_processed++;
+            await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+          }
+          await new Promise(r => setTimeout(r, 500));
+          continue; // Skip Jina path for yad2
+        }
+
         // ===== JINA SCRAPE with 45s property-level timeout =====
         const propertyController = new AbortController();
         const propertyTimeout = setTimeout(() => propertyController.abort(), 45000);
