@@ -1,57 +1,79 @@
-<final-text># תוכנית תיקון מחמירה — לא ממשיכים עם ניחוש
 
-## אבחנה
-- **הומלס:** הבעיה כבר לא נראית כמו Regex קטן, אלא כמו **שורש שגוי**. בתמונת המסך רואים שפיצ'רים שלא קיימים עדיין מופיעים כלייבלים אפורים. לכן Markdown/plain-text לא מספיק כדי לדעת אם הפיצ'ר פעיל או כבוי.
-- **יד2:** הלוגיקה הנוכחית עדיין יכולה “לנחש” מתוך טקסט חופשי או עמוד חלקי/חסום, ולכן `renovated` כבר יצא שגוי.
-- **מדל"ן:** נראה הכי יציב כרגע, אבל הבדיקה שבוצעה הייתה דלה מדי ולא מספיקה כדי להכריז שהכול נכון.
 
-## מה אבנה
-1. **הומלס — מעבר ל-HTML אמיתי**
-   - ב-`supabase/functions/backfill-property-data-jina/index.ts` אעשה ל-Homeless fetch ב-HTML, לא Markdown.
-   - אוסיף parser ייעודי ל-detail page של הומלס שיקרא את בלוק `מאפייני הנכס` לפי מצב DOM/קלאסים/אייקונים, לא לפי טקסט בלבד.
-   - כללי חניה:
-     - `חניה משותפת` = `true`
-     - `חניה ציבורית` / `חניה ברחוב` / `חניה: אין` = `false`
-   - אם מצב פיצ'ר לא ניתן להוכחה מה-HTML, הוא יישאר `null` ולא ינוחש.
+# תיקון חילוץ פיצ'רים — גישה חדשה לגמרי
 
-2. **יד2 — ביטול ניחושים**
-   - אבטל את ה-fallback הגנרי של פיצ'רים ביד2 כשאין section אמין.
-   - אעדכן פיצ'רים רק כשיש עדות מפורשת מ-`מה יש בנכס` או מבנה אמין אחר.
-   - `renovated` ביד2 לא יעודכן עד שיהיה סימון אמין וברור.
+## מה מצאתי
 
-3. **מדל"ן — שמרני**
-   - אשאיר את הלוגיקה השמרנית של `יתרונות הנכס` / `מידע נוסף`.
-   - בבדיקה החיה אבחר רק נכסים פעילים, לא מודעות שהוסרו.
+### תגלית קריטית: Homeless detail page עובד עם fetch ישיר
+בדקתי עכשיו — `fetch("https://www.homeless.co.il/rent/viewad,733159.aspx")` מחזיר HTML מלא **בלי חסימה**. לא צריך Jina, לא צריך proxy.
 
-4. **מיזוג נתונים שמרני**
-   - רק ערכים שהגיעו מ-parser מאומת ידרסו ערכים קיימים.
-   - אם המקור לא אמין, לא אעדכן feature בכלל.
+ב-HTML של דף הנכס, כל פיצ'ר מסומן בצורה חד-משמעית:
+```text
+<div class="IconOption on">...מרפסת: 1</div>     ← יש מרפסת
+<div class="IconOption off">...מעלית</div>         ← אין מעלית
+<div class="IconOption off">...חניה: אין</div>     ← אין חניה
+<div class="IconOption off">...ממד</div>            ← אין ממ"ד
+<div class="IconOption off">...מחסן</div>           ← אין מחסן
+<div class="IconOption off">...משופצת</div>         ← לא משופצת
+<div class="IconOption off">...חיות מחמד</div>      ← אין חיות מחמד
+<div class="IconOption on">...ריהוט</div>           ← יש ריהוט
+```
 
-5. **בדיקות**
-   - אוסיף tests ל-Backfill עבור:
-     - הומלס: פיצ'רים פעילים מול אפורים
-     - הומלס: shared/public/street parking
-     - יד2: אין section אמין ⇒ אין update
-     - מדל"ן: מופיע רק ב-spec ⇒ `null`, לא `false`
+**`on` = יש, `off` = אין.** אפס ניחוש. אפס regex על טקסט חופשי.
 
-## קבצים עיקריים
-- `supabase/functions/backfill-property-data-jina/index.ts`
-- helper/parser חדש ל-Homeless detail page features
-- test file חדש עבור backfill
-- `mem://features/property-scout/feature-extraction-and-inference-rules-hebrew` — תיקון התיעוד השגוי
+בנוסף, דף הנכס מכיל גם `מ"ר: 55` (גודל) ו-`קומה: 4 מתוך 4` — נתונים שלא קיימים בדף החיפוש.
 
-## איך אאמת אחרי התיקון
-- 5 נכסי **הומלס חדשים**
-- 5 נכסי **מדל"ן חדשים**
-- 5 נכסי **יד2 חדשים רק אם הקריאה אמינה**; אם לא, אדווח `נחסם / לא מאומת` ולא אנחש
-- בלי להשתמש שוב באותם `source_url` שכבר נבדקו
-- לכל נכס אשלח:
-  - לינק
-  - snippet/ראיה גולמית
-  - טבלת `יש / אין / לא ידוע`
+### מה לא עובד היום
+- הסורק סורק דפי חיפוש (SERP) → אין פיצ'רים, אין גודל
+- הבקפיל משתמש ב-Jina → נחסם, מקבל homepage, מנחש שגוי
+- לא משתמשים ב-API בתשלום
 
-## מה לא אעשה עכשיו
-- לא אריץ backfill רחב
-- לא אאפס סטטוסים
-- לא אכתוב שוב “5/5 מדויק” בלי evidence פר-נכס
-- לא אערבב בדוח פיצ'רים שלא במעקב כרגע כמו דוד שמש/מיזוג/ריהוט</final-text>
+## תוכנית — סריקה דו-שלבית להומלס
+
+### שלב 1: Helper חדש — `homeless-detail-parser.ts`
+פונקציה `fetchHomelessDetailFeatures(sourceUrl)` שמחזירה `{ features, size }`:
+- `fetch(sourceUrl)` ישיר (לא Jina)
+- Cheerio parse של ה-HTML
+- לכל `div.IconOption`:
+  - `class="IconOption on"` → `true`
+  - `class="IconOption off"` → `false`
+- חניה: אם `on` אבל הטקסט מכיל `חניה: אין` / `חניה ציבורית` / `חניה ברחוב` → `false`
+- חניה: אם `on` ו-`חניה משותפת` → `true`
+- גודל: חילוץ מ-`מ"ר: X`
+- timeout: 10 שניות, retry: 1
+
+### שלב 2: שילוב בסורק `scout-homeless-jina/index.ts`
+אחרי שה-parser מחלץ רשימת נכסים מה-SERP, **לכל נכס חדש** (שלא קיים ב-DB):
+1. קריאה ל-`fetchHomelessDetailFeatures(property.source_url)`
+2. מיזוג `features` + `size` לתוך ה-property object
+3. סימון `backfill_status = 'not_needed'`
+
+### שלב 3: עדכון הבקפיל
+ב-`backfill-property-data-jina/index.ts` — להומלס: במקום Jina, להשתמש באותו `fetchHomelessDetailFeatures` ישיר. כך גם נכסים ישנים שכבר ב-DB יקבלו פיצ'רים נכונים.
+
+### שלב 4: תיקון `parser-utils.ts`
+- `חניה משותפת` → `true` (לא `false`)
+- `חניה ציבורית` / `חניה ברחוב` → `false`
+
+### מה לא משתנה
+- **הסורק עצמו** (`parser-homeless.ts`) — לא נוגעים. הוא מושלם.
+- מדל"ן ויד2 — נשארים כמו שהם (שמרניים, בלי ניחוש)
+- לא משתמשים ב-API בתשלום
+
+## קבצים
+
+| קובץ | שינוי |
+|---|---|
+| `supabase/functions/_shared/homeless-detail-parser.ts` | **חדש** — fetch ישיר + Cheerio parse של `IconOption on/off` |
+| `supabase/functions/scout-homeless-jina/index.ts` | הוספת קריאה ל-detail page לכל נכס חדש |
+| `supabase/functions/backfill-property-data-jina/index.ts` | החלפת Jina ב-fetch ישיר להומלס |
+| `supabase/functions/_experimental/parser-utils.ts` | תיקון חניה משותפת/ציבורית |
+
+## בדיקה אחרי
+- דיפלוי
+- בדיקה חיה על 5 נכסי הומלס **חדשים** — עם evidence מה-HTML (class on/off)
+- השוואה מול האתר
+
+## סיכון
+**אפסי** — fetch ישיר עובד (בדקתי עכשיו). Cheerio כבר בשימוש בפרויקט. לא נוגעים בסורק הקיים.
+
