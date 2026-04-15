@@ -1185,12 +1185,12 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     return features;
   }
 
-  // === Homeless: SKIP feature extraction in backfill ===
-  // Homeless detail pages are behind Cloudflare challenge — Jina returns the homepage.
-  // Any text matching here would extract features from navigation menu ("חיות מחמד", "נגישות", etc.)
-  // causing false positives. Features should only come from the initial scout (search results parser).
+  // === Homeless: use direct HTML fetch + Cheerio (not Jina markdown) ===
+  // The detail page parser handles features extraction via IconOption on/off classes.
+  // This function is only called with Jina markdown which is unreliable for Homeless.
+  // Homeless properties should use fetchHomelessDetailFeatures() directly in the main loop.
   if (source === 'homeless') {
-    console.log(`🏠 Homeless: skipping feature extraction (detail pages blocked by Cloudflare)`);
+    console.log(`🏠 Homeless: skipping Jina-markdown feature extraction (use direct detail parser instead)`);
     return features; // Return empty — don't overwrite scout data
   }
 
