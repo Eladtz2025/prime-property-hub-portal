@@ -149,22 +149,21 @@ const EnglishManagement = () => {
           ) : filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => {
-                // Translate the address
-                const translatedAddress = translateStreetName(property.address || '');
-                const streetName = translatedAddress.split(',')[0] || translatedAddress;
+                // Use neighborhood instead of street address for privacy
+                const locationLabel = property.neighborhood_en || property.neighborhood || property.city || '';
                 
                 // Create English titles based on property data
                 const buildingType = property.property_size && property.property_size > 400 
                   ? 'Commercial Building' 
                   : 'Residential Building';
                 
-                const englishTitle = `${buildingType} on ${streetName}`;
+                const englishTitle = `${buildingType} in ${locationLabel}`;
                 
                 return (
                   <FlippablePropertyCard
                     key={property.id}
                     title={englishTitle}
-                    location={translatedAddress}
+                    location={locationLabel}
                     price={property.show_management_badge ? 'Full Management' : 'Property Management'}
                     imageUrl={property.images[0]?.image_url || '/images/properties/building-management-1.jpg'}
                     type={property.property_size ? `${property.property_size} m²` : undefined}
