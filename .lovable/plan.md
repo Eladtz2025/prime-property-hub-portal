@@ -1,29 +1,54 @@
 
 
-# בדיקה חיה: מה הדרך הכי נכונה לשפר חילוץ נתוני מדל"ן
+# תוכנית מימוש: Madlan GraphQL Parser + שילוב בבקפיל
 
-## מצב נוכחי — מאומת
-- **סורק מדל"ן** (`scout-madlan-jina/index.ts`) — ללא שינוי, עובד עם direct fetch
-- **בקפיל** (`backfill-property-data-jina/index.ts`) — מדל"ן עדיין עובר דרך Jina Reader, ללא שינוי
-- **לא נוצר** `madlan-detail-parser.ts` — הקובץ לא קיים
+## מה ישתנה
 
-## מה אעשה
+### קובץ חדש: `supabase/functions/_shared/madlan-detail-parser.ts`
+Parser שמבוסס על GraphQL API של מדל"ן (`/api2`), עושה `poiByIds` query עם ID שנשלף מה-source_url (`/listings/XXXXX`).
 
-### שלב 1 — בדיקת GraphQL API של מדל"ן (ניסוי אמיתי)
-אריץ סקריפט שעושה POST ל-`https://www.madlan.co.il/api2` עם query `poiByIds` על 3 נכסי מדל"ן אמיתיים מה-DB. אבדוק:
-- האם ה-API מחזיר נתונים או חוסם?
-- אם כן — מה מבנה ה-amenities שחוזר?
-- האם יש פיצ'רים שלא מחולצים כרגע?
+מחלץ:
+- **amenities** (46 שדות boolean): balcony, elevator, parking, garage, secureRoom/mamad, storage, garden, accessible, furnished, airConditioner, pets, renovated
+- **area** → size, **floor**, **floors** → totalFloors, **beds** → rooms, **price**
+- **poc.type** → private/agent (לסיווג תיווך)
 
-### שלב 2 — בדיקת הבקפיל הנוכחי (Jina)
-אבדוק מה Jina מחזיר עבור דפי נכסים בודדים של מדל"ן — האם ה-markdown מכיל פיצ'רים? מה חסר?
+### עדכון: `supabase/functions/backfill-property-data-jina/index.ts`
+**שינוי אחד:** הוספת בלוק Madlan (דומה לבלוק Homeless בשורות 445-506) **לפני** נתיב ה-Jina.
 
-### שלב 3 — בדיקת `__NEXT_DATA__` בדפי נכסים
-אנסה fetch ישיר לדף נכס של מדל"ן (עם headers של Next.js) ואבדוק האם ה-HTML מכיל `__NEXT_DATA__` עם JSON מובנה.
+```
+// EXISTING (line 444-506): Homeless → direct HTML fetch
+// NEW: Madlan → GraphQL API (no Jina needed)
+if (prop.source === 'madlan') {
+  const detailResult = await fetchMadlanDetailFeatures(prop.source_url);
+  // Merge features, update size/floor/rooms/price if missing
+  // Classify broker from poc.type if is_private is null
+  // Mark backfill_status = 'completed'
+  continue; // Skip Jina path
+}
+// EXISTING (line 508+): All other sources → Jina
+```
 
-### שלב 4 — דיווח תוצאות
-אציג מה עובד, מה לא, ואיזו גישה תיתן את הנתונים הכי מדויקים.
+לוגיקת המיזוג: features מ-GraphQL דורסים את הקיימים (כי הם 100% מדויקים — boolean מובנים). שדות מספריים (size, floor, rooms) רק אם חסרים.
 
-## לא משנה שום קוד
-רק בדיקות — אף קובץ לא ישתנה.
+**poc.type** → אם `is_private` עדיין null: 
+- `private` → `is_private = true`
+- `agent` → `is_private = false`
+
+### מה לא ישתנה
+- **סורקים** (`scout-madlan-jina`, `scout-yad2-jina`, `scout-homeless-jina`) — אפס שינויים
+- **parser-yad2.ts** — לא נוגעים (הנתונים ב-SERP כבר מחולצים כמו שצריך)
+- **שאר לוגיקת הבקפיל** — ללא שינוי
+
+### בדיקה חיה
+אחרי יצירת הקבצים, אריץ בדיקת GraphQL על 3-5 נכסי מדל"ן מה-DB כדי לוודא שה-API מחזיר נתונים ולא חוסם.
+
+## סיכון
+**נמוך מאוד** — הנתיב החדש הוא `if (source === 'madlan') { ... continue; }` לפני נתיב ה-Jina. אם ה-GraphQL נכשל, הנכס מסומן `failed` (כמו כל כישלון אחר). שום קוד קיים לא נפגע.
+
+## קבצים
+
+| קובץ | פעולה |
+|---|---|
+| `supabase/functions/_shared/madlan-detail-parser.ts` | **חדש** |
+| `supabase/functions/backfill-property-data-jina/index.ts` | הוספת import + בלוק madlan |
 
