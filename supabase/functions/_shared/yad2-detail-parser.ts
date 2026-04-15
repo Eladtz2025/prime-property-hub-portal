@@ -1,7 +1,7 @@
 /**
- * Yad2 Detail Parser — Direct API
- * Fetches structured JSON from gw.yad2.co.il/realestate-item/{token}
- * Returns features (boolean), numeric fields, and broker classification.
+ * Yad2 Detail Parser — Direct API via CF Proxy
+ * Routes through CF Worker to bypass WAF, then parses structured JSON
+ * from gw.yad2.co.il/realestate-item/{token}
  */
 
 export interface Yad2DetailResult {
@@ -20,8 +20,9 @@ export interface Yad2DetailResult {
   propertyCondition?: string;
 }
 
+const CF_WORKER_URL = 'https://yad2-proxy.taylor-kelly88.workers.dev/';
+
 function extractToken(sourceUrl: string): string | null {
-  // Patterns: /item/{token}, /realestate-item/{token}
   const match = sourceUrl.match(/\/item\/([a-z0-9]+)/i)
     || sourceUrl.match(/\/realestate-item\/([a-z0-9]+)/i);
   return match ? match[1] : null;
@@ -34,48 +35,89 @@ export async function fetchYad2DetailFeatures(sourceUrl: string): Promise<Yad2De
     return null;
   }
 
+  const proxyKey = Deno.env.get('YAD2_PROXY_KEY');
   const apiUrl = `https://gw.yad2.co.il/realestate-item/${token}`;
-  
-  const headers: Record<string, string> = {
-    'Accept': 'application/json',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-    'Referer': 'https://www.yad2.co.il/',
-    'Origin': 'https://www.yad2.co.il',
-    'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
-  };
 
-  let response: Response;
-  try {
-    response = await fetch(apiUrl, { headers });
-  } catch (e) {
-    console.warn(`⚠️ Yad2 API first attempt failed, retrying...`);
-    await new Promise(r => setTimeout(r, 2000));
+  let jsonText: string | null = null;
+
+  // Strategy 1: CF Worker proxy (if available)
+  if (proxyKey) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const resp = await fetch(CF_WORKER_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-proxy-key': proxyKey,
+          },
+          body: JSON.stringify({ url: apiUrl }),
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          console.warn(`⚠️ Yad2 CF proxy attempt ${attempt + 1} returned ${resp.status}: ${errText.substring(0, 200)}`);
+          if (attempt === 0) { await new Promise(r => setTimeout(r, 2000)); continue; }
+          return null;
+        }
+
+        const proxyData = await resp.json();
+        // The CF proxy returns { status, html } — html is the raw body
+        if (proxyData.status === 403 || proxyData.status === 429) {
+          console.warn(`⚠️ Yad2 upstream returned ${proxyData.status} via proxy`);
+          if (attempt === 0) { await new Promise(r => setTimeout(r, 2000)); continue; }
+          return null;
+        }
+
+        jsonText = proxyData.html || proxyData.body || null;
+        if (jsonText) break;
+      } catch (e) {
+        console.warn(`⚠️ Yad2 CF proxy attempt ${attempt + 1} error:`, e);
+        if (attempt === 0) { await new Promise(r => setTimeout(r, 2000)); continue; }
+      }
+    }
+  }
+
+  // Strategy 2: Direct fetch (fallback, usually blocked from cloud IPs)
+  if (!jsonText) {
     try {
-      response = await fetch(apiUrl, { headers });
-    } catch (e2) {
-      console.error(`❌ Yad2 API retry failed:`, e2);
+      const resp = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Referer': 'https://www.yad2.co.il/',
+          'Origin': 'https://www.yad2.co.il',
+        },
+      });
+      if (resp.ok) {
+        jsonText = await resp.text();
+      } else {
+        console.warn(`⚠️ Yad2 direct API returned ${resp.status}`);
+        await resp.text(); // consume
+        return null;
+      }
+    } catch (e) {
+      console.error(`❌ Yad2 direct fetch failed:`, e);
       return null;
     }
   }
 
-  if (!response.ok) {
-    console.error(`❌ Yad2 API returned ${response.status} for token ${token}`);
-    await response.text(); // consume body
+  if (!jsonText) {
+    console.error(`❌ Yad2 parser: no data received for token ${token}`);
     return null;
   }
 
-  let json: any;
+  // Parse JSON
+  let data: any;
   try {
-    json = await response.json();
+    const parsed = JSON.parse(jsonText);
+    data = parsed?.data || parsed;
   } catch {
-    console.error(`❌ Yad2 API: invalid JSON for token ${token}`);
+    console.error(`❌ Yad2 parser: invalid JSON for token ${token}, preview: ${jsonText.substring(0, 200)}`);
     return null;
   }
 
-  // The actual data can be at root or under .data
-  const data = json?.data || json;
   if (!data || typeof data !== 'object') {
-    console.error(`❌ Yad2 API: empty data for token ${token}`);
+    console.error(`❌ Yad2 parser: empty data for token ${token}`);
     return null;
   }
 
@@ -122,15 +164,14 @@ export async function fetchYad2DetailFeatures(sourceUrl: string): Promise<Yad2De
       features.renovated = true;
     }
     if (/חדש(?:\s*מקבלן)?|new/i.test(condStr)) {
-      features.renovated = true; // new from contractor counts as renovated
+      features.renovated = true;
     }
   }
 
-  // Detect yard/garden/roof
+  // Detect yard/garden
   if (data.gardenArea && Number(data.gardenArea) > 0) {
     features.yard = true;
   }
-  // balconiesCount > 0 reinforces balcony
   if (data.balconiesCount && Number(data.balconiesCount) > 0) {
     features.balcony = true;
   }
@@ -166,16 +207,12 @@ export async function fetchYad2DetailFeatures(sourceUrl: string): Promise<Yad2De
 
   // Broker classification
   if (data.adType) {
-    result.adType = data.adType; // 'private' or 'agency'
+    result.adType = data.adType;
   }
 
   // Entrance date
-  if (data.entranceDate) {
-    result.entranceDate = data.entranceDate;
-  }
-  if (typeof data.isImmediateEntrance === 'boolean') {
-    result.isImmediateEntrance = data.isImmediateEntrance;
-  }
+  if (data.entranceDate) result.entranceDate = data.entranceDate;
+  if (typeof data.isImmediateEntrance === 'boolean') result.isImmediateEntrance = data.isImmediateEntrance;
 
   if (desc) result.description = desc;
   if (condition) result.propertyCondition = String(condition);
