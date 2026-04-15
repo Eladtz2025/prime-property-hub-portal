@@ -1178,8 +1178,10 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
       console.log(`🏢 Madlan cross-ref features (adv=${advantages.length}ch, spec=${spec.length}ch, info=${info.length}ch):`, JSON.stringify(features));
       return features;
     } else {
-      console.log(`⚠️ Madlan: no advantages/spec sections found, falling through to keyword detection`);
+      console.log(`⚠️ Madlan: no advantages/spec sections found — skipping feature extraction (no guessing)`);
     }
+    // Always return here for Madlan — never fall through to keyword guessing
+    return features;
   }
 
   // === Homeless: SKIP feature extraction in backfill ===
