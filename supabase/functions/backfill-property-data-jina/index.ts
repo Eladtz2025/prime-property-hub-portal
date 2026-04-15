@@ -1186,28 +1186,45 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     }
   }
 
-  // === Homeless: bold = feature exists, plain only = UNKNOWN (not false) ===
+  // === Homeless: features listed in "מאפייני הנכס" section as SVG+text ===
+  // In Jina markdown: ![Image](*.svg)featureName — only present features are listed
+  // So: found in section → true, not found → null (unknown)
   if (source === 'homeless') {
-    const homelessFeatureMap: Array<{ key: keyof PropertyFeatures; boldPatterns: RegExp[]; negativePatterns: RegExp[] }> = [
-      { key: 'balcony',  boldPatterns: [/\*\*מרפסת\*\*/], negativePatterns: [] },
-      { key: 'yard',     boldPatterns: [/\*\*(חצר|גינה)\*\*/, /\*\*גינה\*\*/], negativePatterns: [] },
-      { key: 'elevator', boldPatterns: [/\*\*מעלית\*\*/], negativePatterns: [] },
-      { key: 'parking',  boldPatterns: [/\*\*חניי?ה\*\*/, /\*\*חניה\*\*/], negativePatterns: [/חניה\s*ציבורית/i, /חניה\s*משותפת/i] },
-      { key: 'mamad',    boldPatterns: [/\*\*ממ"?ד\*\*/], negativePatterns: [] },
-      { key: 'storage',  boldPatterns: [/\*\*מחסן\*\*/], negativePatterns: [] },
-      { key: 'aircon',   boldPatterns: [/\*\*מזגנ?\*\*/, /\*\*מיזוג\*\*/], negativePatterns: [] },
-      { key: 'roof',     boldPatterns: [/\*\*גג\*\*/], negativePatterns: [] },
+    // Extract the "מאפייני הנכס" section
+    const propsMatch = markdown.match(/מאפייני הנכס([\s\S]*?)(?:###|##|קומה:|מ"ר:|כניסה:|הצגת מספר|איש קשר|עוד מודעות|$)/i);
+    const propsSection = propsMatch ? propsMatch[1] : '';
+    
+    // Also check the description text
+    const combinedText = propsSection + '\n' + text;
+    
+    const homelessFeatureMap: Array<{ key: keyof PropertyFeatures; patterns: RegExp[]; negativePatterns: RegExp[] }> = [
+      { key: 'balcony',    patterns: [/מרפסת/i], negativePatterns: [] },
+      { key: 'yard',       patterns: [/חצר|גינה/i], negativePatterns: [] },
+      { key: 'elevator',   patterns: [/מעלית/i], negativePatterns: [] },
+      { key: 'parking',    patterns: [/חניי?ה/i], negativePatterns: [/חניה\s*ציבורית/i, /חניה\s*משותפת/i] },
+      { key: 'mamad',      patterns: [/ממ["״]?ד/i], negativePatterns: [] },
+      { key: 'storage',    patterns: [/מחסן/i], negativePatterns: [] },
+      { key: 'aircon',     patterns: [/מזגנ|מיזוג/i], negativePatterns: [] },
+      { key: 'roof',       patterns: [/גג\b/i], negativePatterns: [] },
+      { key: 'accessible', patterns: [/נגיש/i], negativePatterns: [] },
+      { key: 'renovated',  patterns: [/משופצ/i], negativePatterns: [] },
+      { key: 'pets',       patterns: [/חיות מחמד/i], negativePatterns: [] },
     ];
 
-    for (const { key, boldPatterns, negativePatterns } of homelessFeatureMap) {
-      // Check negatives first
-      if (negativePatterns.some(p => p.test(text))) {
+    for (const { key, patterns, negativePatterns } of homelessFeatureMap) {
+      if (negativePatterns.some(p => p.test(combinedText))) {
         features[key] = false;
         continue;
       }
-      const isBold = boldPatterns.some(p => p.test(text));
-      if (isBold) {
+      if (patterns.some(p => p.test(combinedText))) {
         features[key] = true;
+      }
+      // Not mentioned → leave undefined (null/unknown)
+    }
+
+    console.log(`🏠 Homeless section-based features (section=${propsSection.length}ch):`, JSON.stringify(features));
+    return features;
+  }
       }
       // If not bold → leave undefined (null/unknown), NOT false
     }
