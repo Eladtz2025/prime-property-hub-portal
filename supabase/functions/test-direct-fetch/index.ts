@@ -1,109 +1,120 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { fetchYad2DetailFeatures } from '../_shared/yad2-detail-parser.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const CF_WORKER_URL = 'https://yad2-proxy.taylor-kelly88.workers.dev/';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const body = await req.json().catch(() => ({}));
   const url = body.url || 'https://www.yad2.co.il/realestate/item/vzas3xxi';
-  const mode = body.mode || 'yad2_api';
+  const proxyKey = Deno.env.get('YAD2_PROXY_KEY');
 
-  if (mode === 'yad2_api') {
-    const result = await fetchYad2DetailFeatures(url);
-    return new Response(JSON.stringify({ url, result }, null, 2), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  if (!proxyKey) {
+    return new Response(JSON.stringify({ error: 'No YAD2_PROXY_KEY' }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 
-  // Debug: try direct API call with various header combos
-  if (mode === 'debug_api') {
-    const token = url.match(/\/item\/([a-z0-9]+)/i)?.[1] || url;
-    const apiUrl = `https://gw.yad2.co.il/realestate-item/${token}`;
-    
-    const results: any = {};
-
-    // Attempt 1: minimal
-    try {
-      const r1 = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          'Referer': 'https://www.yad2.co.il/',
-          'Origin': 'https://www.yad2.co.il',
-        },
-      });
-      const txt = await r1.text();
-      results.attempt1 = { status: r1.status, size: txt.length, body_preview: txt.substring(0, 300) };
-    } catch (e: any) {
-      results.attempt1 = { error: e.message };
-    }
-
-    // Attempt 2: no origin, different UA
-    try {
-      const r2 = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        },
-      });
-      const txt = await r2.text();
-      results.attempt2 = { status: r2.status, size: txt.length, body_preview: txt.substring(0, 300) };
-    } catch (e: any) {
-      results.attempt2 = { error: e.message };
-    }
-
-    // Attempt 3: mobile UA
-    try {
-      const r3 = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
-          'Referer': 'https://m.yad2.co.il/',
-        },
-      });
-      const txt = await r3.text();
-      results.attempt3_mobile = { status: r3.status, size: txt.length, body_preview: txt.substring(0, 300) };
-    } catch (e: any) {
-      results.attempt3_mobile = { error: e.message };
-    }
-
-    // Attempt 4: API gateway with sec-ch headers
-    try {
-      const r4 = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          'Referer': 'https://www.yad2.co.il/',
-          'sec-ch-ua': '"Chromium";v="131", "Not_A Brand";v="24"',
-          'sec-ch-ua-mobile': '?0',
-          'sec-ch-ua-platform': '"Windows"',
-          'sec-fetch-dest': 'empty',
-          'sec-fetch-mode': 'cors',
-          'sec-fetch-site': 'same-site',
-        },
-      });
-      const txt = await r4.text();
-      results.attempt4_secch = { status: r4.status, size: txt.length, body_preview: txt.substring(0, 500) };
-    } catch (e: any) {
-      results.attempt4_secch = { error: e.message };
-    }
-
-    return new Response(JSON.stringify(results, null, 2), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  // Fallback: raw fetch
-  const res = await fetch(url, {
-    headers: { 'Accept': '*/*', 'Accept-Language': 'he-IL,he;q=0.9' },
+  // Test 1: Fetch HTML page via CF proxy
+  const resp = await fetch(CF_WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-proxy-key': proxyKey },
+    body: JSON.stringify({ url }),
   });
-  const html = await res.text();
-  return new Response(JSON.stringify({ status: res.status, size: html.length }, null, 2), {
+  const proxyData = await resp.json();
+  const html = proxyData.html || '';
+  
+  const results: any = {
+    proxy_status: resp.status,
+    upstream_status: proxyData.status,
+    html_length: html.length,
+  };
+
+  // Check for __NEXT_DATA__
+  const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (nextDataMatch) {
+    try {
+      const nextData = JSON.parse(nextDataMatch[1]);
+      const props = nextData?.props?.pageProps;
+      results.has_next_data = true;
+      
+      // Look for item data
+      const item = props?.item || props?.itemData || props?.data;
+      if (item) {
+        results.item_keys = Object.keys(item);
+        results.price = item.price;
+        results.rooms = item.roomsCount;
+        results.sqm = item.squareMeter;
+        results.floor = item.floor;
+        results.adType = item.adType;
+        results.inProperty = item.inProperty;
+        results.neighborhood = item.neighborhood;
+        results.street = item.street;
+        results.propertyCondition = item.propertyCondition;
+        results.description = item.description?.substring(0, 200);
+      } else {
+        // Explore structure
+        results.pageProps_keys = props ? Object.keys(props) : null;
+        // Try deeper
+        if (props) {
+          for (const key of Object.keys(props)) {
+            const val = props[key];
+            if (val && typeof val === 'object' && !Array.isArray(val)) {
+              if (val.price || val.roomsCount || val.inProperty) {
+                results.found_at = key;
+                results.item_keys = Object.keys(val);
+                results.price = val.price;
+                results.rooms = val.roomsCount;
+                results.inProperty = val.inProperty;
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      results.next_data_parse_error = e.message;
+    }
+  } else {
+    results.has_next_data = false;
+    // Check if it has any JSON-LD
+    const jsonLdMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+    results.has_json_ld = !!jsonLdMatch;
+    if (jsonLdMatch) {
+      try {
+        results.json_ld_preview = JSON.parse(jsonLdMatch[1]);
+      } catch {}
+    }
+    results.html_preview = html.substring(0, 500);
+  }
+
+  // Test 2: Try API via proxy
+  const token = url.match(/\/item\/([a-z0-9]+)/i)?.[1];
+  if (token) {
+    const apiResp = await fetch(CF_WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-proxy-key': proxyKey },
+      body: JSON.stringify({ url: `https://gw.yad2.co.il/realestate-item/${token}` }),
+    });
+    const apiData = await apiResp.json();
+    results.api_proxy_status = apiData.status;
+    results.api_proxy_body_length = (apiData.html || '').length;
+    if (apiData.status === 200 && apiData.html) {
+      try {
+        const parsed = JSON.parse(apiData.html);
+        results.api_json_keys = Object.keys(parsed);
+      } catch {
+        results.api_body_preview = (apiData.html || '').substring(0, 300);
+      }
+    }
+  }
+
+  return new Response(JSON.stringify(results, null, 2), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });
