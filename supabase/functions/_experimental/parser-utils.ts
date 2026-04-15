@@ -645,8 +645,10 @@ export function extractFeatures(text: string): PropertyFeatures {
     features.balcony = true;
   }
   
-  // Parking patterns (חניה)
-  if (isNegated(/חניה|חנייה/)) {
+  // Parking patterns (חניה) — "חניה ציבורית" and "חניה משותפת" are NOT parking
+  if (/חניה\s*ציבורית/i.test(text) || /חניה\s*משותפת/i.test(text)) {
+    features.parking = false;
+  } else if (isNegated(/חניה|חנייה/)) {
     features.parking = false;
   } else if (/חניה|חנייה|מקום\s*חניה/.test(text)) {
     features.parking = true;

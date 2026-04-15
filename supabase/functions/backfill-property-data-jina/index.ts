@@ -731,14 +731,8 @@ Deno.serve(async (req) => {
           mergedFeatures.immediate_entry = entryDateInfo.immediate_entry;
         }
         
-        // Negative inference: if backfill succeeded and feature wasn't found, mark as false
-        // Apply even if existing was true from scout (scout could be wrong)
-        const inferFalse = ['elevator', 'parking', 'balcony', 'mamad', 'yard', 'roof', 'storage', 'pets'];
-        for (const key of inferFalse) {
-          if (mergedFeatures[key] !== true) {
-            mergedFeatures[key] = false;
-          }
-        }
+        // NO negative inference — if a feature wasn't explicitly found, leave as null (unknown)
+        // Previously this marked unfound features as false, causing widespread inaccuracies
         
         if (hasNewFeatures || existingIsEmpty || entryDateInfo.entry_date || entryDateInfo.immediate_entry || mergedFeatures.elevator === false) {
           updates.features = mergedFeatures;
