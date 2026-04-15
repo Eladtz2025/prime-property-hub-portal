@@ -62,8 +62,8 @@ const EnglishManagement = () => {
   const { translations, isLoading: isTranslating } = useTranslation(textsToTranslate);
 
   const filteredProperties = (properties || []).filter((property) => {
-    const translatedAddress = translations[property.address || ''] || property.address || '';
-    const matchesSearch = translatedAddress.toLowerCase().includes(searchTerm.toLowerCase());
+    const locationLabel = property.neighborhood_en || property.neighborhood || property.city || '';
+    const matchesSearch = locationLabel.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
