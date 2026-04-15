@@ -1,56 +1,12 @@
 /**
- * Madlan Detail Parser — GraphQL API
+ * Madlan Detail Parser — HTML + JSON-LD
  * 
- * Uses Madlan's internal GraphQL API (/api2) with `poiByIds` query
- * to fetch structured property data (amenities, area, floor, beds, price, poc).
- * 
- * No API key needed — same public API the website uses.
+ * Fetches individual Madlan listing pages using direct fetch (same technique as scout).
+ * Extracts structured data from:
+ * 1. JSON-LD Schema.org (additionalProperty with PropertyValue כן/לא)
+ * 2. data-auto attributes (amenity highlights, price, rooms, floor, area)
+ * 3. data-auto="agent-tag" for broker detection
  */
-
-const MADLAN_API_URL = 'https://www.madlan.co.il/api2';
-
-const GRAPHQL_QUERY = `
-query poiByIds($ids: [PoiIds!]!) {
-  poiByIds(ids: $ids) {
-    ... on Bulletin {
-      amenities {
-        accessible
-        airConditioner
-        balcony
-        bars
-        boiler
-        elevator
-        furnished
-        garage
-        garden
-        handicapped
-        kosherKitchen
-        mampiKitchen
-        nets
-        pandorDoors
-        parking
-        pets
-        renovated
-        roommates
-        secureRoom
-        storage
-        sunWaterHeater
-        tadiran
-        unit
-        warhouse
-      }
-      area
-      beds
-      floor
-      floors
-      price
-      poc {
-        type
-      }
-    }
-  }
-}
-`;
 
 export interface MadlanDetailResult {
   features: Record<string, boolean>;
@@ -59,143 +15,333 @@ export interface MadlanDetailResult {
   totalFloors?: number;
   rooms?: number;
   price?: number;
-  pocType?: string; // 'private' | 'agent' | etc.
+  pocType?: string; // 'private' | 'agent'
 }
 
 /**
- * Extract property ID from Madlan source_url.
- * Patterns:
- *   /listings/XXXXX
- *   /listings/XXXXX?...
+ * Fetch property details from Madlan detail page.
  */
-function extractMadlanId(url: string): string | null {
-  const match = url.match(/\/listings\/([a-zA-Z0-9_-]+)/);
-  return match ? match[1] : null;
+export async function fetchMadlanDetailFeatures(sourceUrl: string): Promise<MadlanDetailResult | null> {
+  console.log(`🔍 Madlan Detail: Fetching ${sourceUrl}`);
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      const response = await fetch(sourceUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': '*/*',
+          'Accept-Language': 'he-IL,he;q=0.9',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const err = await response.text();
+        console.warn(`⚠️ Madlan Detail attempt ${attempt + 1}: HTTP ${response.status}`);
+        if (attempt < 1) await new Promise(r => setTimeout(r, 3000));
+        continue;
+      }
+
+      const html = await response.text();
+      if (!html || html.length < 1000) {
+        console.warn(`⚠️ Madlan Detail: Short response (${html.length} chars)`);
+        continue;
+      }
+
+      // Check for PerimeterX captcha page (no real content)
+      if (html.length < 50000 && html.includes('_pxAppId') && !html.includes('data-auto=')) {
+        console.warn(`⚠️ Madlan Detail: PerimeterX captcha page`);
+        if (attempt < 1) await new Promise(r => setTimeout(r, 5000));
+        continue;
+      }
+
+      const result = parseDetailHtml(html);
+      if (result && (Object.keys(result.features).length > 0 || result.size || result.floor)) {
+        console.log(`✅ Madlan Detail: ${Object.keys(result.features).length} features, size=${result.size}, floor=${result.floor}, rooms=${result.rooms}, poc=${result.pocType}`);
+        return result;
+      }
+
+      console.warn(`⚠️ Madlan Detail: No features from ${html.length} chars`);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error(`⏱️ Madlan Detail attempt ${attempt + 1}: timeout`);
+      } else {
+        console.error(`❌ Madlan Detail attempt ${attempt + 1}:`, error);
+      }
+      if (attempt < 1) await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+
+  return null;
 }
 
 /**
- * Map Madlan amenities object to our feature keys.
+ * Parse Madlan detail page HTML.
  */
-function mapAmenitiesToFeatures(amenities: Record<string, any>): Record<string, boolean> {
-  const features: Record<string, boolean> = {};
+function parseDetailHtml(html: string): MadlanDetailResult | null {
+  const result: MadlanDetailResult = { features: {} };
+
+  // === Method 1: JSON-LD Schema.org ===
+  extractFromJsonLd(html, result);
+
+  // === Method 2: data-auto attributes ===
+  extractFromDataAuto(html, result);
+
+  // === Method 3: data-auto-highlight-amenity ===
+  extractFromHighlightAmenities(html, result);
+
+  // === Broker detection ===
+  detectBroker(html, result);
+
+  return result;
+}
+
+/**
+ * Extract from JSON-LD additionalProperty (PropertyValue with כן/לא).
+ */
+function extractFromJsonLd(html: string, result: MadlanDetailResult): void {
+  // Use indexOf instead of regex for large HTML (2-3MB)
+  const ldMarker = 'application/ld+json';
+  let searchFrom = 0;
+  
+  while (true) {
+    const markerIdx = html.indexOf(ldMarker, searchFrom);
+    if (markerIdx < 0) break;
+    
+    // Find the opening > of this script tag
+    const tagOpen = html.indexOf('>', markerIdx);
+    if (tagOpen < 0) break;
+    
+    // Find </script> after it
+    const scriptClose = html.indexOf('</script>', tagOpen);
+    if (scriptClose < 0) break;
+    
+    const jsonContent = html.substring(tagOpen + 1, scriptClose).trim();
+    searchFrom = scriptClose + 9;
+    
+    if (jsonContent.length < 10) continue;
+    
+    try {
+      const data = JSON.parse(jsonContent);
+      processJsonLd(Array.isArray(data) ? data : [data], result);
+      console.log(`📋 JSON-LD: parsed ${jsonContent.length} chars, features so far: ${Object.keys(result.features).length}`);
+    } catch (e) {
+      console.warn(`⚠️ JSON-LD parse failed for ${jsonContent.length} chars`);
+    }
+  }
+
+  // Fallback: search for additionalProperty array using indexOf
+  if (Object.keys(result.features).length === 0) {
+    const apIdx = html.indexOf('"additionalProperty"');
+    if (apIdx >= 0) {
+      const arrayStart = html.indexOf('[', apIdx);
+      if (arrayStart >= 0 && arrayStart - apIdx < 20) {
+        // Find matching ]
+        let depth = 0;
+        let i = arrayStart;
+        for (; i < html.length && i < arrayStart + 5000; i++) {
+          if (html[i] === '[') depth++;
+          if (html[i] === ']') { depth--; if (depth === 0) break; }
+        }
+        if (depth === 0) {
+          try {
+            const props = JSON.parse(html.substring(arrayStart, i + 1));
+            for (const prop of props) {
+              mapPropertyValue(prop?.name, prop?.value, result);
+            }
+            console.log(`📋 additionalProperty fallback: ${props.length} props, features: ${Object.keys(result.features).length}`);
+          } catch (e) { /* ignore */ }
+        }
+      }
+    }
+  }
+}
+
+function processJsonLd(items: any[], result: MadlanDetailResult): void {
+  for (const item of items) {
+    // Extract price from offers
+    if (item?.offers?.price) {
+      const price = parseInt(String(item.offers.price));
+      if (price > 0) result.price = price;
+    }
+
+    // Extract size from "size" field (e.g. "97 מ׳׳ר")
+    if (item?.size) {
+      const sizeNum = parseInt(String(item.size).replace(/[^\d]/g, ''));
+      if (sizeNum > 0 && sizeNum < 2000) result.size = sizeNum;
+    }
+
+    // Extract additionalProperty (amenities)
+    if (Array.isArray(item?.additionalProperty)) {
+      for (const prop of item.additionalProperty) {
+        mapPropertyValue(prop?.name, prop?.value, result);
+      }
+    }
+
+    // Recurse into @graph or arrays
+    if (Array.isArray(item?.['@graph'])) {
+      processJsonLd(item['@graph'], result);
+    }
+  }
+}
+
+/**
+ * Map Hebrew property names to feature keys.
+ */
+function mapPropertyValue(name: string | undefined, value: string | undefined, result: MadlanDetailResult): void {
+  if (!name || !value) return;
+  const isYes = value === 'כן';
+  const isNo = value === 'לא';
+  if (!isYes && !isNo) return;
 
   const mapping: Record<string, string> = {
+    'מרפסת': 'balcony',
+    'מעלית': 'elevator',
+    'חניה': 'parking',
+    'חניון': 'parking',
+    'גראז\'': 'garage',
+    'גראז': 'garage',
+    'ממ״ד': 'mamad',
+    'ממ"ד': 'mamad',
+    'חדר ביטחון': 'mamad',
+    'מחסן': 'storage',
+    'גינה': 'yard',
+    'גן': 'yard',
+    'נגיש לנכים': 'accessible',
+    'נגישות': 'accessible',
+    'מרוהטת': 'furnished',
+    'מרוהט': 'furnished',
+    'ריהוט': 'furnished',
+    'מיזוג אוויר': 'aircon',
+    'מיזוג': 'aircon',
+    'חיות מחמד': 'pets',
+    'חיות': 'pets',
+    'משופצת': 'renovated',
+    'משופץ': 'renovated',
+    'שיפוץ': 'renovated',
+    'סורגים': 'bars',
+    'דוד שמש': 'sun_water_heater',
+    'בריכה': 'pool',
+    'ממ״ק': 'shelter',
+    'ממ"ק': 'shelter',
+    'מקלט': 'shelter',
+    'גישה לנכים': 'accessible',
+  };
+
+  for (const [hebrewName, featureKey] of Object.entries(mapping)) {
+    if (name.includes(hebrewName)) {
+      result.features[featureKey] = isYes;
+      return;
+    }
+  }
+}
+
+/**
+ * Extract numeric data from data-auto attributes.
+ */
+function extractFromDataAuto(html: string, result: MadlanDetailResult): void {
+  // Price: data-auto="current-price"
+  const priceContext = extractAfterDataAuto(html, 'current-price', 200);
+  if (priceContext && !result.price) {
+    const priceNum = parseInt(priceContext.replace(/[^\d]/g, ''));
+    if (priceNum > 0) result.price = priceNum;
+  }
+
+  // Rooms: data-auto="beds-count"
+  const bedsContext = extractAfterDataAuto(html, 'beds-count', 100);
+  if (bedsContext && !result.rooms) {
+    const roomsMatch = bedsContext.match(/([\d.]+)/);
+    if (roomsMatch) {
+      const rooms = parseFloat(roomsMatch[1]);
+      if (rooms > 0 && rooms < 20) result.rooms = rooms;
+    }
+  }
+
+  // Floor: data-auto="floor"
+  const floorContext = extractAfterDataAuto(html, 'floor', 100);
+  if (floorContext && result.floor === undefined) {
+    const floorMatch = floorContext.match(/(\d+)/);
+    if (floorMatch) result.floor = parseInt(floorMatch[1]);
+  }
+
+  // Area/Size: data-auto="area"
+  const areaContext = extractAfterDataAuto(html, 'area', 100);
+  if (areaContext && !result.size) {
+    const sizeMatch = areaContext.match(/(\d+)/);
+    if (sizeMatch) {
+      const size = parseInt(sizeMatch[1]);
+      if (size > 0 && size < 2000) result.size = size;
+    }
+  }
+}
+
+/**
+ * Extract text content after a data-auto attribute.
+ */
+function extractAfterDataAuto(html: string, autoName: string, maxLen: number): string | null {
+  const marker = `data-auto="${autoName}"`;
+  const idx = html.indexOf(marker);
+  if (idx < 0) return null;
+
+  const after = html.substring(idx + marker.length, idx + marker.length + maxLen + 200);
+  // Find closing > of the tag, then extract text
+  const tagClose = after.indexOf('>');
+  if (tagClose < 0) return null;
+
+  const content = after.substring(tagClose + 1, tagClose + 1 + maxLen);
+  return content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Extract from data-auto-highlight-amenity attributes (highlighted amenities).
+ */
+function extractFromHighlightAmenities(html: string, result: MadlanDetailResult): void {
+  const highlightRegex = /data-auto-highlight-amenity="([^"]+)"/g;
+  let match;
+  const highlightMapping: Record<string, string> = {
+    parking: 'parking',
     balcony: 'balcony',
     elevator: 'elevator',
-    parking: 'parking',
-    garage: 'garage',
     secureRoom: 'mamad',
     storage: 'storage',
     garden: 'yard',
     accessible: 'accessible',
-    handicapped: 'accessible',
     furnished: 'furnished',
     airConditioner: 'aircon',
     pets: 'pets',
     renovated: 'renovated',
-    bars: 'bars',
-    boiler: 'boiler',
-    kosherKitchen: 'kosher_kitchen',
-    nets: 'nets',
-    pandorDoors: 'pandor_doors',
-    sunWaterHeater: 'sun_water_heater',
-    tadiran: 'tadiran',
-    warhouse: 'warehouse',
-    roommates: 'roommates',
+    garage: 'garage',
   };
 
-  for (const [madlanKey, ourKey] of Object.entries(mapping)) {
-    if (typeof amenities[madlanKey] === 'boolean') {
-      // For accessible: combine accessible + handicapped (either true = true)
-      if (ourKey === 'accessible' && features.accessible === true) continue;
-      features[ourKey] = amenities[madlanKey];
+  while ((match = highlightRegex.exec(html)) !== null) {
+    const amenityName = match[1];
+    const featureKey = highlightMapping[amenityName];
+    if (featureKey && result.features[featureKey] === undefined) {
+      // Highlighted amenities are the ones that ARE present
+      result.features[featureKey] = true;
     }
   }
-
-  return features;
 }
 
 /**
- * Fetch property details from Madlan GraphQL API.
+ * Detect broker from agent-tag or description.
  */
-export async function fetchMadlanDetailFeatures(sourceUrl: string): Promise<MadlanDetailResult | null> {
-  const propertyId = extractMadlanId(sourceUrl);
-  if (!propertyId) {
-    console.error(`❌ Madlan: Could not extract ID from URL: ${sourceUrl}`);
-    return null;
+function detectBroker(html: string, result: MadlanDetailResult): void {
+  // data-auto="agent-tag" means it's listed by an agent
+  if (html.includes('data-auto="agent-tag"')) {
+    result.pocType = 'agent';
+  } else {
+    // Check for "פרטי" (private) indicators
+    const privatePatterns = [/data-auto="private-tag"/, /מפרסם פרטי/, /בעל הנכס/];
+    for (const p of privatePatterns) {
+      if (p.test(html)) {
+        result.pocType = 'private';
+        break;
+      }
+    }
   }
-
-  console.log(`🔍 Madlan GraphQL: Fetching ID ${propertyId}`);
-
-  const response = await fetch(MADLAN_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-      'Referer': 'https://www.madlan.co.il/',
-      'Origin': 'https://www.madlan.co.il',
-    },
-    body: JSON.stringify({
-      operationName: 'poiByIds',
-      query: GRAPHQL_QUERY,
-      variables: {
-        ids: [{ id: propertyId, type: 'bulletin' }],
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    console.error(`❌ Madlan GraphQL: HTTP ${response.status} for ID ${propertyId}`);
-    await response.text(); // consume body
-    return null;
-  }
-
-  const json = await response.json();
-  const results = json?.data?.poiByIds;
-
-  if (!results || results.length === 0) {
-    console.warn(`⚠️ Madlan GraphQL: No results for ID ${propertyId}`);
-    return null;
-  }
-
-  const bulletin = results[0];
-  if (!bulletin) {
-    console.warn(`⚠️ Madlan GraphQL: Empty bulletin for ID ${propertyId}`);
-    return null;
-  }
-
-  const result: MadlanDetailResult = {
-    features: {},
-  };
-
-  // Map amenities
-  if (bulletin.amenities) {
-    result.features = mapAmenitiesToFeatures(bulletin.amenities);
-  }
-
-  // Numeric fields
-  if (typeof bulletin.area === 'number' && bulletin.area > 0) {
-    result.size = bulletin.area;
-  }
-  if (typeof bulletin.floor === 'number') {
-    result.floor = bulletin.floor;
-  }
-  if (typeof bulletin.floors === 'number') {
-    result.totalFloors = bulletin.floors;
-  }
-  if (typeof bulletin.beds === 'number' && bulletin.beds > 0) {
-    result.rooms = bulletin.beds;
-  }
-  if (typeof bulletin.price === 'number' && bulletin.price > 0) {
-    result.price = bulletin.price;
-  }
-
-  // POC type
-  if (bulletin.poc?.type) {
-    result.pocType = bulletin.poc.type;
-  }
-
-  console.log(`✅ Madlan GraphQL: Got ${Object.keys(result.features).length} features, size=${result.size}, floor=${result.floor}, rooms=${result.rooms}, poc=${result.pocType}`);
-
-  return result;
 }

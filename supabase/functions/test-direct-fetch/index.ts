@@ -1,109 +1,77 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { analyzeMadlanHtml, analyzeMadlanBrokerDetection } from "./analyze.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-/**
- * TEST ONLY - Direct Fetch Diagnostic v2
- * Tests multiple fetch strategies against Madlan
- * Does NOT save anything to DB.
- */
-
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const body = await req.json().catch(() => ({}));
-  const page = body.page ?? 1;
-  const city = body.city ?? 'תל-אביב-יפו-ישראל';
-  const dealType = body.deal_type ?? 'for-rent';
-  const mode = body.mode ?? 'analyze'; // 'analyze', 'broker-audit', or 'strategies'
+  const url = body.url || 'https://www.madlan.co.il/listings/yDRjYNhIG4I';
 
-  const baseUrl = `https://www.madlan.co.il/${dealType}/${encodeURIComponent(city)}?page=${page}`;
-
-  if (mode === 'broker-audit') {
-    // Broker detection diagnostic - detailed per-card analysis
-    const response = await fetch(baseUrl, {
-      method: 'GET',
-      headers: { 'Accept': '*/*', 'Accept-Language': 'he-IL,he;q=0.9' },
-    });
-    const html = await response.text();
-    const audit = analyzeMadlanBrokerDetection(html);
-    
-    return new Response(JSON.stringify({ url: baseUrl, page, html_length: html.length, audit }, null, 2), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  if (mode === 'analyze') {
-    // Direct fetch with minimal headers and analyze structure
-    const response = await fetch(baseUrl, {
-      method: 'GET',
-      headers: { 'Accept': '*/*' },
-    });
-    const html = await response.text();
-    const analysis = analyzeMadlanHtml(html);
-    
-    return new Response(JSON.stringify({ url: baseUrl, page, analysis }, null, 2), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  // Original strategy testing mode
-  const STRATEGIES: Record<string, Record<string, string>> = {
-    minimal: { 'Accept': 'text/html' },
-    naked: {},
-    deno_default: { 'Accept': '*/*' },
+  const res = await fetch(url, {
+    headers: { 'Accept': '*/*', 'Accept-Language': 'he-IL,he;q=0.9' },
+  });
+  const html = await res.text();
+  
+  const results: Record<string, any> = {
+    status: res.status,
+    size: html.length,
   };
 
-  const strategy = body.strategy as string | undefined;
-  const strategiesToTest = strategy && strategy !== 'all' 
-    ? { [strategy]: (STRATEGIES as any)[strategy] || {} }
-    : STRATEGIES;
+  // Search for amenity-related patterns
+  const patterns = [
+    'amenity', 'amenities', 'data-auto', 'balcon', 'elevator', 'מרפסת', 'מעלית',
+    'חניה', 'parking', 'ממד', 'secureRoom', 'מחסן', 'storage',
+    'מיזוג', 'airCondition', 'נגיש', 'accessible', 'חיות', 'pets',
+    'מרוהט', 'furnished', 'משופצ', 'renovated', 'גינה', 'garden',
+    'IconOption', 'feature-item', 'property-feature',
+    'bulletin-feature', 'poi-feature', 'specification',
+  ];
 
-  const results: Record<string, any> = {};
-
-  for (const [name, headers] of Object.entries(strategiesToTest)) {
-    const startTime = Date.now();
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-      const response = await fetch(baseUrl, {
-        method: 'GET',
-        headers: headers as Record<string, string>,
-        signal: controller.signal,
-        redirect: 'follow',
-      });
-      clearTimeout(timeoutId);
-      const html = await response.text();
-      const duration = Date.now() - startTime;
-      const uniqueListings = new Set(html.match(/\/listings\/[A-Za-z0-9]+/g) || []);
-
-      results[name] = {
-        status: response.status,
-        html_length: html.length,
-        duration_ms: duration,
-        unique_listings: uniqueListings.size,
-        has_content: html.length > 50000,
-      };
-    } catch (error) {
-      results[name] = {
-        status: 0,
-        error: error instanceof Error ? error.message : 'Unknown',
-        duration_ms: Date.now() - startTime,
-      };
-    }
-
-    if (Object.keys(strategiesToTest).length > 1) {
-      await new Promise(r => setTimeout(r, 1000));
+  results.pattern_matches = {};
+  for (const p of patterns) {
+    const regex = new RegExp(p, 'gi');
+    const matches = html.match(regex);
+    if (matches) {
+      results.pattern_matches[p] = matches.length;
     }
   }
 
-  return new Response(JSON.stringify({ url: baseUrl, page, results }, null, 2), {
+  // Find context around amenity-related content
+  const searchTerms = ['מרפסת', 'מעלית', 'חניה', 'ממד', 'מחסן', 'מיזוג', 'amenity', 'data-auto="bulletin'];
+  results.contexts = {};
+  for (const term of searchTerms) {
+    const idx = html.indexOf(term);
+    if (idx >= 0) {
+      results.contexts[term] = html.substring(Math.max(0, idx - 200), idx + 300);
+    }
+  }
+
+  // Find all data-auto values
+  const dataAutoMatches = html.match(/data-auto="[^"]+"/g);
+  if (dataAutoMatches) {
+    const unique = [...new Set(dataAutoMatches)];
+    results.data_auto_values = unique.slice(0, 40);
+  }
+
+  // Find script tags with JSON (might contain inline data)
+  const scriptMatches = html.match(/<script[^>]*type="application\/json"[^>]*>/g);
+  results.json_scripts = scriptMatches;
+
+  // Look for window.__data or similar
+  const windowDataPatterns = ['window.__', 'window._app', '__APOLLO', 'INITIAL_STATE', 'initialData', '__data'];
+  results.window_data = {};
+  for (const p of windowDataPatterns) {
+    const idx = html.indexOf(p);
+    if (idx >= 0) {
+      results.window_data[p] = html.substring(idx, idx + 200);
+    }
+  }
+
+  return new Response(JSON.stringify(results, null, 2), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });
