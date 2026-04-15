@@ -772,6 +772,10 @@ Deno.serve(async (req) => {
 
         if (!dry_run) {
           updates.backfill_status = 'completed';
+          // Save raw markdown for debugging (truncated to 10KB)
+          if (markdown && markdown.length > 100) {
+            updates.raw_text = markdown.substring(0, 10000);
+          }
           const { error: updateError } = await supabase
             .from('scouted_properties')
             .update(updates)
