@@ -1182,45 +1182,13 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     }
   }
 
-  // === Homeless: features listed in "מאפייני הנכס" section as SVG+text ===
-  // In Jina markdown: ![Image](*.svg)featureName — only present features are listed
-  // So: found in section → true, not found → null (unknown)
+  // === Homeless: SKIP feature extraction in backfill ===
+  // Homeless detail pages are behind Cloudflare challenge — Jina returns the homepage.
+  // Any text matching here would extract features from navigation menu ("חיות מחמד", "נגישות", etc.)
+  // causing false positives. Features should only come from the initial scout (search results parser).
   if (source === 'homeless') {
-    // Extract the "מאפייני הנכס" section
-    const propsMatch = markdown.match(/מאפייני הנכס([\s\S]*?)(?:###|##|קומה:|מ"ר:|כניסה:|הצגת מספר|איש קשר|עוד מודעות|$)/i);
-    const propsSection = propsMatch ? propsMatch[1] : '';
-    
-    // Only search in the structured features section — NOT the free-text description
-    const sectionText = propsSection;
-    
-    const homelessFeatureMap: Array<{ key: keyof PropertyFeatures; patterns: RegExp[]; negativePatterns: RegExp[] }> = [
-      { key: 'balcony',    patterns: [/מרפסת/i], negativePatterns: [/מרפסת\s*:?\s*(אין|ללא|לא)/i, /אין\s*מרפסת/i, /ללא\s*מרפסת/i] },
-      { key: 'yard',       patterns: [/חצר|גינה/i], negativePatterns: [/(חצר|גינה)\s*:?\s*(אין|ללא|לא)/i, /אין\s*(חצר|גינה)/i, /ללא\s*(חצר|גינה)/i] },
-      { key: 'elevator',   patterns: [/מעלית/i], negativePatterns: [/מעלית\s*:?\s*(אין|ללא|לא)/i, /אין\s*מעלית/i, /ללא\s*מעלית/i] },
-      { key: 'parking',    patterns: [/חניי?ה/i], negativePatterns: [/חניי?ה\s*:?\s*(אין|ללא|לא|ציבורית|ברחוב)/i, /אין\s*חניי?ה/i, /ללא\s*חניי?ה/i] },
-      { key: 'mamad',      patterns: [/ממ["״]?ד/i], negativePatterns: [/ממ["״]?ד\s*:?\s*(אין|ללא|לא)/i, /אין\s*ממ["״]?ד/i, /ללא\s*ממ["״]?ד/i] },
-      { key: 'storage',    patterns: [/מחסן/i], negativePatterns: [/מחסן\s*:?\s*(אין|ללא|לא)/i, /אין\s*מחסן/i, /ללא\s*מחסן/i] },
-      { key: 'roof',       patterns: [/גג\b/i], negativePatterns: [] },
-      { key: 'accessible', patterns: [/נגיש/i], negativePatterns: [] },
-      { key: 'renovated',  patterns: [/משופצ/i], negativePatterns: [] },
-      { key: 'pets',       patterns: [/חיות מחמד/i], negativePatterns: [] },
-    ];
-
-    for (const { key, patterns, negativePatterns } of homelessFeatureMap) {
-      if (negativePatterns.some(p => p.test(sectionText))) {
-        features[key] = false;
-        continue;
-      }
-      if (patterns.some(p => p.test(sectionText))) {
-        features[key] = true;
-      } else if (propsSection.length > 20) {
-        // Homeless lists ALL features — if not mentioned, it's absent
-        features[key] = false;
-      }
-    }
-
-    console.log(`🏠 Homeless section-based features (section=${propsSection.length}ch):`, JSON.stringify(features));
-    return features;
+    console.log(`🏠 Homeless: skipping feature extraction (detail pages blocked by Cloudflare)`);
+    return features; // Return empty — don't overwrite scout data
   }
 
   // === Yad2: "מה יש בנכס" section lists only present features ===
