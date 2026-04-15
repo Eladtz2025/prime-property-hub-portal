@@ -6,6 +6,7 @@ import { getNeighborhoodConfig } from '../_shared/locations.ts';
 import { normalizeNeighborhoodToValue } from '../_experimental/street-lookup.ts';
 import { fetchHomelessDetailFeatures } from '../_shared/homeless-detail-parser.ts';
 import { fetchMadlanDetailFeatures } from '../_shared/madlan-detail-parser.ts';
+import { parseYad2DetailMarkdown } from '../_shared/yad2-detail-parser.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1362,15 +1363,44 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
         { key: 'storage',    pattern: /מחסן/i },
         { key: 'yard',       pattern: /חצר|גינה/i },
         { key: 'roof',       pattern: /גג\b/i },
-        { key: 'accessible', pattern: /נגיש|גישה לנכים/i },
+        { key: 'accessible', pattern: /נגיש|גישה\s*לנכים/i },
+        { key: 'furnished',  pattern: /מרוהט|ריהוט/i },
+        { key: 'renovated',  pattern: /משופצ|שופצ/i },
+        { key: 'pets',       pattern: /חיות|בע"?ח/i },
+      ];
+
+      // Additional non-PropertyFeatures boolean features stored in features object
+      const extraFeatures: Array<{ key: string; pattern: RegExp }> = [
+        { key: 'airConditioner', pattern: /מיזוג|מזגן/i },
+        { key: 'bars',          pattern: /סורגים/i },
+        { key: 'sunHeater',     pattern: /דוד\s*שמש/i },
+        { key: 'tadiran',       pattern: /טורנדו|טדיראן/i },
+        { key: 'boiler',        pattern: /בויילר|דוד\s*חשמלי/i },
+        { key: 'pandorDoors',   pattern: /דלתות\s*פנדור/i },
+        { key: 'kosherKitchen', pattern: /מטבח\s*כשר/i },
       ];
 
       for (const { key, pattern } of yad2Features) {
         if (pattern.test(yad2Section)) {
           features[key] = true;
         }
-        // Yad2 only lists present features — absence means unknown, not false
       }
+
+      for (const { key, pattern } of extraFeatures) {
+        if (pattern.test(yad2Section)) {
+          (features as any)[key] = true;
+        }
+      }
+
+      // Negative inference: Yad2 lists ALL present features, so absence = false
+      const negativeKeys: (keyof PropertyFeatures)[] = ['mamad', 'elevator', 'parking', 'storage', 'balcony'];
+      for (const key of negativeKeys) {
+        if (features[key] === undefined) {
+          features[key] = false;
+        }
+      }
+      // Also for extra features
+      if (!(features as any).airConditioner) (features as any).airConditioner = false;
       
       console.log(`🟠 Yad2 section-based features (section=${yad2Section.length}ch):`, JSON.stringify(features));
     } else {
