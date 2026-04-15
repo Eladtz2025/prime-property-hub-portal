@@ -645,9 +645,13 @@ export function extractFeatures(text: string): PropertyFeatures {
     features.balcony = true;
   }
   
-  // Parking patterns (חניה) — "חניה ציבורית" and "חניה משותפת" are NOT parking
-  if (/חניה\s*ציבורית/i.test(text) || /חניה\s*משותפת/i.test(text)) {
+  // Parking patterns (חניה)
+  // "חניה ציבורית" / "חניה ברחוב" = NO parking
+  // "חניה משותפת" = YES parking (shared but exists)
+  if (/חניי?ה\s*ציבורית/i.test(text) || /חניי?ה\s*ברחוב/i.test(text)) {
     features.parking = false;
+  } else if (/חניי?ה\s*משותפת/i.test(text)) {
+    features.parking = true;
   } else if (isNegated(/חניה|חנייה/)) {
     features.parking = false;
   } else if (/חניה|חנייה|מקום\s*חניה/.test(text)) {

@@ -50,6 +50,7 @@ async function scrapeHomelessWithJina(url: string, maxRetries = 2, timeoutSecond
 import { saveProperty } from "../_shared/property-helpers.ts";
 import { parseHomelessHtml } from "../_experimental/parser-homeless.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
+import { fetchHomelessDetailFeatures } from "../_shared/homeless-detail-parser.ts";
 
 /**
  * Edge Function for scraping Homeless using Jina Reader - SINGLE PAGE MODE
@@ -138,10 +139,46 @@ serve(async (req) => {
     console.log(`🟣 Homeless-Jina page ${page}: Parsed ${extractedProperties.length} properties (${parseResult.stats.private_count} private)`);
 
     let pageNew = 0;
+    let detailFetched = 0;
     for (const property of extractedProperties) {
       const result = await saveProperty(supabase, property);
+      if (result.isNew && property.source_url) {
+        // Fetch detail page for NEW properties to get features + size
+        try {
+          const detailResult = await fetchHomelessDetailFeatures(property.source_url);
+          if (detailResult && Object.keys(detailResult.features).length > 0) {
+            const updateData: Record<string, any> = {
+              features: detailResult.features,
+              backfill_status: 'not_needed',
+            };
+            if (detailResult.size && !property.size) {
+              updateData.size = detailResult.size;
+            }
+            if (detailResult.floor !== undefined && property.floor === null) {
+              updateData.floor = detailResult.floor;
+            }
+            
+            await supabase
+              .from('scouted_properties')
+              .update(updateData)
+              .eq('id', result.id);
+            
+            detailFetched++;
+            console.log(`✅ Detail features for ${property.source_url}: ${JSON.stringify(detailResult.features)}`);
+          }
+        } catch (detailError) {
+          console.warn(`⚠️ Detail fetch failed for ${property.source_url}:`, detailError);
+          // Non-fatal — property is already saved, backfill will retry later
+        }
+        
+        // Small delay between detail page fetches to be polite
+        if (extractedProperties.indexOf(property) < extractedProperties.length - 1) {
+          await new Promise(r => setTimeout(r, 500));
+        }
+      }
       if (result.isNew) pageNew++;
     }
+    console.log(`🟣 Detail features fetched for ${detailFetched}/${pageNew} new properties`);
 
     const duration = Date.now() - pageStartTime;
     await updatePageStatus(supabase, runId, page, { status: 'completed', found: extractedProperties.length, new: pageNew, duration_ms: duration });

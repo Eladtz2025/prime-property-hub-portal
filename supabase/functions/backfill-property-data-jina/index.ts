@@ -4,6 +4,7 @@ import { fetchCategorySettings, isPastEndTime } from '../_shared/settings.ts';
 import { isProcessEnabled } from '../_shared/process-flags.ts';
 import { getNeighborhoodConfig } from '../_shared/locations.ts';
 import { normalizeNeighborhoodToValue } from '../_experimental/street-lookup.ts';
+import { fetchHomelessDetailFeatures } from '../_shared/homeless-detail-parser.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -244,7 +245,6 @@ Deno.serve(async (req) => {
         .select('id', { count: 'exact', head: true })
         .eq('is_active', true)
         .not('source_url', 'is', null)
-        .neq('source_url', 'https://www.homeless.co.il')
       .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
 
       if (source_filter) {
@@ -303,7 +303,6 @@ Deno.serve(async (req) => {
       .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
       .eq('is_active', true)
       .not('source_url', 'is', null)
-      .neq('source_url', 'https://www.homeless.co.il')
       .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed')
       .order('id', { ascending: true })
       .limit(effectiveBatchSize);
@@ -440,7 +439,71 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        console.log(`\n🔍 Processing (Jina): ${prop.source_url}`);
+        console.log(`\n🔍 Processing: ${prop.source_url}`);
+
+        // ===== HOMELESS: Direct HTML fetch (no Jina needed) =====
+        if (prop.source === 'homeless') {
+          try {
+            const detailResult = await fetchHomelessDetailFeatures(prop.source_url);
+            if (detailResult && Object.keys(detailResult.features).length > 0) {
+              const existingFeatures = (prop.features || {}) as Record<string, any>;
+              const mergedFeatures = { ...existingFeatures, ...detailResult.features };
+              
+              const updates: Record<string, any> = {
+                features: mergedFeatures,
+                backfill_status: 'completed',
+              };
+              if (detailResult.size && !prop.size) {
+                updates.size = detailResult.size;
+                batchStats.fields_updated.size++;
+              }
+              if (detailResult.floor !== undefined && !prop.floor) {
+                updates.floor = detailResult.floor;
+                batchStats.fields_updated.floor++;
+              }
+
+              if (!dry_run) {
+                await supabase.from('scouted_properties').update(updates).eq('id', prop.id);
+              }
+
+              successCount++;
+              batchStats.features_updated++;
+              batchStats.total_processed++;
+              await saveRecentItem({
+                address: prop.address || prop.title,
+                neighborhood: prop.neighborhood,
+                source: prop.source,
+                source_url: prop.source_url,
+                status: 'ok',
+                fields_updated: Object.keys(updates).filter(k => k !== 'backfill_status' && k !== 'features'),
+                timestamp: new Date().toISOString(),
+              });
+              console.log(`✅ Homeless direct: ${JSON.stringify(detailResult.features)}`);
+            } else {
+              // Detail page couldn't be parsed
+              failCount++;
+              batchStats.scrape_failed++;
+              batchStats.total_processed++;
+              await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+              await saveRecentItem({
+                address: prop.address || prop.title,
+                neighborhood: prop.neighborhood,
+                source: prop.source,
+                source_url: prop.source_url,
+                status: 'scrape_failed',
+                timestamp: new Date().toISOString(),
+              });
+            }
+          } catch (homelessError) {
+            console.error(`❌ Homeless direct fetch error:`, homelessError);
+            failCount++;
+            batchStats.scrape_failed++;
+            batchStats.total_processed++;
+            await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+          }
+          await new Promise(r => setTimeout(r, 500));
+          continue; // Skip Jina path for homeless
+        }
 
         // ===== JINA SCRAPE with 45s property-level timeout =====
         const propertyController = new AbortController();
@@ -905,7 +968,6 @@ Deno.serve(async (req) => {
       .select('id', { count: 'exact', head: true })
       .eq('is_active', true)
       .not('source_url', 'is', null)
-      .neq('source_url', 'https://www.homeless.co.il')
       .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
     if (source_filter) {
       remainingQuery = remainingQuery.eq('source', source_filter);
@@ -1184,12 +1246,12 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     return features;
   }
 
-  // === Homeless: SKIP feature extraction in backfill ===
-  // Homeless detail pages are behind Cloudflare challenge — Jina returns the homepage.
-  // Any text matching here would extract features from navigation menu ("חיות מחמד", "נגישות", etc.)
-  // causing false positives. Features should only come from the initial scout (search results parser).
+  // === Homeless: use direct HTML fetch + Cheerio (not Jina markdown) ===
+  // The detail page parser handles features extraction via IconOption on/off classes.
+  // This function is only called with Jina markdown which is unreliable for Homeless.
+  // Homeless properties should use fetchHomelessDetailFeatures() directly in the main loop.
   if (source === 'homeless') {
-    console.log(`🏠 Homeless: skipping feature extraction (detail pages blocked by Cloudflare)`);
+    console.log(`🏠 Homeless: skipping Jina-markdown feature extraction (use direct detail parser instead)`);
     return features; // Return empty — don't overwrite scout data
   }
 
