@@ -645,8 +645,10 @@ export function extractFeatures(text: string): PropertyFeatures {
     features.balcony = true;
   }
   
-  // Parking patterns (חניה)
-  if (isNegated(/חניה|חנייה/)) {
+  // Parking patterns (חניה) — "חניה ציבורית" and "חניה משותפת" are NOT parking
+  if (/חניה\s*ציבורית/i.test(text) || /חניה\s*משותפת/i.test(text)) {
+    features.parking = false;
+  } else if (isNegated(/חניה|חנייה/)) {
     features.parking = false;
   } else if (/חניה|חנייה|מקום\s*חניה/.test(text)) {
     features.parking = true;
@@ -716,18 +718,8 @@ export function extractFeatures(text: string): PropertyFeatures {
     features.pets = true;
   }
   
-  // Negative inference: if text contains recognized features,
-  // mark unmentioned critical features as false
-  const criticalFeatures = ['parking', 'balcony', 'elevator', 'storage', 'yard', 'roof'];
-  const recognizedCount = criticalFeatures.filter(f => (features as any)[f] !== undefined).length;
-  
-  if (recognizedCount >= 1) {
-    for (const key of criticalFeatures) {
-      if ((features as any)[key] === undefined) {
-        (features as any)[key] = false;
-      }
-    }
-  }
+  // NO negative inference — if a feature wasn't mentioned, leave as undefined (null/unknown)
+  // Previously this marked unfound features as false, causing widespread inaccuracies
   
   return features;
 }
