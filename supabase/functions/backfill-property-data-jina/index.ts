@@ -74,7 +74,6 @@ interface PropertyFeatures {
   mamad?: boolean;
   storage?: boolean;
   roof?: boolean;
-  aircon?: boolean;
   renovated?: boolean;
   furnished?: boolean;
   accessible?: boolean;
