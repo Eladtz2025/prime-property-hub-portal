@@ -245,7 +245,6 @@ Deno.serve(async (req) => {
         .select('id', { count: 'exact', head: true })
         .eq('is_active', true)
         .not('source_url', 'is', null)
-        .neq('source_url', 'https://www.homeless.co.il')
       .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
 
       if (source_filter) {
@@ -304,7 +303,6 @@ Deno.serve(async (req) => {
       .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
       .eq('is_active', true)
       .not('source_url', 'is', null)
-      .neq('source_url', 'https://www.homeless.co.il')
       .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed')
       .order('id', { ascending: true })
       .limit(effectiveBatchSize);
