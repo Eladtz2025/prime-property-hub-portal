@@ -1122,37 +1122,63 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
   const features: PropertyFeatures = {};
   const text = isolatePropertyDescription(markdown, source);
 
-  // === Madlan: detect ✅/❌ or V/X markers in "מפרט מלא" section ===
+  // === Madlan: cross-reference "יתרונות הנכס" (confirmed true) vs "מפרט מלא" (full list) ===
+  // Jina strips ✅/✕ markers so we can't tell true/false from "מפרט מלא" alone.
+  // Strategy:
+  //   - "יתרונות הנכס" = only features the property HAS → true
+  //   - "מידע נוסף על הנכס" = extra data that confirms features (e.g. "מרפסת 12 מ"ר")
+  //   - "מפרט מלא" = full list of ALL features (both has and hasn't)
+  //   - Feature in advantages OR info → true
+  //   - Feature in spec but NOT in advantages/info → false
+  //   - Feature not mentioned anywhere → null (unknown)
   if (source === 'madlan') {
-    // Check both "יתרונות הנכס" and "מפרט מלא" sections
-    // In Madlan markdown: features are simply LISTED — presence = true, absence = false
-    const specMatch = markdown.match(/מפרט מלא([\s\S]*?)(?:##|מידע נוסף|צור קשר|$)/i);
+    // Guard: if markdown is too short, WAF likely blocked the content — skip features entirely
+    if (markdown.length < 500) {
+      console.log(`⚠️ Madlan markdown too short (${markdown.length} chars), skipping feature extraction`);
+      return features;
+    }
+
     const advantagesMatch = markdown.match(/יתרונות הנכס([\s\S]*?)(?:##|תיאור הנכס|מפרט מלא|מידע נוסף|$)/i);
-    const combinedSpec = (specMatch ? specMatch[1] : '') + '\n' + (advantagesMatch ? advantagesMatch[1] : '');
+    const specMatch = markdown.match(/מפרט מלא([\s\S]*?)(?:##|מידע נוסף|צור קשר|חשוב לדעת|צעד ראשון|$)/i);
+    const infoMatch = markdown.match(/מידע נוסף על הנכס([\s\S]*?)(?:##|יצירת קשר|צור קשר|חשוב לדעת|$)/i);
     
-    if (combinedSpec.length > 20) {
-      const madlanFeatures: Array<{ key: keyof PropertyFeatures; pattern: RegExp }> = [
-        { key: 'parking',  pattern: /חניי?ה/i },
-        { key: 'elevator', pattern: /מעלית/i },
-        { key: 'mamad',    pattern: /ממ[""״]?ד/i },
-        { key: 'balcony',  pattern: /מרפסת/i },
-        { key: 'storage',  pattern: /מחסן/i },
-        { key: 'aircon',   pattern: /מיזוג/i },
-        { key: 'yard',     pattern: /חצר|גינה/i },
-        { key: 'roof',     pattern: /גג/i },
+    const advantages = advantagesMatch ? advantagesMatch[1] : '';
+    const spec = specMatch ? specMatch[1] : '';
+    const info = infoMatch ? infoMatch[1] : '';
+    
+    // Need at least one section to extract features
+    if (advantages.length > 5 || spec.length > 20) {
+      const madlanFeatures: Array<{ key: keyof PropertyFeatures; pattern: RegExp; infoPattern?: RegExp }> = [
+        { key: 'parking',    pattern: /חניי?ה/i },
+        { key: 'elevator',   pattern: /מעלית/i },
+        { key: 'mamad',      pattern: /ממ[""״׳']?ד/i },
+        { key: 'balcony',    pattern: /מרפסת/i, infoPattern: /מרפסת\s*\d+\s*מ/i },
+        { key: 'storage',    pattern: /מחסן/i },
+        { key: 'aircon',     pattern: /מיזוג/i },
+        { key: 'yard',       pattern: /חצר|גינה/i },
+        { key: 'roof',       pattern: /גג\b/i },
         { key: 'accessible', pattern: /נגיש/i },
       ];
 
-      for (const { key, pattern } of madlanFeatures) {
-        if (pattern.test(combinedSpec)) {
+      for (const { key, pattern, infoPattern } of madlanFeatures) {
+        const inAdvantages = pattern.test(advantages);
+        const inInfo = infoPattern ? infoPattern.test(info) : false;
+        const inSpec = pattern.test(spec);
+        
+        if (inAdvantages || inInfo) {
+          // Confirmed present — either in advantages or info section
           features[key] = true;
-        } else {
+        } else if (inSpec) {
+          // Listed in full spec but NOT in advantages/info → absent
           features[key] = false;
         }
+        // Not mentioned anywhere → leave as undefined (null/unknown)
       }
       
-      console.log(`🏢 Madlan list-based features:`, JSON.stringify(features));
-      return features; // Madlan spec is authoritative, no need for keyword fallback
+      console.log(`🏢 Madlan cross-ref features (adv=${advantages.length}ch, spec=${spec.length}ch, info=${info.length}ch):`, JSON.stringify(features));
+      return features;
+    } else {
+      console.log(`⚠️ Madlan: no advantages/spec sections found, falling through to keyword detection`);
     }
   }
 
