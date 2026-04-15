@@ -968,7 +968,6 @@ Deno.serve(async (req) => {
       .select('id', { count: 'exact', head: true })
       .eq('is_active', true)
       .not('source_url', 'is', null)
-      .neq('source_url', 'https://www.homeless.co.il')
       .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
     if (source_filter) {
       remainingQuery = remainingQuery.eq('source', source_filter);
