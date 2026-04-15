@@ -1225,13 +1225,6 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     console.log(`🏠 Homeless section-based features (section=${propsSection.length}ch):`, JSON.stringify(features));
     return features;
   }
-      }
-      // If not bold → leave undefined (null/unknown), NOT false
-    }
-
-    console.log(`🏠 Homeless bold-based features:`, JSON.stringify(features));
-    return features;
-  }
 
   // === Non-homeless/non-madlan-spec sources: keyword detection ===
   // Returns: true (positive found), false (negative found), null (not mentioned)
