@@ -5,115 +5,70 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-/**
- * TEST ONLY - Madlan detail page structure analysis
- * Fetches a single listing page and reports what data is available.
- */
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const body = await req.json().catch(() => ({}));
   const url = body.url || 'https://www.madlan.co.il/listings/yDRjYNhIG4I';
-  const results: Record<string, any> = {};
 
-  // Fetch with Next.js data headers
   const res = await fetch(url, {
-    headers: {
-      'Accept': 'application/json',
-      'X-Nextjs-Data': '1',
-      'Accept-Language': 'he-IL,he;q=0.9',
-    },
+    headers: { 'Accept': '*/*', 'Accept-Language': 'he-IL,he;q=0.9' },
   });
   const html = await res.text();
-  results.status = res.status;
-  results.content_type = res.headers.get('content-type');
-  results.size = html.length;
-  results.is_perimeterx = html.includes('_pxAppId') || html.includes('captcha');
+  
+  const results: Record<string, any> = {
+    status: res.status,
+    size: html.length,
+  };
 
-  // Check __NEXT_DATA__
-  const nextDataMatch = html.match(/<script\s+id="__NEXT_DATA__"\s+type="application\/json"[^>]*>([\s\S]*?)<\/script>/);
-  if (nextDataMatch) {
-    try {
-      const nd = JSON.parse(nextDataMatch[1]);
-      const pp = nd?.props?.pageProps;
-      results.has_next_data = true;
-      results.page_props_keys = pp ? Object.keys(pp) : [];
+  // Search for amenity-related patterns
+  const patterns = [
+    'amenity', 'amenities', 'data-auto', 'balcon', 'elevator', 'מרפסת', 'מעלית',
+    'חניה', 'parking', 'ממד', 'secureRoom', 'מחסן', 'storage',
+    'מיזוג', 'airCondition', 'נגיש', 'accessible', 'חיות', 'pets',
+    'מרוהט', 'furnished', 'משופצ', 'renovated', 'גינה', 'garden',
+    'IconOption', 'feature-item', 'property-feature',
+    'bulletin-feature', 'poi-feature', 'specification',
+  ];
 
-      // Recursive search for amenities
-      function findKey(obj: any, target: string, path = '', d = 0): string | null {
-        if (!obj || d > 8 || typeof obj !== 'object') return null;
-        if (obj[target] !== undefined) return path || '(root)';
-        for (const k of Object.keys(obj).slice(0, 50)) {
-          const r = findKey(obj[k], target, path ? `${path}.${k}` : k, d + 1);
-          if (r) return r;
-        }
-        return null;
-      }
-
-      results.amenities_path = findKey(pp, 'amenities');
-      results.area_path = findKey(pp, 'area');
-      results.beds_path = findKey(pp, 'beds');
-      results.poc_path = findKey(pp, 'poc');
-
-      // If found amenities, extract data
-      if (results.amenities_path) {
-        const parts = results.amenities_path.split('.');
-        let cur = pp;
-        for (const p of parts) cur = cur?.[p];
-        results.amenities_data = cur?.amenities;
-        results.area_data = cur?.area;
-        results.beds_data = cur?.beds;
-        results.floor_data = cur?.floor;
-        results.price_data = cur?.price;
-        results.poc_data = cur?.poc;
-        results.nearby_keys = Object.keys(cur || {}).filter(k => !['__typename'].includes(k)).slice(0, 30);
-      }
-
-      // Also check for Apollo State
-      if (pp?.__APOLLO_STATE__) {
-        const apollo = pp.__APOLLO_STATE__;
-        const apolloKeys = Object.keys(apollo);
-        results.apollo_keys_sample = apolloKeys.slice(0, 15);
-        // Find Bulletin entries
-        const bulletinKeys = apolloKeys.filter(k => k.startsWith('Bulletin:'));
-        results.bulletin_count = bulletinKeys.length;
-        if (bulletinKeys.length > 0) {
-          const firstBulletin = apollo[bulletinKeys[0]];
-          results.bulletin_keys = Object.keys(firstBulletin || {}).slice(0, 30);
-          results.bulletin_amenities = firstBulletin?.amenities;
-          results.bulletin_area = firstBulletin?.area;
-          results.bulletin_beds = firstBulletin?.beds;
-          results.bulletin_floor = firstBulletin?.floor;
-          results.bulletin_price = firstBulletin?.price;
-          results.bulletin_poc = firstBulletin?.poc;
-        }
-      }
-
-      // Preview first 2000 chars of pageProps
-      results.pp_preview = JSON.stringify(pp).substring(0, 2000);
-    } catch (e) {
-      results.parse_error = String(e);
+  results.pattern_matches = {};
+  for (const p of patterns) {
+    const regex = new RegExp(p, 'gi');
+    const matches = html.match(regex);
+    if (matches) {
+      results.pattern_matches[p] = matches.length;
     }
-  } else {
-    results.has_next_data = false;
-    results.html_preview = html.substring(0, 1000);
   }
 
-  // Also test GraphQL
-  const id = url.match(/\/listings\/([a-zA-Z0-9_-]+)/)?.[1];
-  if (id) {
-    const gql = await fetch('https://www.madlan.co.il/api2', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Origin': 'https://www.madlan.co.il', 'Referer': 'https://www.madlan.co.il/' },
-      body: JSON.stringify({
-        operationName: 'poiByIds',
-        query: 'query poiByIds($ids:[PoiIds!]!){poiByIds(ids:$ids){...on Bulletin{amenities{balcony elevator parking}area beds floor price}}}',
-        variables: { ids: [{ id, type: 'bulletin' }] },
-      }),
-    });
-    const gqlBody = await gql.text();
-    results.graphql_status = gql.status;
-    results.graphql_body = gqlBody.substring(0, 300);
+  // Find context around amenity-related content
+  const searchTerms = ['מרפסת', 'מעלית', 'חניה', 'ממד', 'מחסן', 'מיזוג', 'amenity', 'data-auto="bulletin'];
+  results.contexts = {};
+  for (const term of searchTerms) {
+    const idx = html.indexOf(term);
+    if (idx >= 0) {
+      results.contexts[term] = html.substring(Math.max(0, idx - 200), idx + 300);
+    }
+  }
+
+  // Find all data-auto values
+  const dataAutoMatches = html.match(/data-auto="[^"]+"/g);
+  if (dataAutoMatches) {
+    const unique = [...new Set(dataAutoMatches)];
+    results.data_auto_values = unique.slice(0, 40);
+  }
+
+  // Find script tags with JSON (might contain inline data)
+  const scriptMatches = html.match(/<script[^>]*type="application\/json"[^>]*>/g);
+  results.json_scripts = scriptMatches;
+
+  // Look for window.__data or similar
+  const windowDataPatterns = ['window.__', 'window._app', '__APOLLO', 'INITIAL_STATE', 'initialData', '__data'];
+  results.window_data = {};
+  for (const p of windowDataPatterns) {
+    const idx = html.indexOf(p);
+    if (idx >= 0) {
+      results.window_data[p] = html.substring(idx, idx + 200);
+    }
   }
 
   return new Response(JSON.stringify(results, null, 2), {
