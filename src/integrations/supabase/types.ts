@@ -3660,6 +3660,69 @@ export type Database = {
           },
         ]
       }
+      social_group_publish_queue: {
+        Row: {
+          attempt_count: number
+          content_text: string
+          created_at: string
+          error_message: string | null
+          group_id: string | null
+          group_name: string
+          group_url: string
+          id: string
+          image_urls: Json | null
+          published_at: string | null
+          scheduled_at: string
+          social_post_id: string | null
+          status: string
+        }
+        Insert: {
+          attempt_count?: number
+          content_text: string
+          created_at?: string
+          error_message?: string | null
+          group_id?: string | null
+          group_name: string
+          group_url: string
+          id?: string
+          image_urls?: Json | null
+          published_at?: string | null
+          scheduled_at: string
+          social_post_id?: string | null
+          status?: string
+        }
+        Update: {
+          attempt_count?: number
+          content_text?: string
+          created_at?: string
+          error_message?: string | null
+          group_id?: string | null
+          group_name?: string
+          group_url?: string
+          id?: string
+          image_urls?: Json | null
+          published_at?: string | null
+          scheduled_at?: string
+          social_post_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_group_publish_queue_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "social_facebook_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_group_publish_queue_social_post_id_fkey"
+            columns: ["social_post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_posts: {
         Row: {
           content_text: string | null

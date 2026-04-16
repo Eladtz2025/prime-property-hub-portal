@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 16px;
+      direction: rtl;
+    }
+    .header {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 10px;
+    }
+    .header h1 { font-size: 14px; font-weight: 600; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #22c55e; flex-shrink: 0;
+    }
+    .status-dot.paused { background: #f59e0b; }
+    .status-text { font-size: 11px; color: #94a3b8; }
+
+    .stats {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px; margin-bottom: 12px;
+    }
+    .stat-box {
+      background: #1e293b; border-radius: 8px;
+      padding: 8px; text-align: center;
+    }
+    .stat-number { font-size: 20px; font-weight: 700; color: #3b82f6; }
+    .stat-number.success { color: #22c55e; }
+    .stat-number.error { color: #ef4444; }
+    .stat-label { font-size: 9px; color: #94a3b8; margin-top: 2px; }
+
+    .next-info {
+      background: #1e293b; border-radius: 8px;
+      padding: 8px 10px; margin-bottom: 12px;
+      font-size: 11px; color: #94a3b8;
+    }
+    .next-info strong { color: #e2e8f0; }
+
+    .controls {
+      display: flex; gap: 8px; margin-bottom: 12px;
+    }
+    .btn {
+      flex: 1; padding: 8px; border: none; border-radius: 6px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-warning { background: #f59e0b; color: #0f172a; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-secondary { background: #1e293b; color: #e2e8f0; }
+    .btn-secondary:hover { background: #334155; }
+
+    .logs {
+      max-height: 180px; overflow-y: auto;
+      background: #1e293b; border-radius: 8px; padding: 6px;
+    }
+    .log-entry {
+      font-size: 10px; padding: 3px 4px;
+      border-bottom: 1px solid #0f172a;
+      line-height: 1.4;
+    }
+    .log-time { color: #64748b; font-size: 9px; }
+    .logs-title { font-size: 11px; color: #94a3b8; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="status-dot" id="statusDot"></div>
+    <div>
+      <h1>CT Market Publisher</h1>
+      <div class="status-text" id="statusText">טוען...</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-box">
+      <div class="stat-number" id="pendingCount">-</div>
+      <div class="stat-label">ממתינים</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number success" id="publishedCount">-</div>
+      <div class="stat-label">פורסמו היום</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number error" id="failedCount">-</div>
+      <div class="stat-label">נכשלו</div>
+    </div>
+  </div>
+
+  <div class="next-info" id="nextInfo">טוען מידע...</div>
+
+  <div class="controls">
+    <button class="btn btn-warning" id="toggleBtn" onclick="togglePause()">⏸️ השהה</button>
+    <button class="btn btn-primary" id="forceBtn" onclick="forceCheck()">▶️ הפעל עכשיו</button>
+  </div>
+
+  <div class="logs-title">📋 לוג אחרון:</div>
+  <div class="logs" id="logsContainer"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

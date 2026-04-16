@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "CT Market Auto Publisher",
+  "description": "פרסום אוטומטי של נכסים בקבוצות פייסבוק — CT Market Properties",
+  "version": "1.0.0",
+  "permissions": ["tabs", "storage", "alarms", "activeTab"],
+  "host_permissions": [
+    "https://www.facebook.com/*",
+    "https://*.supabase.co/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.facebook.com/groups/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

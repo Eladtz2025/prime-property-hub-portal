@@ -176,3 +176,6 @@ verify_jwt = false
 
 [functions.social-scheduler]
 verify_jwt = false
+
+[functions.group-publish-queue]
+verify_jwt = false

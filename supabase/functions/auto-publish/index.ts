@@ -190,10 +190,12 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
   const publishTarget = (queue.publish_target as { type: string; group_ids?: string[] }) || { type: 'page' };
   // Determine effective platforms — if target is groups, use facebook_group platform
   const effectivePlatforms: { platform: string; group_id?: string }[] = [];
+  const groupQueueItems: { platform: string; group_id: string }[] = [];
+
   for (const platform of platforms) {
     if (platform === 'facebook_page' && publishTarget.type === 'groups' && publishTarget.group_ids?.length) {
       for (const groupId of publishTarget.group_ids) {
-        effectivePlatforms.push({ platform: 'facebook_group', group_id: groupId });
+        groupQueueItems.push({ platform: 'facebook_group', group_id: groupId });
       }
     } else {
       effectivePlatforms.push({ platform });
@@ -202,6 +204,91 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
 
   let hadSuccess = false;
 
+  // ── Group posts → route to social_group_publish_queue for Chrome Extension ──
+  if (groupQueueItems.length > 0) {
+    // Create the social_post record first (as parent reference)
+    const fullTextWithHashtags = hashtags ? `${postTextWithLink}\n\n${hashtags}` : postTextWithLink;
+    const { data: post, error: postErr } = await supabase
+      .from('social_posts')
+      .insert({
+        platform: 'facebook_group',
+        post_type: 'property_listing',
+        content_text: postTextWithLink,
+        hashtags,
+        image_urls: imageUrls,
+        status: 'ready_to_copy',
+        property_id: property.id,
+        created_by: queue.created_by,
+      })
+      .select()
+      .single();
+
+    if (postErr) throw postErr;
+
+    // Fetch group details for all group_ids
+    const { data: groups } = await supabase
+      .from('social_facebook_groups')
+      .select('id, group_name, group_url')
+      .in('id', groupQueueItems.map(g => g.group_id));
+
+    const groupMap = new Map((groups || []).map(g => [g.id, g]));
+
+    // Anti-spam: stagger posts with random 2-5 min gaps
+    // Respect publishing hours: 09:00-21:00 Israel time
+    const israelNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
+    const hour = israelNow.getHours();
+    let baseTime: Date;
+    if (hour < 9) {
+      // Before 9am — schedule for 9:00 + random 0-30 min
+      baseTime = new Date(israelNow);
+      baseTime.setHours(9, Math.floor(Math.random() * 30), 0, 0);
+    } else if (hour >= 21) {
+      // After 9pm — schedule for tomorrow 9:00
+      baseTime = new Date(israelNow);
+      baseTime.setDate(baseTime.getDate() + 1);
+      baseTime.setHours(9, Math.floor(Math.random() * 30), 0, 0);
+    } else {
+      baseTime = new Date();
+    }
+
+    let nextTime = baseTime;
+    for (const { group_id } of groupQueueItems) {
+      const group = groupMap.get(group_id);
+      if (!group) continue;
+
+      // Add slight text variation per group (shuffle hashtags, add/remove whitespace)
+      const variations = [fullTextWithHashtags, fullTextWithHashtags + ' ', ' ' + fullTextWithHashtags];
+      const variedText = variations[Math.floor(Math.random() * variations.length)];
+
+      await supabase.from('social_group_publish_queue').insert({
+        social_post_id: post.id,
+        group_id: group_id,
+        group_url: group.group_url,
+        group_name: group.group_name,
+        content_text: variedText.trim(),
+        image_urls: imageUrls,
+        scheduled_at: nextTime.toISOString(),
+        status: 'pending',
+      });
+
+      // Random delay 2-5 minutes between groups
+      const delayMinutes = 2 + Math.random() * 3;
+      nextTime = new Date(nextTime.getTime() + delayMinutes * 60000);
+    }
+
+    hadSuccess = true;
+
+    await supabase.from('auto_publish_log').insert({
+      queue_id: queue.id,
+      property_id: property.id,
+      social_post_id: post.id,
+      platforms: ['facebook_group'],
+      status: 'published',
+      error_message: null,
+    });
+  }
+
+  // ── Page/Instagram posts → direct publish as before ──
   for (const { platform, group_id } of effectivePlatforms) {
     const { data: post, error: postErr } = await supabase
       .from('social_posts')
@@ -211,7 +298,6 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
         content_text: postTextWithLink,
         hashtags,
         image_urls: imageUrls,
-        // For link-style posts, pass the URL so social-publish sends it as a Link Card
         ...(queue.post_style === 'link' ? { link_url: propertyLink } : {}),
         status: 'scheduled',
         property_id: property.id,
