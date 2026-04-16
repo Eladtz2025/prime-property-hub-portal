@@ -1,34 +1,52 @@
 
 
-# בדיקת API ישיר של יד2 — ניסיון חוזר עם גישות שונות
+# תיקון באג הלולאה האינסופית בבקפיל + תיקון מדל"ן
 
-## מה אעשה
+## הבעיה
 
-אעדכן את `test-direct-fetch/index.ts` לבדוק **5 גישות שונות** לגישה ל-API של יד2 מ-Edge Function:
+שתי בעיות:
 
-### גישה 1 — `gw.yad2.co.il/realestate-item/{token}` (headers מינימליים)
-רק `Accept: application/json` — בודק אם חוסמים לפי headers
+### 1. לולאה אינסופית (קריטי)
+השאילתה כוללת `backfill_status.eq.failed` — נכסים שנכשלים נשלפים שוב ושוב. 5 נכסי מדל"ן נכשלו ~300 פעם כל אחד → 1,543 כשלונות מ-1,591 עיבודים.
 
-### גישה 2 — `gw.yad2.co.il/realestate-item/{token}` (headers כמו דפדפן)
-הוספת `Referer`, `Origin`, `User-Agent` מלא — כמו שעבד לנו עם מדל"ן
+### 2. מדל"ן parser נחסם
+ה-parser עושה `fetch(sourceUrl)` ישיר למדל"ן, ומקבל captcha של PerimeterX. צריך להחליף את ה-fetch headers לאותם headers שעבדו בבדיקה הישירה (עם `Accept: application/json` ו-Next.js bypass).
 
-### גישה 3 — Feed Search API
-`gw.yad2.co.il/feed-search/realestate/rent?token={token}` — endpoint אחר שאולי לא חסום
+## מה ישתנה
 
-### גישה 4 — HTML ישיר + `__NEXT_DATA__`
-Fetch של דף ה-HTML עם חילוץ `__NEXT_DATA__` (כמו שעשינו עם מדל"ן) — יד2 גם אתר Next.js
+### קובץ 1: `backfill-property-data-jina/index.ts`
 
-### גישה 5 — `api.yad2.co.il` (דומיין אחר)
-בדיקה אם יש endpoint ישן/חלופי בדומיין `api.yad2.co.il`
+**תיקון הלולאה** (שורות 250, 308):
+- הסרת `backfill_status.eq.failed` מה-query
+- נכסים שנכשלו לא ייבחרו אוטומטית שוב
+- מי שרוצה לנסות שוב → ריסט ידני ל-`pending` דרך ה-UI
 
-## אחרי הבדיקה
-אציג תוצאות — מה עבד, מה לא, ואיזו גישה נותנת את הנתונים הכי טובים. אם אחת מצליחה — אבנה parser ישיר שמחליף את Jina בבקפיל.
+```text
+לפני:  .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed')
+אחרי:  .or('backfill_status.is.null,backfill_status.eq.pending')
+```
 
-## קבצים שישתנו
+שינוי בשני מקומות: שורה 250 (count query) ושורה 308 (fetch query).
 
-| קובץ | פעולה |
+### קובץ 2: `_shared/madlan-detail-parser.ts`
+
+**שדרוג ה-fetch headers** — שימוש באותם headers שעבדו בבדיקת ה-API הישירה:
+- `Accept: 'application/json, text/html, */*'`
+- `User-Agent` של Chrome
+- `Referer: 'https://www.madlan.co.il/'`
+- `Origin: 'https://www.madlan.co.il'`
+
+**הוספת fallback** — אם ה-HTML fetch נכשל, ניסיון GraphQL API (`/api2`) עם `poiByIds` query כגיבוי.
+
+## סיכון
+**נמוך** — שני שינויים מינוריים:
+1. הסרת `failed` מ-query = מניעת לולאה (שינוי בטוח)
+2. headers חדשים ל-madlan = אותם headers שעבדו כבר בבדיקה
+
+## קבצים
+
+| קובץ | שינוי |
 |---|---|
-| `supabase/functions/test-direct-fetch/index.ts` | עדכון לבדיקת 5 גישות |
-
-**שום קוד production לא ישתנה** — רק פונקציית הבדיקה.
+| `supabase/functions/backfill-property-data-jina/index.ts` | הסרת `failed` מ-2 queries |
+| `supabase/functions/_shared/madlan-detail-parser.ts` | headers חדשים + GraphQL fallback |
 
