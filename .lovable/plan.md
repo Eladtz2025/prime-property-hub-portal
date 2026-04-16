@@ -1,34 +1,19 @@
 
 
-# תוכנית תיקונים — Backfill + פרסום
+# איפוס Backfill + עדכון פוסטי קבוצות
 
-כל 5 התיקונים אומתו מול הקוד בפועל. הכל מדויק.
+## פעולה 1: איפוס Backfill
+עדכון כל הנכסים הפעילים עם `backfill_status = 'completed'` או `'failed'` חזרה ל-`'pending'` כדי שירוצו מחדש עם הלוגיקה המתוקנת (תיקונים 2-5).
 
-## תיקון 1: DB Constraint חוסם פרסום (דחוף ביותר)
-**מיגרציה** — הרחבת CHECK constraint על `social_posts.status` להוסיף `ready_to_copy`.
-בנוסף: עדכון 2 הפוסטים התקועים מ-`publishing` ל-`ready_to_copy`.
+- **1,425** נכסים `completed` → `pending`
+- **197** נכסים `failed` → `pending`
+- סה"כ: ~1,622 נכסים יאופסו
 
-## תיקון 2: Parking Fallback — בדיקת דפוסים שליליים
-**קובץ:** `supabase/functions/_shared/yad2-detail-parser.ts` שורות 277-283
-הוספת regex patterns שליליים (`אין חניה`, `ללא חניה`, `בלי חניה`) לפני הרישום כ-true.
+## פעולה 2: פוסטי קבוצות פייסבוק
+2 הפוסטים כבר במצב `ready_to_copy` (המיגרציה עבדה). מכיוון שפרסום לקבוצות הוא **חצי-אוטומטי** (הקוד לא יכול לפרסם ישירות לקבוצות פייסבוק — רק לדפים), יש שתי אפשרויות:
+- **סימון כ-published** — אם כבר העתקת ופרסמת ידנית
+- **השארה על ready_to_copy** — אם עדיין לא העתקת
 
-## תיקון 3: Feature Grid Sanity Check
-**קובץ:** `supabase/functions/_shared/yad2-detail-parser.ts` — אחרי `extractFeatureItems`
-אם 10+ פיצ'רים וכולם true (0 false) → מחיקת כל הפיצ'רים כי CSS parsing שבור.
-
-## תיקון 4: immediate_entry ברירת מחדל
-**קובץ:** `supabase/functions/backfill-property-data-jina/index.ts` שורה 1734
-שינוי `immediate_entry: true` ל-`immediate_entry: false`.
-
-## תיקון 5: Merge Logic — לא לדרוס נתונים קיימים
-**קובץ:** `supabase/functions/backfill-property-data-jina/index.ts` שורות 474, 538, 630, 1004-1010
-שינוי ל-merge שדורס רק כש-existing הוא `undefined`/`null`.
-
-## סדר ביצוע
-1. מיגרציה (תיקון 1)
-2. שינויי קוד (תיקונים 2-5)
-3. Deploy edge functions: `backfill-property-data-jina`, `social-publish`
-
-## הערה
-אחרי התיקונים — מומלץ לאפס `backfill_status = 'pending'` לנכסים שכבר עברו backfill כדי שירוצו מחדש עם הלוגיקה המתוקנת. זה ידרוש אישור נפרד.
+## ביצוע
+שתי פעולות INSERT/UPDATE דרך כלי הנתונים (לא מיגרציה).
 
