@@ -24,6 +24,22 @@ export interface MadlanDetailResult {
 export async function fetchMadlanDetailFeatures(sourceUrl: string): Promise<MadlanDetailResult | null> {
   console.log(`🔍 Madlan Detail: Fetching ${sourceUrl}`);
 
+  // Method 1: Direct fetch with Next.js bypass headers (proven to work)
+  const htmlResult = await fetchWithBypassHeaders(sourceUrl);
+  if (htmlResult) return htmlResult;
+
+  // Method 2: GraphQL API fallback
+  const graphqlResult = await fetchViaGraphQL(sourceUrl);
+  if (graphqlResult) return graphqlResult;
+
+  console.warn(`❌ Madlan Detail: All methods failed for ${sourceUrl}`);
+  return null;
+}
+
+/**
+ * Fetch using Next.js bypass headers (same as test-direct-fetch that worked).
+ */
+async function fetchWithBypassHeaders(sourceUrl: string): Promise<MadlanDetailResult | null> {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const controller = new AbortController();
@@ -32,27 +48,42 @@ export async function fetchMadlanDetailFeatures(sourceUrl: string): Promise<Madl
       const response = await fetch(sourceUrl, {
         method: 'GET',
         headers: {
-          'Accept': '*/*',
-          'Accept-Language': 'he-IL,he;q=0.9',
+          'Accept': 'application/json, text/html, */*',
+          'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Referer': 'https://www.madlan.co.il/',
+          'Origin': 'https://www.madlan.co.il',
+          'X-Nextjs-Data': '1',
         },
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const err = await response.text();
         console.warn(`⚠️ Madlan Detail attempt ${attempt + 1}: HTTP ${response.status}`);
         if (attempt < 1) await new Promise(r => setTimeout(r, 3000));
         continue;
       }
 
       const html = await response.text();
-      if (!html || html.length < 1000) {
+      if (!html || html.length < 500) {
         console.warn(`⚠️ Madlan Detail: Short response (${html.length} chars)`);
         continue;
       }
 
-      // Check for PerimeterX captcha page (no real content)
+      // Try JSON response first (Next.js data route)
+      if (html.startsWith('{') || html.startsWith('[')) {
+        try {
+          const jsonData = JSON.parse(html);
+          const result = parseNextJsJson(jsonData);
+          if (result && (Object.keys(result.features).length > 0 || result.size || result.floor)) {
+            console.log(`✅ Madlan Detail (JSON): ${Object.keys(result.features).length} features`);
+            return result;
+          }
+        } catch (e) { /* fall through to HTML parsing */ }
+      }
+
+      // Check for PerimeterX captcha page
       if (html.length < 50000 && html.includes('_pxAppId') && !html.includes('data-auto=')) {
         console.warn(`⚠️ Madlan Detail: PerimeterX captcha page`);
         if (attempt < 1) await new Promise(r => setTimeout(r, 5000));
@@ -61,7 +92,7 @@ export async function fetchMadlanDetailFeatures(sourceUrl: string): Promise<Madl
 
       const result = parseDetailHtml(html);
       if (result && (Object.keys(result.features).length > 0 || result.size || result.floor)) {
-        console.log(`✅ Madlan Detail: ${Object.keys(result.features).length} features, size=${result.size}, floor=${result.floor}, rooms=${result.rooms}, poc=${result.pocType}`);
+        console.log(`✅ Madlan Detail (HTML): ${Object.keys(result.features).length} features, size=${result.size}, floor=${result.floor}, rooms=${result.rooms}, poc=${result.pocType}`);
         return result;
       }
 
@@ -75,8 +106,139 @@ export async function fetchMadlanDetailFeatures(sourceUrl: string): Promise<Madl
       if (attempt < 1) await new Promise(r => setTimeout(r, 3000));
     }
   }
-
   return null;
+}
+
+/**
+ * Parse Next.js JSON response (__NEXT_DATA__ or X-Nextjs-Data response).
+ */
+function parseNextJsJson(data: any): MadlanDetailResult | null {
+  const result: MadlanDetailResult = { features: {} };
+  
+  // Navigate to page props
+  const pageProps = data?.pageProps || data?.props?.pageProps;
+  if (!pageProps) return null;
+
+  const poi = pageProps?.poi || pageProps?.initialData?.poi;
+  if (!poi) return null;
+
+  // Extract basic fields
+  if (poi.price) result.price = parseInt(String(poi.price));
+  if (poi.area) result.size = parseInt(String(poi.area));
+  if (poi.floor != null) result.floor = parseInt(String(poi.floor));
+  if (poi.totalFloors) result.totalFloors = parseInt(String(poi.totalFloors));
+  if (poi.rooms) result.rooms = parseFloat(String(poi.rooms));
+
+  // Extract features from additionalDetails or amenities
+  const amenities = poi.amenities || poi.additionalDetails || {};
+  const boolMapping: Record<string, string> = {
+    parking: 'parking', balcony: 'balcony', elevator: 'elevator',
+    secureRoom: 'mamad', safeRoom: 'mamad', storage: 'storage',
+    garden: 'yard', accessible: 'accessible', furnished: 'furnished',
+    airConditioner: 'aircon', airCondition: 'aircon',
+    pets: 'pets', renovated: 'renovated', garage: 'garage',
+    bars: 'bars', sunHeater: 'sun_water_heater', pool: 'pool',
+  };
+
+  for (const [apiKey, featureKey] of Object.entries(boolMapping)) {
+    if (amenities[apiKey] === true) result.features[featureKey] = true;
+    else if (amenities[apiKey] === false) result.features[featureKey] = false;
+  }
+
+  // POC type
+  if (poi.pocType === 'agent' || poi.contactType === 'agent') result.pocType = 'agent';
+  else if (poi.pocType === 'private' || poi.contactType === 'private') result.pocType = 'private';
+
+  return result;
+}
+
+/**
+ * Fetch property data via Madlan GraphQL API as fallback.
+ */
+async function fetchViaGraphQL(sourceUrl: string): Promise<MadlanDetailResult | null> {
+  // Extract property ID from URL: /listing/{id} or /rent/{id} etc.
+  const idMatch = sourceUrl.match(/\/([a-f0-9-]{20,})(?:\?|$|\/)/i) 
+    || sourceUrl.match(/\/(\d{5,})(?:\?|$|\/)/);
+  if (!idMatch) {
+    console.warn(`⚠️ Madlan GraphQL: Cannot extract ID from ${sourceUrl}`);
+    return null;
+  }
+
+  const propertyId = idMatch[1];
+  console.log(`🔍 Madlan GraphQL fallback: ID=${propertyId}`);
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch('https://www.madlan.co.il/api2', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Referer': sourceUrl,
+        'Origin': 'https://www.madlan.co.il',
+      },
+      body: JSON.stringify({
+        operationName: 'poiByIds',
+        variables: { ids: [propertyId] },
+        query: `query poiByIds($ids: [String!]!) { poiByIds(ids: $ids) { id price area floor totalFloors rooms amenities contactType pocType additionalProperty { name value } } }`,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.warn(`⚠️ Madlan GraphQL: HTTP ${response.status}`);
+      return null;
+    }
+
+    const json = await response.json();
+    const poi = json?.data?.poiByIds?.[0];
+    if (!poi) {
+      console.warn(`⚠️ Madlan GraphQL: No POI in response`);
+      return null;
+    }
+
+    const result: MadlanDetailResult = { features: {} };
+    if (poi.price) result.price = parseInt(String(poi.price));
+    if (poi.area) result.size = parseInt(String(poi.area));
+    if (poi.floor != null) result.floor = parseInt(String(poi.floor));
+    if (poi.totalFloors) result.totalFloors = parseInt(String(poi.totalFloors));
+    if (poi.rooms) result.rooms = parseFloat(String(poi.rooms));
+
+    // Map amenities
+    if (poi.amenities && typeof poi.amenities === 'object') {
+      const boolMapping: Record<string, string> = {
+        parking: 'parking', balcony: 'balcony', elevator: 'elevator',
+        secureRoom: 'mamad', storage: 'storage', garden: 'yard',
+        accessible: 'accessible', furnished: 'furnished',
+        airConditioner: 'aircon', pets: 'pets', renovated: 'renovated',
+        garage: 'garage', bars: 'bars', sunHeater: 'sun_water_heater',
+      };
+      for (const [apiKey, featureKey] of Object.entries(boolMapping)) {
+        if (poi.amenities[apiKey] === true) result.features[featureKey] = true;
+        else if (poi.amenities[apiKey] === false) result.features[featureKey] = false;
+      }
+    }
+
+    // additionalProperty from GraphQL
+    if (Array.isArray(poi.additionalProperty)) {
+      for (const prop of poi.additionalProperty) {
+        mapPropertyValue(prop?.name, prop?.value, result);
+      }
+    }
+
+    if (poi.pocType) result.pocType = poi.pocType;
+    else if (poi.contactType) result.pocType = poi.contactType;
+
+    console.log(`✅ Madlan GraphQL: ${Object.keys(result.features).length} features, size=${result.size}`);
+    return result;
+  } catch (error) {
+    console.error(`❌ Madlan GraphQL fallback failed:`, error);
+    return null;
+  }
 }
 
 /**
