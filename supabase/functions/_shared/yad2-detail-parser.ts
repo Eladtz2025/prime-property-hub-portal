@@ -155,6 +155,16 @@ export function parseYad2Html(html: string): Yad2DetailResult | null {
     extractFeatureItems($, featureItems, features);
   }
 
+  // Sanity check: if all features are true (none false), CSS class parsing is likely broken
+  const totalFeatures = Object.keys(features).length;
+  const falseCount = Object.values(features).filter(v => v === false).length;
+  if (totalFeatures >= 10 && falseCount === 0) {
+    console.warn('⚠️ Yad2: All features are true — CSS class parsing likely broken, clearing features');
+    for (const key of Object.keys(features)) {
+      delete features[key];
+    }
+  }
+
   // ====================================================
   // SECTION 2: "פרטים נוספים" — Structured details via data-testid
   // ====================================================
@@ -277,7 +287,17 @@ export function parseYad2Html(html: string): Yad2DetailResult | null {
   // Parking fallback from text if not set via structured extraction
   if (features.parking === undefined) {
     const fullText = $.text();
-    if (/חניות?\s*\d+/i.test(fullText) || /חניי?ה/i.test(fullText)) {
+    const NEGATIVE_PARKING = [
+      /אין\s*חניי?ה/i,
+      /ללא\s*חניי?ה/i,
+      /בלי\s*חניי?ה/i,
+      /חניי?ה\s*:?\s*אין/i,
+      /חניי?ה\s*ציבורית/i,
+      /חניי?ה\s*ברחוב/i,
+    ];
+    if (NEGATIVE_PARKING.some(p => p.test(fullText))) {
+      features.parking = false;
+    } else if (/חניות?\s*\d+/i.test(fullText) || /חניי?ה/i.test(fullText)) {
       features.parking = true;
     }
   }

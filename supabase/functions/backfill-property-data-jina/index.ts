@@ -471,7 +471,12 @@ Deno.serve(async (req) => {
             const detailResult = await fetchHomelessDetailFeatures(prop.source_url);
             if (detailResult && Object.keys(detailResult.features).length > 0) {
               const existingFeatures = (prop.features || {}) as Record<string, any>;
-              const mergedFeatures = { ...existingFeatures, ...detailResult.features };
+              const mergedFeatures = { ...existingFeatures };
+              for (const [key, value] of Object.entries(detailResult.features)) {
+                if (mergedFeatures[key] === undefined || mergedFeatures[key] === null) {
+                  mergedFeatures[key] = value;
+                }
+              }
               
               const updates: Record<string, any> = {
                 features: mergedFeatures,
@@ -535,7 +540,12 @@ Deno.serve(async (req) => {
             const detailResult = await fetchMadlanDetailFeatures(prop.source_url);
             if (detailResult && Object.keys(detailResult.features).length > 0) {
               const existingFeatures = (prop.features || {}) as Record<string, any>;
-              const mergedFeatures = { ...existingFeatures, ...detailResult.features };
+              const mergedFeatures = { ...existingFeatures };
+              for (const [key, value] of Object.entries(detailResult.features)) {
+                if (mergedFeatures[key] === undefined || mergedFeatures[key] === null) {
+                  mergedFeatures[key] = value;
+                }
+              }
               
               const updates: Record<string, any> = {
                 features: mergedFeatures,
@@ -627,7 +637,12 @@ Deno.serve(async (req) => {
             const detailResult = await fetchYad2DetailFeatures(prop.source_url);
             if (detailResult && Object.keys(detailResult.features).length > 0) {
               const existingFeatures = (prop.features || {}) as Record<string, any>;
-              const mergedFeatures = { ...existingFeatures, ...detailResult.features };
+              const mergedFeatures = { ...existingFeatures };
+              for (const [key, value] of Object.entries(detailResult.features)) {
+                if (mergedFeatures[key] === undefined || mergedFeatures[key] === null) {
+                  mergedFeatures[key] = value;
+                }
+              }
               
               // Store extended metadata inside features jsonb
               if (detailResult.totalFloors) mergedFeatures.totalFloors = detailResult.totalFloors;
@@ -1002,9 +1017,9 @@ Deno.serve(async (req) => {
         });
         
         const mergedFeatures = { ...existingFeatures };
-        // Backfill always wins for explicit boolean values
+        // Only fill in missing values — don't overwrite existing scout data
         for (const [key, value] of Object.entries(features)) {
-          if (value === true || value === false) {
+          if ((value === true || value === false) && (mergedFeatures[key] === undefined || mergedFeatures[key] === null)) {
             mergedFeatures[key] = value;
           }
         }
@@ -1731,5 +1746,5 @@ function extractEntryDateInfo(markdown: string, source?: string): { entry_date: 
     }
   }
 
-  return { entry_date: null, immediate_entry: true };
+  return { entry_date: null, immediate_entry: false };
 }
