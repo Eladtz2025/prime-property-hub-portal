@@ -247,7 +247,7 @@ Deno.serve(async (req) => {
         .select('id', { count: 'exact', head: true })
         .eq('is_active', true)
         .not('source_url', 'is', null)
-      .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
+      .or('backfill_status.is.null,backfill_status.eq.pending');
 
       if (source_filter) {
         countQuery = countQuery.eq('source', source_filter);
@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
       .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
       .eq('is_active', true)
       .not('source_url', 'is', null)
-      .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed')
+      .or('backfill_status.is.null,backfill_status.eq.pending')
       .order('id', { ascending: true })
       .limit(effectiveBatchSize);
 
@@ -1062,7 +1062,7 @@ Deno.serve(async (req) => {
       .select('id', { count: 'exact', head: true })
       .eq('is_active', true)
       .not('source_url', 'is', null)
-      .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
+      .or('backfill_status.is.null,backfill_status.eq.pending');
     if (source_filter) {
       remainingQuery = remainingQuery.eq('source', source_filter);
     }
