@@ -161,6 +161,28 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Handle reset action - reset completed/failed properties back to pending
+    if (action === 'reset') {
+      const resetSource = source_filter || 'yad2';
+      const { count, error: resetError } = await supabase
+        .from('scouted_properties')
+        .update({ backfill_status: 'pending' }, { count: 'exact' })
+        .eq('source', resetSource)
+        .eq('is_active', true)
+        .in('backfill_status', ['completed', 'failed']);
+      
+      if (resetError) {
+        return new Response(JSON.stringify({ success: false, error: resetError.message }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      console.log(`🔄 Reset ${count} ${resetSource} properties to pending`);
+      return new Response(JSON.stringify({ success: true, reset_count: count, source: resetSource }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Handle status check
     if (action === 'status') {
       const { data: progress } = await supabase
