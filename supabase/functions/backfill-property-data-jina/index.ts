@@ -1372,6 +1372,7 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     const yad2Section = yad2Match ? yad2Match[1] : '';
     
     if (yad2Section.length > 10) {
+      console.log(`🔍 Yad2 raw "מה יש בנכס" section (first 800 chars): "${yad2Section.substring(0, 800)}"`);
       const yad2Features: Array<{ key: keyof PropertyFeatures; pattern: RegExp }> = [
         { key: 'parking',    pattern: /חניי?ה|חניות/i },
         { key: 'elevator',   pattern: /מעלית/i },
