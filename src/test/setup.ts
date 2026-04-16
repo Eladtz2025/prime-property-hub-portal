@@ -1,3 +1,4 @@
+// @ts-expect-error - jest-dom types are loaded at runtime
 import "@testing-library/jest-dom";
 
 Object.defineProperty(window, "matchMedia", {
