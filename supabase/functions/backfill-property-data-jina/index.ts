@@ -1366,73 +1366,26 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     return features; // Return empty — don't overwrite scout data
   }
 
-  // === Yad2: "מה יש בנכס" section lists only present features ===
+  // === Yad2: SKIP "מה יש בנכס" — Jina renders ALL features (active+inactive) identically ===
+  // Only use "פרטים נוספים" for reliable factual data (parking, size, floor, condition)
   if (source === 'yad2') {
-    const yad2Match = markdown.match(/מה יש בנכס([\s\S]*?)(?:##|הדרך לבית|בנק מזרחי|מחשבון|מחיר למ"ר|$)/i);
-    const yad2Section = yad2Match ? yad2Match[1] : '';
-    
-    if (yad2Section.length > 10) {
-      const yad2Features: Array<{ key: keyof PropertyFeatures; pattern: RegExp }> = [
-        { key: 'parking',    pattern: /חניי?ה|חניות/i },
-        { key: 'elevator',   pattern: /מעלית/i },
-        { key: 'mamad',      pattern: /ממ["״]?ד/i },
-        { key: 'balcony',    pattern: /מרפסת/i },
-        { key: 'storage',    pattern: /מחסן/i },
-        { key: 'yard',       pattern: /חצר|גינה/i },
-        { key: 'roof',       pattern: /גג\b/i },
-        { key: 'accessible', pattern: /נגיש|גישה\s*לנכים/i },
-        { key: 'furnished',  pattern: /מרוהט|ריהוט/i },
-        { key: 'renovated',  pattern: /משופצ|שופצ/i },
-        { key: 'pets',       pattern: /חיות|בע"?ח/i },
-      ];
+    console.log(`🟠 Yad2: skipping "מה יש בנכס" (unreliable via Jina — active/inactive indistinguishable)`);
 
-      // Additional non-PropertyFeatures boolean features stored in features object
-      const extraFeatures: Array<{ key: string; pattern: RegExp }> = [
-        { key: 'airConditioner', pattern: /מיזוג|מזגן/i },
-        { key: 'bars',          pattern: /סורגים/i },
-        { key: 'sunHeater',     pattern: /דוד\s*שמש/i },
-        { key: 'tadiran',       pattern: /טורנדו|טדיראן/i },
-        { key: 'boiler',        pattern: /בויילר|דוד\s*חשמלי/i },
-        { key: 'pandorDoors',   pattern: /דלתות\s*פנדור/i },
-        { key: 'kosherKitchen', pattern: /מטבח\s*כשר/i },
-      ];
-
-      for (const { key, pattern } of yad2Features) {
-        if (pattern.test(yad2Section)) {
-          features[key] = true;
-        }
-      }
-
-      for (const { key, pattern } of extraFeatures) {
-        if (pattern.test(yad2Section)) {
-          (features as any)[key] = true;
-        }
-      }
-
-      // Negative inference: Yad2 lists ALL present features, so absence = false
-      const negativeKeys: (keyof PropertyFeatures)[] = ['mamad', 'elevator', 'parking', 'storage', 'balcony'];
-      for (const key of negativeKeys) {
-        if (features[key] === undefined) {
-          features[key] = false;
-        }
-      }
-      // Also for extra features
-      if (!(features as any).airConditioner) (features as any).airConditioner = false;
-      
-      console.log(`🟠 Yad2 section-based features (section=${yad2Section.length}ch):`, JSON.stringify(features));
-    } else {
-      console.log(`⚠️ Yad2: no "מה יש בנכס" section found — skipping feature extraction (no guessing)`);
-    }
-
-    // === Also check "פרטים נוספים" section for parking, size, floor, condition ===
+    // === Only extract from "פרטים נוספים" section ===
     const yad2DetailsMatch = markdown.match(/פרטים נוספים([\s\S]*?)(?=##|מה יש בנכס|הדרך לבית|בנק מזרחי|מחשבון|$)/i);
     if (yad2DetailsMatch) {
       const details = yad2DetailsMatch[1];
+      console.log(`🔍 Yad2 "פרטים נוספים" section (first 500 chars): "${details.substring(0, 500)}"`);
       
-      // Parking from "פרטים נוספים" overrides negative inference
-      if (/חניי?ה|חניות?\s*\d*/i.test(details)) {
+      // Parking from "חניות X" or "חניה"
+      const parkingMatch = details.match(/חניות?\s*(\d+)/i);
+      if (parkingMatch) {
+        const parkingCount = parseInt(parkingMatch[1]);
+        features.parking = parkingCount > 0;
+        console.log(`🅿️ Yad2: parking=${features.parking} (count=${parkingCount})`);
+      } else if (/חניי?ה/i.test(details)) {
         features.parking = true;
-        console.log(`🅿️ Yad2: parking found in "פרטים נוספים"`);
+        console.log(`🅿️ Yad2: parking=true (keyword found)`);
       }
 
       // Size from "מ״ר בנוי XX"
@@ -1452,11 +1405,21 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
         console.log(`🏢 Yad2: floor from "פרטים נוספים" = ${floorMatch[1]}`);
       }
 
-      // Property condition
+      // Property condition — renovated
       if (/משופץ|שופצ/i.test(details)) {
         features.renovated = true;
+        console.log(`🔨 Yad2: renovated=true from "פרטים נוספים"`);
       }
+
+      // Immediate entry
+      if (/כניסה\s*מידית/i.test(details)) {
+        (features as any).immediate_entry = true;
+      }
+    } else {
+      console.log(`⚠️ Yad2: no "פרטים נוספים" section found`);
     }
+
+    console.log(`🟠 Yad2 features (from "פרטים נוספים" only):`, JSON.stringify(features));
 
     // Always return here for Yad2 — never fall through to keyword guessing
     return features;

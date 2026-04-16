@@ -50,29 +50,10 @@ export function parseYad2DetailMarkdown(markdown: string): Yad2DetailResult | nu
   const features: Record<string, boolean> = {};
   const result: Yad2DetailResult = { features };
 
-  // === Extract "מה יש בנכס" section ===
-  const featureSectionMatch = markdown.match(/##?\s*מה יש בנכס([\s\S]*?)(?=##|הדרך לבית|$)/i);
-  if (featureSectionMatch) {
-    const featureSection = featureSectionMatch[1];
-    const items = featureSection.match(/\*\s+(.+)/g) || [];
-    
-    for (const item of items) {
-      const text = item.replace(/^\*\s+/, '').trim();
-      for (const [pattern, key] of FEATURE_MAP) {
-        if (pattern.test(text)) {
-          features[key] = true;
-        }
-      }
-    }
-
-    // Negative inference: if the section exists but feature not listed
-    const negativeKeys = ['mamad', 'elevator', 'parking', 'storage', 'balcony', 'airConditioner'];
-    for (const key of negativeKeys) {
-      if (!(key in features)) {
-        features[key] = false;
-      }
-    }
-  }
+  // === SKIP "מה יש בנכס" section ===
+  // Jina renders ALL features (active + inactive) as identical bullet items.
+  // We CANNOT distinguish present from absent features, so skip entirely.
+  // Only use "פרטים נוספים" below for reliable data.
 
   // === Extract "פרטים נוספים" section ===
   const detailsMatch = markdown.match(/##?\s*פרטים נוספים([\s\S]*?)(?=##|$)/i);
