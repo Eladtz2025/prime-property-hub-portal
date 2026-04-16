@@ -1,33 +1,57 @@
 
 
-# תיקון CI Pipeline — Lint & Unit Tests
+# תוסף כרום לפרסום אוטומטי בקבוצות פייסבוק
 
-## הבעיות
-1. **840 שגיאות ESLint** — כמעט כולן `no-explicit-any` ו-`no-require-imports`. TypeScript עובר ללא שגיאות.
-2. **אין סקריפט test:ci** — ה-CI מריץ `npm run test:ci` שלא קיים ב-`package.json`.
+## סקירה
+הארכיטקטורה שהמתכנת הציע טובה ומקיפה. אני יכול לבנות את כל 3 החלקים. הנה התוכנית:
 
-## תיקונים
+## חלק 1: Supabase — טבלה + Edge Function + שינוי auto-publish
 
-### 1. ESLint — השתקת חוקים לא רלוונטיים
-**קובץ:** `eslint.config.js`
+### 1א. מיגרציה — טבלת `social_group_publish_queue`
+- יצירת הטבלה כפי שתואר, עם RLS policies (מנהלים בלבד)
+- אינדקסים על `status + scheduled_at` לשליפה מהירה
 
-הוספת חוקים ל-rules:
-- `@typescript-eslint/no-explicit-any: "off"` (כבר כבוי `no-unused-vars`, אותו דבר)
-- `@typescript-eslint/no-require-imports: "off"` (tailwind.config משתמש ב-require)
-- `no-case-declarations: "off"`
+### 1ב. Edge Function — `group-publish-queue`
+- `GET ?action=next` — מחזיר פוסט pending שהגיע זמנו, מעדכן ל-publishing
+- `POST ?action=complete` — מעדכן ל-published
+- `POST ?action=fail` — מעדכן ל-failed, מעלה attempt_count
+- `GET ?action=stats` — סטטיסטיקות להצגה ב-popup
+- אימות באמצעות anon key (התוסף ישלח אותו)
 
-### 2. הוספת סקריפטי טסטים
-**קובץ:** `package.json`
+### 1ג. שינוי `auto-publish/index.ts`
+- כש-`publish_target.type === 'groups'` — במקום ליצור social_posts ולקרוא ל-social-publish, ייצור רשומות ב-`social_group_publish_queue` עם `scheduled_at` מפוזר (רווח אקראי 2-5 דקות)
+- יישום כללי אנטי-ספאם בצד השרת: מגבלת 8-10 קבוצות ליום, חלון 09:00-21:00, ווריאציה בטקסט
 
-הוספת:
-```json
-"test": "vitest run",
-"test:ci": "vitest run --reporter=verbose"
-```
+## חלק 2: תוסף כרום
 
-### 3. בדיקה שיש טסטים שעוברים
-הרצת `npm run test:ci` מקומית לוודא שהכל עובר.
+### מבנה קבצים ב-`extension/`
+- `manifest.json` — MV3, permissions: tabs, storage, alarms, activeTab
+- `background.js` — polling כל 2 דקות, ניהול טאבים, דיווח חזרה ל-Supabase
+- `content-script.js` — מציאת composer, הקלדה אנושית, העלאת תמונות, לחיצה על Post
+- `popup.html` + `popup.js` — סטטוס, כפתורי השהה/הפעל, לוג
 
-## תוצאה צפויה
-שני ה-checks (Lint & Unit Tests) יעברו בירוק, ו-Build ישוחרר מ-Skipped.
+### אנטי-ספאם בתוסף
+- delay אקראי 60-120 שניה בין פוסטים
+- הקלדה תו-תו (30-80ms)
+- warmup mode בשבוע ראשון
+
+### אריזה
+- ZIP ל-`public/ct-market-publisher.zip` עם כפתור הורדה מה-admin
+
+## חלק 3: UI בפאנל ניהול
+- הוספת טאב "תור קבוצות" ב-AutoPublishManager שמציג את הפוסטים בתור + סטטוסים
+- כפתורי "Copy & Open" לפרסום ידני כ-fallback (אם התוסף לא פעיל)
+
+## סדר ביצוע
+1. מיגרציה לטבלה
+2. Edge Function `group-publish-queue`
+3. שינוי `auto-publish/index.ts`
+4. בניית תוסף כרום (manifest, background, content-script, popup)
+5. אריזה ב-ZIP + כפתור הורדה
+6. UI ניהול תור קבוצות + Copy & Open fallback
+
+## הערות חשובות
+- ה-content-script תלוי ב-DOM של פייסבוק — שביר מטבעו. ה-selectors יצטרכו עדכון תקופתי
+- התוסף דורש שהמשתמש מחובר לפייסבוק בדפדפן
+- ה-anon key יוטמע בתוסף — הוא public key אז זה תקין, אבל ה-RLS חייב להיות הדוק
 
