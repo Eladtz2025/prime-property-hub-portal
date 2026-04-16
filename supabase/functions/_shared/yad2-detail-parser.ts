@@ -2,13 +2,17 @@
  * Yad2 Detail Parser — HTML Parser (Cheerio)
  * 
  * Fetches a Yad2 detail page via Jina Reader in HTML mode
- * and extracts features from "מה יש בנכס" section.
+ * and extracts data from TWO sections:
  * 
- * Features are determined by CSS classes:
- *   - <li data-testid="xxx-item"> → feature is PRESENT (true)
- *   - <li class="...disabled..." data-testid="xxx-item"> → feature is ABSENT (false)
+ * 1. "מה יש בנכס" (Features grid):
+ *    - <li data-testid="xxx-item"> → feature is PRESENT (true)
+ *    - <li class="...disabled..." data-testid="xxx-item"> → feature is ABSENT (false)
  * 
- * Also extracts size, floor, parking from "פרטים נוספים" section (text-based).
+ * 2. "פרטים נוספים" (Additional details):
+ *    - Structured <dl> with <dd> labels and <dt> values, each with data-testid
+ *    - property-condition-value, parking-value, building-top-floor-value, etc.
+ * 
+ * Also extracts price from header and address from title.
  */
 
 import { load as cheerioLoad } from "https://esm.sh/cheerio@1.0.0";
@@ -21,6 +25,11 @@ export interface Yad2DetailResult {
   price?: number;
   propertyCondition?: string;
   adType?: string;
+  totalFloors?: number;
+  pricePerSqm?: number;
+  parkingSpots?: number;
+  entryDate?: string;
+  address?: string;
 }
 
 /** Map data-testid values to our feature keys */
@@ -44,33 +53,6 @@ const TESTID_FEATURE_MAP: Record<string, string> = {
   'roof-item': 'roof',
   'long-term-item': 'longTerm',
   'roommates-item': 'roommates',
-};
-
-/** Fallback: map Hebrew text labels to feature keys (if data-testid unknown) */
-const TEXT_FEATURE_MAP: Record<string, string> = {
-  'מעלית': 'elevator',
-  'חניה': 'parking',
-  'חנייה': 'parking',
-  'מרפסת': 'balcony',
-  'ממ"ד': 'mamad',
-  'ממד': 'mamad',
-  'מחסן': 'storage',
-  'מיזוג': 'airConditioner',
-  'מזגן טורנדו': 'tadiran',
-  'סורגים': 'bars',
-  'גישה לנכים': 'accessible',
-  'חיות מחמד': 'pets',
-  'דוד שמש': 'sunHeater',
-  'משופצת': 'renovated',
-  'משופץ': 'renovated',
-  'מרוהטת': 'furnished',
-  'מרוהט': 'furnished',
-  'גינה': 'yard',
-  'גג': 'roof',
-  'דלתות פנדור': 'pandorDoors',
-  'מטבח כשר': 'kosherKitchen',
-  'לטווח ארוך': 'longTerm',
-  'שותפים': 'roommates',
 };
 
 /**
@@ -145,7 +127,7 @@ export async function fetchYad2DetailFeatures(
 }
 
 /**
- * Parse Yad2 detail page HTML and extract features.
+ * Parse Yad2 detail page HTML and extract features + structured details.
  * Exported for testing.
  */
 export function parseYad2Html(html: string): Yad2DetailResult | null {
@@ -155,76 +137,201 @@ export function parseYad2Html(html: string): Yad2DetailResult | null {
   const features: Record<string, boolean> = {};
   const result: Yad2DetailResult = { features };
 
-  // === Extract features from "מה יש בנכס" section ===
+  // ====================================================
+  // SECTION 1: "מה יש בנכס" — Feature grid via data-testid
+  // ====================================================
   const featureItems = $('[data-testid="in-property-grid"] li[data-testid]');
 
   if (featureItems.length === 0) {
-    console.log(`⚠️ Yad2 HTML: no feature items found in "מה יש בנכס"`);
+    // Fallback: try all li with data-nagish="content-in-property"
+    const fallbackItems = $('li[data-nagish="content-in-property"]');
+    if (fallbackItems.length > 0) {
+      console.log(`⚠️ Yad2: using fallback selector, found ${fallbackItems.length} items`);
+      extractFeatureItems($, fallbackItems, features);
+    } else {
+      console.log(`⚠️ Yad2 HTML: no feature items found`);
+    }
   } else {
-    featureItems.each((_i, el) => {
-      const $el = $(el);
-      const testId = $el.attr('data-testid') || '';
-      const text = $el.find('[class*="text"]').text().trim();
-      const isDisabled = $el.attr('class')?.includes('disabled') || false;
-
-      // Map testid to feature key
-      let featureKey = TESTID_FEATURE_MAP[testId];
-      if (!featureKey && text) {
-        featureKey = TEXT_FEATURE_MAP[text];
-      }
-
-      if (featureKey) {
-        features[featureKey] = !isDisabled;
-      }
-    });
-
-    console.log(`✅ Yad2 HTML features (${Object.keys(features).length}):`,
-      Object.entries(features).map(([k, v]) => `${k}=${v}`).join(', '));
+    extractFeatureItems($, featureItems, features);
   }
 
-  // === Extract from "פרטים נוספים" via text content ===
-  const detailsSection = $('[data-testid*="additional-details"], [data-testid*="more-details"]');
-  const fullText = $.text();
-
-  // Size
-  const sizeMatch = fullText.match(/(\d+)\s*מ[״"]ר/) || fullText.match(/מ[״"]ר\s*(?:בנוי\s*)?(\d+)/);
-  if (sizeMatch) {
-    const size = parseInt(sizeMatch[1]);
-    if (size > 10 && size < 2000) result.size = size;
+  // ====================================================
+  // SECTION 2: "פרטים נוספים" — Structured details via data-testid
+  // ====================================================
+  
+  // Property condition (מצב הנכס)
+  const conditionEl = $('[data-testid="property-condition-value"]');
+  if (conditionEl.length) {
+    result.propertyCondition = conditionEl.text().trim();
   }
 
-  // Floor
-  const floorMatch = fullText.match(/קומה\s*(\d+)/i);
-  if (floorMatch) {
-    result.floor = parseInt(floorMatch[1]);
+  // Size (מ"ר בנוי)
+  const sizeEl = $('[data-testid="square-meter-build-value"]');
+  if (sizeEl.length) {
+    const sizeNum = parseInt(sizeEl.text().replace(/[^\d]/g, ''));
+    if (sizeNum > 10 && sizeNum < 2000) result.size = sizeNum;
   }
 
-  // Rooms
-  const roomsMatch = fullText.match(/(\d+(?:\.\d)?)\s*חדרי/);
-  if (roomsMatch) {
-    const rooms = parseFloat(roomsMatch[1]);
-    if (rooms > 0 && rooms <= 20) result.rooms = rooms;
+  // Total floors in building (קומות בבניין)
+  const totalFloorsEl = $('[data-testid="building-top-floor-value"]');
+  if (totalFloorsEl.length) {
+    const tf = parseInt(totalFloorsEl.text().replace(/[^\d]/g, ''));
+    if (tf > 0 && tf < 200) result.totalFloors = tf;
   }
 
-  // Price
-  const priceMatch = fullText.match(/[‏]?([\d,]+)\s*[‏]?₪/);
-  if (priceMatch) {
-    const price = parseInt(priceMatch[1].replace(/,/g, ''));
+  // Parking spots (חניות)
+  const parkingEl = $('[data-testid="parking-value"]');
+  if (parkingEl.length) {
+    const spots = parseInt(parkingEl.text().replace(/[^\d]/g, ''));
+    if (spots > 0 && spots < 20) {
+      result.parkingSpots = spots;
+      // Also set parking feature to true if parking spots > 0
+      features.parking = true;
+    }
+  }
+
+  // Price per sqm (מחיר למ"ר)
+  const pricePerSqmEl = $('[data-testid="price-per-squaremeter-value"]');
+  if (pricePerSqmEl.length) {
+    const pps = parseInt(pricePerSqmEl.text().replace(/[^\d]/g, ''));
+    if (pps > 100 && pps < 500000) result.pricePerSqm = pps;
+  }
+
+  // Entry date (תאריך כניסה)
+  const entryDateEl = $('[data-testid="entrance-date-value"]');
+  if (entryDateEl.length) {
+    result.entryDate = entryDateEl.text().trim();
+  }
+
+  // Deal type (סוג העסקה) — used for broker/ad-type detection
+  const dealTypeEl = $('[data-testid="deal-type-value"]');
+  
+  // Floor — from header details or structured
+  const floorEl = $('[data-testid="floor-value"]');
+  if (floorEl.length) {
+    const floorNum = parseInt(floorEl.text().replace(/[^\d]/g, ''));
+    if (floorNum >= 0 && floorNum < 200) result.floor = floorNum;
+  }
+
+  // Rooms — from header
+  const roomsEl = $('[data-testid="rooms-value"]');
+  if (roomsEl.length) {
+    const roomsNum = parseFloat(roomsEl.text().replace(/[^\d.]/g, ''));
+    if (roomsNum > 0 && roomsNum <= 20) result.rooms = roomsNum;
+  }
+
+  // ====================================================
+  // SECTION 3: Price from header
+  // ====================================================
+  const priceEl = $('[data-testid="price"]');
+  if (priceEl.length) {
+    const priceText = priceEl.text().replace(/[^\d]/g, '');
+    const price = parseInt(priceText);
     if (price > 500 && price < 100000000) result.price = price;
   }
 
-  // Parking override from "פרטים נוספים" if not already set
+  // ====================================================
+  // SECTION 4: Address from heading
+  // ====================================================
+  const headingEl = $('[data-testid="heading"]');
+  if (headingEl.length) {
+    result.address = headingEl.text().trim();
+  }
+
+  // ====================================================
+  // SECTION 5: Fallback regex for fields not found via selectors
+  // ====================================================
+  if (!result.size || !result.floor || !result.rooms || !result.price) {
+    const fullText = $.text();
+
+    if (!result.size) {
+      const sizeMatch = fullText.match(/(\d+)\s*מ[״"]ר/) || fullText.match(/מ[״"]ר\s*(?:בנוי\s*)?(\d+)/);
+      if (sizeMatch) {
+        const size = parseInt(sizeMatch[1]);
+        if (size > 10 && size < 2000) result.size = size;
+      }
+    }
+
+    if (result.floor === undefined) {
+      const floorMatch = fullText.match(/קומה\s*(\d+)/i);
+      if (floorMatch) result.floor = parseInt(floorMatch[1]);
+    }
+
+    if (!result.rooms) {
+      const roomsMatch = fullText.match(/(\d+(?:\.\d)?)\s*חדרי/);
+      if (roomsMatch) {
+        const rooms = parseFloat(roomsMatch[1]);
+        if (rooms > 0 && rooms <= 20) result.rooms = rooms;
+      }
+    }
+
+    if (!result.price) {
+      const priceMatch = fullText.match(/[‏]?([\d,]+)\s*[‏]?₪/);
+      if (priceMatch) {
+        const price = parseInt(priceMatch[1].replace(/,/g, ''));
+        if (price > 500 && price < 100000000) result.price = price;
+      }
+    }
+  }
+
+  // Parking fallback from text if not set via structured extraction
   if (features.parking === undefined) {
+    const fullText = $.text();
     if (/חניות?\s*\d+/i.test(fullText) || /חניי?ה/i.test(fullText)) {
       features.parking = true;
     }
   }
 
   // Broker detection
+  const fullText = $.text();
   if (/משרד\s*תיווך|סוכנות|מתווכ|RE\/MAX|רימקס|אנגלו|century/i.test(fullText)) {
     result.adType = 'agency';
   }
 
-  console.log(`✅ Yad2 HTML parsed: ${Object.keys(features).length} features, size=${result.size}, rooms=${result.rooms}, floor=${result.floor}`);
+  const featureCount = Object.keys(features).length;
+  const trueCount = Object.values(features).filter(v => v).length;
+  const falseCount = Object.values(features).filter(v => !v).length;
+  console.log(`✅ Yad2 HTML parsed: ${featureCount} features (${trueCount}✅/${falseCount}❌), size=${result.size}, rooms=${result.rooms}, floor=${result.floor}, price=${result.price}, condition=${result.propertyCondition}, totalFloors=${result.totalFloors}, parking=${result.parkingSpots}, entryDate=${result.entryDate}`);
   return result;
+}
+
+/**
+ * Extract feature items from a Cheerio selection of <li> elements.
+ */
+function extractFeatureItems(
+  $: ReturnType<typeof cheerioLoad>,
+  items: ReturnType<ReturnType<typeof cheerioLoad>>,
+  features: Record<string, boolean>
+) {
+  items.each((_i, el) => {
+    const $el = $(el);
+    const testId = $el.attr('data-testid') || '';
+    const text = $el.find('span[class*="text"]').text().trim();
+    const classes = $el.attr('class') || '';
+    const isDisabled = classes.includes('disabled');
+
+    // Map testid to feature key
+    let featureKey = TESTID_FEATURE_MAP[testId];
+    if (!featureKey && text) {
+      // Fallback: match Hebrew text to known features
+      const TEXT_FEATURE_MAP: Record<string, string> = {
+        'מעלית': 'elevator', 'חניה': 'parking', 'חנייה': 'parking',
+        'מרפסת': 'balcony', 'ממ"ד': 'mamad', 'ממד': 'mamad',
+        'מחסן': 'storage', 'מיזוג': 'airConditioner', 'מזגן טורנדו': 'tadiran',
+        'סורגים': 'bars', 'גישה לנכים': 'accessible', 'חיות מחמד': 'pets',
+        'דוד שמש': 'sunHeater', 'משופצת': 'renovated', 'משופץ': 'renovated',
+        'מרוהטת': 'furnished', 'מרוהט': 'furnished', 'גינה': 'yard',
+        'גג': 'roof', 'דלתות פנדור': 'pandorDoors', 'מטבח כשר': 'kosherKitchen',
+        'לטווח ארוך': 'longTerm', 'שותפים': 'roommates',
+      };
+      featureKey = TEXT_FEATURE_MAP[text];
+    }
+
+    if (featureKey) {
+      features[featureKey] = !isDisabled;
+    }
+  });
+
+  console.log(`✅ Yad2 features extracted (${Object.keys(features).length}):`,
+    Object.entries(features).map(([k, v]) => `${k}=${v}`).join(', '));
 }
