@@ -607,6 +607,13 @@ Deno.serve(async (req) => {
               const existingFeatures = (prop.features || {}) as Record<string, any>;
               const mergedFeatures = { ...existingFeatures, ...detailResult.features };
               
+              // Store extended metadata inside features jsonb
+              if (detailResult.totalFloors) mergedFeatures.totalFloors = detailResult.totalFloors;
+              if (detailResult.pricePerSqm) mergedFeatures.pricePerSqm = detailResult.pricePerSqm;
+              if (detailResult.parkingSpots) mergedFeatures.parkingSpots = detailResult.parkingSpots;
+              if (detailResult.propertyCondition) mergedFeatures.propertyCondition = detailResult.propertyCondition;
+              if (detailResult.entryDate) mergedFeatures.entryDate = detailResult.entryDate;
+
               const updates: Record<string, any> = {
                 features: mergedFeatures,
                 backfill_status: 'completed',
@@ -634,6 +641,14 @@ Deno.serve(async (req) => {
                 fieldsUpdated.push('price');
               }
 
+              // Address upgrade: use detail page address if current one lacks house number
+              if (detailResult.address && isValidAddressForUpdate(detailResult.address)) {
+                if (!prop.address || !hasHouseNumber(prop.address)) {
+                  updates.address = detailResult.address;
+                  fieldsUpdated.push('address');
+                }
+              }
+
               // Broker detection from detail page
               if (prop.is_private === null && detailResult.adType) {
                 updates.is_private = detailResult.adType !== 'agency';
@@ -647,6 +662,15 @@ Deno.serve(async (req) => {
               successCount++;
               batchStats.features_updated++;
               batchStats.total_processed++;
+              
+              // Log extended info
+              const extFields = [
+                detailResult.propertyCondition && `condition=${detailResult.propertyCondition}`,
+                detailResult.totalFloors && `totalFloors=${detailResult.totalFloors}`,
+                detailResult.parkingSpots && `parking=${detailResult.parkingSpots}`,
+                detailResult.entryDate && `entry=${detailResult.entryDate}`,
+              ].filter(Boolean).join(', ');
+              
               await saveRecentItem({
                 address: prop.address || prop.title,
                 neighborhood: prop.neighborhood,
@@ -656,7 +680,7 @@ Deno.serve(async (req) => {
                 fields_updated: fieldsUpdated,
                 timestamp: new Date().toISOString(),
               });
-              console.log(`✅ Yad2 HTML: ${Object.keys(detailResult.features).length} features, fields: ${fieldsUpdated.join(',') || 'none'}`);
+              console.log(`✅ Yad2 HTML: ${Object.keys(detailResult.features).length} features, fields: ${fieldsUpdated.join(',') || 'none'}${extFields ? ', ' + extFields : ''}`);
             } else {
               failCount++;
               batchStats.scrape_failed++;
