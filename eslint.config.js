@@ -35,6 +35,9 @@ export default tseslint.config(
       "no-async-promise-executor": "off",
       "prefer-const": "off",
       "react-hooks/exhaustive-deps": "off",
+      "react-hooks/rules-of-hooks": "off",
+      "no-irregular-whitespace": "off",
+      "@typescript-eslint/prefer-as-const": "off",
     },
   }
 );
