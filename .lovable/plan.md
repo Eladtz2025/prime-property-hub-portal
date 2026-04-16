@@ -1,45 +1,26 @@
 
 
-# תיקון CI Pipeline — Lint & Unit Tests
+# עדכון content-script.js עם הקוד של המתכנת
 
-## הבעיות שנמצאו
+## סיכום
+הקוד של המתכנת טוב מאוד — 5 אסטרטגיות חיפוש ל-composer ו-3 לכפתור פרסום. אני אחליף את `extension/content-script.js` בקוד שלו, עם כמה שיפורים קטנים:
 
-### בעיה 1: `npm ci` נכשל כי אין `package-lock.json`
-הפרויקט משתמש ב-bun (יש `bun.lock`), אבל ה-CI workflow משתמש ב-`npm ci` שדורש `package-lock.json`. זו כנראה הסיבה העיקרית לכישלון — ה-dependencies לא מותקנים כלל.
+## שינויים שאבצע
 
-### בעיה 2: ESLint סורק גם `supabase/` ו-`scripts/`
-ה-ignores ב-`eslint.config.js` לא מחריג את התיקיות `supabase` ו-`scripts` — עשרות קבצי Edge Functions נסרקים מיותר.
+### 1. החלפת `extension/content-script.js`
+הקוד המלא שהמתכנת כתב — כמעט כמו שהוא, עם תיקונים:
+- **הוספת `selectAll` + `delete` לפני הקלדה** — הקוד המקורי עושה `selectAll` בלי `delete` אחריו, מה שישאיר את הטקסט הקודם
+- **תיקון `clipboardPaste`** — `document.execCommand('paste')` לא עובד בלי אירוע paste אמיתי; אשפר את ה-fallback
+- **הוספת logging לכל שלב** כדי שיהיה קל לדבג ב-service worker console
 
-### בעיה 3: `vitest`, `jsdom`, `@testing-library/*` ב-dependencies במקום devDependencies
-לא שובר את ה-CI, אבל לא נכון. צריך להעביר ל-`devDependencies`.
+### 2. תיקון `extension/popup.html` — CSP fix
+הכפתורים משתמשים ב-`onclick` inline שנחסם ע"י Chrome CSP. אעביר ל-`addEventListener` ב-`popup.js` כדי ש"הפעל עכשיו" באמת יעבוד.
 
-## תיקונים
+### 3. אריזה מחדש ל-ZIP
+עדכון `public/ct-market-publisher.zip` עם הקבצים המעודכנים.
 
-### 1. שינוי CI workflow ל-bun
-**קובץ:** `.github/workflows/ci.yml`
-- החלפת `npm ci` ב-`bun install --frozen-lockfile`
-- החלפת `npm run lint` ב-`bun run lint`
-- החלפת `npm run test:ci` ב-`bun run test:ci`
-- החלפת `npm run build` ב-`bun run build`
-- שימוש ב-`oven-sh/setup-bun@v1` במקום `actions/setup-node` (או בנוסף אליו)
-
-### 2. עדכון ESLint ignores
-**קובץ:** `eslint.config.js` שורה 8
-- שינוי מ-`{ ignores: ["dist"] }` ל-`{ ignores: ["dist", "supabase", "scripts", "extension"] }`
-
-### 3. העברת test dependencies ל-devDependencies
-**קובץ:** `package.json`
-- העברת `vitest`, `jsdom`, `@testing-library/jest-dom`, `@testing-library/react` מ-dependencies ל-devDependencies
-
-### 4. הוספת `--passWithNoTests` לסקריפט test:ci
-למניעת כישלון אם אין טסטים:
-```
-"test:ci": "vitest run --reporter=verbose --passWithNoTests"
-```
-
-## סדר ביצוע
-1. עדכון `eslint.config.js` (ignores)
-2. העברת packages ל-devDependencies + עדכון test:ci script
-3. עדכון `.github/workflows/ci.yml` לשימוש ב-bun
-4. הרצת lint ו-test מקומית לוידוא
+## מה לא משתנה
+- `background.js` — עובד מצוין
+- `manifest.json` — ללא שינוי
+- Edge Function — ללא שינוי
 
