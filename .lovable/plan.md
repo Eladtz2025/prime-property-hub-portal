@@ -1,26 +1,26 @@
 
 
-# עדכון content-script.js עם הקוד של המתכנת
+# תיקון Selectors — חיפוש בתוך `[role="dialog"]`
 
-## סיכום
-הקוד של המתכנת טוב מאוד — 5 אסטרטגיות חיפוש ל-composer ו-3 לכפתור פרסום. אני אחליף את `extension/content-script.js` בקוד שלו, עם כמה שיפורים קטנים:
+## הבעיה
+התוסף פותח את ה-dialog בהצלחה, אבל ה-`waitForElement` מחפש textbox בכל הדף (`document.querySelector`) במקום בתוך ה-dialog הפתוח. אותו דבר עם כפתור Post.
 
-## שינויים שאבצע
+## שינויים
 
-### 1. החלפת `extension/content-script.js`
-הקוד המלא שהמתכנת כתב — כמעט כמו שהוא, עם תיקונים:
-- **הוספת `selectAll` + `delete` לפני הקלדה** — הקוד המקורי עושה `selectAll` בלי `delete` אחריו, מה שישאיר את הטקסט הקודם
-- **תיקון `clipboardPaste`** — `document.execCommand('paste')` לא עובד בלי אירוע paste אמיתי; אשפר את ה-fallback
-- **הוספת logging לכל שלב** כדי שיהיה קל לדבג ב-service worker console
+### 1. `extension/content-script.js` — עדכון Step 2 (textbox)
+שורה 32-34: שינוי ה-selector ל:
+```
+'[role="dialog"] [role="textbox"][contenteditable="true"]'
+```
 
-### 2. תיקון `extension/popup.html` — CSP fix
-הכפתורים משתמשים ב-`onclick` inline שנחסם ע"י Chrome CSP. אעביר ל-`addEventListener` ב-`popup.js` כדי ש"הפעל עכשיו" באמת יעבוד.
+### 2. `clickPostButton()` — חיפוש בתוך dialog קודם
+העדפת חיפוש בתוך `[role="dialog"]` לפני חיפוש גלובלי. כבר יש Strategy 2 שעושה את זה, אבל צריך להעלות אותה לעדיפות ראשונה.
 
-### 3. אריזה מחדש ל-ZIP
-עדכון `public/ct-market-publisher.zip` עם הקבצים המעודכנים.
+### 3. `addImages()` — עדכון selector לכפתור תמונה
+הוספת `aria-label` patterns: `"Photo"`, `"photo"`, `"תמונה"` בתוך dialog.
 
-## מה לא משתנה
-- `background.js` — עובד מצוין
-- `manifest.json` — ללא שינוי
-- Edge Function — ללא שינוי
+### 4. אריזה מחדש ל-ZIP
+
+## היקף
+שינוי קטן — רק עדכון selectors בשלושה מקומות + ZIP מחדש.
 
