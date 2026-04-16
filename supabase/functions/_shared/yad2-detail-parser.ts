@@ -95,8 +95,8 @@ export function parseYad2DetailMarkdown(markdown: string): Yad2DetailResult | nu
       if (size > 10 && size < 2000) result.size = size;
     }
 
-    // Parking count
-    if (/חניות?\s*\d+/i.test(details)) {
+    // Parking — also match "חניה" without digits
+    if (/חניי?ה|חניות?\s*\d*/i.test(details)) {
       features.parking = true;
     }
   }

@@ -1406,6 +1406,41 @@ function extractFeatures(markdown: string, source?: string): PropertyFeatures {
     } else {
       console.log(`⚠️ Yad2: no "מה יש בנכס" section found — skipping feature extraction (no guessing)`);
     }
+
+    // === Also check "פרטים נוספים" section for parking, size, floor, condition ===
+    const yad2DetailsMatch = markdown.match(/פרטים נוספים([\s\S]*?)(?=##|מה יש בנכס|הדרך לבית|בנק מזרחי|מחשבון|$)/i);
+    if (yad2DetailsMatch) {
+      const details = yad2DetailsMatch[1];
+      
+      // Parking from "פרטים נוספים" overrides negative inference
+      if (/חניי?ה|חניות?\s*\d*/i.test(details)) {
+        features.parking = true;
+        console.log(`🅿️ Yad2: parking found in "פרטים נוספים"`);
+      }
+
+      // Size from "מ״ר בנוי XX"
+      const sizeMatch = details.match(/מ[״"]ר\s*(?:בנוי\s*)?(\d+)/) || details.match(/(\d+)\s*מ[״"]ר/);
+      if (sizeMatch) {
+        const detailSize = parseInt(sizeMatch[1]);
+        if (detailSize > 10 && detailSize < 2000) {
+          (features as any)._detail_size = detailSize;
+          console.log(`📐 Yad2: size from "פרטים נוספים" = ${detailSize}`);
+        }
+      }
+
+      // Floor (but NOT "קומות בבניין")
+      const floorMatch = details.match(/קומה\s+(\d+)/i);
+      if (floorMatch) {
+        (features as any)._detail_floor = parseInt(floorMatch[1]);
+        console.log(`🏢 Yad2: floor from "פרטים נוספים" = ${floorMatch[1]}`);
+      }
+
+      // Property condition
+      if (/משופץ|שופצ/i.test(details)) {
+        features.renovated = true;
+      }
+    }
+
     // Always return here for Yad2 — never fall through to keyword guessing
     return features;
   }
