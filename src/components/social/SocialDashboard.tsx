@@ -7,6 +7,7 @@ import { SocialAccountSetup } from './SocialAccountSetup';
 
 import { SocialToolsPanel } from './SocialToolsPanel';
 import { AutoPublishManager } from './AutoPublishManager';
+import { GroupQueueManager } from './GroupQueueManager';
 import { useSocialAccounts, useSocialPosts } from '@/hooks/useSocialPosts';
 
 export const SocialDashboard: React.FC = () => {
@@ -86,6 +87,7 @@ export const SocialDashboard: React.FC = () => {
       </div>
 
       <AutoPublishManager />
+      <GroupQueueManager />
       <SocialToolsPanel />
 
       {/* Settings Sheet */}
