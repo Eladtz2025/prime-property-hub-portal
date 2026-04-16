@@ -895,6 +895,23 @@ Deno.serve(async (req) => {
           batchStats.features_updated++;
         }
 
+        // Apply size/floor from Yad2 "פרטים נוספים" if missing
+        if ((features as any)._detail_size && !prop.size && !updates.size) {
+          updates.size = (features as any)._detail_size;
+          batchStats.fields_updated.size++;
+          console.log(`📐 Size set from Yad2 details: ${updates.size}`);
+        }
+        if ((features as any)._detail_floor !== undefined && prop.floor === null && updates.floor === undefined) {
+          updates.floor = (features as any)._detail_floor;
+          batchStats.fields_updated.floor++;
+          console.log(`🏢 Floor set from Yad2 details: ${updates.floor}`);
+        }
+        // Clean up internal keys from features
+        if (updates.features) {
+          delete updates.features._detail_size;
+          delete updates.features._detail_floor;
+        }
+
         // Broker detection
         const shouldClassifyBroker = prop.is_private === null || prop.is_private === undefined;
 
