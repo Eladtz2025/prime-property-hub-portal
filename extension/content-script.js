@@ -29,9 +29,13 @@ async function publishToGroup(text, imageUrls) {
 
   // === Step 2: Find the textbox inside the modal ===
   console.log('[CT Publisher] Step 2: Looking for textbox...');
+  // First try inside dialog, then fallback to global
   const textbox = await waitForElement(
+    '[role="dialog"] [role="textbox"][contenteditable="true"]',
+    10000
+  ) || await waitForElement(
     '[role="textbox"][contenteditable="true"]',
-    15000
+    5000
   );
   if (!textbox) {
     throw new Error('Textbox not found in composer dialog');
@@ -173,19 +177,7 @@ async function clickPostButton() {
     'Post', 'פרסום', 'פרסמו', 'פרסם', 'Publish', 'Share', 'שיתוף'
   ];
 
-  // Strategy 1: aria-label
-  for (const label of postLabels) {
-    const btn = document.querySelector(
-      `[aria-label="${label}"][role="button"]`
-    );
-    if (btn && !btn.disabled && btn.offsetParent !== null) {
-      console.log(`[CT Publisher] Clicking post button via aria-label: "${label}"`);
-      btn.click();
-      return true;
-    }
-  }
-
-  // Strategy 2: search inside dialog/modal
+  // Strategy 1 (PRIORITY): search inside dialog/modal first
   const dialogs = document.querySelectorAll(
     '[role="dialog"], [aria-modal="true"]'
   );
@@ -201,6 +193,18 @@ async function clickPostButton() {
           return true;
         }
       }
+    }
+  }
+
+  // Strategy 2: aria-label globally
+  for (const label of postLabels) {
+    const btn = document.querySelector(
+      `[aria-label="${label}"][role="button"]`
+    );
+    if (btn && !btn.disabled && btn.offsetParent !== null) {
+      console.log(`[CT Publisher] Clicking post button via aria-label: "${label}"`);
+      btn.click();
+      return true;
     }
   }
 
@@ -324,21 +328,40 @@ async function addImages(imageUrls) {
   ];
 
   let photoBtn = null;
-  const dialogs = document.querySelectorAll(
-    '[role="dialog"], [aria-modal="true"]'
-  );
 
-  for (const dialog of dialogs) {
-    const buttons = dialog.querySelectorAll('[role="button"], [aria-label]');
-    for (const btn of buttons) {
-      const label = btn.getAttribute('aria-label') || '';
-      const text = btn.textContent || '';
-      if (photoLabels.some(l => label.includes(l) || text.includes(l))) {
-        photoBtn = btn;
-        break;
-      }
+  // Strategy 1: aria-label inside dialog
+  const photoAriaSelectors = [
+    '[role="dialog"] [aria-label*="Photo"]',
+    '[role="dialog"] [aria-label*="photo"]',
+    '[role="dialog"] [aria-label*="תמונה"]',
+    '[role="dialog"] [aria-label*="סרטון"]',
+  ];
+  for (const sel of photoAriaSelectors) {
+    const el = document.querySelector(sel);
+    if (el) {
+      photoBtn = el;
+      console.log('[CT Publisher] Found photo button via aria-label in dialog');
+      break;
     }
-    if (photoBtn) break;
+  }
+
+  // Strategy 2: text-based search inside dialog
+  if (!photoBtn) {
+    const imgDialogs = document.querySelectorAll(
+      '[role="dialog"], [aria-modal="true"]'
+    );
+    for (const dialog of imgDialogs) {
+      const buttons = dialog.querySelectorAll('[role="button"], [aria-label]');
+      for (const btn of buttons) {
+        const label = btn.getAttribute('aria-label') || '';
+        const text = btn.textContent || '';
+        if (photoLabels.some(l => label.includes(l) || text.includes(l))) {
+          photoBtn = btn;
+          break;
+        }
+      }
+      if (photoBtn) break;
+    }
   }
 
   if (!photoBtn) {
