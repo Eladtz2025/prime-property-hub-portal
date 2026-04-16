@@ -1,6 +1,11 @@
 // ===== Popup Script =====
 
-document.addEventListener('DOMContentLoaded', loadStats);
+document.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+
+  document.getElementById('toggleBtn').addEventListener('click', togglePause);
+  document.getElementById('forceBtn').addEventListener('click', forceCheck);
+});
 
 async function loadStats() {
   chrome.runtime.sendMessage({ action: 'getStats' }, (stats) => {
