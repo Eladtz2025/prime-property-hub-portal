@@ -551,6 +551,14 @@ Deno.serve(async (req) => {
       broker_result?: string | null;
       address_action?: string | null;
       timestamp: string;
+      // Enriched fields for monitor display
+      price?: number | null;
+      rooms?: number | null;
+      size?: number | null;
+      floor?: number | null;
+      features?: string[];
+      branch?: string | null;
+      error_reason?: string | null;
     }) {
       try {
         console.log(`📝 saveRecentItem: saving for ${item.address || 'unknown'} [${item.status}]`);
