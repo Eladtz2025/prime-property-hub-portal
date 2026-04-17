@@ -309,9 +309,9 @@ export function parseYad2Html(html: string): Yad2DetailResult | null {
   }
 
   const featureCount = Object.keys(features).length;
-  const trueCount = Object.values(features).filter(v => v).length;
-  const falseCount = Object.values(features).filter(v => !v).length;
-  console.log(`✅ Yad2 HTML parsed: ${featureCount} features (${trueCount}✅/${falseCount}❌), size=${result.size}, rooms=${result.rooms}, floor=${result.floor}, price=${result.price}, condition=${result.propertyCondition}, totalFloors=${result.totalFloors}, parking=${result.parkingSpots}, entryDate=${result.entryDate}`);
+  const finalTrueCount = Object.values(features).filter(v => v).length;
+  const finalFalseCount = Object.values(features).filter(v => !v).length;
+  console.log(`✅ Yad2 HTML parsed: ${featureCount} features (${finalTrueCount}✅/${finalFalseCount}❌), size=${result.size}, rooms=${result.rooms}, floor=${result.floor}, price=${result.price}, condition=${result.propertyCondition}, totalFloors=${result.totalFloors}, parking=${result.parkingSpots}, entryDate=${result.entryDate}`);
   return result;
 }
 
