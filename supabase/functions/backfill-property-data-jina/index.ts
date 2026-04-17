@@ -162,6 +162,58 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Handle reset_weak_features - reset properties marked not_needed but with sparse features
+    if (action === 'reset_weak_features') {
+      const SIGNIFICANT = ['mamad', 'elevator', 'aircon', 'balcony', 'furnished', 'renovated'];
+      // Pull candidate properties (not_needed + active). Filter in-memory because we
+      // need to count JSONB keys / detect significant feature presence.
+      const PAGE = 1000;
+      let from = 0;
+      let totalReset = 0;
+      let totalScanned = 0;
+      while (true) {
+        const { data: rows, error: fetchErr } = await supabase
+          .from('scouted_properties')
+          .select('id, features')
+          .eq('is_active', true)
+          .eq('backfill_status', 'not_needed')
+          .range(from, from + PAGE - 1);
+        if (fetchErr) {
+          return new Response(JSON.stringify({ success: false, error: fetchErr.message }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        if (!rows || rows.length === 0) break;
+        totalScanned += rows.length;
+        const weakIds = rows.filter((r: any) => {
+          const f = r.features || {};
+          const keys = Object.keys(f);
+          if (keys.length >= 3) return false;
+          if (keys.some((k) => SIGNIFICANT.includes(k))) return false;
+          return true; // weak: 0-2 keys, none significant
+        }).map((r: any) => r.id);
+
+        if (weakIds.length > 0) {
+          const { error: updErr } = await supabase
+            .from('scouted_properties')
+            .update({ backfill_status: 'pending' })
+            .in('id', weakIds);
+          if (updErr) {
+            return new Response(JSON.stringify({ success: false, error: updErr.message }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
+          totalReset += weakIds.length;
+        }
+        if (rows.length < PAGE) break;
+        from += PAGE;
+      }
+      console.log(`🔄 reset_weak_features: scanned ${totalScanned}, reset ${totalReset} to pending`);
+      return new Response(JSON.stringify({ success: true, reset_count: totalReset, scanned: totalScanned }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Handle reset action - reset failed (and optionally completed) properties back to pending
     if (action === 'reset') {
       const resetAll = source_filter === 'all' || body?.reset_all === true;
