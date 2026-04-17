@@ -262,6 +262,109 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Handle process_specific - run backfill on a list of explicit property IDs
+    // (bypasses the regular queue / time window). Useful for ad-hoc debugging.
+    if (action === 'process_specific') {
+      const ids: string[] = Array.isArray(body?.property_ids) ? body.property_ids : [];
+      if (ids.length === 0) {
+        return new Response(JSON.stringify({ success: false, error: 'property_ids array required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      if (ids.length > 20) {
+        return new Response(JSON.stringify({ success: false, error: 'Max 20 property_ids per call' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const { data: props, error: fetchErr } = await supabase
+        .from('scouted_properties')
+        .select('id, source, source_url, address, title, city, neighborhood, price, rooms, size, floor, features, is_private')
+        .in('id', ids);
+
+      if (fetchErr || !props) {
+        return new Response(JSON.stringify({ success: false, error: fetchErr?.message || 'fetch failed' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const results: any[] = [];
+      for (const prop of props) {
+        const r: any = { id: prop.id, source: prop.source, source_url: prop.source_url, address: prop.address };
+        try {
+          let detailResult: any = null;
+          if (prop.source === 'yad2') {
+            detailResult = await fetchYad2DetailFeatures(prop.source_url);
+          } else if (prop.source === 'madlan') {
+            detailResult = await fetchMadlanDetailFeatures(prop.source_url);
+          } else if (prop.source === 'homeless') {
+            detailResult = await fetchHomelessDetailFeatures(prop.source_url);
+          } else {
+            r.error = `Unsupported source: ${prop.source}`;
+            results.push(r);
+            continue;
+          }
+
+          if (!detailResult || !detailResult.features || Object.keys(detailResult.features).length === 0) {
+            await supabase.from('scouted_properties')
+              .update({ backfill_status: 'failed' })
+              .eq('id', prop.id);
+            r.status = 'scrape_failed';
+            r.detail_raw = detailResult;
+            results.push(r);
+            continue;
+          }
+
+          const existingFeatures = (prop.features || {}) as Record<string, any>;
+          const mergedFeatures = { ...existingFeatures };
+          for (const [k, v] of Object.entries(detailResult.features)) {
+            if (mergedFeatures[k] === undefined || mergedFeatures[k] === null) mergedFeatures[k] = v;
+          }
+          if (prop.source === 'yad2') {
+            if (detailResult.totalFloors) mergedFeatures.totalFloors = detailResult.totalFloors;
+            if (detailResult.pricePerSqm) mergedFeatures.pricePerSqm = detailResult.pricePerSqm;
+            if (detailResult.parkingSpots) mergedFeatures.parkingSpots = detailResult.parkingSpots;
+            if (detailResult.propertyCondition) mergedFeatures.propertyCondition = detailResult.propertyCondition;
+            if (detailResult.entryDate) mergedFeatures.entryDate = detailResult.entryDate;
+          }
+
+          const updates: Record<string, any> = {
+            features: mergedFeatures,
+            backfill_status: 'completed',
+          };
+          if (detailResult.size && !prop.size) updates.size = detailResult.size;
+          if (detailResult.floor !== undefined && prop.floor === null) updates.floor = detailResult.floor;
+          if (detailResult.rooms && !prop.rooms) updates.rooms = detailResult.rooms;
+          if (detailResult.price && !prop.price) updates.price = detailResult.price;
+          if (prop.source === 'yad2' && detailResult.address && isValidAddressForUpdate(detailResult.address)) {
+            if (!prop.address || !hasHouseNumber(prop.address)) updates.address = detailResult.address;
+          }
+
+          await supabase.from('scouted_properties').update(updates).eq('id', prop.id);
+
+          r.status = 'ok';
+          r.features_merged = mergedFeatures;
+          r.fields_updated = Object.keys(updates).filter(k => k !== 'backfill_status');
+          results.push(r);
+        } catch (err: any) {
+          await supabase.from('scouted_properties')
+            .update({ backfill_status: 'failed' })
+            .eq('id', prop.id);
+          r.status = 'error';
+          r.error = err?.message || String(err);
+          results.push(r);
+        }
+        await new Promise((res) => setTimeout(res, 400));
+      }
+
+      return new Response(JSON.stringify({ success: true, count: results.length, results }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Check if there's already a running task
     const { data: existingTask } = await supabase
       .from('backfill_progress')
