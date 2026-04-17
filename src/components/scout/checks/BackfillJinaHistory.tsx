@@ -169,20 +169,33 @@ export const BackfillJinaHistory: React.FC = () => {
               const statusInfo = getStatusInfo(item.status);
               const time = new Date(item.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
               const updatedFields = (item.fields_updated ?? []).filter(f => f !== 'backfill_status');
+              const detailsLine = isSuccessStatus(item.status) ? formatDetails(item) : null;
+              const failureLine = !isSuccessStatus(item.status) ? item.error_reason : null;
 
               return (
                 <TableRow key={i}>
-                  <TableCell className="font-medium max-w-[180px] truncate">
-                    {item.source_url ? (
-                      <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">{item.address || '—'}</a>
-                    ) : (item.address || '—')}
+                  <TableCell className="font-medium max-w-[260px] align-top">
+                    <div className="truncate">
+                      {item.source_url ? (
+                        <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">{item.address || '—'}</a>
+                      ) : (item.address || '—')}
+                      {item.branch && (
+                        <span className="ms-1 inline-block text-[9px] text-muted-foreground border border-border rounded px-1 py-0">[{item.branch}]</span>
+                      )}
+                    </div>
+                    {detailsLine && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5 whitespace-normal leading-tight">{detailsLine}</div>
+                    )}
+                    {failureLine && (
+                      <div className="text-[10px] text-destructive mt-0.5 whitespace-normal leading-tight">סיבה: {failureLine}</div>
+                    )}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{item.neighborhood || '—'}</TableCell>
-                  <TableCell className="text-muted-foreground">{item.source || '—'}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-muted-foreground align-top">{item.neighborhood || '—'}</TableCell>
+                  <TableCell className="text-muted-foreground align-top">{item.source || '—'}</TableCell>
+                  <TableCell className="align-top">
                     <Badge variant={statusInfo.variant} className="text-[10px]">{statusInfo.label}</Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="align-top">
                     <div className="flex flex-wrap gap-1">
                       {updatedFields.length > 0 ? updatedFields.map(f => (
                         <span key={f} className="inline-block bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">
@@ -191,7 +204,7 @@ export const BackfillJinaHistory: React.FC = () => {
                       )) : <span className="text-[10px] text-muted-foreground">—</span>}
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-[11px] whitespace-nowrap">{time}</TableCell>
+                  <TableCell className="text-muted-foreground text-[11px] whitespace-nowrap align-top">{time}</TableCell>
                 </TableRow>
               );
             })}
