@@ -1,55 +1,20 @@
 
-## הוספת פירוט נתונים + פיצ'רים בשורות המוניטור
+## הבנתי — להוציא רשימה של הנכסים שתקועים ב-backfill כדי שתריץ עליהם בדיקת זמינות
 
-### מה המשתמש רוצה
-במסך המוניטור של "השלמה" (data_completion_jina), במקום שכל שורה תציג רק `ok` / `failed`, להציג גם את הנתונים והפיצ'רים שנמשכו מהדירה (מחיר, חדרים, גודל, קומה, mamad, חניה, מעלית, וכו').
-
-### איפה זה מוצג היום
-המוניטור מציג `recent_items` מתוך `backfill_progress.summary_data`. כל item מכיל היום משהו כמו:
-```json
-{ "address": "פנקס, צפון חדש", "source": "madlan", "status": "ok" }
+### מה אעשה
+שאילתה אחת ב-SQL:
+```sql
+SELECT id, source, address, city, neighborhood, source_url, backfill_status, updated_at
+FROM scouted_properties
+WHERE is_active = true
+  AND backfill_status = 'failed'
+ORDER BY source, updated_at DESC;
 ```
 
-### מה צריך לשנות
+### פלט
+- ספירה כוללת + פירוט לפי מקור (madlan / yad2 / homeless)
+- טבלה מלאה של כל הנכסים: id, מקור, כתובת, שכונה, סטטוס, URL
+- **קובץ CSV** ב-`/mnt/documents/backfill-failed-properties.csv` עם כל ה-IDs כדי שתוכל להעתיק/להזין אותם לבדיקת הזמינות בקלות
 
-**שני שינויים בלבד:**
-
-1. **Edge Function `backfill-property-data-jina`** — להעשיר את ה-`recent_items` שנדחף ל-`summary_data` כך שיכלול גם:
-   - `price`, `rooms`, `size`, `floor`
-   - `features` (מערך הפיצ'רים שנמשכו: mamad, parking, elevator, balcony, aircon, וכו')
-   - `branch` (direct/graphql) — כבר קיים מהשינוי הקודם
-   - שמירה על `status` ו-`address` הקיימים
-
-2. **רכיב המוניטור (UI)** — להציג את השדות הנוספים בשורה:
-   - שורה ראשית: שעה | מקור | כתובת | status
-   - שורה משנית קטנה מתחת: `₪1,250,000 · 4 חד׳ · 95מ״ר · קומה 3 · ממ״ד, חניה, מעלית`
-   - אם נכשל — להציג סיבת כישלון במקום הפיצ'רים
-
-### איתור הקבצים
-- Edge Function: `supabase/functions/backfill-property-data-jina/index.ts` — להוסיף שדות ל-item שנדחף ל-`recent_items` בכל branch (yad2 success / madlan success / failed)
-- UI: לאתר את הקומפוננטה שמרנדרת את שורות `data_completion_jina` במסך המוניטור (כנראה תחת `src/components/devops/` או מסך "שיווק" → מוניטור) — אבדוק את המיקום המדויק לאחר אישור.
-
-### מה לא אעשה
-- לא אשנה את לוגיקת ה-fetch (yad2/madlan) — היא עובדת כעת
-- לא אשנה את מבנה הטבלה `backfill_progress` — רק תוכן ה-JSON
-- לא אגע בשאר הטאבים (סריקה, זמינות, כפילויות, התאמות)
-
-### סיכון
-נמוך — שינוי קוסמטי + העשרת JSON. אם משהו ישבר, השדות החדשים פשוט לא יוצגו.
-
-### תוצאה צפויה
-במקום:
-```
-17:50:43  MDLN  פנקס, צפון חדש  ok
-```
-תקבל:
-```
-17:50:43  MDLN  פנקס, צפון חדש  ok  [direct]
-         ₪4,200,000 · 4 חד׳ · 92מ״ר · קומה 5 · ממ״ד, חניה, מעלית, מרפסת
-```
-
-ובכישלונות:
-```
-17:50:50  MDLN  הסוללים 3, ביצרון  failed
-         סיבה: HTTP 403 — בלוק
-```
+### זהו
+בלי לגעת בכלום, בלי לשנות סטטוסים, בלי הצעות נוספות. רק רשימה.
