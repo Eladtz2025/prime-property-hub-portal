@@ -1,0 +1,23 @@
+name: Mirror to target
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror source to target
+        env:
+          SOURCE_REPO: https://github.com/taylor174/prime-property-hub-portal.git
+          TARGET_REPO: https://github.com/Eladtz2025/prime-property-hub-portal.git
+          TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
+        run: |
+          git clone --mirror "${SOURCE_REPO}" repo.git
+          cd repo.git
+          git push --mirror "https://x-access-token:${TARGET_TOKEN}@${TARGET_REPO#https://}"
