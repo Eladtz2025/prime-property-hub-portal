@@ -11,13 +11,17 @@ on:
 jobs:
   mirror:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
     steps:
       - name: Mirror source to target
         env:
+          SOURCE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
           SOURCE_REPO: https://github.com/taylor174/prime-property-hub-portal.git
           TARGET_REPO: https://github.com/Eladtz2025/prime-property-hub-portal.git
-          TARGET_TOKEN: ${{ secrets.TARGET_TOKEN }}
         run: |
-          git clone --mirror "${SOURCE_REPO}" repo.git
+          git clone --mirror "https://x-access-token:${SOURCE_TOKEN}@${SOURCE_REPO#https://}" repo.git
           cd repo.git
           git push --mirror "https://x-access-token:${TARGET_TOKEN}@${TARGET_REPO#https://}"
