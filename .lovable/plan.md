@@ -1,20 +1,18 @@
 
-## הבנתי — להוציא רשימה של הנכסים שתקועים ב-backfill כדי שתריץ עליהם בדיקת זמינות
+## איפוס availability_checked_at ל-92 הנכסים
 
 ### מה אעשה
-שאילתה אחת ב-SQL:
+מיגרציה אחת:
 ```sql
-SELECT id, source, address, city, neighborhood, source_url, backfill_status, updated_at
-FROM scouted_properties
+UPDATE scouted_properties
+SET availability_checked_at = NULL,
+    availability_check_reason = NULL
 WHERE is_active = true
-  AND backfill_status = 'failed'
-ORDER BY source, updated_at DESC;
+  AND backfill_status = 'failed';
 ```
 
-### פלט
-- ספירה כוללת + פירוט לפי מקור (madlan / yad2 / homeless)
-- טבלה מלאה של כל הנכסים: id, מקור, כתובת, שכונה, סטטוס, URL
-- **קובץ CSV** ב-`/mnt/documents/backfill-failed-properties.csv` עם כל ה-IDs כדי שתוכל להעתיק/להזין אותם לבדיקת הזמינות בקלות
+### תוצאה
+92 הנכסים יחזרו להיחשב "ממתינים לבדיקה" ויופיעו בתור הרגיל של בדיקת זמינות, ותוכל להריץ אותם מה-UI.
 
-### זהו
-בלי לגעת בכלום, בלי לשנות סטטוסים, בלי הצעות נוספות. רק רשימה.
+### לא נוגע
+לא ב-`is_active`, לא ב-`status`, לא ב-`availability_check_count`, לא בלוגיקה — רק איפוס שני שדות כדי שייכנסו לתור.
