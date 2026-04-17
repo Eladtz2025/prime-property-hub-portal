@@ -161,24 +161,33 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Handle reset action - reset completed/failed properties back to pending
+    // Handle reset action - reset failed (and optionally completed) properties back to pending
     if (action === 'reset') {
-      const resetSource = source_filter || 'yad2';
-      const { count, error: resetError } = await supabase
+      const resetAll = source_filter === 'all' || body?.reset_all === true;
+      const onlyFailed = body?.only_failed !== false; // default: only failed
+      const statuses = onlyFailed ? ['failed'] : ['completed', 'failed'];
+
+      let query = supabase
         .from('scouted_properties')
         .update({ backfill_status: 'pending' }, { count: 'exact' })
-        .eq('source', resetSource)
         .eq('is_active', true)
-        .in('backfill_status', ['completed', 'failed']);
-      
+        .in('backfill_status', statuses);
+
+      if (!resetAll) {
+        query = query.eq('source', source_filter || 'yad2');
+      }
+
+      const { count, error: resetError } = await query;
+
       if (resetError) {
         return new Response(JSON.stringify({ success: false, error: resetError.message }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
-      
-      console.log(`🔄 Reset ${count} ${resetSource} properties to pending`);
-      return new Response(JSON.stringify({ success: true, reset_count: count, source: resetSource }), {
+
+      const label = resetAll ? 'all sources' : (source_filter || 'yad2');
+      console.log(`🔄 Reset ${count} ${label} properties to pending (statuses=${statuses.join(',')})`);
+      return new Response(JSON.stringify({ success: true, reset_count: count, source: label }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
