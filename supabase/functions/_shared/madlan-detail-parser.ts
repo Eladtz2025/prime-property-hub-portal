@@ -24,13 +24,19 @@ export interface MadlanDetailResult {
 export async function fetchMadlanDetailFeatures(sourceUrl: string): Promise<MadlanDetailResult | null> {
   console.log(`🔍 Madlan Detail: Fetching ${sourceUrl}`);
 
-  // Method 1: Direct fetch with Next.js bypass headers (proven to work)
+  // Method 1: Direct fetch with minimal Next.js headers (matches working scout — ~88% success)
   const htmlResult = await fetchWithBypassHeaders(sourceUrl);
-  if (htmlResult) return htmlResult;
+  if (htmlResult) {
+    console.log(`✅ Madlan Detail branch=direct success`);
+    return htmlResult;
+  }
 
   // Method 2: GraphQL API fallback
   const graphqlResult = await fetchViaGraphQL(sourceUrl);
-  if (graphqlResult) return graphqlResult;
+  if (graphqlResult) {
+    console.log(`✅ Madlan Detail branch=graphql success`);
+    return graphqlResult;
+  }
 
   console.warn(`❌ Madlan Detail: All methods failed for ${sourceUrl}`);
   return null;
