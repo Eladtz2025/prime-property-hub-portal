@@ -681,6 +681,11 @@ Deno.serve(async (req) => {
                 status: 'ok',
                 fields_updated: Object.keys(updates).filter(k => k !== 'backfill_status' && k !== 'features'),
                 timestamp: new Date().toISOString(),
+                price: updates.price ?? prop.price ?? null,
+                rooms: updates.rooms ?? prop.rooms ?? null,
+                size: updates.size ?? prop.size ?? null,
+                floor: updates.floor ?? prop.floor ?? null,
+                features: Object.keys(detailResult.features || {}).filter(k => (detailResult.features as any)[k]),
               });
               console.log(`✅ Homeless direct: ${JSON.stringify(detailResult.features)}`);
             } else {
@@ -696,6 +701,7 @@ Deno.serve(async (req) => {
                 source_url: prop.source_url,
                 status: 'scrape_failed',
                 timestamp: new Date().toISOString(),
+                error_reason: 'No features extracted from detail page',
               });
             }
           } catch (homelessError) {
