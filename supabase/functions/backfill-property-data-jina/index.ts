@@ -785,6 +785,12 @@ Deno.serve(async (req) => {
                 fields_updated: fieldsUpdated,
                 broker_result: brokerResult,
                 timestamp: new Date().toISOString(),
+                price: updates.price ?? prop.price ?? null,
+                rooms: updates.rooms ?? prop.rooms ?? null,
+                size: updates.size ?? prop.size ?? null,
+                floor: updates.floor ?? prop.floor ?? null,
+                features: Object.keys(detailResult.features || {}).filter(k => (detailResult.features as any)[k]),
+                branch: detailResult.branch ?? null,
               });
               console.log(`✅ Madlan GraphQL: ${Object.keys(detailResult.features).length} features, fields: ${fieldsUpdated.join(',') || 'none'}`);
             } else {
@@ -799,6 +805,7 @@ Deno.serve(async (req) => {
                 source_url: prop.source_url,
                 status: 'scrape_failed',
                 timestamp: new Date().toISOString(),
+                error_reason: 'Madlan: no features extracted (both direct and GraphQL failed)',
               });
             }
           } catch (madlanError) {
@@ -897,6 +904,11 @@ Deno.serve(async (req) => {
                 status: 'ok',
                 fields_updated: fieldsUpdated,
                 timestamp: new Date().toISOString(),
+                price: updates.price ?? prop.price ?? null,
+                rooms: updates.rooms ?? prop.rooms ?? null,
+                size: updates.size ?? prop.size ?? null,
+                floor: updates.floor ?? prop.floor ?? null,
+                features: Object.keys(detailResult.features || {}).filter(k => (detailResult.features as any)[k]),
               });
               console.log(`✅ Yad2 HTML: ${Object.keys(detailResult.features).length} features, fields: ${fieldsUpdated.join(',') || 'none'}${extFields ? ', ' + extFields : ''}`);
             } else {
@@ -911,6 +923,7 @@ Deno.serve(async (req) => {
                 source_url: prop.source_url,
                 status: 'scrape_failed',
                 timestamp: new Date().toISOString(),
+                error_reason: 'Yad2: no features extracted from detail page',
               });
             }
           } catch (yad2Error) {
