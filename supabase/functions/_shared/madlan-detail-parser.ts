@@ -24,13 +24,19 @@ export interface MadlanDetailResult {
 export async function fetchMadlanDetailFeatures(sourceUrl: string): Promise<MadlanDetailResult | null> {
   console.log(`🔍 Madlan Detail: Fetching ${sourceUrl}`);
 
-  // Method 1: Direct fetch with Next.js bypass headers (proven to work)
+  // Method 1: Direct fetch with minimal Next.js headers (matches working scout — ~88% success)
   const htmlResult = await fetchWithBypassHeaders(sourceUrl);
-  if (htmlResult) return htmlResult;
+  if (htmlResult) {
+    console.log(`✅ Madlan Detail branch=direct success`);
+    return htmlResult;
+  }
 
   // Method 2: GraphQL API fallback
   const graphqlResult = await fetchViaGraphQL(sourceUrl);
-  if (graphqlResult) return graphqlResult;
+  if (graphqlResult) {
+    console.log(`✅ Madlan Detail branch=graphql success`);
+    return graphqlResult;
+  }
 
   console.warn(`❌ Madlan Detail: All methods failed for ${sourceUrl}`);
   return null;
@@ -45,15 +51,14 @@ async function fetchWithBypassHeaders(sourceUrl: string): Promise<MadlanDetailRe
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
+      // Use the SAME minimal headers as scout-madlan-jina (proven to work, ~88% success).
+      // Heavier browser-like headers (User-Agent/Referer/Origin) trigger Madlan blocking.
       const response = await fetch(sourceUrl, {
         method: 'GET',
         headers: {
-          'Accept': 'application/json, text/html, */*',
-          'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          'Referer': 'https://www.madlan.co.il/',
-          'Origin': 'https://www.madlan.co.il',
+          'Accept': 'application/json',
           'X-Nextjs-Data': '1',
+          'Accept-Language': 'he-IL,he;q=0.9',
         },
         signal: controller.signal,
       });
