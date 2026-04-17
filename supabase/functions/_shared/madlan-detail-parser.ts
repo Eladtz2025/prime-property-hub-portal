@@ -16,6 +16,7 @@ export interface MadlanDetailResult {
   rooms?: number;
   price?: number;
   pocType?: string; // 'private' | 'agent'
+  branch?: 'direct' | 'graphql';
 }
 
 /**
@@ -28,14 +29,14 @@ export async function fetchMadlanDetailFeatures(sourceUrl: string): Promise<Madl
   const htmlResult = await fetchWithBypassHeaders(sourceUrl);
   if (htmlResult) {
     console.log(`✅ Madlan Detail branch=direct success`);
-    return htmlResult;
+    return { ...htmlResult, branch: 'direct' };
   }
 
   // Method 2: GraphQL API fallback
   const graphqlResult = await fetchViaGraphQL(sourceUrl);
   if (graphqlResult) {
     console.log(`✅ Madlan Detail branch=graphql success`);
-    return graphqlResult;
+    return { ...graphqlResult, branch: 'graphql' };
   }
 
   console.warn(`❌ Madlan Detail: All methods failed for ${sourceUrl}`);
