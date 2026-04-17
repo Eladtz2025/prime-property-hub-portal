@@ -18,7 +18,51 @@ interface RecentItem {
   broker_result?: string;
   address_action?: string;
   timestamp: string;
+  // Enriched fields
+  price?: number | null;
+  rooms?: number | null;
+  size?: number | null;
+  floor?: number | null;
+  features?: string[];
+  branch?: string | null;
+  error_reason?: string | null;
 }
+
+const featureLabels: Record<string, string> = {
+  mamad: 'ממ״ד',
+  parking: 'חניה',
+  elevator: 'מעלית',
+  balcony: 'מרפסת',
+  aircon: 'מזגן',
+  air_conditioner: 'מזגן',
+  storage: 'מחסן',
+  furnished: 'מרוהט',
+  renovated: 'משופץ',
+  accessible: 'נגיש',
+  bars: 'סורגים',
+  kosher_kitchen: 'מטבח כשר',
+  pets: 'חיות מחמד',
+  garden: 'גינה',
+  rooftop: 'גג',
+  sun_balcony: 'מרפסת שמש',
+};
+
+const formatPrice = (n?: number | null) => {
+  if (!n || n <= 0) return null;
+  return `₪${n.toLocaleString('he-IL')}`;
+};
+
+const formatDetails = (item: RecentItem): string | null => {
+  const parts: string[] = [];
+  const price = formatPrice(item.price);
+  if (price) parts.push(price);
+  if (item.rooms) parts.push(`${item.rooms} חד׳`);
+  if (item.size) parts.push(`${item.size}מ״ר`);
+  if (item.floor !== null && item.floor !== undefined) parts.push(`קומה ${item.floor}`);
+  const feats = (item.features || []).map(f => featureLabels[f] || f);
+  if (feats.length) parts.push(feats.join(', '));
+  return parts.length ? parts.join(' · ') : null;
+};
 
 type StatusFilter = 'all' | 'success' | 'failed';
 
