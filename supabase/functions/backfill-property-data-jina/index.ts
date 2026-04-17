@@ -163,7 +163,9 @@ Deno.serve(async (req) => {
     }
 
     // Handle reset_weak_features - reset properties marked not_needed but with sparse features
+    // (redeploy marker v2)
     if (action === 'reset_weak_features') {
+      console.log('🔄 reset_weak_features action received');
       const SIGNIFICANT = ['mamad', 'elevator', 'aircon', 'balcony', 'furnished', 'renovated'];
       // Pull candidate properties (not_needed + active). Filter in-memory because we
       // need to count JSONB keys / detect significant feature presence.
