@@ -115,16 +115,17 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    const body = await req.json().catch(() => ({}));
     const {
-      action = 'start', 
-      task_id, 
+      action = 'start',
+      task_id,
       dry_run = false,
       source_filter,
       only_recent = false,
       batch_size,
       auto_trigger = false,
       force_broker_reset = false
-    } = await req.json().catch(() => ({}));
+    } = body;
 
     // Fire-and-forget cleanup of stuck runs (only on start)
     if (action === 'start') {
