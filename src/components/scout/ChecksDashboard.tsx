@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  Database, Copy, Users, Search, Shield,
+  Database, Copy, Users, Search, Shield, RotateCcw, Loader2,
 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/social/ConfirmDialog';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -102,6 +103,7 @@ export const ChecksDashboard: React.FC = () => {
   const queryClient = useQueryClient();
   const backfillJina = useBackfillProgressJina();
   const [pendingPropertiesOpen, setPendingPropertiesOpen] = React.useState(false);
+  const [retryFailedConfirmOpen, setRetryFailedConfirmOpen] = React.useState(false);
 
 
   // Process kill switches (feature flags)
@@ -654,13 +656,26 @@ export const ChecksDashboard: React.FC = () => {
           status={backfillJina.isRunning ? 'running' : backfillJina.progress?.status === 'completed' ? 'completed' : 'idle'}
           primaryValue={backfillRemaining ?? 0}
           primaryLabel="ממתינים להשלמה"
-          secondaryLine={`${(backfillJina.progress?.successful_items ?? 0).toLocaleString('he-IL')} הושלמו`}
+          secondaryLine={`${(backfillJina.progress?.successful_items ?? 0).toLocaleString('he-IL')} הושלמו${backfillJina.failedCount > 0 ? ` · ${backfillJina.failedCount.toLocaleString('he-IL')} נכשלו` : ''}`}
           insight={backfillRemaining === 0 ? 'כל הנתונים טופלו' : backfillJina.isRunning ? `${backfillJina.progress?.processed_items ?? 0}/${backfillJina.progress?.total_items ?? '?'}` : 'לא זוהו עיכובים'}
           insightType={backfillRemaining === 0 ? 'ok' : backfillJina.isRunning ? 'info' : 'warning'}
           onRun={backfillJina.start}
           onStop={backfillJina.stop}
           isRunPending={backfillJina.isStarting}
           isStopPending={backfillJina.isStopping}
+          extraAction={
+            backfillJina.failedCount > 0 && !backfillJina.isRunning ? (
+              <button
+                className="bg-muted text-muted-foreground rounded-md px-3 py-1 text-[11px] font-medium flex items-center gap-1 hover:bg-muted/80 disabled:opacity-50 transition-colors border border-border/40"
+                onClick={() => setRetryFailedConfirmOpen(true)}
+                disabled={backfillJina.isRetryingFailed}
+                title="אפס נכסים שנכשלו ונסה שוב"
+              >
+                {backfillJina.isRetryingFailed ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-2.5 w-2.5" />}
+                נסה שוב נכשלים ({backfillJina.failedCount.toLocaleString('he-IL')})
+              </button>
+            ) : null
+          }
           historyContent={<BackfillJinaHistory />}
           historyTitle="היסטוריית השלמת נתונים"
           settingsContent={
@@ -680,6 +695,15 @@ export const ChecksDashboard: React.FC = () => {
 
 
       <PendingPropertiesDialog open={pendingPropertiesOpen} onOpenChange={setPendingPropertiesOpen} />
+
+      <ConfirmDialog
+        open={retryFailedConfirmOpen}
+        onOpenChange={setRetryFailedConfirmOpen}
+        title="לאפס נכסים שנכשלו?"
+        description={`האם לאפס ${backfillJina.failedCount.toLocaleString('he-IL')} נכסים שנכשלו ולנסות להשלים אותם שוב? פעולה זו תחזיר אותם ל-pending ותפעיל את תהליך ההשלמה.`}
+        confirmLabel="אפס ונסה שוב"
+        onConfirm={() => backfillJina.retryFailed()}
+      />
     </div>
   );
 };

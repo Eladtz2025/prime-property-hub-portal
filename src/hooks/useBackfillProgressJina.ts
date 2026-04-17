@@ -101,6 +101,46 @@ export const useBackfillProgressJina = () => {
     }
   });
 
+  // Count of failed properties (so the user can retry them)
+  const { data: failedCount = 0, refetch: refetchFailedCount } = useQuery({
+    queryKey: ['backfill-jina-failed-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('scouted_properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true)
+        .eq('backfill_status', 'failed');
+      if (error) throw error;
+      return count ?? 0;
+    },
+    refetchInterval: isRunning ? 5000 : 30000,
+  });
+
+  const retryFailedMutation = useMutation({
+    mutationFn: async () => {
+      toast.info('מאפס נכסים שנכשלו...', { duration: 3000 });
+      const { data, error } = await supabase.functions.invoke('backfill-property-data-jina', {
+        body: { action: 'reset', source_filter: 'all', only_failed: true }
+      });
+      if (error) throw error;
+      return data as { success: boolean; reset_count: number };
+    },
+    onSuccess: (data) => {
+      toast.success(`✅ אופסו ${data?.reset_count ?? 0} נכסים — מתחיל השלמה...`);
+      refetchFailedCount();
+      // Fire-and-forget start
+      supabase.functions.invoke('backfill-property-data-jina', {
+        body: { action: 'start', dry_run: false }
+      }).catch(err => logger.error('Backfill Jina start after reset error:', err));
+      setIsRunning(true);
+      setTimeout(() => refetchProgress(), 2000);
+    },
+    onError: (error) => {
+      logger.error('Backfill Jina retry-failed error:', error);
+      toast.error('❌ שגיאה באיפוס נכשלים');
+    }
+  });
+
   const start = useCallback(() => {
     startMutation.mutate();
   }, [startMutation]);
@@ -108,6 +148,10 @@ export const useBackfillProgressJina = () => {
   const stop = useCallback(() => {
     stopMutation.mutate();
   }, [stopMutation]);
+
+  const retryFailed = useCallback(() => {
+    retryFailedMutation.mutate();
+  }, [retryFailedMutation]);
 
   const percentComplete = progress?.total_items && progress.total_items > 0
     ? Math.round(((progress.processed_items || 0) / progress.total_items) * 100)
@@ -119,7 +163,10 @@ export const useBackfillProgressJina = () => {
     percentComplete,
     start,
     stop,
+    retryFailed,
+    failedCount,
     isStarting: startMutation.isPending,
     isStopping: stopMutation.isPending,
+    isRetryingFailed: retryFailedMutation.isPending,
   };
 };

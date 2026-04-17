@@ -28,6 +28,7 @@ export interface ProcessCardProps {
   onToggleEnabled?: (enabled: boolean) => void;
   isTogglePending?: boolean;
   onPrimaryClick?: () => void;
+  extraAction?: React.ReactNode;
 }
 
 const statusText = (status: string, enabled: boolean) => {
@@ -71,6 +72,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
   onToggleEnabled,
   isTogglePending,
   onPrimaryClick,
+  extraAction,
 }) => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -143,6 +145,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({
                   הפעל
                 </button>
               ) : null}
+              {extraAction && <div className="mr-2">{extraAction}</div>}
             </div>
             <div className="flex items-center gap-0 absolute left-0">
               {historyContent && (
