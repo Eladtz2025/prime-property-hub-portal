@@ -528,14 +528,22 @@ export async function saveProperty(
     existedBefore = !!existingByUrl;
   }
 
-  // Determine if backfill is needed based on available data
+  // Determine if backfill is needed based on available data.
+  // Features check: require either >=3 feature keys OR at least one "significant" feature
+  // (mamad, elevator, aircon, balcony, furnished, renovated). A lone `parking` flag
+  // — which Yad2 list views often emit — is NOT enough to mark backfill as not_needed.
+  const SIGNIFICANT_FEATURES = ['mamad', 'elevator', 'aircon', 'balcony', 'furnished', 'renovated'];
+  const featureKeys = property.features ? Object.keys(property.features) : [];
+  const hasRichFeatures = featureKeys.length >= 3 ||
+    featureKeys.some((k) => SIGNIFICANT_FEATURES.includes(k));
+
   const hasAllCriticalFields = !!(
     property.rooms !== undefined && property.rooms !== null &&
     property.price !== undefined && property.price !== null &&
     property.size !== undefined && property.size !== null &&
     property.floor !== undefined && property.floor !== null &&
     normalizedNeighborhood &&
-    property.features && Object.keys(property.features).length > 0
+    hasRichFeatures
   );
   const backfillStatus = hasAllCriticalFields ? 'not_needed' : 'pending';
   if (hasAllCriticalFields) {
