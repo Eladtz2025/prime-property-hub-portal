@@ -1,18 +1,32 @@
 
-## איפוס availability_checked_at ל-92 הנכסים
+## בדיקה: למה רק 2/4 משימות הושלמו אתמול בסקאוט נדל"ן
 
 ### מה אעשה
-מיגרציה אחת:
-```sql
-UPDATE scouted_properties
-SET availability_checked_at = NULL,
-    availability_check_reason = NULL
-WHERE is_active = true
-  AND backfill_status = 'failed';
-```
+שאילתות קריאה בלבד כדי להבין מה רץ אתמול ומה נכשל:
 
-### תוצאה
-92 הנכסים יחזרו להיחשב "ממתינים לבדיקה" ויופיעו בתור הרגיל של בדיקת זמינות, ותוכל להריץ אותם מה-UI.
+1. **טבלת `scout_runs`** — כל הריצות מאתמול (סטטוס: completed / partial / stopped / failed) לפי `source` ו-`scanner`
+2. **טבלת `availability_check_runs`** — ריצות בדיקת זמינות מאתמול
+3. **טבלת `backfill_progress`** — סטטוס ההשלמה של אתמול
+4. **טבלת `cron.job_run_details`** (אם נגישה) או logs של ה-edge functions הרלוונטיות — לראות אם cron בכלל רץ
+5. **`feature_flags`** — לוודא שאין kill switch פעיל על אחת המשימות
 
-### לא נוגע
-לא ב-`is_active`, לא ב-`status`, לא ב-`availability_check_count`, לא בלוגיקה — רק איפוס שני שדות כדי שייכנסו לתור.
+### 4 המשימות הצפויות בלילה (לפי הזיכרון)
+לפי `mem://infrastructure/task-scheduling-and-sequencing-reliability` — בלילה אמורות לרוץ עד 08:30:
+- סריקה (Scout)
+- בדיקת זמינות (Availability)
+- כפילויות (Dedup)
+- השלמת נתונים (Backfill — חלון 00:00-02:30)
+- התאמות (Matching)
+
+### תוצר
+דוח קצר בעברית:
+- אילו 2 משימות הושלמו ✓
+- אילו 2 לא הושלמו ✗
+- סיבה לכל אחת (timeout? kill switch? cron לא רץ? ריצה תקועה ב-running? failed?)
+- המלצה נקודתית מה לבדוק/לתקן (בלי לבצע — רק להציג)
+
+### מה לא אעשה
+- לא אריץ שום משימה
+- לא אשנה סטטוסים
+- לא אגע בקוד או במיגרציות
+- רק חקירה וקריאה
