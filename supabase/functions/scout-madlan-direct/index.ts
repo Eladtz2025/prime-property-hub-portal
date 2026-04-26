@@ -103,146 +103,163 @@ interface DetailData {
   raw_apollo_keys?: number;
 }
 
-function parseApolloOrNextJson(html: string): any | null {
-  // Try Apollo state
-  const apollo = html.match(/window\.__APOLLO_STATE__\s*=\s*({[\s\S]*?})\s*;?\s*<\/script>/);
-  if (apollo) {
-    try { return JSON.parse(apollo[1]); } catch { /* fall through */ }
-  }
-  // Try Next.js data
-  const next = html.match(/<script\s+id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-  if (next) {
-    try { return JSON.parse(next[1]); } catch { /* fall through */ }
+// Decode HTML entities in title/h1/meta strings
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&#x27;/g, "'").replace(/&#x2F;/g, '/').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n)));
+}
+
+// Map Hebrew amenity names from JSON-LD additionalProperty -> normalized feature keys
+const LDJSON_FEATURE_MAP: Record<string, string> = {
+  'נגיש לנכים': 'accessible',
+  'מיזוג אוויר': 'aircon',
+  'מרפסת': 'balcony',
+  'מעלית': 'elevator',
+  'גינה': 'yard',
+  'סורגים': 'bars',
+  'בריכה': 'pool',
+  'ממ״ד': 'mamad',
+  'ממ"ד': 'mamad',
+  'ממ״ק': 'mamak',
+  'מקלט': 'shelter',
+  'מחסן': 'storage',
+  'דוד שמש': 'sun_water_heater',
+  'חניה': 'parking',
+  'מרוהט': 'furnished',
+  'משופץ': 'renovated',
+};
+
+// Find the JSON-LD <script> block that contains the Product / property data.
+function extractProductLdJson(html: string): any | null {
+  const ldMatches = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/g)];
+  for (const m of ldMatches) {
+    try {
+      const parsed = JSON.parse(m[1]);
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+      for (const item of arr) {
+        if (item && (item['@type'] === 'Product' || item.offers?.price != null)) {
+          return item;
+        }
+      }
+    } catch { /* skip */ }
   }
   return null;
 }
 
-const HEBREW_FEATURE_MAP: Record<string, string> = {
-  'מרפסת': 'balcony', 'מעלית': 'elevator', 'חניה': 'parking', 'חניון': 'parking',
-  'ממ״ד': 'mamad', 'ממ"ד': 'mamad', 'מחסן': 'storage', 'גינה': 'yard',
-  'נגיש': 'accessible', 'מרוהט': 'furnished', 'ריהוט': 'furnished',
-  'מיזוג': 'aircon', 'חיות': 'pets', 'משופץ': 'renovated', 'סורגים': 'bars',
-  'דוד שמש': 'sun_water_heater', 'בריכה': 'pool',
-};
-
-function findPoiInApollo(apollo: any): any | null {
-  if (!apollo || typeof apollo !== 'object') return null;
-  // Apollo state keys often look like "Listing:abc123" or "POI:xyz"
-  for (const [key, val] of Object.entries(apollo)) {
-    if (typeof key === 'string' && /^(Listing|POI|Property|Bulletin):/i.test(key) && val && typeof val === 'object') {
-      return val;
-    }
+// Parse the meta description: "{address}, {neighborhood}, {city} - {type} ... ₪{price}, {rooms} חדרים בגודל של {size} מטר רבוע."
+function parseMetaDescription(desc: string): { address?: string; neighborhood?: string; city?: string; rooms?: number; size?: number } {
+  const out: any = {};
+  const decoded = decodeEntities(desc);
+  // Split off the part before " - "
+  const dashIdx = decoded.indexOf(' - ');
+  const head = dashIdx > 0 ? decoded.slice(0, dashIdx) : decoded;
+  const parts = head.split(',').map(s => s.trim()).filter(Boolean);
+  if (parts.length >= 3) {
+    out.address = parts[0];
+    out.neighborhood = parts[1];
+    out.city = parts.slice(2).join(', ');
+  } else if (parts.length === 2) {
+    out.address = parts[0];
+    out.city = parts[1];
+  } else if (parts.length === 1) {
+    out.address = parts[0];
   }
-  // Next.js shape: props.pageProps.poi or initialData.poi
-  const pageProps = apollo?.props?.pageProps;
-  if (pageProps?.poi) return pageProps.poi;
-  if (pageProps?.initialData?.poi) return pageProps.initialData.poi;
-  if (pageProps?.listing) return pageProps.listing;
-  return null;
+  const roomsM = decoded.match(/(\d+(?:\.\d+)?)\s*חדרים/);
+  if (roomsM) {
+    const r = parseFloat(roomsM[1]);
+    if (r > 0 && r < 25) out.rooms = r;
+  }
+  const sizeM = decoded.match(/(\d+(?:\.\d+)?)\s*(?:מטר רבוע|מ['׳"״]?ר)/);
+  if (sizeM) {
+    const s = parseFloat(sizeM[1]);
+    if (s > 0 && s < 5000) out.size = s;
+  }
+  return out;
+}
+
+// Determine property kind (apartment/parking/house/lot) and rent vs sale from <title>
+function parseTitle(title: string): { property_kind?: string; deal?: 'rent' | 'sale' } {
+  const out: any = {};
+  const t = decodeEntities(title);
+  if (/להשכרה/.test(t)) out.deal = 'rent';
+  else if (/למכירה/.test(t)) out.deal = 'sale';
+  // First word before colon is the property kind
+  const kindM = t.match(/^([^:]+?)\s*(?:להשכרה|למכירה)/);
+  if (kindM) out.property_kind = kindM[1].trim();
+  return out;
 }
 
 function extractDetail(html: string, sourceId: string, sourceUrl: string): DetailData {
   const result: DetailData = { source_id: sourceId, source_url: sourceUrl, features: {} };
 
-  // ----- Apollo / Next.js JSON -----
-  const apollo = parseApolloOrNextJson(html);
-  result.raw_apollo_keys = apollo ? Object.keys(apollo).length : 0;
-  const poi = findPoiInApollo(apollo);
-
-  if (poi && typeof poi === 'object') {
-    if (poi.price) result.price = parseInt(String(poi.price).replace(/[^\d]/g, ''));
-    if (poi.area || poi.size || poi.squareMeter) {
-      const s = parseInt(String(poi.area ?? poi.size ?? poi.squareMeter).replace(/[^\d]/g, ''));
-      if (s > 0 && s < 5000) result.size = s;
+  // ----- 1. JSON-LD Product (most reliable) -----
+  const product = extractProductLdJson(html);
+  if (product) {
+    const offer = product.offers || {};
+    if (offer.price != null) {
+      const p = parseInt(String(offer.price).replace(/[^\d]/g, ''));
+      if (p > 0) result.price = p;
     }
-    if (poi.rooms != null) {
-      const r = parseFloat(String(poi.rooms));
-      if (r > 0 && r < 25) result.rooms = r;
-    }
-    if (poi.floor != null && poi.floor !== '') {
-      const f = parseInt(String(poi.floor));
-      if (!isNaN(f)) result.floor = f;
-    }
-    if (poi.addressTitle || poi.address || poi.addressString) {
-      result.address = String(poi.addressTitle ?? poi.address ?? poi.addressString).trim();
-    }
-    if (poi.city) result.city = String(poi.city).trim();
-    if (poi.neighborhood || poi.neighbourhood || poi.area_name) {
-      result.neighborhood = String(poi.neighborhood ?? poi.neighbourhood ?? poi.area_name).trim();
-    }
-    if (poi.type) result.property_type_raw = String(poi.type);
-    if (poi.description) result.description = String(poi.description).slice(0, 5000);
-    if (Array.isArray(poi.images)) result.images = poi.images.map((x: any) => typeof x === 'string' ? x : x?.url).filter(Boolean).slice(0, 30);
-    else if (Array.isArray(poi.mediaItems)) result.images = poi.mediaItems.map((x: any) => x?.url || x?.src).filter(Boolean).slice(0, 30);
-
-    // POC type (private vs agent)
-    const poc = poi.pocType || poi.contactType || poi?.contactInfo?.type;
-    if (poc === 'private') result.is_private = true;
-    else if (poc === 'agent' || poc === 'broker') result.is_private = false;
-    else if (poi?.contactInfo?.agencyName) result.is_private = false;
-
-    // Amenities
-    const amenities = poi.amenities || poi.additionalDetails || {};
-    const boolMap: Record<string, string> = {
-      parking: 'parking', balcony: 'balcony', elevator: 'elevator',
-      secureRoom: 'mamad', safeRoom: 'mamad', storage: 'storage',
-      garden: 'yard', accessible: 'accessible', furnished: 'furnished',
-      airConditioner: 'aircon', airCondition: 'aircon',
-      pets: 'pets', renovated: 'renovated', garage: 'garage',
-      bars: 'bars', sunHeater: 'sun_water_heater', pool: 'pool',
-    };
-    for (const [k, fk] of Object.entries(boolMap)) {
-      if (amenities[k] === true) result.features[fk] = true;
-      else if (amenities[k] === false) result.features[fk] = false;
-    }
-  }
-
-  // ----- Regex fallbacks (when no Apollo POI matched) -----
-  if (!result.price) {
-    const m = html.match(/"price"\s*:\s*(\d{4,9})/);
-    if (m) result.price = parseInt(m[1]);
-  }
-  if (!result.rooms) {
-    const m = html.match(/"rooms?"\s*:\s*"?(\d+(?:\.\d+)?)"?/);
-    if (m) result.rooms = parseFloat(m[1]);
-  }
-  if (!result.size) {
-    const m = html.match(/"(?:area|squareMeter|size)"\s*:\s*(\d{2,5})/);
-    if (m) result.size = parseInt(m[1]);
-  }
-  if (result.floor === undefined) {
-    const m = html.match(/"floor"\s*:\s*"?(-?\d+)"?/);
-    if (m) result.floor = parseInt(m[1]);
-  }
-  if (!result.address) {
-    const m = html.match(/"address(?:Title|String)?"\s*:\s*"([^"]{3,160})"/);
-    if (m) result.address = m[1];
-  }
-  if (!result.city) {
-    const m = html.match(/"city"\s*:\s*"([^"]{2,40})"/);
-    if (m) result.city = m[1];
-  }
-
-  // ----- Title from <title> -----
-  const titleMatch = html.match(/<title>([^<]{0,250})<\/title>/);
-  if (titleMatch) result.title = titleMatch[1].replace(/\s*\|.*$/, '').trim();
-
-  // ----- Broker detection from HTML markers -----
-  if (result.is_private == null) {
-    if (/data-auto="agent-tag"/i.test(html) || /agencyName/i.test(html)) {
-      result.is_private = false;
-    } else if (/private[_-]?owner|בעלים פרטי|מפרסם פרטי/i.test(html)) {
-      result.is_private = true;
-    }
-  }
-
-  // ----- Hebrew feature scan in description -----
-  if (result.description) {
-    for (const [heb, fk] of Object.entries(HEBREW_FEATURE_MAP)) {
-      if (result.features[fk] === undefined && result.description.includes(heb)) {
-        result.features[fk] = true;
+    if (product.size) {
+      const sm = String(product.size).match(/(\d+(?:\.\d+)?)/);
+      if (sm) {
+        const s = parseFloat(sm[1]);
+        if (s > 0 && s < 5000) result.size = s;
       }
     }
+    if (product.description) result.description = decodeEntities(String(product.description)).slice(0, 5000);
+    if (product.image) {
+      const imgs = Array.isArray(product.image) ? product.image : [product.image];
+      result.images = imgs.filter((x: any) => typeof x === 'string').slice(0, 30);
+    }
+    if (Array.isArray(product.additionalProperty)) {
+      for (const p of product.additionalProperty) {
+        const name = String(p?.name || '').trim();
+        const val = String(p?.value || '').trim();
+        const fk = LDJSON_FEATURE_MAP[name];
+        if (fk) result.features[fk] = (val === 'כן' || val === 'true' || val === 'yes');
+      }
+    }
+  }
+
+  // ----- 2. Meta description: address/neighborhood/city/rooms/size -----
+  const metaDescM = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/);
+  if (metaDescM) {
+    const parsed = parseMetaDescription(metaDescM[1]);
+    if (parsed.address) result.address = parsed.address;
+    if (parsed.neighborhood) result.neighborhood = parsed.neighborhood;
+    if (parsed.city) result.city = parsed.city;
+    if (parsed.rooms && !result.rooms) result.rooms = parsed.rooms;
+    if (parsed.size && !result.size) result.size = parsed.size;
+  }
+
+  // ----- 3. Title for property_kind / deal type -----
+  const titleM = html.match(/<title[^>]*>([^<]+)<\/title>/);
+  if (titleM) {
+    result.title = decodeEntities(titleM[1]).replace(/\s*\|.*$/, '').trim();
+    const t = parseTitle(titleM[1]);
+    if (t.property_kind) result.property_type_raw = t.property_kind;
+  }
+
+  // ----- 4. H1 fallback for address -----
+  if (!result.address) {
+    const h1M = html.match(/<h1[^>]*>([\s\S]{0,300}?)<\/h1>/);
+    if (h1M) {
+      const txt = decodeEntities(h1M[1].replace(/<[^>]+>/g, '')).trim();
+      const parts = txt.split(',').map(s => s.trim());
+      if (parts.length >= 1) result.address = parts[0];
+      if (parts.length >= 2 && !result.neighborhood) result.neighborhood = parts[1];
+      if (parts.length >= 3 && !result.city) result.city = parts.slice(2).join(', ');
+    }
+  }
+
+  // ----- 5. Broker detection -----
+  if (/data-auto=["']agent-tag["']|"agencyName"|"isAgent"\s*:\s*true|מתווך|תיווך/i.test(html)) {
+    result.is_private = false;
+  } else if (/"isPrivate"\s*:\s*true|בעלים פרטי|מפרסם פרטי/i.test(html)) {
+    result.is_private = true;
   }
 
   return result;
