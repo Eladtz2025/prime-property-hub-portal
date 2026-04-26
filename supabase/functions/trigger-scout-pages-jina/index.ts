@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
     }
 
     const runId = runData.id;
-    // Map to Jina-specific functions
+    // Map to Jina-specific functions (madlan-direct exists but is not yet stable for detail pages)
     const targetFunction = `scout-${source}-jina`;
     const delayMs = config.page_delay_seconds ? config.page_delay_seconds * 1000 : SOURCE_DELAYS[source] || 5000;
     const totalPages = pagesToScan - startPage + 1;
