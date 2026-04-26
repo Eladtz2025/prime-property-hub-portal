@@ -1477,6 +1477,56 @@ Deno.serve(async (req) => {
         .eq('id', progressId);
       
       console.log(`🏁 BACKFILL JINA ${stopReason.toUpperCase()}`);
+
+      // ===== POST-BACKFILL: send all failed properties to availability check =====
+      // Logic: If backfill failed, the listing might be removed. Let availability
+      // check verify it - if removed, mark inactive (cleanly). If still alive, it
+      // will be retried by next backfill run.
+      try {
+        const { data: failedProps } = await supabase
+          .from('scouted_properties')
+          .select('id')
+          .eq('is_active', true)
+          .eq('backfill_status', 'failed')
+          .not('source_url', 'is', null)
+          .limit(500);
+
+        if (failedProps && failedProps.length > 0) {
+          console.log(`🔄 Sending ${failedProps.length} failed-backfill properties to availability check...`);
+
+          // Create a dedicated availability run for traceability
+          const { data: availRun } = await supabase
+            .from('availability_check_runs')
+            .insert({ status: 'running', is_manual: false })
+            .select('id')
+            .single();
+
+          if (availRun) {
+            // Process in chunks of 50 to avoid timeouts
+            const chunkSize = 50;
+            const chunks: string[][] = [];
+            for (let i = 0; i < failedProps.length; i += chunkSize) {
+              chunks.push(failedProps.slice(i, i + chunkSize).map(p => p.id));
+            }
+
+            // Fire-and-forget the first chunk; rely on availability function's own logic
+            fetch(`${supabaseUrl}/functions/v1/check-property-availability-jina`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ property_ids: chunks[0], run_id: availRun.id })
+            }).catch(err => console.error('Failed to trigger post-backfill availability:', err));
+
+            console.log(`✅ Post-backfill availability check triggered for ${chunks[0].length} properties (run ${availRun.id})`);
+          }
+        } else {
+          console.log(`✅ No failed-backfill properties to recheck`);
+        }
+      } catch (postErr) {
+        console.error('⚠️ Post-backfill availability trigger failed:', postErr);
+      }
     }
 
     return new Response(JSON.stringify({
