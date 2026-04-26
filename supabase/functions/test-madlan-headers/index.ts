@@ -38,6 +38,26 @@ function extractFields(text: string) {
   };
 }
 
+function extractListingCards(html: string, maxCards = 10) {
+  const cards: Array<{ id: string; url: string; fields: ReturnType<typeof extractFields>; snippet: string }> = [];
+  const seen = new Set<string>();
+  const re = /\/listings?\/([a-zA-Z0-9_-]{6,40})/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = re.exec(html)) && cards.length < maxCards) {
+    const id = match[1];
+    if (seen.has(id) || /^(undefined|null|search|index)$/i.test(id)) continue;
+
+    const start = Math.max(0, match.index - 9000);
+    const end = Math.min(html.length, match.index + 12000);
+    const chunk = html.slice(start, end);
+    const fields = extractFields(chunk);
+    cards.push({ id, url: `https://www.madlan.co.il/listings/${id}`, fields, snippet: safeText(chunk, 1000) });
+    seen.add(id);
+  }
+  return cards;
+}
+
 async function fetchText(url: string, init: RequestInit, timeoutMs = 25000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -56,6 +76,8 @@ function summarize(name: string, url: string, response: { status: number; ok: bo
   const next = text.match(/<script\s+id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)?.[1];
   const jsonSource = apollo || next || text;
   const fields = extractFields(jsonSource);
+  const listingIds = extractListingIds(text);
+  const listingCards = name.startsWith('search_') ? extractListingCards(text, 8) : [];
   const blockedMarkers = /cloudflare|perimeterx|_pxAppId|access denied|captcha|forbidden|robot/i.test(text);
   return {
     method: name,
@@ -67,8 +89,11 @@ function summarize(name: string, url: string, response: { status: number; ok: bo
     has_apollo_state: Boolean(apollo),
     has_next_data: Boolean(next),
     blocked_markers: blockedMarkers,
+    listing_ids_count: listingIds.length,
+    listing_ids_sample: listingIds.slice(0, 8),
+    listing_cards_sample: listingCards,
     fields,
-    success: response.ok && fields.usable && !blockedMarkers,
+    success: response.ok && (fields.usable || listingCards.some(card => card.fields.usable)) && !blockedMarkers,
     snippet: safeText(text),
   };
 }
@@ -103,6 +128,10 @@ serve(async (req) => {
     for (const variant of searchVariants) {
       const attempt = await runAttempt(variant.name, searchUrl, { headers: variant.headers });
       searchAttempts.push(attempt);
+
+      if (listingIds.length === 0 && 'listing_ids_sample' in attempt && Array.isArray(attempt.listing_ids_sample)) {
+        listingIds = attempt.listing_ids_sample;
+      }
 
       if (listingIds.length === 0 && 'status' in attempt && typeof attempt.snippet === 'string') {
         // Re-fetch only when needed because snippet is intentionally truncated.
