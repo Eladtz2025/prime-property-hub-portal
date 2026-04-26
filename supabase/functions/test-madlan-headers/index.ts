@@ -6,102 +6,104 @@ const corsHeaders = {
 };
 
 /**
- * Madlan GraphQL API Reconnaissance Tool
- * Tests known + guessed operations on https://www.madlan.co.il/api2
+ * Fetch Madlan listing page HTML with iPhone UA, then extract embedded state to find poi IDs.
  */
-
-// Common GraphQL operation names to try for search/list functionality
-const SEARCH_QUERIES = [
-  // Variant 1: searchPoi - common pattern
-  {
-    name: 'searchPoi_simple',
-    body: {
-      operationName: 'searchPoi',
-      variables: { city: 'תל אביב יפו', dealType: 'rent', page: 1 },
-      query: `query searchPoi($city: String!, $dealType: String!, $page: Int) { searchPoi(city: $city, dealType: $dealType, page: $page) { id price address rooms area floor } }`,
-    },
-  },
-  // Variant 2: feed
-  {
-    name: 'feed',
-    body: {
-      operationName: 'feed',
-      variables: { dealType: 'rent', page: 1 },
-      query: `query feed($dealType: String!, $page: Int) { feed(dealType: $dealType, page: $page) { id price } }`,
-    },
-  },
-  // Variant 3: Empty query - introspection check
-  {
-    name: 'introspection',
-    body: {
-      query: `{ __schema { queryType { fields { name args { name type { name kind } } } } } }`,
-    },
-  },
-  // Variant 4: poiSearch
-  {
-    name: 'poiSearch',
-    body: {
-      operationName: 'poiSearch',
-      variables: { input: { dealType: 'rent', city: 'תל אביב יפו', page: 1 } },
-      query: `query poiSearch($input: PoiSearchInput!) { poiSearch(input: $input) { items { id price } total } }`,
-    },
-  },
-];
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const body = await req.json().catch(() => ({}));
-  const customQuery = body.custom_query;
-  const onlyOne = body.only;
+  const path = body.path || 'for-rent/' + encodeURIComponent('תל-אביב-יפו-ישראל');
+  const url = `https://www.madlan.co.il/${path}`;
 
-  const queries = customQuery 
-    ? [{ name: 'custom', body: customQuery }]
-    : (onlyOne ? SEARCH_QUERIES.filter(q => q.name === onlyOne) : SEARCH_QUERIES);
+  try {
+    // Step 1: Fetch HTML
+    const htmlRes = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'he-IL,he;q=0.9',
+      },
+    });
+    const html = await htmlRes.text();
 
-  const results = [];
-
-  for (const q of queries) {
-    const start = Date.now();
-    try {
-      const c = new AbortController();
-      const t = setTimeout(() => c.abort(), 12000);
-      const r = await fetch('https://www.madlan.co.il/api2', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
-          'Referer': 'https://www.madlan.co.il/for-rent/' + encodeURIComponent('תל-אביב-יפו-ישראל'),
-          'Origin': 'https://www.madlan.co.il',
-          'Accept-Language': 'he-IL,he;q=0.9',
-        },
-        body: JSON.stringify(q.body),
-        signal: c.signal,
+    if (htmlRes.status !== 200) {
+      return new Response(JSON.stringify({ step: 'html', status: htmlRes.status, snippet: html.substring(0, 300) }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-      clearTimeout(t);
-      const text = await r.text();
-      let parsed: any = null;
-      try { parsed = JSON.parse(text); } catch {}
-
-      results.push({
-        operation: q.name,
-        status: r.status,
-        cf_ray: r.headers.get('cf-ray'),
-        duration_ms: Date.now() - start,
-        response_size: text.length,
-        has_data: parsed?.data ? Object.keys(parsed.data) : null,
-        errors: parsed?.errors?.map((e: any) => ({ message: e.message, path: e.path, extensions: e.extensions?.code })),
-        snippet: text.substring(0, 600),
-      });
-    } catch (e) {
-      results.push({ operation: q.name, error: String(e), duration_ms: Date.now() - start });
     }
-    // gentle pacing
-    await new Promise(r => setTimeout(r, 1500));
-  }
 
-  return new Response(JSON.stringify({ results }, null, 2), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+    // Step 2: Search for various ID patterns - we need to find the bulletin/poi IDs in the HTML
+    // Madlan uses patterns like bulletin-XXXXX or properties with type identifiers
+    
+    // Pattern A: __APOLLO_STATE__ or window.__INITIAL_STATE__
+    const apolloMatch = html.match(/window\.__APOLLO_STATE__\s*=\s*({[\s\S]*?});/);
+    const initialMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?});/);
+    const reduxMatch = html.match(/window\.REDUX_INITIAL_STATE\s*=\s*({[\s\S]*?});/);
+    
+    // Pattern B: data-* attributes with IDs
+    const dataIds = [...html.matchAll(/data-(?:auto-bulletin-id|bulletin-id|poi-id|property-id)="([^"]+)"/g)].map(m => m[1]);
+    
+    // Pattern C: bulletin/poi mentions in JSON-like data
+    const jsonIdsBulletin = [...html.matchAll(/"id":"([a-zA-Z0-9_-]{8,40})"[^}]{0,200}"(?:Bulletin|Project|CommercialBulletin)"/g)].map(m => m[1]);
+    const jsonIdsTypename = [...html.matchAll(/"__typename":"(?:Bulletin|Project|CommercialBulletin)"[^}]{0,200}"id":"([a-zA-Z0-9_-]{8,40})"/g)].map(m => m[1]);
+    
+    // Pattern D: any string that looks like a poi id (UUID or alphanumeric)
+    const uuidMatches = [...html.matchAll(/"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})"/g)].map(m => m[1]);
+    
+    // Pattern E: madlan-specific listing references
+    const listingRefs = [...html.matchAll(/\/listings?\/([a-zA-Z0-9_-]+)/g)].map(m => m[1]);
+    const projectRefs = [...html.matchAll(/\/projects?\/([a-zA-Z0-9_-]+)/g)].map(m => m[1]);
+    
+    // Pattern F: find any `poiByIds` reference / cached IDs
+    const poiPattern = [...html.matchAll(/poi[_-]?id["':\s]+["']?([a-zA-Z0-9_-]{8,40})/gi)].slice(0, 10).map(m => m[1]);
+    
+    // Pattern G: search for "Bulletin:XXXXX" cache key pattern (Apollo style)
+    const apolloKeys = [...html.matchAll(/"(?:Bulletin|Project|CommercialBulletin):([a-zA-Z0-9_-]+)"/g)].map(m => m[1]);
+    
+    return new Response(JSON.stringify({
+      url,
+      status: htmlRes.status,
+      html_length: html.length,
+      
+      has_apollo_state: !!apolloMatch,
+      apollo_state_size: apolloMatch ? apolloMatch[1].length : 0,
+      
+      has_initial_state: !!initialMatch,
+      initial_state_size: initialMatch ? initialMatch[1].length : 0,
+      
+      has_redux_state: !!reduxMatch,
+      
+      data_ids_count: dataIds.length,
+      data_ids_sample: dataIds.slice(0, 5),
+      
+      json_ids_bulletin_first: jsonIdsBulletin.length,
+      json_ids_bulletin_sample: jsonIdsBulletin.slice(0, 5),
+      
+      json_ids_typename_first: jsonIdsTypename.length,
+      json_ids_typename_sample: jsonIdsTypename.slice(0, 5),
+      
+      uuid_count: [...new Set(uuidMatches)].length,
+      
+      listing_refs_count: [...new Set(listingRefs)].length,
+      listing_refs_sample: [...new Set(listingRefs)].slice(0, 5),
+      
+      project_refs_count: [...new Set(projectRefs)].length,
+      project_refs_sample: [...new Set(projectRefs)].slice(0, 5),
+      
+      poi_pattern_sample: poiPattern,
+      
+      apollo_cache_keys_count: [...new Set(apolloKeys)].length,
+      apollo_cache_keys_sample: [...new Set(apolloKeys)].slice(0, 10),
+      
+      // Search for words that might indicate where state is stored
+      has_window_data: html.includes('window.__'),
+      script_tags_with_state: [...html.matchAll(/<script[^>]*id="([^"]*(?:state|data|cache)[^"]*)"/gi)].map(m => m[1]),
+    }, null, 2), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: String(e) }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500,
+    });
+  }
 });
