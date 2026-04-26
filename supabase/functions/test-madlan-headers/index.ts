@@ -7,65 +7,125 @@ const corsHeaders = {
 
 const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
-  const body = await req.json().catch(() => ({}));
-  const id = body.id || '1Xcd5eXJA2P';
-  const url = `https://www.madlan.co.il/listings/${id}`;
-  const res = await fetch(url, { headers: { 'User-Agent': IPHONE_UA, 'Accept': 'text/html', 'Accept-Language': 'he-IL,he;q=0.9' } });
-  const html = await res.text();
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&#x27;/g, "'").replace(/&#x2F;/g, '/').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n)));
+}
 
-  const findings: any = { status: res.status, bytes: html.length };
-  
-  // Pattern probes
-  const probes = ['__APOLLO_STATE__','__NEXT_DATA__','__INITIAL_STATE__','window.__','application/ld+json','__PRELOADED','self.__next_f','"price"','"rooms"','"address"','₪','חדרים','מ"ר'];
-  findings.probes = {};
-  for (const p of probes) {
-    const idx = html.indexOf(p);
-    findings.probes[p] = idx >= 0 ? idx : null;
-  }
+const LDJSON_FEATURE_MAP: Record<string, string> = {
+  'נגיש לנכים':'accessible','מיזוג אוויר':'aircon','מרפסת':'balcony','מעלית':'elevator',
+  'גינה':'yard','סורגים':'bars','בריכה':'pool','ממ״ד':'mamad','ממ"ד':'mamad','ממ״ק':'mamak',
+  'מקלט':'shelter','מחסן':'storage','דוד שמש':'sun_water_heater','חניה':'parking',
+  'מרוהט':'furnished','משופץ':'renovated',
+};
 
-  // Sample around price
-  const priceIdx = html.indexOf('"price"');
-  if (priceIdx >= 0) findings.price_context = html.slice(priceIdx, priceIdx + 500);
-
-  // ld+json blocks - extract ALL and find the one with price
+function extractProductLdJson(html: string): any | null {
   const ldMatches = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/g)];
-  findings.ld_json_count = ldMatches.length;
-  findings.ld_json_parsed = [];
   for (const m of ldMatches) {
     try {
       const parsed = JSON.parse(m[1]);
       const arr = Array.isArray(parsed) ? parsed : [parsed];
       for (const item of arr) {
-        if (item && (item['@type'] === 'Product' || item['@type'] === 'Apartment' || item['@type'] === 'Residence' || JSON.stringify(item).includes('"price"'))) {
-          findings.ld_json_parsed.push(item);
-        }
+        if (item && (item['@type'] === 'Product' || item.offers?.price != null)) return item;
       }
-    } catch (e) { findings.ld_json_parsed.push({ parse_error: String(e), raw: m[1].slice(0,300) }); }
+    } catch {}
   }
-  // Also check window.__ context
-  const winIdx = html.indexOf('window.__');
-  if (winIdx >= 0) findings.window_context = html.slice(winIdx, winIdx + 600);
+  return null;
+}
 
-  // self.__next_f
-  const nextF = [...html.matchAll(/self\.__next_f\.push\(\[(\d+),"([\s\S]{20,2000}?)"\]\)/g)];
-  findings.next_f_count = nextF.length;
-  findings.next_f_first = nextF.slice(0,2).map(m => m[2].slice(0, 1000));
+function parseMetaDescription(desc: string): any {
+  const out: any = {};
+  const decoded = decodeEntities(desc);
+  const dashIdx = decoded.indexOf(' - ');
+  const head = dashIdx > 0 ? decoded.slice(0, dashIdx) : decoded;
+  const parts = head.split(',').map(s => s.trim()).filter(Boolean);
+  if (parts.length >= 3) { out.address = parts[0]; out.neighborhood = parts[1]; out.city = parts.slice(2).join(', '); }
+  else if (parts.length === 2) { out.address = parts[0]; out.city = parts[1]; }
+  else if (parts.length === 1) { out.address = parts[0]; }
+  const rm = decoded.match(/(\d+(?:\.\d+)?)\s*חדרים/);
+  if (rm) { const r = parseFloat(rm[1]); if (r > 0 && r < 25) out.rooms = r; }
+  const sm = decoded.match(/(\d+(?:\.\d+)?)\s*(?:מטר רבוע|מ['׳"״]?ר)/);
+  if (sm) { const s = parseFloat(sm[1]); if (s > 0 && s < 5000) out.size = s; }
+  return out;
+}
 
-  // shekel/rooms hits
-  findings.shekel_hits = [...html.matchAll(/(\d{1,3}(?:,\d{3})+)\s*₪/g)].slice(0,5).map(m=>m[0]);
-  findings.rooms_hits = [...html.matchAll(/(\d+(?:\.\d+)?)\s*חדרים/g)].slice(0,5).map(m=>m[0]);
-  // Meta tags & title (often contain rooms for THIS listing)
-  const metaDesc = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/);
-  findings.meta_description = metaDesc ? metaDesc[1] : null;
-  const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/);
-  findings.og_title = ogTitle ? ogTitle[1] : null;
-  const titleM = html.match(/<title[^>]*>([^<]+)<\/title>/);
-  findings.title = titleM ? titleM[1] : null;
-  // First h1
-  const h1 = html.match(/<h1[^>]*>([\s\S]{0,300}?)<\/h1>/);
-  findings.h1 = h1 ? h1[1].replace(/<[^>]+>/g,'').trim() : null;
+function extractDetail(html: string, sourceId: string, sourceUrl: string): any {
+  const result: any = { source_id: sourceId, source_url: sourceUrl, features: {} };
+  const product = extractProductLdJson(html);
+  if (product) {
+    const offer = product.offers || {};
+    if (offer.price != null) { const p = parseInt(String(offer.price).replace(/[^\d]/g,'')); if (p>0) result.price = p; }
+    if (product.size) { const sm = String(product.size).match(/(\d+(?:\.\d+)?)/); if (sm) { const s = parseFloat(sm[1]); if (s>0 && s<5000) result.size = s; } }
+    if (product.description) result.description = decodeEntities(String(product.description)).slice(0, 5000);
+    if (product.image) { const imgs = Array.isArray(product.image) ? product.image : [product.image]; result.images = imgs.filter((x:any)=>typeof x==='string').slice(0,30); }
+    if (Array.isArray(product.additionalProperty)) {
+      for (const p of product.additionalProperty) {
+        const name = String(p?.name||'').trim(); const val = String(p?.value||'').trim();
+        const fk = LDJSON_FEATURE_MAP[name];
+        if (fk) result.features[fk] = (val === 'כן');
+      }
+    }
+  }
+  const md = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/);
+  if (md) {
+    const p = parseMetaDescription(md[1]);
+    if (p.address) result.address = p.address;
+    if (p.neighborhood) result.neighborhood = p.neighborhood;
+    if (p.city) result.city = p.city;
+    if (p.rooms && !result.rooms) result.rooms = p.rooms;
+    if (p.size && !result.size) result.size = p.size;
+  }
+  const tm = html.match(/<title[^>]*>([^<]+)<\/title>/);
+  if (tm) {
+    result.title = decodeEntities(tm[1]).replace(/\s*\|.*$/,'').trim();
+    const t = decodeEntities(tm[1]);
+    if (/להשכרה/.test(t)) result.deal = 'rent';
+    else if (/למכירה/.test(t)) result.deal = 'sale';
+    const km = t.match(/^([^:]+?)\s*(?:להשכרה|למכירה)/);
+    if (km) result.property_kind = km[1].trim();
+  }
+  if (/data-auto=["']agent-tag["']|"agencyName"|מתווך|תיווך/i.test(html)) result.is_private = false;
+  return result;
+}
 
-  return new Response(JSON.stringify(findings, null, 2), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+async function fetchWithRetry(url: string, retries = 3): Promise<{html: string|null, status: number, attempts: number}> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(()=>ctrl.abort(), 20000);
+      const res = await fetch(url, { headers: { 'User-Agent': IPHONE_UA, 'Accept': 'text/html', 'Accept-Language': 'he-IL,he;q=0.9' }, signal: ctrl.signal });
+      clearTimeout(timer);
+      const html = await res.text();
+      if (res.ok && html.length > 50000) return { html, status: res.status, attempts: i+1 };
+      if (i < retries - 1) await new Promise(r => setTimeout(r, 2000 + i * 2000));
+    } catch { if (i < retries - 1) await new Promise(r => setTimeout(r, 2000)); }
+  }
+  return { html: null, status: 0, attempts: retries };
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  const body = await req.json().catch(() => ({}));
+  const ids: string[] = body.ids || ['1Xcd5eXJA2P'];
+  const results: any[] = [];
+  for (const id of ids) {
+    const url = `https://www.madlan.co.il/listings/${id}`;
+    const { html, status, attempts } = await fetchWithRetry(url, 3);
+    if (!html) { results.push({ id, status, attempts, error: 'fetch_failed' }); continue; }
+    const detail = extractDetail(html, id, url);
+    results.push({ id, status, attempts, ok: true, ...detail });
+    await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
+  }
+  const summary = {
+    total: results.length,
+    ok: results.filter(r => r.ok).length,
+    with_price: results.filter(r => r.price).length,
+    with_address: results.filter(r => r.address).length,
+    with_rooms: results.filter(r => r.rooms).length,
+    with_size: results.filter(r => r.size).length,
+    with_features: results.filter(r => r.features && Object.keys(r.features).length > 0).length,
+  };
+  return new Response(JSON.stringify({ summary, results }, null, 2), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 });
