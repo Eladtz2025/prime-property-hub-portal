@@ -67,22 +67,18 @@ serve(async (req) => {
       throw runsError;
     }
 
-    if (!runningRuns || runningRuns.length === 0) {
-      console.log('✅ No running runs found - nothing to clean');
-      return new Response(
-        JSON.stringify({ success: true, message: 'No running runs', cleaned: 0 }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log(`📋 Found ${runningRuns.length} running runs`);
-
     const now = Date.now();
     let pagesTimedOut = 0;
     let runsForceCompleted = 0;
     const cleanupDetails: any[] = [];
 
-    for (const run of runningRuns as ScoutRun[]) {
+    if (!runningRuns || runningRuns.length === 0) {
+      console.log('✅ No running scout_runs found - skipping to other cleanups');
+    } else {
+      console.log(`📋 Found ${runningRuns.length} running runs`);
+    }
+
+    for (const run of (runningRuns || []) as ScoutRun[]) {
       const runAgeMinutes = (now - new Date(run.started_at).getTime()) / 60000;
       const pageStats = run.page_stats || [];
       
