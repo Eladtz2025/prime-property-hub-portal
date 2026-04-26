@@ -5,96 +5,103 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/**
+ * Madlan GraphQL API Reconnaissance Tool
+ * Tests known + guessed operations on https://www.madlan.co.il/api2
+ */
+
+// Common GraphQL operation names to try for search/list functionality
+const SEARCH_QUERIES = [
+  // Variant 1: searchPoi - common pattern
+  {
+    name: 'searchPoi_simple',
+    body: {
+      operationName: 'searchPoi',
+      variables: { city: 'תל אביב יפו', dealType: 'rent', page: 1 },
+      query: `query searchPoi($city: String!, $dealType: String!, $page: Int) { searchPoi(city: $city, dealType: $dealType, page: $page) { id price address rooms area floor } }`,
+    },
+  },
+  // Variant 2: feed
+  {
+    name: 'feed',
+    body: {
+      operationName: 'feed',
+      variables: { dealType: 'rent', page: 1 },
+      query: `query feed($dealType: String!, $page: Int) { feed(dealType: $dealType, page: $page) { id price } }`,
+    },
+  },
+  // Variant 3: Empty query - introspection check
+  {
+    name: 'introspection',
+    body: {
+      query: `{ __schema { queryType { fields { name args { name type { name kind } } } } } }`,
+    },
+  },
+  // Variant 4: poiSearch
+  {
+    name: 'poiSearch',
+    body: {
+      operationName: 'poiSearch',
+      variables: { input: { dealType: 'rent', city: 'תל אביב יפו', page: 1 } },
+      query: `query poiSearch($input: PoiSearchInput!) { poiSearch(input: $input) { items { id price } total } }`,
+    },
+  },
+];
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const body = await req.json().catch(() => ({}));
-  const url = body.url || 'https://www.madlan.co.il/for-rent/תל-אביב-יפו-ישראל?page=1';
+  const customQuery = body.custom_query;
+  const onlyOne = body.only;
 
-  const headers = {
-    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'he-IL,he;q=0.9',
-    'Accept-Encoding': 'gzip, deflate, br',
-  };
+  const queries = customQuery 
+    ? [{ name: 'custom', body: customQuery }]
+    : (onlyOne ? SEARCH_QUERIES.filter(q => q.name === onlyOne) : SEARCH_QUERIES);
 
-  try {
-    const c = new AbortController();
-    const t = setTimeout(() => c.abort(), 20000);
-    const r = await fetch(url, { method: 'GET', headers, signal: c.signal, redirect: 'follow' });
-    clearTimeout(t);
-    const html = await r.text();
+  const results = [];
 
-    // Try to extract listing IDs
-    const listingMatches = [...html.matchAll(/madlan\.co\.il\/listings\/([a-zA-Z0-9_-]+)/g)];
-    const uniqueListingIds = [...new Set(listingMatches.map(m => m[1]))];
+  for (const q of queries) {
+    const start = Date.now();
+    try {
+      const c = new AbortController();
+      const t = setTimeout(() => c.abort(), 12000);
+      const r = await fetch('https://www.madlan.co.il/api2', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+          'Referer': 'https://www.madlan.co.il/for-rent/תל-אביב-יפו-ישראל',
+          'Origin': 'https://www.madlan.co.il',
+          'Accept-Language': 'he-IL,he;q=0.9',
+        },
+        body: JSON.stringify(q.body),
+        signal: c.signal,
+      });
+      clearTimeout(t);
+      const text = await r.text();
+      let parsed: any = null;
+      try { parsed = JSON.parse(text); } catch {}
 
-    // Try to find prices (Hebrew shekel) — pattern: ₪ NUMBER or NUMBER ₪
-    const priceMatches = [...html.matchAll(/₪\s*([\d,]+)|([\d,]+)\s*₪/g)];
-
-    // Try to find rooms
-    const roomsMatches = [...html.matchAll(/(\d+(?:\.5)?)\s*חדרים?/g)];
-
-    // Find __NEXT_DATA__ if exists
-    const nextDataMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-    let nextDataParsed: any = null;
-    let nextDataListings: any = null;
-    if (nextDataMatch) {
-      try {
-        nextDataParsed = JSON.parse(nextDataMatch[1]);
-        // Try to find listings in the data
-        const findListings = (obj: any, depth = 0): any => {
-          if (depth > 10 || !obj || typeof obj !== 'object') return null;
-          if (Array.isArray(obj)) {
-            for (const item of obj) {
-              const found = findListings(item, depth + 1);
-              if (found) return found;
-            }
-            return null;
-          }
-          for (const key of Object.keys(obj)) {
-            if (['poi','poiList','listings','bulletins','results','feed'].includes(key) && Array.isArray(obj[key]) && obj[key].length > 0) {
-              return { key, count: obj[key].length, sample: obj[key][0] };
-            }
-            const found = findListings(obj[key], depth + 1);
-            if (found) return found;
-          }
-          return null;
-        };
-        nextDataListings = findListings(nextDataParsed);
-      } catch (e) {
-        nextDataListings = { error: String(e) };
-      }
+      results.push({
+        operation: q.name,
+        status: r.status,
+        cf_ray: r.headers.get('cf-ray'),
+        duration_ms: Date.now() - start,
+        response_size: text.length,
+        has_data: parsed?.data ? Object.keys(parsed.data) : null,
+        errors: parsed?.errors?.map((e: any) => ({ message: e.message, path: e.path, extensions: e.extensions?.code })),
+        snippet: text.substring(0, 600),
+      });
+    } catch (e) {
+      results.push({ operation: q.name, error: String(e), duration_ms: Date.now() - start });
     }
-
-    return new Response(JSON.stringify({
-      url,
-      status: r.status,
-      content_length: html.length,
-      cf_ray: r.headers.get('cf-ray'),
-      
-      listing_ids_found: uniqueListingIds.length,
-      first_5_listing_ids: uniqueListingIds.slice(0, 5),
-      
-      price_matches_count: priceMatches.length,
-      first_5_prices: priceMatches.slice(0, 5).map(m => m[0]),
-      
-      rooms_matches_count: roomsMatches.length,
-      first_5_rooms: roomsMatches.slice(0, 5).map(m => m[0]),
-      
-      has_next_data: !!nextDataMatch,
-      next_data_size: nextDataMatch ? nextDataMatch[1].length : 0,
-      next_data_listings_summary: nextDataListings ? {
-        key: nextDataListings.key,
-        count: nextDataListings.count,
-        sample_keys: nextDataListings.sample ? Object.keys(nextDataListings.sample).slice(0, 30) : null,
-      } : null,
-    }, null, 2), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500,
-    });
+    // gentle pacing
+    await new Promise(r => setTimeout(r, 1500));
   }
+
+  return new Response(JSON.stringify({ results }, null, 2), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 });
