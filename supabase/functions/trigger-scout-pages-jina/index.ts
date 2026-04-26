@@ -103,8 +103,9 @@ Deno.serve(async (req) => {
     }
 
     const runId = runData.id;
-    // Map to Jina-specific functions
-    const targetFunction = `scout-${source}-jina`;
+    // Map source to its scout function. Madlan uses the new direct (iPhone-UA) scanner;
+    // others remain on Jina.
+    const targetFunction = source === 'madlan' ? 'scout-madlan-direct' : `scout-${source}-jina`;
     const delayMs = config.page_delay_seconds ? config.page_delay_seconds * 1000 : SOURCE_DELAYS[source] || 5000;
     const totalPages = pagesToScan - startPage + 1;
 
