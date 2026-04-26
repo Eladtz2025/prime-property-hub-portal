@@ -5,104 +5,131 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-/**
- * Fetch Madlan listing page HTML with iPhone UA, then extract embedded state to find poi IDs.
- */
+const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const body = await req.json().catch(() => ({}));
   const path = body.path || 'for-rent/' + encodeURIComponent('תל-אביב-יפו-ישראל');
-  const url = `https://www.madlan.co.il/${path}`;
+  const searchUrl = `https://www.madlan.co.il/${path}`;
+  const out: any = { stage1: {}, stage2: {} };
 
   try {
-    // Step 1: Fetch HTML
-    const htmlRes = await fetch(url, {
+    // STAGE 1
+    const htmlRes = await fetch(searchUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+        'User-Agent': IPHONE_UA,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'he-IL,he;q=0.9',
       },
     });
     const html = await htmlRes.text();
+    out.stage1.status = htmlRes.status;
+    out.stage1.html_length = html.length;
 
-    if (htmlRes.status !== 200) {
-      return new Response(JSON.stringify({ step: 'html', status: htmlRes.status, snippet: html.substring(0, 300) }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const listingRefs = [...new Set([...html.matchAll(/\/listings?\/([a-zA-Z0-9_-]{6,40})/g)].map(m => m[1]))];
+    out.stage1.listing_ids_count = listingRefs.length;
+    out.stage1.listing_ids_sample = listingRefs.slice(0, 5);
+
+    if (listingRefs.length === 0) {
+      out.error = 'No listing IDs found in stage 1';
+      return new Response(JSON.stringify(out, null, 2), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Step 2: Search for various ID patterns - we need to find the bulletin/poi IDs in the HTML
-    // Madlan uses patterns like bulletin-XXXXX or properties with type identifiers
-    
-    // Pattern A: __APOLLO_STATE__ or window.__INITIAL_STATE__
-    const apolloMatch = html.match(/window\.__APOLLO_STATE__\s*=\s*({[\s\S]*?});/);
-    const initialMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?});/);
-    const reduxMatch = html.match(/window\.REDUX_INITIAL_STATE\s*=\s*({[\s\S]*?});/);
-    
-    // Pattern B: data-* attributes with IDs
-    const dataIds = [...html.matchAll(/data-(?:auto-bulletin-id|bulletin-id|poi-id|property-id)="([^"]+)"/g)].map(m => m[1]);
-    
-    // Pattern C: bulletin/poi mentions in JSON-like data
-    const jsonIdsBulletin = [...html.matchAll(/"id":"([a-zA-Z0-9_-]{8,40})"[^}]{0,200}"(?:Bulletin|Project|CommercialBulletin)"/g)].map(m => m[1]);
-    const jsonIdsTypename = [...html.matchAll(/"__typename":"(?:Bulletin|Project|CommercialBulletin)"[^}]{0,200}"id":"([a-zA-Z0-9_-]{8,40})"/g)].map(m => m[1]);
-    
-    // Pattern D: any string that looks like a poi id (UUID or alphanumeric)
-    const uuidMatches = [...html.matchAll(/"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})"/g)].map(m => m[1]);
-    
-    // Pattern E: madlan-specific listing references
-    const listingRefs = [...html.matchAll(/\/listings?\/([a-zA-Z0-9_-]+)/g)].map(m => m[1]);
-    const projectRefs = [...html.matchAll(/\/projects?\/([a-zA-Z0-9_-]+)/g)].map(m => m[1]);
-    
-    // Pattern F: find any `poiByIds` reference / cached IDs
-    const poiPattern = [...html.matchAll(/poi[_-]?id["':\s]+["']?([a-zA-Z0-9_-]{8,40})/gi)].slice(0, 10).map(m => m[1]);
-    
-    // Pattern G: search for "Bulletin:XXXXX" cache key pattern (Apollo style)
-    const apolloKeys = [...html.matchAll(/"(?:Bulletin|Project|CommercialBulletin):([a-zA-Z0-9_-]+)"/g)].map(m => m[1]);
-    
-    return new Response(JSON.stringify({
-      url,
-      status: htmlRes.status,
-      html_length: html.length,
-      
-      has_apollo_state: !!apolloMatch,
-      apollo_state_size: apolloMatch ? apolloMatch[1].length : 0,
-      
-      has_initial_state: !!initialMatch,
-      initial_state_size: initialMatch ? initialMatch[1].length : 0,
-      
-      has_redux_state: !!reduxMatch,
-      
-      data_ids_count: dataIds.length,
-      data_ids_sample: dataIds.slice(0, 5),
-      
-      json_ids_bulletin_first: jsonIdsBulletin.length,
-      json_ids_bulletin_sample: jsonIdsBulletin.slice(0, 5),
-      
-      json_ids_typename_first: jsonIdsTypename.length,
-      json_ids_typename_sample: jsonIdsTypename.slice(0, 5),
-      
-      uuid_count: [...new Set(uuidMatches)].length,
-      
-      listing_refs_count: [...new Set(listingRefs)].length,
-      listing_refs_sample: [...new Set(listingRefs)].slice(0, 5),
-      
-      project_refs_count: [...new Set(projectRefs)].length,
-      project_refs_sample: [...new Set(projectRefs)].slice(0, 5),
-      
-      poi_pattern_sample: poiPattern,
-      
-      apollo_cache_keys_count: [...new Set(apolloKeys)].length,
-      apollo_cache_keys_sample: [...new Set(apolloKeys)].slice(0, 10),
-      
-      // Search for words that might indicate where state is stored
-      has_window_data: html.includes('window.__'),
-      script_tags_with_state: [...html.matchAll(/<script[^>]*id="([^"]*(?:state|data|cache)[^"]*)"/gi)].map(m => m[1]),
-    }, null, 2), {
+    const targetId = body.testId || listingRefs[0];
+    out.stage2.target_id = targetId;
+    const attempts: any[] = [];
+
+    // A: Listing page HTML + extract embedded JSON
+    try {
+      const url = `https://www.madlan.co.il/listings/${targetId}`;
+      const r = await fetch(url, {
+        headers: {
+          'User-Agent': IPHONE_UA,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'he-IL,he;q=0.9',
+        },
+      });
+      const t = await r.text();
+      const apolloMatch = t.match(/window\.__APOLLO_STATE__\s*=\s*({[\s\S]*?})\s*;?\s*<\/script>/);
+      const nextMatch = t.match(/<script\s+id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+      const source = apolloMatch?.[1] || nextMatch?.[1] || t;
+      const priceMatch = source.match(/"price"\s*:\s*(\d{4,9})/);
+      const roomsMatch = source.match(/"rooms?"\s*:\s*"?(\d+(?:\.\d+)?)/);
+      const addrMatch = source.match(/"address(?:Title|String)?"\s*:\s*"([^"]{3,120})"/);
+      const sizeMatch = source.match(/"(?:area|squareMeter|size)"\s*:\s*(\d{2,5})/);
+      const floorMatch = source.match(/"floor"\s*:\s*"?(-?\d+)/);
+      attempts.push({
+        method: 'A_listing_page_html',
+        url, status: r.status, bytes: t.length,
+        has_apollo_state: !!apolloMatch,
+        has_next_data: !!nextMatch,
+        price: priceMatch?.[1],
+        rooms: roomsMatch?.[1],
+        address: addrMatch?.[1],
+        size: sizeMatch?.[1],
+        floor: floorMatch?.[1],
+        title_snippet: t.match(/<title>([^<]{0,200})<\/title>/)?.[1],
+        body_start: t.substring(0, 300),
+      });
+    } catch (e) {
+      attempts.push({ method: 'A_listing_page_html', error: String(e) });
+    }
+
+    // B: GraphQL /api2 poiByIds
+    try {
+      const gqlBody = {
+        operationName: 'poiByIds',
+        variables: { ids: [targetId] },
+        query: `query poiByIds($ids: [ID!]!) { poiByIds(ids: $ids) { id price addressTitle rooms area floor type __typename } }`,
+      };
+      const r = await fetch('https://www.madlan.co.il/api2', {
+        method: 'POST',
+        headers: {
+          'User-Agent': IPHONE_UA,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Accept-Language': 'he-IL,he;q=0.9',
+          'Origin': 'https://www.madlan.co.il',
+          'Referer': 'https://www.madlan.co.il/',
+        },
+        body: JSON.stringify(gqlBody),
+      });
+      const t = await r.text();
+      attempts.push({
+        method: 'B_graphql_poiByIds',
+        status: r.status, bytes: t.length,
+        body_start: t.substring(0, 800),
+      });
+    } catch (e) {
+      attempts.push({ method: 'B_graphql_poiByIds', error: String(e) });
+    }
+
+    // C: REST /api/poi/<id>
+    try {
+      const url = `https://www.madlan.co.il/api/poi/${targetId}`;
+      const r = await fetch(url, {
+        headers: {
+          'User-Agent': IPHONE_UA,
+          'Accept': 'application/json',
+          'Accept-Language': 'he-IL,he;q=0.9',
+          'Referer': `https://www.madlan.co.il/listings/${targetId}`,
+        },
+      });
+      const t = await r.text();
+      attempts.push({ method: 'C_rest_api_poi', url, status: r.status, bytes: t.length, body_start: t.substring(0, 400) });
+    } catch (e) {
+      attempts.push({ method: 'C_rest_api_poi', error: String(e) });
+    }
+
+    out.stage2.attempts = attempts;
+    return new Response(JSON.stringify(out, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
+    out.error = String(e);
+    return new Response(JSON.stringify(out, null, 2), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500,
     });
   }
