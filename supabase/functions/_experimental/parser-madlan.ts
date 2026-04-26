@@ -672,8 +672,12 @@ function cleanMadlanContent(markdown: string): string {
     const blogIdx = cleaned.indexOf(blogStart);
     if (blogIdx > 0) {
       // Find where listings resume (next property block)
+      // Supports Format A/B (Firecrawl: [![alt](IMG)](listing_url))
+      // AND Format D (Jina: [![Image N: ...](IMG) ... ](listing_url) on a single line)
       const afterBlog = cleaned.substring(blogIdx);
-      const nextListingMatch = afterBlog.search(/\n\[!\[[^\]]+\]\([^\)]+\)\]\(https:\/\/www\.madlan\.co\.il\/(listings|projects)/);
+      const nextListingMatch = afterBlog.search(
+        /\n\[!\[[^\]]*\][\s\S]{0,3000}?https:\/\/www\.madlan\.co\.il\/(listings|projects)\//
+      );
       
       if (nextListingMatch > 0) {
         // Remove blog section, keep content before and after
