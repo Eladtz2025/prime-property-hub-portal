@@ -72,7 +72,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
-          'Referer': 'https://www.madlan.co.il/for-rent/תל-אביב-יפו-ישראל',
+          'Referer': 'https://www.madlan.co.il/for-rent/' + encodeURIComponent('תל-אביב-יפו-ישראל'),
           'Origin': 'https://www.madlan.co.il',
           'Accept-Language': 'he-IL,he;q=0.9',
         },
