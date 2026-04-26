@@ -29,10 +29,24 @@ serve(async (req) => {
   const priceIdx = html.indexOf('"price"');
   if (priceIdx >= 0) findings.price_context = html.slice(priceIdx, priceIdx + 500);
 
-  // ld+json blocks
+  // ld+json blocks - extract ALL and find the one with price
   const ldMatches = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/g)];
   findings.ld_json_count = ldMatches.length;
-  findings.ld_json_samples = ldMatches.slice(0,3).map(m => m[1].slice(0,800));
+  findings.ld_json_parsed = [];
+  for (const m of ldMatches) {
+    try {
+      const parsed = JSON.parse(m[1]);
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+      for (const item of arr) {
+        if (item && (item['@type'] === 'Product' || item['@type'] === 'Apartment' || item['@type'] === 'Residence' || JSON.stringify(item).includes('"price"'))) {
+          findings.ld_json_parsed.push(item);
+        }
+      }
+    } catch (e) { findings.ld_json_parsed.push({ parse_error: String(e), raw: m[1].slice(0,300) }); }
+  }
+  // Also check window.__ context
+  const winIdx = html.indexOf('window.__');
+  if (winIdx >= 0) findings.window_context = html.slice(winIdx, winIdx + 600);
 
   // self.__next_f
   const nextF = [...html.matchAll(/self\.__next_f\.push\(\[(\d+),"([\s\S]{20,2000}?)"\]\)/g)];
