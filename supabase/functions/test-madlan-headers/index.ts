@@ -91,7 +91,7 @@ serve(async (req) => {
     const searchUrl = body.searchUrl || `https://www.madlan.co.il/${path}`;
     const sampleSize = Math.max(1, Math.min(Number(body.sampleSize || 5), 20));
 
-    const searchVariants = [
+    const searchVariants: Array<{ name: string; headers: Record<string, string> }> = [
       { name: 'search_iphone_html', headers: { 'User-Agent': IPHONE_UA, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'he-IL,he;q=0.9' } },
       { name: 'search_next_json_minimal', headers: { 'Accept': 'application/json', 'X-Nextjs-Data': '1', 'Accept-Language': 'he-IL,he;q=0.9' } },
       { name: 'search_desktop_html', headers: { 'User-Agent': DESKTOP_UA, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'he-IL,he;q=0.9' } },
@@ -102,7 +102,6 @@ serve(async (req) => {
 
     for (const variant of searchVariants) {
       const attempt = await runAttempt(variant.name, searchUrl, { headers: variant.headers });
-      const ids = 'snippet' in attempt ? [] : [];
       searchAttempts.push(attempt);
 
       if (listingIds.length === 0 && 'status' in attempt && typeof attempt.snippet === 'string') {
