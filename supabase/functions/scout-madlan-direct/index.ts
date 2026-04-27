@@ -63,8 +63,10 @@ async function fetchHtml(url: string, maxRetries = 2, timeoutMs = 30000): Promis
 
       if (res.ok) {
         const html = await res.text();
-        if (html && html.length > 1000) return html;
-        console.warn(`⚠️ Madlan-Direct short response ${html.length} chars from ${url}`);
+        // Madlan listing pages are >100KB. Anything <50KB is likely a Cloudflare
+        // challenge/redirect/empty shell - retry instead of accepting.
+        if (html && html.length > 50000) return html;
+        console.warn(`⚠️ Madlan-Direct short response ${html?.length ?? 0} chars from ${url} (likely CF challenge)`);
       } else {
         console.warn(`⚠️ Madlan-Direct attempt ${attempt + 1} HTTP ${res.status} for ${url}`);
         if (res.status === 410 || res.status === 404) return null;
