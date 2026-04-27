@@ -103,8 +103,10 @@ Deno.serve(async (req) => {
     }
 
     const runId = runData.id;
-    // Madlan now uses the Direct iPhone-UA scraper (no third-party Jina dependency)
-    const targetFunction = source === 'madlan' ? 'scout-madlan-direct' : `scout-${source}-jina`;
+    // Madlan: route back to Jina Reader. Direct iPhone-UA approach is now blocked
+    // by Cloudflare regardless of headers (returns CF challenge pages). Jina with
+    // JINA_API_KEY uses residential-style proxy that bypasses CF reliably.
+    const targetFunction = `scout-${source}-jina`;
     const delayMs = config.page_delay_seconds ? config.page_delay_seconds * 1000 : SOURCE_DELAYS[source] || 5000;
     const totalPages = pagesToScan - startPage + 1;
 

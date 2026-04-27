@@ -51,8 +51,10 @@ export async function scrapeWithJina(
         headers['Accept'] = 'text/html';
         headers['X-Return-Format'] = 'html';
       } else {
-        // Yad2/Madlan use markdown parsers
+        // Yad2/Madlan use markdown parsers — set both headers explicitly so Jina
+        // never falls back to a different format.
         headers['Accept'] = 'text/markdown';
+        headers['X-Return-Format'] = 'markdown';
       }
 
       const response = await fetch(`https://r.jina.ai/${url}`, {
