@@ -1,88 +1,78 @@
-# תוכנית: יישום דוח המתכנת עם תיקונים והשלמות
+## ההמלצה שלי: כן, ללכת על זה — בזהירות
 
-## הערכה כללית של הדוח
-המתכנת זיהה נכון את הבעיה המרכזית (חסימת Cloudflare על Direct Fetch) אבל פספס שני דברים חשובים:
-1. ה-chunking שכבר מיושם ב-`scout-madlan-direct` ולא קיים ב-`scout-madlan-jina`.
-2. נקודה 2 שלו (X-Return-Format ליד2) לא תפתור את בעיית ה-WAF של יד2.
+המתכנת שלך צודק לחלוטין בעיקרון, וההצעה שלו מבוססת על קוד שאכן **קיים ועובד** אצלנו (`madlan-detail-parser.ts` משיג ~88% הצלחה עם בדיוק אותם headers שהוא מציע). זה הפתרון הכי הגיוני כרגע: ללא JINA_API_KEY בתשלום, ללא תלות חיצונית, מבוסס על דפוס מוכח.
 
-לכן ניישם את ההמלצות שלו אבל עם תוספות.
+**אבל** — יש כמה דברים שהוא לא ציין שצריך לטפל בהם, אחרת הסורק יישבר בייצור.
 
-## שלב 1 — מדל"ן: חזרה ל-Jina + הוספת chunking (קריטי)
+---
 
-### 1.1 שינוי ניתוב ב-trigger
-ב-`supabase/functions/trigger-scout-pages-jina/index.ts` שורה 107:
+## מה הוא צדק בו
+
+1. **Headers מינימליים עובדים**: ה-`madlan-detail-parser.ts` שלנו משתמש בדיוק ב-`Accept`, `X-Nextjs-Data: 1`, `Accept-Language` בלבד — ומשיג ~88% הצלחה. אותו דפוס יעבוד גם לדפי חיפוש.
+2. **Next.js JSON עדיף על HTML**: `__NEXT_DATA__` מחזיר את כל הנכסים בדף בבת אחת, מובנה — בלי regex שביר.
+3. **לא להוסיף User-Agent/Referer/Origin**: זה נכון, ה-WAF של מדל"ן באמת מגיב הפוך לאלה.
+4. **88% הצלחה עדיף על 0%**: כרגע הסורק מחזיר אפס נכסים מאז 25/04. כל שיפור הוא רווח נטו.
+
+## מה הוא פספס / מה צריך להוסיף
+
+1. **Next.js URL נכון לדפי חיפוש**: בקשה רגילה ל-`/for-rent/...?page=1` עם `X-Nextjs-Data` תחזיר HTML, לא JSON. כדי לקבל JSON ישיר צריך URL בפורמט `/_next/data/<buildId>/he/for-rent/...json`. ה-`buildId` משתנה בכל deploy של מדל"ן. **פתרון**: בקשה ראשונה ל-HTML, חילוץ `buildId` מתוך `__NEXT_DATA__`, ואז שימוש בו לדפים הבאים. זה גם מה שעובד ב-detail-parser שלנו (בודק שני המסלולים: JSON ו-HTML).
+2. **ניתוח מבנה ה-JSON**: הוא לא ציין איפה בתוך ה-JSON נמצאת רשימת הנכסים. צריך מחקר קצר על המבנה (`pageProps.searchPoiList` או דומה) — אעשה זאת מתוך תגובה אמיתית.
+3. **בדיקת CF challenge**: גם בדפי חיפוש Cloudflare יכול לחסום (במיוחד ברצף בקשות מהירות). צריך להשאיר את `isCloudflareChallenge` ושיהוי בין דפים (8 שניות, כמו ב-Jina היום).
+4. **Fallback**: אם ה-JSON לא נטען, לחזור לפרסור HTML עם regex — בדיוק כמו שעושה `madlan-detail-parser.ts`.
+
+---
+
+## תוכנית הפעולה
+
+### 1. יצירת `supabase/functions/scout-madlan-nextjs/index.ts`
+פונקציה חדשה (לא נוגע ב-`scout-madlan-jina` הקיים, נשמור אותו כ-fallback אפשרי לעתיד):
+
+- **Headers** (זהים ל-detail-parser שעובד):
+  ```
+  Accept: application/json, text/html
+  X-Nextjs-Data: 1
+  Accept-Language: he-IL,he;q=0.9
+  ```
+- **Flow לכל דף**:
+  1. Fetch של URL החיפוש (`buildSinglePageUrl('madlan', config, page)`).
+  2. אם התגובה HTML → לחלץ `<script id="__NEXT_DATA__">{...}</script>` עם regex.
+  3. אם התגובה JSON ישיר → `JSON.parse` ישירות.
+  4. ניווט במבנה ה-JSON אל רשימת ה-POIs (אזהה מבנה אמיתי בזמן הפיתוח על-ידי לוג ראשוני).
+  5. לכל POI: לחלץ `id`, `price`, `rooms`, `size`, `address`, `city`, `neighborhood`, `pocType`, `images`, ולהעביר ל-`saveProperty()` הקיים — בדיוק כמו `scout-madlan-jina`.
+- **Anti-block**: 
+  - זיהוי CF challenge → retry עם השהייה 20 שניות.
+  - מקסימום 2 retries לדף.
+  - השהייה 8 שניות בין דפים (sequential mode כבר במקום).
+
+### 2. עדכון Trigger
+ב-`supabase/functions/trigger-scout-pages-jina/index.ts` שורה 107-109:
 ```ts
-// במקום:
-const targetFunction = source === 'madlan' ? 'scout-madlan-direct' : `scout-${source}-jina`;
-// יהיה:
-const targetFunction = `scout-${source}-jina`;
+const targetFunction = source === 'madlan' 
+  ? 'scout-madlan-nextjs' 
+  : `scout-${source}-jina`;
 ```
 
-### 1.2 הוספת chunking ל-`scout-madlan-jina`
-זו ההשלמה שהמתכנת פספס. בלי זה — נחזור ל-timeout של 3 דקות על 50 מודעות.
-מעבירים את לוגיקת ה-chunk-based processing מ-`scout-madlan-direct` (CHUNK_SIZE: 12, re-invoke עצמי) גם ל-`scout-madlan-jina`.
+### 3. בדיקה בייצור (mini-test)
+- ריצה ידנית של דף אחד דרך הדשבורד.
+- בדיקת לוגים: כמה נכסים נמצאו, אם יש CF blocks, אם המבנה JSON נקלט.
+- אם עובד → להריץ מלא (10 דפים).
 
-### 1.3 ודא שהוא משתמש ב-JINA_API_KEY
-כבר קורה (שורה 35 בקובץ) — זה ינטרל את rate limit של free tier שהיה הסיבה המקורית שעברנו ל-Direct.
+### 4. שמירת fallback
+לא מוחקים את `scout-madlan-jina` ואת `scout-madlan-direct`. אם המתכנת בעתיד יחדש את חשבון ה-Jina או נמצא פתרון אחר — הם זמינים. רק ה-router בטריגר משתנה.
 
-## שלב 2 — שיפורי `scout-madlan-direct` (לעתיד / fallback)
+---
 
-לא נמחק את הפונקציה — נשפר אותה כך שתהיה fallback איכותי:
+## מה לא נעשה
 
-### 2.1 זיהוי Cloudflare challenge לפי content
-ב-`fetchHtml`, להוסיף בדיקה לפני קבלת התוצאה:
-```ts
-const cfPatterns = ['__cf_chl_opt', 'challenge.cloudflare.com', 'cf-browser-verification', 'Just a moment...'];
-if (cfPatterns.some(p => html.includes(p))) {
-  console.warn('🚫 Cloudflare challenge detected');
-  return null; // יפעיל retry
-}
-```
+- **לא** מוסיפים שירות חיצוני בתשלום (תואם ל-`mem://constraints/no-external-paid-services`).
+- **לא** משנים את scout-yad2-jina או scout-homeless-jina — הם נושא נפרד.
+- **לא** מוחקים את הסורקים הקיימים.
 
-### 2.2 הוספת כותרות דפדפן ריאליסטיות
-```ts
-'Accept-Encoding': 'gzip, deflate, br',
-'Sec-Fetch-Dest': 'document',
-'Sec-Fetch-Mode': 'navigate',
-'Sec-Fetch-Site': 'none',
-'Sec-Fetch-User': '?1',
-```
+---
 
-### 2.3 חילוץ IDs מ-__NEXT_DATA__
-ב-`extractListingIds`, לנסות קודם:
-```ts
-const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-if (nextDataMatch) {
-  const json = JSON.parse(nextDataMatch[1]);
-  // לחלץ IDs מהמבנה של מדל"ן
-}
-// fallback ל-regex הקיים
-```
+## סיכון
 
-## שלב 3 — יד2 (אופציונלי, סיכון נמוך)
+- אם מבנה ה-JSON של מדל"ן ישתנה בעתיד (Next.js rebuild) — נצטרך לעדכן את הניווט במבנה. אבל זה אותו סיכון שיש לנו היום ב-`madlan-detail-parser.ts`, שעובד יציב כבר חודשים.
+- שיעור הצלחה צפוי: דומה ל-detail parser (~80-90%), עדיף בהרבה מ-0% הנוכחי.
 
-### 3.1 הוספת X-Return-Format
-ב-`_shared/scraping-jina.ts` בענף של yad2/madlan:
-```ts
-headers['Accept'] = 'text/markdown';
-headers['X-Return-Format'] = 'markdown'; // הצעת המתכנת — לא יזיק
-```
-
-**הסתייגות:** זה **כנראה לא יפתור** את בעיית יד2 (WAF Radware חוסם גם דרך Jina free). אם רוצים פתרון אמיתי ליד2, צריך JINA_API_KEY בתוכנית בתשלום או פתרון אחר. נשאיר את יד2 לאחרי שמדל"ן יחזור לעבוד.
-
-## סדר עבודה ובדיקות
-1. שלב 1.1 + 1.2 ביחד (אחרת מדל"ן ייכשל ב-timeout).
-2. בדיקת mini-run של מדל"ן (page 1, 50 listings).
-3. אם עובד — סבב מלא. אם לא — שלב 2.
-4. שלב 3 כתיקון נקודתי בנפרד.
-
-## קבצים שיתעדכנו
-- `supabase/functions/trigger-scout-pages-jina/index.ts` (שורה אחת)
-- `supabase/functions/scout-madlan-jina/index.ts` (הוספת chunking)
-- `supabase/functions/scout-madlan-direct/index.ts` (שיפורי CF detection + headers + NEXT_DATA)
-- `supabase/functions/_shared/scraping-jina.ts` (שורה אחת ליד2)
-
-## סיכום למתכנת שלך
-- נקודה 1 שלו: ✅ נכונה, אבל חסר chunking → נוסיף.
-- נקודה 2 שלו: ⚠️ לא מזיק אבל לא יפתור — נעשה בכל זאת.
-- נקודה 3 שלו: ✅ מצוינת, ניישם.
+לאישורך — אם תאשר אבנה את הפונקציה, אעדכן את ה-router, ואריץ mini-test.
