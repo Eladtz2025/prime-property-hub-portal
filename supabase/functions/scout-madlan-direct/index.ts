@@ -348,6 +348,40 @@ serve(async (req) => {
 
     await updatePageStatus(supabase, runId, page, { status: 'scraping' });
 
+    // ========== Mode A: chunk continuation (skip search-page fetch) ==========
+    if (chunkIds && chunkIds.length > 0) {
+      console.log(`🍎 Madlan-Direct page ${page} chunk #${chunkIndex} (${chunkIds.length} listings, ${remainingIds?.length ?? 0} remaining)`);
+
+      const result = await processListings(
+        supabase, config, chunkIds, runId
+      );
+      const newAccFound = accFound + result.found;
+      const newAccNew = accNew + result.new;
+      const newAccSkipped = accSkippedBroker + result.skippedBroker;
+
+      // Update progressive stats
+      await updatePageStatus(supabase, runId, page, {
+        found: newAccFound, new: newAccNew, status: 'scraping',
+      });
+      await incrementRunStats(supabase, runId, result.found, result.new);
+
+      const duration = Date.now() - pageStartTime;
+      console.log(`✅ Chunk #${chunkIndex} done in ${duration}ms: +${result.found} found (total: ${newAccFound})`);
+
+      // More chunks remaining?
+      if (remainingIds && remainingIds.length > 0) {
+        await triggerNextChunk(supabaseUrl, supabaseServiceKey, configId, page, runId, maxPages!, startPage, remainingIds, chunkIndex + 1, newAccFound, newAccNew, newAccSkipped, isRetry, retryPages);
+        return new Response(JSON.stringify({ success: true, page, chunk: chunkIndex, found: result.found, partial: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // Last chunk: finalize page
+      await updatePageStatus(supabase, runId, page, { status: 'completed', found: newAccFound, new: newAccNew, duration_ms: duration });
+      console.log(`✅ Madlan-Direct page ${page} FINAL: found=${newAccFound} new=${newAccNew} skipped_broker=${newAccSkipped}`);
+      await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
+      return new Response(JSON.stringify({ success: true, page, found: newAccFound, new: newAccNew, skipped_broker: newAccSkipped, duration_ms: duration, parser: 'direct-iphone-ua' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ========== Mode B: initial — fetch search page, extract IDs, dispatch first chunk ==========
     const urls = buildSinglePageUrl(config, page);
     if (!urls.length) {
       await updatePageStatus(supabase, runId, page, { status: 'failed', error: 'Failed to build URL', duration_ms: Date.now() - pageStartTime });
@@ -355,25 +389,18 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: false, error: 'No URL' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    let totalFound = 0;
-    let totalNew = 0;
-    let urlsFailed = 0;
-    let totalSkippedBroker = 0;
-
     await updatePageStatus(supabase, runId, page, { url: urls[0] });
 
+    // Aggregate IDs across all URLs for this page (rare: single URL per page in practice)
+    const allIds: string[] = [];
+    let urlsFailed = 0;
     for (const searchUrl of urls) {
       console.log(`🍎 Madlan-Direct page ${page}: ${searchUrl}`);
-
       const searchHtml = await fetchHtml(searchUrl, 2, 35000);
       if (!searchHtml) { urlsFailed++; continue; }
-
       const ids = extractListingIds(searchHtml);
       console.log(`🍎 Madlan-Direct page ${page}: extracted ${ids.length} listing IDs`);
-
       if (ids.length === 0) { urlsFailed++; continue; }
-
-      // Save debug sample
       try {
         await supabase.from('debug_scrape_samples').upsert({
           source: 'madlan', url: searchUrl, html: null,
@@ -381,58 +408,11 @@ serve(async (req) => {
           properties_found: ids.length, updated_at: new Date().toISOString()
         }, { onConflict: 'source' });
       } catch { /* non-fatal */ }
-
-      // Fetch each listing detail with polite delay
-      for (const id of ids) {
-        if (await isRunStopped(supabase, runId)) {
-          console.log(`🛑 Run ${runId} stopped mid-page`);
-          break;
-        }
-
-        await sleep(jitter(MADLAN_DIRECT_CONFIG.DETAIL_DELAY_MIN_MS, MADLAN_DIRECT_CONFIG.DETAIL_DELAY_MAX_MS));
-        const detail = await fetchDetail(id);
-        if (!detail) continue;
-
-        // Apply broker filter (config.owner_type_filter: 'private' | 'all' | undefined)
-        const ownerFilter = (config as any).owner_type_filter;
-        if (ownerFilter === 'private' && detail.is_private === false) {
-          totalSkippedBroker++;
-          continue;
-        }
-
-        const property: ScrapedProperty = {
-          source: MADLAN_DIRECT_CONFIG.SOURCE,
-          source_url: detail.source_url,
-          source_id: detail.source_id,
-          title: detail.title,
-          city: detail.city,
-          neighborhood: detail.neighborhood,
-          address: detail.address,
-          price: detail.price,
-          rooms: detail.rooms,
-          size: detail.size,
-          floor: detail.floor,
-          property_type: config.property_type as 'rent' | 'sale',
-          description: detail.description,
-          images: detail.images,
-          features: detail.features,
-          is_private: detail.is_private ?? null,
-          raw_data: { scanner: 'direct-iphone-ua', apollo_keys: detail.raw_apollo_keys },
-        };
-
-        try {
-          const saveResult = await saveProperty(supabase, property);
-          totalFound++;
-          if (saveResult.isNew) totalNew++;
-        } catch (err) {
-          console.error(`❌ saveProperty failed for ${id}:`, err);
-        }
-      }
+      allIds.push(...ids);
     }
 
-    const duration = Date.now() - pageStartTime;
-
-    if (totalFound === 0 && urlsFailed === urls.length) {
+    if (allIds.length === 0) {
+      const duration = Date.now() - pageStartTime;
       const { data: runData } = await supabase.from('scout_runs').select('page_stats').eq('id', runId).single();
       const currentRetryCount = runData?.page_stats?.find((p: any) => p.page === page)?.retry_count || 0;
       await updatePageStatus(supabase, runId, page, { status: 'blocked', error: 'all_urls_failed_or_blocked', duration_ms: duration, retry_count: isRetry ? currentRetryCount : 0 });
@@ -440,14 +420,32 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: false, page, error: 'all_urls_failed_or_blocked', duration_ms: duration }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    await updatePageStatus(supabase, runId, page, { status: 'completed', found: totalFound, new: totalNew, duration_ms: duration });
-    await incrementRunStats(supabase, runId, totalFound, totalNew);
+    // Split into chunks; process first chunk in this invocation, dispatch the rest
+    const CHUNK_SIZE = MADLAN_DIRECT_CONFIG.CHUNK_SIZE;
+    const firstChunk = allIds.slice(0, CHUNK_SIZE);
+    const rest = allIds.slice(CHUNK_SIZE);
 
-    console.log(`✅ Madlan-Direct page ${page}: found=${totalFound} new=${totalNew} skipped_broker=${totalSkippedBroker} ${duration}ms`);
+    console.log(`🍎 Page ${page}: ${allIds.length} total IDs → chunks of ${CHUNK_SIZE} (first chunk: ${firstChunk.length}, rest: ${rest.length})`);
+
+    const result = await processListings(supabase, config, firstChunk, runId);
+    await incrementRunStats(supabase, runId, result.found, result.new);
+    await updatePageStatus(supabase, runId, page, { found: result.found, new: result.new, status: 'scraping' });
+
+    const duration = Date.now() - pageStartTime;
+    console.log(`✅ Chunk #0 done in ${duration}ms: +${result.found} found`);
+
+    if (rest.length > 0) {
+      await triggerNextChunk(supabaseUrl, supabaseServiceKey, configId, page, runId, maxPages!, startPage, rest, 1, result.found, result.new, result.skippedBroker, isRetry, retryPages);
+      return new Response(JSON.stringify({ success: true, page, chunk: 0, found: result.found, partial: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Single-chunk page (unusual): finalize directly
+    await updatePageStatus(supabase, runId, page, { status: 'completed', found: result.found, new: result.new, duration_ms: duration });
+    console.log(`✅ Madlan-Direct page ${page} (single chunk): found=${result.found} new=${result.new}`);
     await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
 
     return new Response(JSON.stringify({
-      success: true, page, found: totalFound, new: totalNew, skipped_broker: totalSkippedBroker,
+      success: true, page, found: result.found, new: result.new, skipped_broker: result.skippedBroker,
       duration_ms: duration, parser: 'direct-iphone-ua'
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
