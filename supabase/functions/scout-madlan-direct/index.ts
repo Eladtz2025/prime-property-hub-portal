@@ -23,13 +23,16 @@ const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleW
 
 const MADLAN_DIRECT_CONFIG = {
   SOURCE: 'madlan',
-  PAGE_DELAY_MS: 6000,         // delay between pages
+  PAGE_DELAY_MS: 6000,
   RETRY_DELAY_MS: 15000,
   MAX_BLOCK_RETRIES: 2,
-  DETAIL_DELAY_MIN_MS: 700,    // jitter delay between detail fetches
-  DETAIL_DELAY_MAX_MS: 1400,
-  DETAIL_MAX_RETRIES: 2,
-  DETAIL_CONCURRENCY: 1,       // serial detail fetches to stay polite
+  // Bigger jitter (5-10s) between detail fetches to avoid Cloudflare rate-limit
+  DETAIL_DELAY_MIN_MS: 5000,
+  DETAIL_DELAY_MAX_MS: 10000,
+  // Retry with exponential backoff (10s, 20s, 30s) on failures
+  DETAIL_MAX_RETRIES: 3,
+  DETAIL_RETRY_BACKOFF_MS: [10000, 20000, 30000],
+  DETAIL_CONCURRENCY: 1,
 };
 
 // ==================== Fetch helpers ====================
@@ -267,16 +270,21 @@ function extractDetail(html: string, sourceId: string, sourceUrl: string): Detai
 
 async function fetchDetail(listingId: string): Promise<DetailData | null> {
   const url = `https://www.madlan.co.il/listings/${listingId}`;
+  const backoffs = MADLAN_DIRECT_CONFIG.DETAIL_RETRY_BACKOFF_MS;
   for (let attempt = 0; attempt < MADLAN_DIRECT_CONFIG.DETAIL_MAX_RETRIES; attempt++) {
     const html = await fetchHtml(url, 1, 25000);
-    if (!html) {
-      if (attempt < MADLAN_DIRECT_CONFIG.DETAIL_MAX_RETRIES - 1) await sleep(2000);
-      continue;
+    if (html) {
+      const detail = extractDetail(html, listingId, url);
+      if (detail.price || detail.address || detail.rooms) return detail;
+      console.warn(`⚠️ Detail ${listingId}: no usable fields (attempt ${attempt + 1})`);
+    } else {
+      console.warn(`⚠️ Detail ${listingId}: fetch failed (attempt ${attempt + 1})`);
     }
-    const detail = extractDetail(html, listingId, url);
-    // Require at minimum an address or price to be usable
-    if (detail.price || detail.address || detail.rooms) return detail;
-    console.warn(`⚠️ Detail ${listingId}: no usable fields extracted (apollo_keys=${detail.raw_apollo_keys})`);
+    if (attempt < MADLAN_DIRECT_CONFIG.DETAIL_MAX_RETRIES - 1) {
+      const wait = backoffs[attempt] ?? 30000;
+      console.log(`⏳ Detail ${listingId}: backing off ${wait}ms before retry`);
+      await sleep(wait);
+    }
   }
   return null;
 }
