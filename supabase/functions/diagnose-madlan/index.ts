@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+const serve = (h: (r: Request) => Response | Promise<Response>) => Deno.serve(h);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
