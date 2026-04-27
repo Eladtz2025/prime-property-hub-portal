@@ -103,12 +103,11 @@ Deno.serve(async (req) => {
     }
 
     const runId = runData.id;
-    // Madlan: route to scout-madlan-nextjs which uses minimal Next.js bypass headers
-    // (Accept/X-Nextjs-Data/Accept-Language only — no User-Agent/Referer/Origin).
-    // This is the same technique that achieves ~88% success on madlan-detail-parser.ts
-    // and avoids any external paid service like Jina.
+    // Madlan: route to scout-madlan-direct.
+    // The CF Worker path is currently getting upstream=403 in production,
+    // while the direct iPhone-Safari strategy is the safer live fallback.
     const targetFunction = source === 'madlan'
-      ? 'scout-madlan-nextjs'
+      ? 'scout-madlan-direct'
       : `scout-${source}-jina`;
     const delayMs = config.page_delay_seconds ? config.page_delay_seconds * 1000 : SOURCE_DELAYS[source] || 5000;
     const totalPages = pagesToScan - startPage + 1;
@@ -153,7 +152,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       success: true, run_id: runId, source, pages_triggered: totalPages, start_page: startPage, delay_ms: delayMs,
       mode: (source === 'madlan' || source === 'yad2') ? 'sequential' : 'parallel',
-      message: `Started Jina scraping pages ${startPage}-${pagesToScan} for ${config.name}`
+      message: `Started scraping pages ${startPage}-${pagesToScan} for ${config.name}`
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error) {
