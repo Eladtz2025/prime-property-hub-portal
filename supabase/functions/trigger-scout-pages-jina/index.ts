@@ -103,10 +103,13 @@ Deno.serve(async (req) => {
     }
 
     const runId = runData.id;
-    // Madlan: route back to Jina Reader. Direct iPhone-UA approach is now blocked
-    // by Cloudflare regardless of headers (returns CF challenge pages). Jina with
-    // JINA_API_KEY uses residential-style proxy that bypasses CF reliably.
-    const targetFunction = `scout-${source}-jina`;
+    // Madlan: route to scout-madlan-nextjs which uses minimal Next.js bypass headers
+    // (Accept/X-Nextjs-Data/Accept-Language only — no User-Agent/Referer/Origin).
+    // This is the same technique that achieves ~88% success on madlan-detail-parser.ts
+    // and avoids any external paid service like Jina.
+    const targetFunction = source === 'madlan'
+      ? 'scout-madlan-nextjs'
+      : `scout-${source}-jina`;
     const delayMs = config.page_delay_seconds ? config.page_delay_seconds * 1000 : SOURCE_DELAYS[source] || 5000;
     const totalPages = pagesToScan - startPage + 1;
 
