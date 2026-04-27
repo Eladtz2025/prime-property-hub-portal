@@ -557,3 +557,113 @@ async function handleRetryOrFinalize(
   const retryPageNumbers = blockedPages.map((p: any) => p.page);
   await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPageNumbers[0], runId, maxPages, startPage, true, retryPageNumbers);
 }
+
+// ==================== Chunk processing ====================
+
+/**
+ * Process a list of listing IDs: fetch detail for each, apply broker filter, save.
+ * Returns counts for this chunk only.
+ */
+async function processListings(
+  supabase: any, config: any, ids: string[], runId: string
+): Promise<{ found: number; new: number; skippedBroker: number }> {
+  let found = 0;
+  let _new = 0;
+  let skippedBroker = 0;
+
+  for (const id of ids) {
+    if (await isRunStopped(supabase, runId)) {
+      console.log(`🛑 Run ${runId} stopped mid-chunk`);
+      break;
+    }
+
+    await sleep(jitter(MADLAN_DIRECT_CONFIG.DETAIL_DELAY_MIN_MS, MADLAN_DIRECT_CONFIG.DETAIL_DELAY_MAX_MS));
+    const detail = await fetchDetail(id);
+    if (!detail) continue;
+
+    const ownerFilter = (config as any).owner_type_filter;
+    if (ownerFilter === 'private' && detail.is_private === false) {
+      skippedBroker++;
+      continue;
+    }
+
+    const property: ScrapedProperty = {
+      source: MADLAN_DIRECT_CONFIG.SOURCE,
+      source_url: detail.source_url,
+      source_id: detail.source_id,
+      title: detail.title,
+      city: detail.city,
+      neighborhood: detail.neighborhood,
+      address: detail.address,
+      price: detail.price,
+      rooms: detail.rooms,
+      size: detail.size,
+      floor: detail.floor,
+      property_type: config.property_type as 'rent' | 'sale',
+      description: detail.description,
+      images: detail.images,
+      features: detail.features,
+      is_private: detail.is_private ?? null,
+      raw_data: { scanner: 'direct-iphone-ua', apollo_keys: detail.raw_apollo_keys },
+    };
+
+    try {
+      const saveResult = await saveProperty(supabase, property);
+      found++;
+      if (saveResult.isNew) _new++;
+    } catch (err) {
+      console.error(`❌ saveProperty failed for ${id}:`, err);
+    }
+  }
+
+  return { found, new: _new, skippedBroker };
+}
+
+/**
+ * Re-invoke this same edge function with the next chunk of listings for the same page.
+ */
+async function triggerNextChunk(
+  supabaseUrl: string, supabaseKey: string, configId: string,
+  page: number, runId: string, maxPages: number, startPage: number | undefined,
+  remainingIds: string[], chunkIndex: number,
+  accFound: number, accNew: number, accSkippedBroker: number,
+  isRetry?: boolean, retryPages?: number[]
+): Promise<void> {
+  await sleep(MADLAN_DIRECT_CONFIG.CHUNK_DELAY_MS);
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  if (await isRunStopped(supabase, runId)) {
+    console.log(`🛑 Run ${runId} stopped, skipping chunk #${chunkIndex}`);
+    return;
+  }
+
+  const CHUNK_SIZE = MADLAN_DIRECT_CONFIG.CHUNK_SIZE;
+  const nextChunk = remainingIds.slice(0, CHUNK_SIZE);
+  const stillRemaining = remainingIds.slice(CHUNK_SIZE);
+
+  console.log(`📦 Triggering chunk #${chunkIndex} for page ${page}: ${nextChunk.length} listings, ${stillRemaining.length} after`);
+
+  try {
+    await fetch(`${supabaseUrl}/functions/v1/scout-madlan-direct`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+      body: JSON.stringify({
+        config_id: configId, page, run_id: runId,
+        max_pages: maxPages, start_page: startPage,
+        is_retry: isRetry, retry_pages: retryPages,
+        chunk_ids: nextChunk,
+        chunk_index: chunkIndex,
+        remaining_ids: stillRemaining,
+        acc_found: accFound, acc_new: accNew, acc_skipped_broker: accSkippedBroker,
+      })
+    });
+  } catch (err) {
+    console.error(`❌ Failed to trigger chunk #${chunkIndex}:`, err);
+    // Best-effort: mark page as completed with what we have, then chain to next page
+    await updatePageStatus(supabase, runId, page, {
+      status: 'completed', found: accFound, new: accNew,
+      error: `chunk_trigger_failed_at_${chunkIndex}`,
+    });
+    await chainNextPage(supabaseUrl, supabaseKey, supabase, configId, page, runId, maxPages, startPage, isRetry, retryPages);
+  }
+}
