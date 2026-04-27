@@ -1,71 +1,88 @@
-## בניית `scout-madlan-direct` — סורק מדלן ישיר ללא Jina
+# תוכנית: יישום דוח המתכנת עם תיקונים והשלמות
 
-### מטרה
-החלפת `scout-madlan-jina` בסורק עצמאי שמושך מודעות ישירות ממדלן באמצעות שיטת ה-iPhone UA + חילוץ HTML שהוכחה ב-PoC.
+## הערכה כללית של הדוח
+המתכנת זיהה נכון את הבעיה המרכזית (חסימת Cloudflare על Direct Fetch) אבל פספס שני דברים חשובים:
+1. ה-chunking שכבר מיושם ב-`scout-madlan-direct` ולא קיים ב-`scout-madlan-jina`.
+2. נקודה 2 שלו (X-Return-Format ליד2) לא תפתור את בעיית ה-WAF של יד2.
 
-### ארכיטקטורה
+לכן ניישם את ההמלצות שלו אבל עם תוספות.
 
-```text
-trigger-scout-pages-jina (קיים)
-        │
-        ▼
-scout-madlan-direct  ◄── חדש
-        │
-        ├─ Stage 1: GET search page (iPhone UA) → חילוץ listing IDs
-        ├─ Stage 2: לכל ID → GET /listings/<id> → חילוץ Apollo/__NEXT_DATA__
-        │           → price, rooms, address, size, floor, neighborhood, type, images, description, contact
-        ├─ Stage 3: סיווג private/broker (לפי contact info ב-Apollo state)
-        └─ Stage 4: saveProperty() → scouted_properties (משתמש בלוגיקה הקיימת)
+## שלב 1 — מדל"ן: חזרה ל-Jina + הוספת chunking (קריטי)
+
+### 1.1 שינוי ניתוב ב-trigger
+ב-`supabase/functions/trigger-scout-pages-jina/index.ts` שורה 107:
+```ts
+// במקום:
+const targetFunction = source === 'madlan' ? 'scout-madlan-direct' : `scout-${source}-jina`;
+// יהיה:
+const targetFunction = `scout-${source}-jina`;
 ```
 
-### קבצים
+### 1.2 הוספת chunking ל-`scout-madlan-jina`
+זו ההשלמה שהמתכנת פספס. בלי זה — נחזור ל-timeout של 3 דקות על 50 מודעות.
+מעבירים את לוגיקת ה-chunk-based processing מ-`scout-madlan-direct` (CHUNK_SIZE: 12, re-invoke עצמי) גם ל-`scout-madlan-jina`.
 
-**חדש:** `supabase/functions/scout-madlan-direct/index.ts`
-- מבוסס על המבנה של `scout-madlan-jina/index.ts` (אותו interface: scout_run_id, config, page params)
-- מחליף את שכבת ה-fetch של Jina ב-fetch ישיר עם iPhone UA
-- שומר את אותה לוגיקת `saveProperty`, dedup, matching trigger
+### 1.3 ודא שהוא משתמש ב-JINA_API_KEY
+כבר קורה (שורה 35 בקובץ) — זה ינטרל את rate limit של free tier שהיה הסיבה המקורית שעברנו ל-Direct.
 
-**עדכון:** `supabase/config.toml` — הוספת `[functions.scout-madlan-direct]` עם `verify_jwt = false`
+## שלב 2 — שיפורי `scout-madlan-direct` (לעתיד / fallback)
 
-**עדכון:** `supabase/functions/trigger-scout-pages-jina/index.ts` — החלפת קריאה ל-`scout-madlan-jina` ב-`scout-madlan-direct` (madlan בלבד; yad2/homeless נשארים על Jina בינתיים)
+לא נמחק את הפונקציה — נשפר אותה כך שתהיה fallback איכותי:
 
-### פרטים טכניים
-
-**Headers (iPhone Safari):**
+### 2.1 זיהוי Cloudflare challenge לפי content
+ב-`fetchHtml`, להוסיף בדיקה לפני קבלת התוצאה:
+```ts
+const cfPatterns = ['__cf_chl_opt', 'challenge.cloudflare.com', 'cf-browser-verification', 'Just a moment...'];
+if (cfPatterns.some(p => html.includes(p))) {
+  console.warn('🚫 Cloudflare challenge detected');
+  return null; // יפעיל retry
+}
 ```
-User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) ...
-Accept-Language: he-IL,he;q=0.9
-Accept: text/html,...
+
+### 2.2 הוספת כותרות דפדפן ריאליסטיות
+```ts
+'Accept-Encoding': 'gzip, deflate, br',
+'Sec-Fetch-Dest': 'document',
+'Sec-Fetch-Mode': 'navigate',
+'Sec-Fetch-Site': 'none',
+'Sec-Fetch-User': '?1',
 ```
 
-**חילוץ נתונים מדף מודעה:**
-- מקור ראשי: `__APOLLO_STATE__` (JSON מובנה — price, rooms, addressTitle, area, floor, neighborhood, type, mediaItems, description, contact info)
-- fallback: `__NEXT_DATA__`
-- fallback אחרון: regex על HTML
+### 2.3 חילוץ IDs מ-__NEXT_DATA__
+ב-`extractListingIds`, לנסות קודם:
+```ts
+const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+if (nextDataMatch) {
+  const json = JSON.parse(nextDataMatch[1]);
+  // לחלץ IDs מהמבנה של מדל"ן
+}
+// fallback ל-regex הקיים
+```
 
-**Rate limiting:**
-- delay של 800-1500ms בין בקשות (ג'יטר רנדומלי) למניעת חסימה
-- batch size: 10 מודעות בכל יחידת זמן
-- retry פעם אחת עם backoff על 403/429/503
+## שלב 3 — יד2 (אופציונלי, סיכון נמוך)
 
-**איתור private vs broker:**
-- בדיקת `contactInfo.agencyName` / `contactInfo.type` ב-Apollo state
-- אם broker → דילוג (לפי business policy הקיימת)
+### 3.1 הוספת X-Return-Format
+ב-`_shared/scraping-jina.ts` בענף של yad2/madlan:
+```ts
+headers['Accept'] = 'text/markdown';
+headers['X-Return-Format'] = 'markdown'; // הצעת המתכנת — לא יזיק
+```
 
-**שמירה:**
-- שימוש מחדש בפונקציות העזר מ-`_shared/saveProperty` (אם קיים) או הקוד מ-`scout-madlan-jina`
-- שמירת `source = 'madlan'`, `source_url = listing URL`
-- triger קיים של dedup/matching יפעל אוטומטית
+**הסתייגות:** זה **כנראה לא יפתור** את בעיית יד2 (WAF Radware חוסם גם דרך Jina free). אם רוצים פתרון אמיתי ליד2, צריך JINA_API_KEY בתוכנית בתשלום או פתרון אחר. נשאיר את יד2 לאחרי שמדל"ן יחזור לעבוד.
 
-### בדיקה לאחר deploy
-1. הרצה ידנית עם config של עיר בודדת + 1 עמוד
-2. אימות שמודעות נשמרות עם price/rooms/address מלאים
-3. השוואה לסריקת Jina מקבילה (כיסוי + שדות)
+## סדר עבודה ובדיקות
+1. שלב 1.1 + 1.2 ביחד (אחרת מדל"ן ייכשל ב-timeout).
+2. בדיקת mini-run של מדל"ן (page 1, 50 listings).
+3. אם עובד — סבב מלא. אם לא — שלב 2.
+4. שלב 3 כתיקון נקודתי בנפרד.
 
-### מה לא משתנה
-- yad2 + homeless נשארים על Jina (לא נגענו)
-- כל לוגיקת ה-matching, dedup, availability check
-- ה-cron schedule וה-trigger functions
+## קבצים שיתעדכנו
+- `supabase/functions/trigger-scout-pages-jina/index.ts` (שורה אחת)
+- `supabase/functions/scout-madlan-jina/index.ts` (הוספת chunking)
+- `supabase/functions/scout-madlan-direct/index.ts` (שיפורי CF detection + headers + NEXT_DATA)
+- `supabase/functions/_shared/scraping-jina.ts` (שורה אחת ליד2)
 
-### סיכון
-נמוך — אם הסורק החדש נכשל, ניתן להחזיר את `trigger-scout-pages-jina` לקרוא ל-`scout-madlan-jina` (קיים ופועל).
+## סיכום למתכנת שלך
+- נקודה 1 שלו: ✅ נכונה, אבל חסר chunking → נוסיף.
+- נקודה 2 שלו: ⚠️ לא מזיק אבל לא יפתור — נעשה בכל זאת.
+- נקודה 3 שלו: ✅ מצוינת, ניישם.
