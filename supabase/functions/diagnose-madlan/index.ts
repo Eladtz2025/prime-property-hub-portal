@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+const serve = (h: (r: Request) => Response | Promise<Response>) => Deno.serve(h);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,6 +49,41 @@ serve(async (req) => {
       nextDataSnippet: (() => {
         const m = html.match(/<script[^>]*id=["']__NEXT_DATA__["'][^>]*>([^<]{0,500})/);
         return m ? m[1] : null;
+      })(),
+      // SSR hydration context - look for the assignment and capture a large window
+      ssrHydratedContextSnippet: (() => {
+        const idx = html.indexOf('__SSR_HYDRATED_CONTEXT__');
+        if (idx === -1) return null;
+        return html.slice(idx, idx + 8000);
+      })(),
+      localizeSsrConfigSnippet: (() => {
+        const idx = html.indexOf('__LOCALIZE_SSR_CONFIG__');
+        if (idx === -1) return null;
+        return html.slice(idx, idx + 2000);
+      })(),
+      // All JSON-LD blocks
+      jsonLdBlocks: (() => {
+        const blocks: string[] = [];
+        const re = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+        let m;
+        while ((m = re.exec(html)) !== null) {
+          blocks.push(m[1].slice(0, 2000));
+        }
+        return blocks;
+      })(),
+      // Look for any inline script that mentions key property fields
+      scriptsWithRooms: (() => {
+        const re = /<script[^>]*>([\s\S]*?)<\/script>/gi;
+        const hits: string[] = [];
+        let m;
+        while ((m = re.exec(html)) !== null) {
+          const s = m[1];
+          if (s.includes('rooms') || s.includes('"floor"') || s.includes('agentName') || s.includes('isPrivate')) {
+            hits.push(s.slice(0, 1500));
+            if (hits.length >= 3) break;
+          }
+        }
+        return hits;
       })(),
       // First 2000 chars of body to see structure
       bodySnippet: html.slice(0, 2000),
