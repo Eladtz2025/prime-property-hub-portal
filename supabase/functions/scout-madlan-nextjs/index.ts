@@ -36,16 +36,56 @@ interface FetchResult {
 }
 
 /**
- * Fetch search page HTML using the same minimal headers proven to work for detail pages.
- * Returns null on any non-2xx or error.
+ * Fetch search page HTML via Cloudflare Worker proxy (bypasses Supabase IP block).
+ * Falls back to direct fetch if proxy is not configured or fails hard.
  */
+const CF_WORKER_URL = 'https://yad2-proxy.taylor-kelly88.workers.dev/';
+
 async function fetchMadlanSearchPage(url: string, attempt: number): Promise<FetchResult | null> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), MADLAN_CONFIG.REQUEST_TIMEOUT_MS);
+  const proxyKey = Deno.env.get('YAD2_PROXY_KEY');
 
   try {
-    console.log(`🌐 Madlan-NextJS attempt ${attempt + 1}/${MADLAN_CONFIG.MAX_RETRIES} — fetching ${url}`);
-    const response = await fetch(url, {
+    console.log(`🌐 Madlan-NextJS attempt ${attempt + 1}/${MADLAN_CONFIG.MAX_RETRIES} — fetching via CF Worker: ${url}`);
+
+    let response: Response;
+    if (proxyKey) {
+      // Route through Cloudflare Worker — different egress IP, bypasses Madlan's Supabase block.
+      response = await fetch(CF_WORKER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-proxy-key': proxyKey,
+        },
+        body: JSON.stringify({
+          url,
+          target: 'madlan',
+          headers: {
+            'Accept': 'text/html',
+            'X-Nextjs-Data': '1',
+            'Accept-Language': 'he-IL,he;q=0.9',
+          },
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.warn(`⚠️ CF Worker returned HTTP ${response.status}`);
+        return { html: await response.text(), status: response.status };
+      }
+
+      const data = await response.json();
+      const html = String(data.html || '');
+      const upstreamStatus = Number(data.status || 0);
+      console.log(`✅ Madlan-NextJS via CF Worker: upstream=${upstreamStatus}, html=${html.length} chars`);
+      return { html, status: upstreamStatus || 200 };
+    }
+
+    // Fallback: direct fetch (will likely be blocked, but kept for safety).
+    console.warn(`⚠️ YAD2_PROXY_KEY not set — falling back to direct fetch (likely blocked).`);
+    response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'text/html',
