@@ -354,6 +354,9 @@ serve(async (req) => {
     if (chunkIds && chunkIds.length > 0) {
       console.log(`🍎 Madlan-Direct page ${page} chunk #${chunkIndex} (${chunkIds.length} listings, ${remainingIds?.length ?? 0} remaining)`);
 
+      // Refresh started_at so cleanup-stuck-runs (3min page-timeout) doesn't kill us mid-chunks
+      await updatePageStatus(supabase, runId, page, { started_at: new Date().toISOString(), status: 'scraping' });
+
       const result = await processListings(
         supabase, config, chunkIds, runId
       );
