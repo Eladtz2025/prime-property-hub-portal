@@ -33,6 +33,10 @@ const MADLAN_DIRECT_CONFIG = {
   DETAIL_MAX_RETRIES: 3,
   DETAIL_RETRY_BACKOFF_MS: [10000, 20000, 30000],
   DETAIL_CONCURRENCY: 1,
+  // Chunk size: keep each invocation under ~2.5min wall-clock to avoid edge timeout
+  // 12 listings × ~10s avg (jitter+fetch+save) ≈ 2 min
+  CHUNK_SIZE: 12,
+  CHUNK_DELAY_MS: 3000, // small gap between chunk invocations
 };
 
 // ==================== Fetch helpers ====================
