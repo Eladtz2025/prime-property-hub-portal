@@ -116,7 +116,7 @@ serve(async (req) => {
     if (!html) { results.push({ id, status, attempts, error: 'fetch_failed' }); continue; }
     const detail = extractDetail(html, id, url);
     results.push({ id, status, attempts, ok: true, ...detail });
-    await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
+    await new Promise(r => setTimeout(r, 5000 + Math.random() * 5000));
   }
   const summary = {
     total: results.length,
