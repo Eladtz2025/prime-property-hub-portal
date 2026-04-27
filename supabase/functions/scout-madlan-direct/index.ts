@@ -44,6 +44,25 @@ const MADLAN_DIRECT_CONFIG = {
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 const jitter = (min: number, max: number) => min + Math.floor(Math.random() * (max - min));
 
+// Patterns that indicate a Cloudflare challenge/interstitial page (any size).
+const CF_CHALLENGE_PATTERNS = [
+  '__cf_chl_opt',
+  'challenge.cloudflare.com',
+  'cf-browser-verification',
+  'Just a moment...',
+  'cf-challenge-running',
+  '/cdn-cgi/challenge-platform/',
+];
+
+function isCloudflareChallenge(html: string): boolean {
+  if (!html) return false;
+  // Cheap substring check (avoids regex overhead on large pages)
+  for (const p of CF_CHALLENGE_PATTERNS) {
+    if (html.includes(p)) return true;
+  }
+  return false;
+}
+
 async function fetchHtml(url: string, maxRetries = 2, timeoutMs = 30000): Promise<string | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -55,7 +74,13 @@ async function fetchHtml(url: string, maxRetries = 2, timeoutMs = 30000): Promis
           'User-Agent': IPHONE_UA,
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'he-IL,he;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
           'Cache-Control': 'no-cache',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1',
         },
         signal: controller.signal,
       });
@@ -63,10 +88,14 @@ async function fetchHtml(url: string, maxRetries = 2, timeoutMs = 30000): Promis
 
       if (res.ok) {
         const html = await res.text();
-        // Madlan listing pages are >100KB. Anything <50KB is likely a Cloudflare
-        // challenge/redirect/empty shell - retry instead of accepting.
-        if (html && html.length > 50000) return html;
-        console.warn(`⚠️ Madlan-Direct short response ${html?.length ?? 0} chars from ${url} (likely CF challenge)`);
+        // Detect CF challenge by content first (size-independent).
+        if (isCloudflareChallenge(html)) {
+          console.warn(`🚫 Madlan-Direct CF challenge detected for ${url} (${html.length} chars)`);
+        } else if (html && html.length > 50000) {
+          return html;
+        } else {
+          console.warn(`⚠️ Madlan-Direct short response ${html?.length ?? 0} chars from ${url} (likely CF challenge)`);
+        }
       } else {
         console.warn(`⚠️ Madlan-Direct attempt ${attempt + 1} HTTP ${res.status} for ${url}`);
         if (res.status === 410 || res.status === 404) return null;
@@ -83,11 +112,48 @@ async function fetchHtml(url: string, maxRetries = 2, timeoutMs = 30000): Promis
 
 function extractListingIds(html: string): string[] {
   const ids = new Set<string>();
+
+  // ----- 1. Try __NEXT_DATA__ first (Madlan is Next.js — most reliable source) -----
+  try {
+    const nextDataMatch = html.match(/<script\s+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/);
+    if (nextDataMatch) {
+      const json = JSON.parse(nextDataMatch[1]);
+      // Walk the JSON tree looking for any string field that matches a listing ID pattern.
+      // Madlan typically stores listings under props.pageProps with shapes like
+      // { id: "abc123", ... } or as URL strings containing /listings/<id>.
+      const walk = (node: any) => {
+        if (!node) return;
+        if (typeof node === 'string') {
+          const m = node.match(/\/listings?\/([a-zA-Z0-9_-]{6,40})/);
+          if (m) ids.add(m[1]);
+          return;
+        }
+        if (Array.isArray(node)) { node.forEach(walk); return; }
+        if (typeof node === 'object') {
+          // Heuristic: a key literally named "id" with a short alnum value, when the
+          // sibling looks like a listing object (has price/rooms/address keys).
+          if (typeof node.id === 'string' && /^[a-zA-Z0-9_-]{6,40}$/.test(node.id)) {
+            const looksLikeListing = ('price' in node) || ('rooms' in node) || ('address' in node) || ('addressRecord' in node);
+            if (looksLikeListing) ids.add(node.id);
+          }
+          for (const k of Object.keys(node)) walk(node[k]);
+        }
+      };
+      walk(json);
+      if (ids.size > 0) {
+        console.log(`🎯 Extracted ${ids.size} listing IDs from __NEXT_DATA__`);
+        return [...ids];
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ __NEXT_DATA__ parse failed, falling back to regex:', err);
+  }
+
+  // ----- 2. Fallback: regex over the raw HTML -----
   const re = /\/listings?\/([a-zA-Z0-9_-]{6,40})/g;
   let m;
   while ((m = re.exec(html)) !== null) {
     const id = m[1];
-    // Filter out obvious non-IDs
     if (!/^(undefined|null|search|index)$/i.test(id)) ids.add(id);
   }
   return [...ids];
