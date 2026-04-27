@@ -310,6 +310,13 @@ serve(async (req) => {
   const startPage = body.start_page as number | undefined;
   const isRetry = body.is_retry as boolean | undefined;
   const retryPages = body.retry_pages as number[] | undefined;
+  // Chunk continuation params: when present, skip search-page fetch and process only the given IDs
+  const chunkIds = body.chunk_ids as string[] | undefined;
+  const chunkIndex = (body.chunk_index as number | undefined) ?? 0;
+  const remainingIds = body.remaining_ids as string[] | undefined;
+  const accFound = (body.acc_found as number | undefined) ?? 0;
+  const accNew = (body.acc_new as number | undefined) ?? 0;
+  const accSkippedBroker = (body.acc_skipped_broker as number | undefined) ?? 0;
 
   if (page == null || !runId || !configId) {
     return new Response(JSON.stringify({ success: false, error: 'Missing required params: page, run_id, config_id' }), {
