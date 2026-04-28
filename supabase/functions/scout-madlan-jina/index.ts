@@ -4,6 +4,7 @@ import { corsHeaders } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 import { saveProperty } from "../_shared/property-helpers.ts";
 import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
+import { parseMadlanSsrHtml } from "../_experimental/parser-madlan-ssr.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
@@ -145,18 +146,25 @@ serve(async (req) => {
 
       const { markdown } = scrapeResult;
 
-      // Validate: minimum length and presence of listing markers
-      const hasListings = markdown.includes('madlan.co.il/listings/');
-      if (markdown.length < 3000 || !hasListings) {
-        console.warn(`⚠️ Madlan-Jina page ${page}: Validation failed (${markdown.length} chars, listings: ${hasListings})`);
+      // Detect format: Jina now sometimes returns raw HTML instead of Markdown.
+      // HTML contains __SSR_HYDRATED_CONTEXT__ with full Apollo cache; parse it directly.
+      const isHtml = /^\s*<!DOCTYPE|<html[\s>]/i.test(markdown) || markdown.includes('__SSR_HYDRATED_CONTEXT__');
+      const hasListingsMarker = isHtml
+        ? markdown.includes('__SSR_HYDRATED_CONTEXT__') || markdown.includes('searchPoiV2')
+        : markdown.includes('madlan.co.il/listings/');
+
+      if (markdown.length < 3000 || !hasListingsMarker) {
+        console.warn(`⚠️ Madlan-Jina page ${page}: Validation failed (${markdown.length} chars, html=${isHtml}, hasMarker=${hasListingsMarker})`);
         urlsFailed++;
         continue;
       }
 
-      const parseResult = parseMadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const parseResult = isHtml
+        ? parseMadlanSsrHtml(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter)
+        : parseMadlanMarkdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
-      console.log(`🟠 Madlan-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
+      console.log(`🟠 Madlan-Jina page ${page} | parser=${isHtml ? 'ssr-html' : 'markdown'} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
 
       if (markdown.length > 1000) {
         try {
@@ -196,7 +204,7 @@ serve(async (req) => {
     console.log(`✅ Madlan-Jina page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
     await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
 
-    return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'jina-markdown' }), {
+    return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'jina-auto' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
