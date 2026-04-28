@@ -256,11 +256,13 @@ async function processPropertiesInParallel(
 
   console.log(`📊 Split: ${madlanProps.length} Madlan (parallel), ${jinaProps.length} Jina (sequential 3.5s delay)`);
 
-  // --- Madlan: parallel batches (same as before, no rate limit) ---
+  // --- Madlan: sequential with delay to avoid WAF rate-limiting (Apr 2026+) ---
+  // Madlan's Cloudflare WAF blocks bursts from same IP. 
+  // Use parallelism=2 with 3s delay — reliable and still fast enough.
   async function processMadlanParallel(): Promise<CheckResult[]> {
     const results: CheckResult[] = [];
-    const parallelism = Math.min(concurrencyLimit, 5);
-    const delayBetweenBatches = 1500;
+    const parallelism = 2;
+    const delayBetweenBatches = 3000;
 
     for (let i = 0; i < madlanProps.length; i += parallelism) {
       if (abortSignal.aborted) break;
