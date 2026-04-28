@@ -42,11 +42,13 @@ async function checkMadlanDirect(
 
     console.log(`🟠 Madlan-Direct availability check for ${url}`);
 
+    // CRITICAL: Madlan WAF (April 2026+) blocks browser-like UA/Referer AND
+    // X-Nextjs-Data headers with 403 Captcha. Only minimal headers pass through.
+    // Same strategy as scout-madlan-direct.
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
-        'X-Nextjs-Data': '1',
+        'Accept': 'text/html',
         'Accept-Language': 'he-IL,he;q=0.9',
       },
       signal: controller.signal,
