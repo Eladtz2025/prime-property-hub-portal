@@ -2,369 +2,127 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
-import { saveProperty, ScrapedProperty } from "../_shared/property-helpers.ts";
+import { saveProperty } from "../_shared/property-helpers.ts";
+import { parseMadlanSsrHtml } from "../_experimental/parser-madlan-ssr.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
- * Madlan Scout - DIRECT strategy (iPhone UA bypass).
+ * Madlan Scout — Direct Fetch (SSR Hydration parser).
  *
- * Replaces scout-madlan-jina by fetching Madlan directly with an iPhone Safari
- * User-Agent (proven in PoC to bypass Cloudflare without third-party proxy).
+ * Why Direct Fetch (not Jina, not CF Worker)?
+ * As of late April 2026, Madlan's Cloudflare WAF rules changed:
+ *   - Requests with `User-Agent` (browser-like) → 403 Captcha
+ *   - Requests with `X-Nextjs-Data: 1` → 403 Captcha
+ *   - Requests with ONLY `Accept: text/html` + `Accept-Language: he-IL` → 200 OK ✅
+ * Verified via test-madlan-direct: 588KB HTML, includes __SSR_HYDRATED_CONTEXT__, ~330ms.
  *
- * Flow:
- *   1. Fetch search page (e.g. /for-rent/<city>) -> extract listing IDs
- *   2. For each ID, fetch /listings/<id> -> extract structured data from
- *      __APOLLO_STATE__ / __NEXT_DATA__ / JSON-LD
- *   3. Determine private vs broker (skip brokers per business policy)
- *   4. saveProperty() reuses existing dedup + matching pipeline
+ * Jina Reader's free tier now returns 402 InsufficientBalance on Madlan, so
+ * Direct Fetch is the only working zero-cost path.
  */
 
-const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
-
-const MADLAN_DIRECT_CONFIG = {
+const MADLAN_CONFIG = {
   SOURCE: 'madlan',
-  PAGE_DELAY_MS: 6000,
+  MAX_RETRIES: 3,
+  PAGE_DELAY_MS: 4000,      // Be polite to Madlan (no API key, but cheap requests)
   RETRY_DELAY_MS: 15000,
   MAX_BLOCK_RETRIES: 2,
-  // Bigger jitter (5-10s) between detail fetches to avoid Cloudflare rate-limit
-  DETAIL_DELAY_MIN_MS: 5000,
-  DETAIL_DELAY_MAX_MS: 10000,
-  // Retry with exponential backoff (10s, 20s, 30s) on failures
-  DETAIL_MAX_RETRIES: 3,
-  DETAIL_RETRY_BACKOFF_MS: [10000, 20000, 30000],
-  DETAIL_CONCURRENCY: 1,
-  // Chunk size: keep each invocation under ~2.5min wall-clock to avoid edge timeout
-  // 12 listings × ~10s avg (jitter+fetch+save) ≈ 2 min
-  CHUNK_SIZE: 12,
-  CHUNK_DELAY_MS: 3000, // small gap between chunk invocations
+  REQUEST_TIMEOUT_MS: 30000,
 };
 
-// ==================== Fetch helpers ====================
+interface FetchResult {
+  html: string;
+  status: number;
+}
 
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-const jitter = (min: number, max: number) => min + Math.floor(Math.random() * (max - min));
+/**
+ * Fetch a Madlan search page using the minimal-headers strategy that bypasses WAF.
+ * No User-Agent, no Referer, no Origin, no X-Nextjs-Data.
+ */
+async function fetchMadlanPage(url: string, attempt: number): Promise<FetchResult | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), MADLAN_CONFIG.REQUEST_TIMEOUT_MS);
 
-// Patterns that indicate a Cloudflare challenge/interstitial page (any size).
-const CF_CHALLENGE_PATTERNS = [
-  '__cf_chl_opt',
-  'challenge.cloudflare.com',
-  'cf-browser-verification',
-  'Just a moment...',
-  'cf-challenge-running',
-  '/cdn-cgi/challenge-platform/',
-];
+  try {
+    console.log(`🌐 Madlan-Direct attempt ${attempt + 1}/${MADLAN_CONFIG.MAX_RETRIES}: ${url}`);
+    const start = Date.now();
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/html',
+        'Accept-Language': 'he-IL,he;q=0.9',
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
 
-function isCloudflareChallenge(html: string): boolean {
-  if (!html) return false;
-  // Cheap substring check (avoids regex overhead on large pages)
-  for (const p of CF_CHALLENGE_PATTERNS) {
-    if (html.includes(p)) return true;
+    const html = await response.text();
+    const elapsed = Date.now() - start;
+
+    if (!response.ok) {
+      console.warn(`⚠️ Madlan-Direct attempt ${attempt + 1}: HTTP ${response.status} (${html.length} chars, ${elapsed}ms)`);
+      return { html, status: response.status };
+    }
+
+    console.log(`✅ Madlan-Direct attempt ${attempt + 1}: ${html.length} chars in ${elapsed}ms (HTTP ${response.status})`);
+    return { html, status: response.status };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`⏱️ Madlan-Direct attempt ${attempt + 1}: timeout`);
+    } else {
+      console.error(`❌ Madlan-Direct attempt ${attempt + 1}:`, error);
+    }
+    return null;
   }
+}
+
+/**
+ * Detect Cloudflare challenge / Captcha block pages.
+ */
+function isBlocked(html: string, status: number): boolean {
+  if (status === 403 || status === 503) return true;
+  const lower = html.toLowerCase();
+  if (lower.includes('captcha') && html.length < 50000) return true;
+  if (lower.includes('cf-chl-bypass') || lower.includes('checking your browser')) return true;
+  if (lower.includes('attention required') && lower.includes('cloudflare')) return true;
   return false;
 }
 
-async function fetchHtml(url: string, maxRetries = 2, timeoutMs = 30000): Promise<string | null> {
+async function scrapeMadlan(url: string, maxRetries: number): Promise<FetchResult | null> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'User-Agent': IPHONE_UA,
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'he-IL,he;q=0.9',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Cache-Control': 'no-cache',
-          'Sec-Fetch-Dest': 'document',
-          'Sec-Fetch-Mode': 'navigate',
-          'Sec-Fetch-Site': 'none',
-          'Sec-Fetch-User': '?1',
-          'Upgrade-Insecure-Requests': '1',
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const html = await res.text();
-        // Detect CF challenge by content first (size-independent).
-        if (isCloudflareChallenge(html)) {
-          console.warn(`🚫 Madlan-Direct CF challenge detected for ${url} (${html.length} chars)`);
-        } else if (html && html.length > 50000) {
-          return html;
-        } else {
-          console.warn(`⚠️ Madlan-Direct short response ${html?.length ?? 0} chars from ${url} (likely CF challenge)`);
-        }
-      } else {
-        console.warn(`⚠️ Madlan-Direct attempt ${attempt + 1} HTTP ${res.status} for ${url}`);
-        if (res.status === 410 || res.status === 404) return null;
+    const result = await fetchMadlanPage(url, attempt);
+    if (!result) {
+      if (attempt < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
       }
-    } catch (err) {
-      console.error(`❌ Madlan-Direct fetch attempt ${attempt + 1} for ${url}:`, err);
+      continue;
     }
-    if (attempt < maxRetries - 1) await sleep(2500 * (attempt + 1));
+
+    if (isBlocked(result.html, result.status)) {
+      console.warn(`🛑 Madlan-Direct blocked (status ${result.status}, ${result.html.length} chars)`);
+      if (attempt < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, 5000 * (attempt + 1)));
+      }
+      continue;
+    }
+
+    if (result.html.length < 5000 || (!result.html.includes('__SSR_HYDRATED_CONTEXT__') && !result.html.includes('searchPoiV2'))) {
+      console.warn(`⚠️ Madlan-Direct: response missing SSR markers (${result.html.length} chars)`);
+      if (attempt < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+      }
+      continue;
+    }
+
+    return result;
   }
   return null;
 }
-
-// ==================== Extractors ====================
-
-function extractListingIds(html: string): string[] {
-  const ids = new Set<string>();
-
-  // ----- 1. Try __NEXT_DATA__ first (Madlan is Next.js — most reliable source) -----
-  try {
-    const nextDataMatch = html.match(/<script\s+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/);
-    if (nextDataMatch) {
-      const json = JSON.parse(nextDataMatch[1]);
-      // Walk the JSON tree looking for any string field that matches a listing ID pattern.
-      // Madlan typically stores listings under props.pageProps with shapes like
-      // { id: "abc123", ... } or as URL strings containing /listings/<id>.
-      const walk = (node: any) => {
-        if (!node) return;
-        if (typeof node === 'string') {
-          const m = node.match(/\/listings?\/([a-zA-Z0-9_-]{6,40})/);
-          if (m) ids.add(m[1]);
-          return;
-        }
-        if (Array.isArray(node)) { node.forEach(walk); return; }
-        if (typeof node === 'object') {
-          // Heuristic: a key literally named "id" with a short alnum value, when the
-          // sibling looks like a listing object (has price/rooms/address keys).
-          if (typeof node.id === 'string' && /^[a-zA-Z0-9_-]{6,40}$/.test(node.id)) {
-            const looksLikeListing = ('price' in node) || ('rooms' in node) || ('address' in node) || ('addressRecord' in node);
-            if (looksLikeListing) ids.add(node.id);
-          }
-          for (const k of Object.keys(node)) walk(node[k]);
-        }
-      };
-      walk(json);
-      if (ids.size > 0) {
-        console.log(`🎯 Extracted ${ids.size} listing IDs from __NEXT_DATA__`);
-        return [...ids];
-      }
-    }
-  } catch (err) {
-    console.warn('⚠️ __NEXT_DATA__ parse failed, falling back to regex:', err);
-  }
-
-  // ----- 2. Fallback: regex over the raw HTML -----
-  const re = /\/listings?\/([a-zA-Z0-9_-]{6,40})/g;
-  let m;
-  while ((m = re.exec(html)) !== null) {
-    const id = m[1];
-    if (!/^(undefined|null|search|index)$/i.test(id)) ids.add(id);
-  }
-  return [...ids];
-}
-
-interface DetailData {
-  source_id: string;
-  source_url: string;
-  title?: string;
-  price?: number;
-  rooms?: number;
-  size?: number;
-  floor?: number;
-  address?: string;
-  city?: string;
-  neighborhood?: string;
-  property_type_raw?: string;
-  description?: string;
-  images?: string[];
-  features: Record<string, boolean>;
-  is_private?: boolean | null;
-  raw_apollo_keys?: number;
-}
-
-// Decode HTML entities in title/h1/meta strings
-function decodeEntities(s: string): string {
-  return s
-    .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
-    .replace(/&#x27;/g, "'").replace(/&#x2F;/g, '/').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/&nbsp;/g, ' ').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n)));
-}
-
-// Map Hebrew amenity names from JSON-LD additionalProperty -> normalized feature keys
-const LDJSON_FEATURE_MAP: Record<string, string> = {
-  'נגיש לנכים': 'accessible',
-  'מיזוג אוויר': 'aircon',
-  'מרפסת': 'balcony',
-  'מעלית': 'elevator',
-  'גינה': 'yard',
-  'סורגים': 'bars',
-  'בריכה': 'pool',
-  'ממ״ד': 'mamad',
-  'ממ"ד': 'mamad',
-  'ממ״ק': 'mamak',
-  'מקלט': 'shelter',
-  'מחסן': 'storage',
-  'דוד שמש': 'sun_water_heater',
-  'חניה': 'parking',
-  'מרוהט': 'furnished',
-  'משופץ': 'renovated',
-};
-
-// Find the JSON-LD <script> block that contains the Product / property data.
-function extractProductLdJson(html: string): any | null {
-  const ldMatches = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/g)];
-  for (const m of ldMatches) {
-    try {
-      const parsed = JSON.parse(m[1]);
-      const arr = Array.isArray(parsed) ? parsed : [parsed];
-      for (const item of arr) {
-        if (item && (item['@type'] === 'Product' || item.offers?.price != null)) {
-          return item;
-        }
-      }
-    } catch { /* skip */ }
-  }
-  return null;
-}
-
-// Parse the meta description: "{address}, {neighborhood}, {city} - {type} ... ₪{price}, {rooms} חדרים בגודל של {size} מטר רבוע."
-function parseMetaDescription(desc: string): { address?: string; neighborhood?: string; city?: string; rooms?: number; size?: number } {
-  const out: any = {};
-  const decoded = decodeEntities(desc);
-  // Split off the part before " - "
-  const dashIdx = decoded.indexOf(' - ');
-  const head = dashIdx > 0 ? decoded.slice(0, dashIdx) : decoded;
-  const parts = head.split(',').map(s => s.trim()).filter(Boolean);
-  if (parts.length >= 3) {
-    out.address = parts[0];
-    out.neighborhood = parts[1];
-    out.city = parts.slice(2).join(', ');
-  } else if (parts.length === 2) {
-    out.address = parts[0];
-    out.city = parts[1];
-  } else if (parts.length === 1) {
-    out.address = parts[0];
-  }
-  const roomsM = decoded.match(/(\d+(?:\.\d+)?)\s*חדרים/);
-  if (roomsM) {
-    const r = parseFloat(roomsM[1]);
-    if (r > 0 && r < 25) out.rooms = r;
-  }
-  const sizeM = decoded.match(/(\d+(?:\.\d+)?)\s*(?:מטר רבוע|מ['׳"״]?ר)/);
-  if (sizeM) {
-    const s = parseFloat(sizeM[1]);
-    if (s > 0 && s < 5000) out.size = s;
-  }
-  return out;
-}
-
-// Determine property kind (apartment/parking/house/lot) and rent vs sale from <title>
-function parseTitle(title: string): { property_kind?: string; deal?: 'rent' | 'sale' } {
-  const out: any = {};
-  const t = decodeEntities(title);
-  if (/להשכרה/.test(t)) out.deal = 'rent';
-  else if (/למכירה/.test(t)) out.deal = 'sale';
-  // First word before colon is the property kind
-  const kindM = t.match(/^([^:]+?)\s*(?:להשכרה|למכירה)/);
-  if (kindM) out.property_kind = kindM[1].trim();
-  return out;
-}
-
-function extractDetail(html: string, sourceId: string, sourceUrl: string): DetailData {
-  const result: DetailData = { source_id: sourceId, source_url: sourceUrl, features: {} };
-
-  // ----- 1. JSON-LD Product (most reliable) -----
-  const product = extractProductLdJson(html);
-  if (product) {
-    const offer = product.offers || {};
-    if (offer.price != null) {
-      const p = parseInt(String(offer.price).replace(/[^\d]/g, ''));
-      if (p > 0) result.price = p;
-    }
-    if (product.size) {
-      const sm = String(product.size).match(/(\d+(?:\.\d+)?)/);
-      if (sm) {
-        const s = parseFloat(sm[1]);
-        if (s > 0 && s < 5000) result.size = s;
-      }
-    }
-    if (product.description) result.description = decodeEntities(String(product.description)).slice(0, 5000);
-    if (product.image) {
-      const imgs = Array.isArray(product.image) ? product.image : [product.image];
-      result.images = imgs.filter((x: any) => typeof x === 'string').slice(0, 30);
-    }
-    if (Array.isArray(product.additionalProperty)) {
-      for (const p of product.additionalProperty) {
-        const name = String(p?.name || '').trim();
-        const val = String(p?.value || '').trim();
-        const fk = LDJSON_FEATURE_MAP[name];
-        if (fk) result.features[fk] = (val === 'כן' || val === 'true' || val === 'yes');
-      }
-    }
-  }
-
-  // ----- 2. Meta description: address/neighborhood/city/rooms/size -----
-  const metaDescM = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/);
-  if (metaDescM) {
-    const parsed = parseMetaDescription(metaDescM[1]);
-    if (parsed.address) result.address = parsed.address;
-    if (parsed.neighborhood) result.neighborhood = parsed.neighborhood;
-    if (parsed.city) result.city = parsed.city;
-    if (parsed.rooms && !result.rooms) result.rooms = parsed.rooms;
-    if (parsed.size && !result.size) result.size = parsed.size;
-  }
-
-  // ----- 3. Title for property_kind / deal type -----
-  const titleM = html.match(/<title[^>]*>([^<]+)<\/title>/);
-  if (titleM) {
-    result.title = decodeEntities(titleM[1]).replace(/\s*\|.*$/, '').trim();
-    const t = parseTitle(titleM[1]);
-    if (t.property_kind) result.property_type_raw = t.property_kind;
-  }
-
-  // ----- 4. H1 fallback for address -----
-  if (!result.address) {
-    const h1M = html.match(/<h1[^>]*>([\s\S]{0,300}?)<\/h1>/);
-    if (h1M) {
-      const txt = decodeEntities(h1M[1].replace(/<[^>]+>/g, '')).trim();
-      const parts = txt.split(',').map(s => s.trim());
-      if (parts.length >= 1) result.address = parts[0];
-      if (parts.length >= 2 && !result.neighborhood) result.neighborhood = parts[1];
-      if (parts.length >= 3 && !result.city) result.city = parts.slice(2).join(', ');
-    }
-  }
-
-  // ----- 5. Broker detection -----
-  if (/data-auto=["']agent-tag["']|"agencyName"|"isAgent"\s*:\s*true|מתווך|תיווך/i.test(html)) {
-    result.is_private = false;
-  } else if (/"isPrivate"\s*:\s*true|בעלים פרטי|מפרסם פרטי/i.test(html)) {
-    result.is_private = true;
-  }
-
-  return result;
-}
-
-async function fetchDetail(listingId: string): Promise<DetailData | null> {
-  const url = `https://www.madlan.co.il/listings/${listingId}`;
-  const backoffs = MADLAN_DIRECT_CONFIG.DETAIL_RETRY_BACKOFF_MS;
-  for (let attempt = 0; attempt < MADLAN_DIRECT_CONFIG.DETAIL_MAX_RETRIES; attempt++) {
-    const html = await fetchHtml(url, 1, 25000);
-    if (html) {
-      const detail = extractDetail(html, listingId, url);
-      if (detail.price || detail.address || detail.rooms) return detail;
-      console.warn(`⚠️ Detail ${listingId}: no usable fields (attempt ${attempt + 1})`);
-    } else {
-      console.warn(`⚠️ Detail ${listingId}: fetch failed (attempt ${attempt + 1})`);
-    }
-    if (attempt < MADLAN_DIRECT_CONFIG.DETAIL_MAX_RETRIES - 1) {
-      const wait = backoffs[attempt] ?? 30000;
-      console.log(`⏳ Detail ${listingId}: backing off ${wait}ms before retry`);
-      await sleep(wait);
-    }
-  }
-  return null;
-}
-
-// ==================== Server ====================
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -378,13 +136,6 @@ serve(async (req) => {
   const startPage = body.start_page as number | undefined;
   const isRetry = body.is_retry as boolean | undefined;
   const retryPages = body.retry_pages as number[] | undefined;
-  // Chunk continuation params: when present, skip search-page fetch and process only the given IDs
-  const chunkIds = body.chunk_ids as string[] | undefined;
-  const chunkIndex = (body.chunk_index as number | undefined) ?? 0;
-  const remainingIds = body.remaining_ids as string[] | undefined;
-  const accFound = (body.acc_found as number | undefined) ?? 0;
-  const accNew = (body.acc_new as number | undefined) ?? 0;
-  const accSkippedBroker = (body.acc_skipped_broker as number | undefined) ?? 0;
 
   if (page == null || !runId || !configId) {
     return new Response(JSON.stringify({ success: false, error: 'Missing required params: page, run_id, config_id' }), {
@@ -393,11 +144,11 @@ serve(async (req) => {
   }
 
   const pageStartTime = Date.now();
-  console.log(`🍎 scout-madlan-direct: Page ${page} for run ${runId}`);
+  console.log(`🟠 scout-madlan-direct: Page ${page} for run ${runId}`);
 
   try {
     if (await isRunStopped(supabase, runId)) {
-      console.log(`🛑 Run ${runId} stopped, skipping page ${page}`);
+      console.log(`🛑 Run ${runId} was stopped, skipping page ${page}`);
       return new Response(JSON.stringify({ success: false, reason: 'stopped' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -407,52 +158,8 @@ serve(async (req) => {
       .from('scout_configs').select('*').eq('id', configId).single();
     if (configError || !config) throw new Error('Config not found');
 
-    if (config.property_type === 'both') {
-      const errorMsg = 'property_type "both" is not supported';
-      await updatePageStatus(supabase, runId, page, { status: 'failed', error: errorMsg, duration_ms: Date.now() - pageStartTime });
-      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-direct');
-      return new Response(JSON.stringify({ success: false, error: errorMsg }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
     await updatePageStatus(supabase, runId, page, { status: 'scraping' });
 
-    // ========== Mode A: chunk continuation (skip search-page fetch) ==========
-    if (chunkIds && chunkIds.length > 0) {
-      console.log(`🍎 Madlan-Direct page ${page} chunk #${chunkIndex} (${chunkIds.length} listings, ${remainingIds?.length ?? 0} remaining)`);
-
-      // Refresh started_at so cleanup-stuck-runs (3min page-timeout) doesn't kill us mid-chunks
-      await updatePageStatus(supabase, runId, page, { started_at: new Date().toISOString(), status: 'scraping' });
-
-      const result = await processListings(
-        supabase, config, chunkIds, runId
-      );
-      const newAccFound = accFound + result.found;
-      const newAccNew = accNew + result.new;
-      const newAccSkipped = accSkippedBroker + result.skippedBroker;
-
-      // Update progressive stats
-      await updatePageStatus(supabase, runId, page, {
-        found: newAccFound, new: newAccNew, status: 'scraping',
-      });
-      await incrementRunStats(supabase, runId, result.found, result.new);
-
-      const duration = Date.now() - pageStartTime;
-      console.log(`✅ Chunk #${chunkIndex} done in ${duration}ms: +${result.found} found (total: ${newAccFound})`);
-
-      // More chunks remaining?
-      if (remainingIds && remainingIds.length > 0) {
-        await triggerNextChunk(supabaseUrl, supabaseServiceKey, configId, page, runId, maxPages!, startPage, remainingIds, chunkIndex + 1, newAccFound, newAccNew, newAccSkipped, isRetry, retryPages);
-        return new Response(JSON.stringify({ success: true, page, chunk: chunkIndex, found: result.found, partial: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-
-      // Last chunk: finalize page
-      await updatePageStatus(supabase, runId, page, { status: 'completed', found: newAccFound, new: newAccNew, duration_ms: duration });
-      console.log(`✅ Madlan-Direct page ${page} FINAL: found=${newAccFound} new=${newAccNew} skipped_broker=${newAccSkipped}`);
-      await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
-      return new Response(JSON.stringify({ success: true, page, found: newAccFound, new: newAccNew, skipped_broker: newAccSkipped, duration_ms: duration, parser: 'direct-iphone-ua' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    // ========== Mode B: initial — fetch search page, extract IDs, dispatch first chunk ==========
     const urls = buildSinglePageUrl(config, page);
     if (!urls.length) {
       await updatePageStatus(supabase, runId, page, { status: 'failed', error: 'Failed to build URL', duration_ms: Date.now() - pageStartTime });
@@ -460,65 +167,77 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: false, error: 'No URL' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    await updatePageStatus(supabase, runId, page, { url: urls[0] });
-
-    // Aggregate IDs across all URLs for this page (rare: single URL per page in practice)
-    const allIds: string[] = [];
-    let urlsFailed = 0;
-    for (const searchUrl of urls) {
-      console.log(`🍎 Madlan-Direct page ${page}: ${searchUrl}`);
-      const searchHtml = await fetchHtml(searchUrl, 2, 35000);
-      if (!searchHtml) { urlsFailed++; continue; }
-      const ids = extractListingIds(searchHtml);
-      console.log(`🍎 Madlan-Direct page ${page}: extracted ${ids.length} listing IDs`);
-      if (ids.length === 0) { urlsFailed++; continue; }
-      try {
-        await supabase.from('debug_scrape_samples').upsert({
-          source: 'madlan', url: searchUrl, html: null,
-          markdown: searchHtml.substring(0, 100000),
-          properties_found: ids.length, updated_at: new Date().toISOString()
-        }, { onConflict: 'source' });
-      } catch { /* non-fatal */ }
-      allIds.push(...ids);
+    if (config.property_type === 'both') {
+      const errorMsg = 'property_type "both" is not supported';
+      await updatePageStatus(supabase, runId, page, { status: 'failed', error: errorMsg, duration_ms: Date.now() - pageStartTime });
+      if (maxPages) await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-direct');
+      return new Response(JSON.stringify({ success: false, error: errorMsg }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (allIds.length === 0) {
-      const duration = Date.now() - pageStartTime;
+    let totalFound = 0;
+    let totalNew = 0;
+    let urlsFailed = 0;
+
+    console.log(`🟠 Madlan-Direct page ${page}: ${urls.length} URL(s) to scrape`);
+    await updatePageStatus(supabase, runId, page, { url: urls[0] });
+
+    for (const url of urls) {
+      const scrapeResult = await scrapeMadlan(url, MADLAN_CONFIG.MAX_RETRIES);
+      if (!scrapeResult) {
+        console.warn(`⚠️ Madlan-Direct page ${page}: All attempts failed for ${url}`);
+        urlsFailed++;
+        continue;
+      }
+
+      const { html } = scrapeResult;
+
+      const parseResult = parseMadlanSsrHtml(html, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const extractedProperties = parseResult.properties;
+
+      console.log(`🟠 Madlan-Direct page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
+
+      // Save debug sample (first 100KB)
+      if (html.length > 1000) {
+        try {
+          await supabase.from('debug_scrape_samples').upsert({
+            source: 'madlan', url, html: null,
+            markdown: html.substring(0, 100000),
+            properties_found: extractedProperties.length, updated_at: new Date().toISOString()
+          }, { onConflict: 'source' });
+        } catch (debugErr) { console.warn('Failed to save debug sample:', debugErr); }
+      }
+
+      const SAVE_CONCURRENCY = 5;
+      let urlNew = 0;
+      for (let i = 0; i < extractedProperties.length; i += SAVE_CONCURRENCY) {
+        const batch = extractedProperties.slice(i, i + SAVE_CONCURRENCY);
+        const results = await Promise.all(batch.map(property => saveProperty(supabase, property)));
+        urlNew += results.filter(r => r.isNew).length;
+      }
+
+      totalFound += extractedProperties.length;
+      totalNew += urlNew;
+    }
+
+    const duration = Date.now() - pageStartTime;
+
+    if (totalFound === 0 && urlsFailed === urls.length) {
       const { data: runData } = await supabase.from('scout_runs').select('page_stats').eq('id', runId).single();
       const currentRetryCount = runData?.page_stats?.find((p: any) => p.page === page)?.retry_count || 0;
-      await updatePageStatus(supabase, runId, page, { status: 'blocked', error: 'all_urls_failed_or_blocked', duration_ms: duration, retry_count: isRetry ? currentRetryCount : 0 });
+      await updatePageStatus(supabase, runId, page, { status: 'blocked', error: `all_urls_failed_or_blocked`, duration_ms: duration, retry_count: isRetry ? currentRetryCount : 0 });
       await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
       return new Response(JSON.stringify({ success: false, page, error: 'all_urls_failed_or_blocked', duration_ms: duration }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Split into chunks; process first chunk in this invocation, dispatch the rest
-    const CHUNK_SIZE = MADLAN_DIRECT_CONFIG.CHUNK_SIZE;
-    const firstChunk = allIds.slice(0, CHUNK_SIZE);
-    const rest = allIds.slice(CHUNK_SIZE);
+    await updatePageStatus(supabase, runId, page, { status: 'completed', found: totalFound, new: totalNew, duration_ms: duration });
+    await incrementRunStats(supabase, runId, totalFound, totalNew);
 
-    console.log(`🍎 Page ${page}: ${allIds.length} total IDs → chunks of ${CHUNK_SIZE} (first chunk: ${firstChunk.length}, rest: ${rest.length})`);
-
-    const result = await processListings(supabase, config, firstChunk, runId);
-    await incrementRunStats(supabase, runId, result.found, result.new);
-    await updatePageStatus(supabase, runId, page, { found: result.found, new: result.new, status: 'scraping' });
-
-    const duration = Date.now() - pageStartTime;
-    console.log(`✅ Chunk #0 done in ${duration}ms: +${result.found} found`);
-
-    if (rest.length > 0) {
-      await triggerNextChunk(supabaseUrl, supabaseServiceKey, configId, page, runId, maxPages!, startPage, rest, 1, result.found, result.new, result.skippedBroker, isRetry, retryPages);
-      return new Response(JSON.stringify({ success: true, page, chunk: 0, found: result.found, partial: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    // Single-chunk page (unusual): finalize directly
-    await updatePageStatus(supabase, runId, page, { status: 'completed', found: result.found, new: result.new, duration_ms: duration });
-    console.log(`✅ Madlan-Direct page ${page} (single chunk): found=${result.found} new=${result.new}`);
+    console.log(`✅ Madlan-Direct page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
     await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
 
-    return new Response(JSON.stringify({
-      success: true, page, found: result.found, new: result.new, skipped_broker: result.skippedBroker,
-      duration_ms: duration, parser: 'direct-iphone-ua'
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'direct-ssr' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
     console.error(`scout-madlan-direct page ${page} error:`, error);
@@ -530,17 +249,15 @@ serve(async (req) => {
   }
 });
 
-// ==================== Chaining ====================
-
 async function chainNextPage(
   supabaseUrl: string, supabaseKey: string, supabase: any,
   configId: string, currentPage: number, runId: string, maxPages: number,
   startPage?: number, isRetry?: boolean, retryPages?: number[]
 ): Promise<void> {
   if (isRetry && retryPages?.length) {
-    const idx = retryPages.indexOf(currentPage);
-    if (idx >= 0 && idx < retryPages.length - 1) {
-      await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPages[idx + 1], runId, maxPages, startPage, true, retryPages);
+    const currentIdx = retryPages.indexOf(currentPage);
+    if (currentIdx >= 0 && currentIdx < retryPages.length - 1) {
+      await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPages[currentIdx + 1], runId, maxPages, startPage, true, retryPages);
     } else {
       await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-direct');
     }
@@ -560,10 +277,10 @@ async function triggerNextPage(
   const MAX_TRIGGER_RETRIES = 3;
   const TRIGGER_RETRY_DELAY = 5000;
   const MAX_CONSECUTIVE_SKIPS = 3;
-  const delay = isRetry ? MADLAN_DIRECT_CONFIG.RETRY_DELAY_MS : MADLAN_DIRECT_CONFIG.PAGE_DELAY_MS;
+  const delay = isRetry ? MADLAN_CONFIG.RETRY_DELAY_MS : MADLAN_CONFIG.PAGE_DELAY_MS;
 
   console.log(`⏳ Waiting ${delay / 1000}s before page ${nextPage}${isRetry ? ' (retry)' : ''}...`);
-  await sleep(delay);
+  await new Promise(r => setTimeout(r, delay));
 
   const supabase = createClient(supabaseUrl, supabaseKey);
   if (await isRunStopped(supabase, runId)) {
@@ -584,17 +301,17 @@ async function triggerNextPage(
       break;
     } catch (err) {
       console.error(`❌ Failed to trigger page ${nextPage} (attempt ${attempt}):`, err);
-      if (attempt < MAX_TRIGGER_RETRIES) await sleep(TRIGGER_RETRY_DELAY);
+      if (attempt < MAX_TRIGGER_RETRIES) await new Promise(r => setTimeout(r, TRIGGER_RETRY_DELAY));
     }
   }
 
   if (!triggered) {
     if (_skipCount < MAX_CONSECUTIVE_SKIPS) {
-      await updatePageStatus(supabase, runId, nextPage, { status: 'failed', error: 'trigger_failed', duration_ms: 0 });
+      await updatePageStatus(supabase, runId, nextPage, { status: 'failed', error: `trigger_failed`, duration_ms: 0 });
       if (isRetry && retryPages?.length) {
-        const idx = retryPages.indexOf(nextPage);
-        if (idx >= 0 && idx < retryPages.length - 1) {
-          await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPages[idx + 1], runId, maxPages, startPage, true, retryPages, _skipCount + 1);
+        const currentIdx = retryPages.indexOf(nextPage);
+        if (currentIdx >= 0 && currentIdx < retryPages.length - 1) {
+          await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPages[currentIdx + 1], runId, maxPages, startPage, true, retryPages, _skipCount + 1);
         } else { await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-direct'); }
       } else if (nextPage < maxPages) {
         await triggerNextPage(supabaseUrl, supabaseKey, configId, nextPage + 1, runId, maxPages, startPage, false, undefined, _skipCount + 1);
@@ -611,14 +328,14 @@ async function handleRetryOrFinalize(
   if (!run?.page_stats) { await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-direct'); return; }
 
   const blockedPages = (run.page_stats as any[]).filter(
-    (p: any) => p.status === 'blocked' && (p.retry_count || 0) < MADLAN_DIRECT_CONFIG.MAX_BLOCK_RETRIES
+    (p: any) => p.status === 'blocked' && (p.retry_count || 0) < MADLAN_CONFIG.MAX_BLOCK_RETRIES
   );
 
   if (blockedPages.length === 0) { await checkAndFinalizeRun(supabase, runId, maxPages, 'madlan-direct'); return; }
 
   console.log(`🔄 Retrying ${blockedPages.length} blocked pages for run ${runId}`);
   const updatedStats = (run.page_stats as any[]).map((p: any) => {
-    if (p.status === 'blocked' && (p.retry_count || 0) < MADLAN_DIRECT_CONFIG.MAX_BLOCK_RETRIES) {
+    if (p.status === 'blocked' && (p.retry_count || 0) < MADLAN_CONFIG.MAX_BLOCK_RETRIES) {
       return { ...p, status: 'pending', error: undefined, retry_count: (p.retry_count || 0) + 1 };
     }
     return p;
@@ -627,114 +344,4 @@ async function handleRetryOrFinalize(
 
   const retryPageNumbers = blockedPages.map((p: any) => p.page);
   await triggerNextPage(supabaseUrl, supabaseKey, configId, retryPageNumbers[0], runId, maxPages, startPage, true, retryPageNumbers);
-}
-
-// ==================== Chunk processing ====================
-
-/**
- * Process a list of listing IDs: fetch detail for each, apply broker filter, save.
- * Returns counts for this chunk only.
- */
-async function processListings(
-  supabase: any, config: any, ids: string[], runId: string
-): Promise<{ found: number; new: number; skippedBroker: number }> {
-  let found = 0;
-  let _new = 0;
-  let skippedBroker = 0;
-
-  for (const id of ids) {
-    if (await isRunStopped(supabase, runId)) {
-      console.log(`🛑 Run ${runId} stopped mid-chunk`);
-      break;
-    }
-
-    await sleep(jitter(MADLAN_DIRECT_CONFIG.DETAIL_DELAY_MIN_MS, MADLAN_DIRECT_CONFIG.DETAIL_DELAY_MAX_MS));
-    const detail = await fetchDetail(id);
-    if (!detail) continue;
-
-    const ownerFilter = (config as any).owner_type_filter;
-    if (ownerFilter === 'private' && detail.is_private === false) {
-      skippedBroker++;
-      continue;
-    }
-
-    const property: ScrapedProperty = {
-      source: MADLAN_DIRECT_CONFIG.SOURCE,
-      source_url: detail.source_url,
-      source_id: detail.source_id,
-      title: detail.title,
-      city: detail.city,
-      neighborhood: detail.neighborhood,
-      address: detail.address,
-      price: detail.price,
-      rooms: detail.rooms,
-      size: detail.size,
-      floor: detail.floor,
-      property_type: config.property_type as 'rent' | 'sale',
-      description: detail.description,
-      images: detail.images,
-      features: detail.features,
-      is_private: detail.is_private ?? null,
-      raw_data: { scanner: 'direct-iphone-ua', apollo_keys: detail.raw_apollo_keys },
-    };
-
-    try {
-      const saveResult = await saveProperty(supabase, property);
-      found++;
-      if (saveResult.isNew) _new++;
-    } catch (err) {
-      console.error(`❌ saveProperty failed for ${id}:`, err);
-    }
-  }
-
-  return { found, new: _new, skippedBroker };
-}
-
-/**
- * Re-invoke this same edge function with the next chunk of listings for the same page.
- */
-async function triggerNextChunk(
-  supabaseUrl: string, supabaseKey: string, configId: string,
-  page: number, runId: string, maxPages: number, startPage: number | undefined,
-  remainingIds: string[], chunkIndex: number,
-  accFound: number, accNew: number, accSkippedBroker: number,
-  isRetry?: boolean, retryPages?: number[]
-): Promise<void> {
-  await sleep(MADLAN_DIRECT_CONFIG.CHUNK_DELAY_MS);
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
-  if (await isRunStopped(supabase, runId)) {
-    console.log(`🛑 Run ${runId} stopped, skipping chunk #${chunkIndex}`);
-    return;
-  }
-
-  const CHUNK_SIZE = MADLAN_DIRECT_CONFIG.CHUNK_SIZE;
-  const nextChunk = remainingIds.slice(0, CHUNK_SIZE);
-  const stillRemaining = remainingIds.slice(CHUNK_SIZE);
-
-  console.log(`📦 Triggering chunk #${chunkIndex} for page ${page}: ${nextChunk.length} listings, ${stillRemaining.length} after`);
-
-  try {
-    await fetch(`${supabaseUrl}/functions/v1/scout-madlan-direct`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
-      body: JSON.stringify({
-        config_id: configId, page, run_id: runId,
-        max_pages: maxPages, start_page: startPage,
-        is_retry: isRetry, retry_pages: retryPages,
-        chunk_ids: nextChunk,
-        chunk_index: chunkIndex,
-        remaining_ids: stillRemaining,
-        acc_found: accFound, acc_new: accNew, acc_skipped_broker: accSkippedBroker,
-      })
-    });
-  } catch (err) {
-    console.error(`❌ Failed to trigger chunk #${chunkIndex}:`, err);
-    // Best-effort: mark page as completed with what we have, then chain to next page
-    await updatePageStatus(supabase, runId, page, {
-      status: 'completed', found: accFound, new: accNew,
-      error: `chunk_trigger_failed_at_${chunkIndex}`,
-    });
-    await chainNextPage(supabaseUrl, supabaseKey, supabase, configId, page, runId, maxPages, startPage, isRetry, retryPages);
-  }
 }
