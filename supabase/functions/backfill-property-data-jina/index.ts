@@ -7,6 +7,7 @@ import { normalizeNeighborhoodToValue } from '../_experimental/street-lookup.ts'
 import { fetchHomelessDetailFeatures } from '../_shared/homeless-detail-parser.ts';
 import { fetchMadlanDetailFeatures } from '../_shared/madlan-detail-parser.ts';
 import { fetchYad2DetailFeatures } from '../_shared/yad2-detail-parser.ts';
+import { fetchYad2DetailNextData } from '../_shared/yad2-detail-nextdata.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
