@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
 
       const { data: props, error: fetchErr } = await supabase
         .from('scouted_properties')
-        .select('id, source, source_url, address, title, city, neighborhood, price, rooms, size, floor, features, is_private')
+        .select('id, source, source_url, address, title, city, neighborhood, price, rooms, size, floor, features, is_private, description, images')
         .in('id', ids);
 
       if (fetchErr || !props) {
@@ -526,7 +526,7 @@ Deno.serve(async (req) => {
 
     let query = supabase
       .from('scouted_properties')
-      .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private')
+      .select('id, source_url, source, rooms, price, size, city, floor, neighborhood, address, title, features, is_private, description, images')
       .eq('is_active', true)
       .not('source_url', 'is', null)
       .or('backfill_status.is.null,backfill_status.eq.pending')
