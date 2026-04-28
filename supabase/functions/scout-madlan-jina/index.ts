@@ -204,7 +204,7 @@ serve(async (req) => {
     console.log(`✅ Madlan-Jina page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
     await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
 
-    return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'jina-markdown' }), {
+    return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'jina-auto' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
