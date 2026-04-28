@@ -84,9 +84,16 @@ function extractSsrContext(html: string): any | null {
     else if (ch === '}') {
       depth--;
       if (depth === 0) {
-        const jsonStr = html.substring(objStart, i + 1);
+        const jsRaw = html.substring(objStart, i + 1);
+        // The blob is a JavaScript object literal (not JSON):
+        // contains `undefined` values and unquoted ES literals.
+        // Replace `undefined` with `null` outside of strings — safe-enough
+        // global replace since "undefined" doesn't appear inside any user-provided string content
+        // (Madlan's SSR strings are Hebrew). If a corner case ever breaks parse, we fallback to null.
+        const jsonStr = jsRaw.replace(/:\s*undefined\b/g, ':null')
+                              .replace(/,\s*undefined\b/g, ',null')
+                              .replace(/\[\s*undefined\b/g, '[null');
         try {
-          // The JSON uses \u002F escapes for slashes - JSON.parse handles them natively
           return JSON.parse(jsonStr);
         } catch (e) {
           console.error('[parser-madlan-ssr] JSON.parse failed:', e instanceof Error ? e.message : e);
