@@ -1,73 +1,36 @@
-## תוכנית: שדרוג יד2 (Scout + Backfill) - ללא פגיעה במדל"ן/הומלס
+## איפוס Backfill ל-2,096 נכסי יד2 חסרי תיאור
 
-### עיקרון מנחה
-**בידוד מוחלט:** כל השינויים נוגעים רק לקבצים של יד2. לא נוגעים ב:
-- `scout-madlan-direct/`, `parser-madlan-ssr.ts` (מדלן - עובד)
-- `scout-homeless-jina/`, `parser-homeless.ts` (הומלס - עובד)
-- `check-property-availability-jina/` (95% הצלחה - לא לגעת)
+### מה זה עושה
+מאפס את `data_completed_at = NULL` ו-`backfill_status = 'pending'` עבור נכסי יד2 פעילים שחסר להם `description` (או ריק), כך שה-cron הקיים של חצות יקלוט אותם מחדש עם הקוד החדש שכבר פרוס (חילוץ description + images דרך CF Worker + __NEXT_DATA__).
 
----
+### תנאי הסינון (מחמיר ובטוח)
+- `source = 'yad2'`
+- `is_active = true`
+- `(description IS NULL OR trim(description) = '')`
+- **לא** לגעת בנכסי מדל"ן/הומלס
+- **לא** לאפס נכסים שיש להם תיאור תקין כבר עכשיו
 
-### שלב 1: אימות הסקאוט החדש (CF Worker + __NEXT_DATA__)
-1. לפרוס את `scout-yad2-jina` המעודכן (כבר קיים בקוד)
-2. להריץ ריצת test קטנה: 3 עמודים בקונפיג יד2 פעיל
-3. לבדוק ב-DB את התוצאות:
-   - כמה properties נשמרו (יעד: ~21/page)
-   - איכות שדות: price, rooms, square_meters, neighborhood, owner_type
-   - אחוז הצלחה של עמודים
-4. לבדוק logs ל-CAPTCHA detection / blocks
-
-**Gate:** רק אם ≥80% הצלחה ו-≥15 properties/page בממוצע - ממשיכים לשלב 2.
-
----
-
-### שלב 2: תיקון Backfill (השלמת נתונים) ליד2
-**הבעיה הידועה:** 94% מהנכסים שעברו backfill חסר להם description, 72% חסר images.
-
-**הפתרון:**
-1. לעדכן `supabase/functions/_shared/yad2-detail-parser.ts`:
-   - חילוץ `description` מ-`[data-testid="property-description"]` ו-fallbacks
-   - חילוץ `images` מ-pattern `img.yad2.co.il/Pic/` ב-HTML וב-`__NEXT_DATA__`
-   - שמירה על שדות קיימים שכבר עובדים (price, rooms וכו')
-
-2. להעביר את ה-fetch של דפי פרטי יד2 ב-backfill מ-Jina ל-CF Worker proxy (אותה לוגיקה כמו ב-scout):
-   - אם listing pages נחסמים ב-Jina, גם detail pages ייחסמו
-   - להוסיף helper משותף `fetchYad2ViaCfProxy` בקובץ נפרד `_shared/yad2-cf-fetcher.ts`
-
-3. **לא לאפס `data_completed_at` לכלל הנכסים** - רק לנכסי יד2 שחסר description:
+### ביצוע
+1. **ספירה מקדימה** (SELECT) - לוודא שמספר הנכסים סביר (~2,096), לא יותר.
+2. **UPDATE יחיד** דרך migration:
    ```sql
-   UPDATE properties 
-   SET data_completed_at = NULL 
-   WHERE source = 'yad2' 
-     AND (description IS NULL OR description = '');
+   UPDATE scouted_properties
+   SET data_completed_at = NULL,
+       backfill_status = 'pending'
+   WHERE source = 'yad2'
+     AND is_active = true
+     AND (description IS NULL OR trim(description) = '');
    ```
-   (~2,096 נכסים בלבד, לא נוגע במדלן/הומלס)
+3. **אימות** - SELECT count לאחר הריצה לוודא שזה תאם לציפייה.
 
----
+### מה זה לא עושה
+- לא מוחק שום נתון קיים
+- לא משנה features/price/rooms/images שכבר מולאו
+- לא נוגע ב-Madlan / Homeless
+- לא מריץ backfill ידני - רק מסמן לקליטה ע"י ה-cron הבא
 
-### שלב 3: אימות Backfill
-1. להריץ backfill על batch קטן (20 נכסי יד2)
-2. לבדוק ב-DB:
-   - description קיים ולא ריק
-   - images array עם ≥1 תמונה
-   - שדות קיימים לא נדרסו
-3. אם תקין → לאשר הרצה מלאה על כל ה-2,096
+### לאחר האיפוס
+ה-cron הקיים של ה-backfill (`backfill-property-data-jina`) ירוץ בחצות הקרוב ויעבד את הנכסים בקצב הרגיל שלו (small batches עם CF Worker). אעקוב אחרי הריצה הראשונה ואדווח על הצלחה/בעיות.
 
----
-
-### מה לא נוגעים בו
-- ❌ `check-property-availability-jina` (עובד 95%)
-- ❌ כל קוד מדלן
-- ❌ כל קוד הומלס
-- ❌ matching engine
-- ❌ scout-configs / cron schedules
-
-### קבצים שייגעו
-- `supabase/functions/scout-yad2-jina/index.ts` (כבר עודכן, צריך אימות)
-- `supabase/functions/_shared/yad2-detail-parser.ts` (תיקון description + images)
-- `supabase/functions/_shared/yad2-cf-fetcher.ts` (חדש - helper משותף)
-- Backfill function שמשתמש ב-detail-parser - לעדכן להשתמש ב-CF fetcher
-- Migration קטן: reset `data_completed_at` רק לנכסי יד2 חסרי description
-
-### דיווח לאחר כל שלב
-אחרי כל שלב אדווח אמת מהמספרים האמיתיים ב-DB וב-logs - לא תיאוריה.
+### סיכון
+נמוך מאוד - פעולה הפיכה (אם משהו ישתבש פשוט נחכה למחזור הבא; הנכסים נשארים פעילים וגלויים). הקוד החדש כבר נבדק ידנית על 5 נכסים בהצלחה בריצה הקודמת.
