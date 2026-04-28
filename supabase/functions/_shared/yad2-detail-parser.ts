@@ -93,6 +93,11 @@ export async function fetchYad2DetailFeatures(
 
       if (!response.ok) {
         console.warn(`⚠️ Yad2 HTML fetch failed: status ${response.status}`);
+        // Fail-fast on 429 (rate-limit): retrying immediately only worsens the rate-limit window
+        if (response.status === 429) {
+          console.warn(`🚫 Yad2 rate-limited (429), aborting retries to release window`);
+          return null;
+        }
         if (attempt < maxRetries) {
           await new Promise(r => setTimeout(r, 5000 * (attempt + 1)));
           continue;
