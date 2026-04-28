@@ -854,25 +854,59 @@ Deno.serve(async (req) => {
           continue; // Skip Jina path for madlan
         }
 
-        // ===== YAD2: Jina HTML fetch with Cheerio (like homeless) =====
+        // ===== YAD2: CF Worker proxy + __NEXT_DATA__ (with Cheerio fallback) =====
         if (prop.source === 'yad2') {
           try {
-            const detailResult = await fetchYad2DetailFeatures(prop.source_url);
-            if (detailResult && Object.keys(detailResult.features).length > 0) {
+            // PRIMARY: __NEXT_DATA__ via CF Worker — gives description, images, full structured data
+            const nextData = await fetchYad2DetailNextData(prop.source_url);
+            // FALLBACK: Cheerio HTML parser if next-data missing or has zero features
+            let detailResult: any = nextData;
+            if (!nextData || Object.keys(nextData.features || {}).length === 0) {
+              const cheerioResult = await fetchYad2DetailFeatures(prop.source_url);
+              if (cheerioResult && Object.keys(cheerioResult.features || {}).length > 0) {
+                // Merge: prefer next-data fields, fill gaps from cheerio
+                detailResult = {
+                  features: { ...(cheerioResult.features || {}), ...(nextData?.features || {}) },
+                  size: nextData?.size ?? nextData?.sizeBuild ?? cheerioResult.size,
+                  floor: nextData?.floor ?? cheerioResult.floor,
+                  rooms: nextData?.rooms ?? cheerioResult.rooms,
+                  price: nextData?.price ?? cheerioResult.price,
+                  propertyCondition: nextData?.propertyCondition ?? cheerioResult.propertyCondition,
+                  totalFloors: nextData?.totalFloors ?? cheerioResult.totalFloors,
+                  pricePerSqm: nextData?.pricePerSqm ?? cheerioResult.pricePerSqm,
+                  parkingSpots: nextData?.parkingSpots ?? cheerioResult.parkingSpots,
+                  entryDate: nextData?.entryDate ?? cheerioResult.entryDate,
+                  address: nextData?.address ?? cheerioResult.address,
+                  adType: nextData?.adType ?? cheerioResult.adType,
+                  description: nextData?.description,
+                  images: nextData?.images,
+                  balconiesCount: nextData?.balconiesCount,
+                  shelterDistance: nextData?.shelterDistance,
+                };
+              }
+            }
+
+            // Determine if we have anything useful at all
+            const hasFeatures = detailResult && Object.keys(detailResult.features || {}).length > 0;
+            const hasContent = detailResult && (detailResult.description || (detailResult.images && detailResult.images.length > 0));
+
+            if (detailResult && (hasFeatures || hasContent)) {
               const existingFeatures = (prop.features || {}) as Record<string, any>;
               const mergedFeatures = { ...existingFeatures };
-              for (const [key, value] of Object.entries(detailResult.features)) {
+              for (const [key, value] of Object.entries(detailResult.features || {})) {
                 if (mergedFeatures[key] === undefined || mergedFeatures[key] === null) {
                   mergedFeatures[key] = value;
                 }
               }
-              
+
               // Store extended metadata inside features jsonb
               if (detailResult.totalFloors) mergedFeatures.totalFloors = detailResult.totalFloors;
               if (detailResult.pricePerSqm) mergedFeatures.pricePerSqm = detailResult.pricePerSqm;
-              if (detailResult.parkingSpots) mergedFeatures.parkingSpots = detailResult.parkingSpots;
+              if (detailResult.parkingSpots !== undefined) mergedFeatures.parkingSpots = detailResult.parkingSpots;
               if (detailResult.propertyCondition) mergedFeatures.propertyCondition = detailResult.propertyCondition;
               if (detailResult.entryDate) mergedFeatures.entryDate = detailResult.entryDate;
+              if (detailResult.balconiesCount !== undefined) mergedFeatures.balconiesCount = detailResult.balconiesCount;
+              if (detailResult.shelterDistance !== undefined) mergedFeatures.shelterDistance = detailResult.shelterDistance;
 
               const updates: Record<string, any> = {
                 features: mergedFeatures,
@@ -909,9 +943,26 @@ Deno.serve(async (req) => {
                 }
               }
 
-              // Broker detection from detail page
+              // NEW: description (from __NEXT_DATA__) — only set if missing/empty
+              if (detailResult.description && detailResult.description.length > 5) {
+                if (!prop.description || prop.description.trim().length === 0) {
+                  updates.description = detailResult.description;
+                  fieldsUpdated.push('description');
+                }
+              }
+
+              // NEW: images (from __NEXT_DATA__) — only set if missing/empty
+              if (Array.isArray(detailResult.images) && detailResult.images.length > 0) {
+                const existingImgs = Array.isArray(prop.images) ? prop.images : [];
+                if (existingImgs.length === 0) {
+                  updates.images = detailResult.images;
+                  fieldsUpdated.push('images');
+                }
+              }
+
+              // Broker detection from detail page (next-data adType: 'commercial' = agency)
               if (prop.is_private === null && detailResult.adType) {
-                updates.is_private = detailResult.adType !== 'agency';
+                updates.is_private = detailResult.adType !== 'agency' && detailResult.adType !== 'commercial';
                 batchStats.broker_classified++;
               }
 
@@ -922,15 +973,17 @@ Deno.serve(async (req) => {
               successCount++;
               batchStats.features_updated++;
               batchStats.total_processed++;
-              
+
               // Log extended info
               const extFields = [
                 detailResult.propertyCondition && `condition=${detailResult.propertyCondition}`,
                 detailResult.totalFloors && `totalFloors=${detailResult.totalFloors}`,
-                detailResult.parkingSpots && `parking=${detailResult.parkingSpots}`,
+                detailResult.parkingSpots !== undefined && `parking=${detailResult.parkingSpots}`,
                 detailResult.entryDate && `entry=${detailResult.entryDate}`,
+                detailResult.description && `desc=${detailResult.description.length}ch`,
+                detailResult.images?.length && `imgs=${detailResult.images.length}`,
               ].filter(Boolean).join(', ');
-              
+
               await saveRecentItem({
                 address: prop.address || prop.title,
                 neighborhood: prop.neighborhood,
@@ -945,7 +998,7 @@ Deno.serve(async (req) => {
                 floor: updates.floor ?? prop.floor ?? null,
                 features: Object.keys(detailResult.features || {}).filter(k => (detailResult.features as any)[k]),
               });
-              console.log(`✅ Yad2 HTML: ${Object.keys(detailResult.features).length} features, fields: ${fieldsUpdated.join(',') || 'none'}${extFields ? ', ' + extFields : ''}`);
+              console.log(`✅ Yad2 next-data: features=${Object.keys(detailResult.features || {}).length}, fields: ${fieldsUpdated.join(',') || 'none'}${extFields ? ', ' + extFields : ''}`);
             } else {
               failCount++;
               batchStats.scrape_failed++;
@@ -958,11 +1011,11 @@ Deno.serve(async (req) => {
                 source_url: prop.source_url,
                 status: 'scrape_failed',
                 timestamp: new Date().toISOString(),
-                error_reason: 'Yad2: no features extracted from detail page',
+                error_reason: 'Yad2: no usable data from detail page (next-data + cheerio both empty)',
               });
             }
           } catch (yad2Error) {
-            console.error(`❌ Yad2 HTML fetch error:`, yad2Error);
+            console.error(`❌ Yad2 detail fetch error:`, yad2Error);
             failCount++;
             batchStats.scrape_failed++;
             batchStats.total_processed++;
