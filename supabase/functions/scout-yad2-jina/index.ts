@@ -141,37 +141,31 @@ serve(async (req) => {
     let totalNew = 0;
     let urlsFailed = 0;
 
-    console.log(`🟠 Yad2-Jina page ${page}: ${urls.length} URL(s) to scrape`);
+    console.log(`🟠 Yad2-CF page ${page}: ${urls.length} URL(s) to scrape`);
     await updatePageStatus(supabase, runId, page, { url: urls[0] });
 
     for (const url of urls) {
-      console.log(`🟠 Yad2-Jina page ${page}: Scraping ${url}`);
+      console.log(`🟠 Yad2-CF page ${page}: Scraping ${url}`);
 
-      const scrapeResult = await scrapeWithJina(url, 'yad2', YAD2_CONFIG.MAX_RETRIES);
-      if (!scrapeResult) {
-        console.warn(`⚠️ Yad2-Jina page ${page}: Scrape failed for ${url}`);
+      const fetchResult = await fetchYad2ViaCfProxy(url);
+      if (!fetchResult) {
+        console.warn(`⚠️ Yad2-CF page ${page}: CF Worker fetch failed for ${url}`);
         urlsFailed++;
         continue;
       }
 
-      const { markdown } = scrapeResult;
-      const validation = validateScrapedContent(markdown, undefined, 'yad2');
-      if (!validation.valid) {
-        console.warn(`⚠️ Yad2-Jina page ${page}: Validation failed: ${validation.reason}`);
-        urlsFailed++;
-        continue;
-      }
-
-      const parseResult = parseYad2Markdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const { html } = fetchResult;
+      const parseResult = parseYad2NextData(html, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
-      console.log(`🟠 Yad2-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
+      console.log(`🟠 Yad2-CF page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count} | unknown=${parseResult.stats.unknown_count || 0}`);
 
-      if (markdown.length > 1000) {
+      // Save debug sample (HTML truncated)
+      if (html.length > 1000) {
         try {
           await supabase.from('debug_scrape_samples').upsert({
-            source: 'yad2', url, markdown: markdown?.substring(0, 100000) || null,
-            html: null,
+            source: 'yad2', url, markdown: null,
+            html: html.substring(0, 100000),
             properties_found: extractedProperties.length, updated_at: new Date().toISOString()
           }, { onConflict: 'source' });
         } catch (debugErr) { console.warn('Failed to save debug sample:', debugErr); }
@@ -202,10 +196,10 @@ serve(async (req) => {
     await updatePageStatus(supabase, runId, page, { status: 'completed', found: totalFound, new: totalNew, duration_ms: duration });
     await incrementRunStats(supabase, runId, totalFound, totalNew);
 
-    console.log(`✅ Yad2-Jina page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
+    console.log(`✅ Yad2-CF page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
     await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
 
-    return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'jina-markdown' }), {
+    return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'cf-worker-nextdata' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
