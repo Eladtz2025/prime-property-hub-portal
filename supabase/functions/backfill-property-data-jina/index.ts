@@ -297,8 +297,29 @@ Deno.serve(async (req) => {
         const r: any = { id: prop.id, source: prop.source, source_url: prop.source_url, address: prop.address };
         try {
           let detailResult: any = null;
+          let nextDataResult: Awaited<ReturnType<typeof fetchYad2DetailNextData>> = null;
           if (prop.source === 'yad2') {
-            detailResult = await fetchYad2DetailFeatures(prop.source_url);
+            // Try __NEXT_DATA__ first (gives description + images + everything)
+            nextDataResult = await fetchYad2DetailNextData(prop.source_url);
+            // If next-data missed features, fall back to Cheerio for the feature grid
+            if (!nextDataResult || Object.keys(nextDataResult.features).length === 0) {
+              detailResult = await fetchYad2DetailFeatures(prop.source_url);
+            } else {
+              detailResult = {
+                features: nextDataResult.features,
+                size: nextDataResult.size ?? nextDataResult.sizeBuild,
+                floor: nextDataResult.floor,
+                rooms: nextDataResult.rooms,
+                price: nextDataResult.price,
+                propertyCondition: nextDataResult.propertyCondition,
+                totalFloors: nextDataResult.totalFloors,
+                pricePerSqm: nextDataResult.pricePerSqm,
+                parkingSpots: nextDataResult.parkingSpots,
+                entryDate: nextDataResult.entryDate,
+                address: nextDataResult.address,
+                adType: nextDataResult.adType,
+              };
+            }
           } else if (prop.source === 'madlan') {
             detailResult = await fetchMadlanDetailFeatures(prop.source_url);
           } else if (prop.source === 'homeless') {
@@ -330,6 +351,8 @@ Deno.serve(async (req) => {
             if (detailResult.parkingSpots) mergedFeatures.parkingSpots = detailResult.parkingSpots;
             if (detailResult.propertyCondition) mergedFeatures.propertyCondition = detailResult.propertyCondition;
             if (detailResult.entryDate) mergedFeatures.entryDate = detailResult.entryDate;
+            if (nextDataResult?.balconiesCount !== undefined) mergedFeatures.balconiesCount = nextDataResult.balconiesCount;
+            if (nextDataResult?.shelterDistance !== undefined) mergedFeatures.shelterDistance = nextDataResult.shelterDistance;
           }
 
           const updates: Record<string, any> = {
@@ -343,12 +366,23 @@ Deno.serve(async (req) => {
           if (prop.source === 'yad2' && detailResult.address && isValidAddressForUpdate(detailResult.address)) {
             if (!prop.address || !hasHouseNumber(prop.address)) updates.address = detailResult.address;
           }
+          // NEW: description + images from __NEXT_DATA__ (Yad2 only)
+          if (prop.source === 'yad2' && nextDataResult) {
+            if (nextDataResult.description && nextDataResult.description.length > 5) {
+              updates.description = nextDataResult.description;
+            }
+            if (nextDataResult.images && nextDataResult.images.length > 0) {
+              updates.images = nextDataResult.images;
+            }
+          }
 
           await supabase.from('scouted_properties').update(updates).eq('id', prop.id);
 
           r.status = 'ok';
           r.features_merged = mergedFeatures;
           r.fields_updated = Object.keys(updates).filter(k => k !== 'backfill_status');
+          r.description_len = updates.description?.length || 0;
+          r.images_count = updates.images?.length || 0;
           results.push(r);
         } catch (err: any) {
           await supabase.from('scouted_properties')
