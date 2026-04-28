@@ -1429,8 +1429,13 @@ Deno.serve(async (req) => {
           timestamp: new Date().toISOString(),
         });
 
-        // Delay between requests
-        await new Promise(r => setTimeout(r, 1500));
+        // Delay between requests — extra jitter for Yad2 to avoid 429 rate-limits
+        if (prop.source === 'yad2') {
+          // 2500-4000ms randomized jitter
+          await new Promise(r => setTimeout(r, 2500 + Math.floor(Math.random() * 1500)));
+        } else {
+          await new Promise(r => setTimeout(r, 1500));
+        }
 
       } catch (propError) {
         console.error(`Error processing ${prop.id}:`, propError);
@@ -1522,7 +1527,9 @@ Deno.serve(async (req) => {
     }
 
     if (hasMore && !endTimeReached) {
-      console.log(`🔄 ${remainingCount} items remaining, triggering next batch (Jina)...`);
+      console.log(`🔄 ${remainingCount} items remaining, triggering next batch (Jina) in 3s...`);
+      // Breather between batches to release Yad2 rate-limit windows
+      await new Promise(r => setTimeout(r, 3000));
       
       const continueUrl = `${supabaseUrl}/functions/v1/backfill-property-data-jina`;
       try {
