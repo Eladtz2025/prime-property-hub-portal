@@ -1,15 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, validateScrapedContent } from "../_shared/scraping.ts";
+import { corsHeaders } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 import { saveProperty } from "../_shared/property-helpers.ts";
-import { scrapeWithJina } from "../_shared/scraping-jina.ts";
-import { parseYad2Markdown } from "../_experimental/parser-yad2.ts";
+import { parseYad2NextData } from "../_experimental/parser-yad2-nextdata.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
- * Edge Function for scraping Yad2 using Jina Reader - SEQUENTIAL MODE
+ * Edge Function for scraping Yad2 — Cloudflare Worker proxy + __NEXT_DATA__ parser.
+ *
+ * Why this design:
+ *   - Yad2's WAF (Radware) blocks both direct fetch AND Jina Reader (returns CAPTCHA shell).
+ *   - Tested 28 Apr 2026: Jina returned CAPTCHA on 10/12 listing pages (~83% blocked).
+ *   - The internal Cloudflare Worker (yad2-proxy) bypasses the WAF (~100% success).
+ *   - The proxy returns full SSR HTML containing __NEXT_DATA__ with structured listings.
  */
+
+const CF_WORKER_URL = 'https://yad2-proxy.taylor-kelly88.workers.dev/';
+const CF_FETCH_TIMEOUT_MS = 30000;
 
 const YAD2_CONFIG = {
   SOURCE: 'yad2',
@@ -18,6 +26,61 @@ const YAD2_CONFIG = {
   RETRY_DELAY_MS: 25000,
   MAX_BLOCK_RETRIES: 3,
 };
+
+/**
+ * Fetch a Yad2 listing page through the Cloudflare Worker proxy.
+ * Returns raw HTML or null on failure.
+ */
+async function fetchYad2ViaCfProxy(url: string): Promise<{ html: string; status: number } | null> {
+  const proxyKey = Deno.env.get('YAD2_PROXY_KEY');
+  if (!proxyKey) {
+    console.error('❌ YAD2_PROXY_KEY missing — cannot scrape Yad2');
+    return null;
+  }
+
+  for (let attempt = 1; attempt <= YAD2_CONFIG.MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CF_FETCH_TIMEOUT_MS);
+    try {
+      const t0 = Date.now();
+      const resp = await fetch(CF_WORKER_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-proxy-key': proxyKey },
+        body: JSON.stringify({ url, target: 'yad2' }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!resp.ok) {
+        console.warn(`⚠️ CF Worker returned ${resp.status} (attempt ${attempt})`);
+        await resp.text();
+      } else {
+        const json = await resp.json();
+        const html: string = json.html || '';
+        const upstream: number = json.status || 0;
+        console.log(`✅ CF Worker fetched in ${Date.now() - t0}ms: upstream=${upstream}, html=${html.length} chars`);
+
+        // CAPTCHA / WAF block detection
+        if (html.includes('Radware') || /Bot\s*Manager\s*Captcha/i.test(html)) {
+          console.warn(`⚠️ CF Worker returned CAPTCHA shell (attempt ${attempt})`);
+        } else if (upstream >= 200 && upstream < 400 && html.length > 5000) {
+          return { html, status: upstream };
+        }
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`⚠️ CF Worker fetch error (attempt ${attempt}): ${msg}`);
+    }
+
+    if (attempt < YAD2_CONFIG.MAX_RETRIES) {
+      const wait = 5000 * attempt;
+      console.log(`⏳ Retrying CF Worker in ${wait}ms...`);
+      await new Promise(r => setTimeout(r, wait));
+    }
+  }
+  return null;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -78,37 +141,31 @@ serve(async (req) => {
     let totalNew = 0;
     let urlsFailed = 0;
 
-    console.log(`🟠 Yad2-Jina page ${page}: ${urls.length} URL(s) to scrape`);
+    console.log(`🟠 Yad2-CF page ${page}: ${urls.length} URL(s) to scrape`);
     await updatePageStatus(supabase, runId, page, { url: urls[0] });
 
     for (const url of urls) {
-      console.log(`🟠 Yad2-Jina page ${page}: Scraping ${url}`);
+      console.log(`🟠 Yad2-CF page ${page}: Scraping ${url}`);
 
-      const scrapeResult = await scrapeWithJina(url, 'yad2', YAD2_CONFIG.MAX_RETRIES);
-      if (!scrapeResult) {
-        console.warn(`⚠️ Yad2-Jina page ${page}: Scrape failed for ${url}`);
+      const fetchResult = await fetchYad2ViaCfProxy(url);
+      if (!fetchResult) {
+        console.warn(`⚠️ Yad2-CF page ${page}: CF Worker fetch failed for ${url}`);
         urlsFailed++;
         continue;
       }
 
-      const { markdown } = scrapeResult;
-      const validation = validateScrapedContent(markdown, undefined, 'yad2');
-      if (!validation.valid) {
-        console.warn(`⚠️ Yad2-Jina page ${page}: Validation failed: ${validation.reason}`);
-        urlsFailed++;
-        continue;
-      }
-
-      const parseResult = parseYad2Markdown(markdown, config.property_type as 'rent' | 'sale', config.owner_type_filter);
+      const { html } = fetchResult;
+      const parseResult = parseYad2NextData(html, config.property_type as 'rent' | 'sale', config.owner_type_filter);
       const extractedProperties = parseResult.properties;
 
-      console.log(`🟠 Yad2-Jina page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count}`);
+      console.log(`🟠 Yad2-CF page ${page} | found=${extractedProperties.length} | private=${parseResult.stats.private_count} | broker=${parseResult.stats.broker_count} | unknown=${parseResult.stats.unknown_count || 0}`);
 
-      if (markdown.length > 1000) {
+      // Save debug sample (HTML truncated)
+      if (html.length > 1000) {
         try {
           await supabase.from('debug_scrape_samples').upsert({
-            source: 'yad2', url, markdown: markdown?.substring(0, 100000) || null,
-            html: null,
+            source: 'yad2', url, markdown: null,
+            html: html.substring(0, 100000),
             properties_found: extractedProperties.length, updated_at: new Date().toISOString()
           }, { onConflict: 'source' });
         } catch (debugErr) { console.warn('Failed to save debug sample:', debugErr); }
@@ -139,10 +196,10 @@ serve(async (req) => {
     await updatePageStatus(supabase, runId, page, { status: 'completed', found: totalFound, new: totalNew, duration_ms: duration });
     await incrementRunStats(supabase, runId, totalFound, totalNew);
 
-    console.log(`✅ Yad2-Jina page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
+    console.log(`✅ Yad2-CF page ${page}: Done | found=${totalFound} | new=${totalNew} | ${duration}ms`);
     await chainNextPage(supabaseUrl, supabaseServiceKey, supabase, configId, page, runId, maxPages!, startPage, isRetry, retryPages);
 
-    return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'jina-markdown' }), {
+    return new Response(JSON.stringify({ success: true, page, found: totalFound, new: totalNew, duration_ms: duration, parser: 'cf-worker-nextdata' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
