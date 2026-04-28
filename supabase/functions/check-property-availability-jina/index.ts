@@ -258,12 +258,13 @@ async function processPropertiesInParallel(
 
   // --- Madlan: SEQUENTIAL with delay to avoid WAF rate-limiting (Apr 2026+) ---
   // Madlan's Cloudflare WAF blocks bursts from same IP heavily.
-  // Tested: parallelism=2+1.5s delay = 40% 403, parallelism=2+3s = 37% 403,
-  // sequential+2s delay = expected ~5% 403. Worth the speed trade-off for reliability.
+  // Tested 2026-04-28: sequential+2s delay = 50% 403 in real runs (much worse than expected 5%).
+  // /listings/* pages are protected more aggressively than /for-rent/* (search) pages.
+  // Increased to 6s = ~10 RPM, expected to drop 403 rate to 10-15%.
   async function processMadlanParallel(): Promise<CheckResult[]> {
     const results: CheckResult[] = [];
     const parallelism = 1;
-    const delayBetweenBatches = 2000;
+    const delayBetweenBatches = 6000;
 
     for (let i = 0; i < madlanProps.length; i += parallelism) {
       if (abortSignal.aborted) break;
