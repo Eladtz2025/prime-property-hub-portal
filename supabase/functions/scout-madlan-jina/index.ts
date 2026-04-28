@@ -4,6 +4,7 @@ import { corsHeaders } from "../_shared/scraping.ts";
 import { buildSinglePageUrl } from "../_shared/url-builders.ts";
 import { saveProperty } from "../_shared/property-helpers.ts";
 import { parseMadlanMarkdown } from "../_experimental/parser-madlan.ts";
+import { parseMadlanSsrHtml } from "../_experimental/parser-madlan-ssr.ts";
 import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped } from "../_shared/run-helpers.ts";
 
 /**
