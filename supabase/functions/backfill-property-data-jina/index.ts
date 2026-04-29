@@ -774,14 +774,17 @@ Deno.serve(async (req) => {
               batchStats.scrape_failed++;
               batchStats.total_processed++;
               await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+              const availResult = await checkAvailabilityAfterFailure(prop.id);
               await saveRecentItem({
                 address: prop.address || prop.title,
                 neighborhood: prop.neighborhood,
                 source: prop.source,
                 source_url: prop.source_url,
-                status: 'scrape_failed',
+                status: availResult === 'removed' ? 'removed_auto' : 'scrape_failed',
                 timestamp: new Date().toISOString(),
-                error_reason: 'No features extracted from detail page',
+                error_reason: availResult === 'removed'
+                  ? 'הוסר מהאתר (זוהה ע"י בדיקת זמינות)'
+                  : 'No features extracted from detail page',
               });
             }
           } catch (homelessError) {
