@@ -1,78 +1,57 @@
-## הבעיה
+## הבעיה (אישור סופי לפי הצילומים שלך)
 
-הריצה הנוכחית מתבססת על `__NEXT_DATA__` (CF Worker) — מקור הנתונים העיקרי ל-Yad2.
-ב-`yad2-detail-nextdata.ts` ה-parking נקבע מ-`item.inProperty` (מיפוי כללי) או מ-`parkingSpacesCount`.
+- בדיאלוג "השלמת נתונים" של מונטיפיורי 22 רואים בבירור שהפרסר מזהה נכון: **אין חניה** (`parking` לא מופיע ברשימת התגים).
+- אבל ב-record שנשמר ב-DB (טבלת `scouted_properties`) השדה `features.parking` נשאר `true`.
+- הסיבה: בקוד ה-merge ב-`backfill-property-data-jina/index.ts`, השדה `parking` נכתב רק אם הערך הקיים הוא `null`/`undefined`. כשהערך הקיים הוא כבר `true` (משלב ה-scout המקורי), ה-`false` שמגיע מהפרסר נדחה בשקט.
 
-**בפועל**: ב-30 הנכסים שעברו backfill עכשיו, כולם נשמרו עם `parking=true` ו-`parkingSpots=null`,
-למרות שב-logs של ה-Cheerio fallback (כשהוא רץ) רואים בבירור `raw="ללא"`.
+## הפתרון — שינוי אחד מבודד בלבד
 
-המשמעות: ה-`inProperty` ב-Yad2 next-data מחזיר את `parking` כ-included גם כשאין חניה, או שהמיפוי שלנו לא מזהה את המצב ה-disabled שלו. ה-Cheerio תיקון שעשיתי בריצה הקודמת עובד נכון — אבל ב-Yad2 הוא בכלל לא רץ כי next-data מצליח עם 11 features.
+### שינוי יחיד: `supabase/functions/backfill-property-data-jina/index.ts`
 
-## פתרון מינימליסטי וזהיר
-
-תיקון נקודתי ב-2 מקומות בלבד. **שום שינוי ב-DB, שום מיגרציה**.
-
-### שינוי 1: `supabase/functions/_shared/yad2-detail-nextdata.ts`
-
-החלפת הלוגיקה של derive parking, כך שתסמוך **אך ורק** על `parkingSpacesCount`:
+בלולאת ה-merge של `features` (שם בודקים אם `mergedFeatures[key]` הוא null/undefined), להוסיף חריג נקודתי **רק לשדה `parking`**:
 
 ```ts
-// Derive parking ONLY from parkingSpacesCount (authoritative).
-// inProperty's parking flag is unreliable (often true even when no parking).
-if (typeof ad.parkingSpacesCount === 'number') {
-  result.features.parking = ad.parkingSpacesCount > 0;
-  if (ad.parkingSpacesCount > 0) {
-    result.parkingSpots = ad.parkingSpacesCount;
-  }
-} else {
-  // Authoritative source missing → remove parking from features so the
-  // Cheerio fallback or detail parser can fill it correctly.
-  delete result.features.parking;
-}
-```
-
-(זה מחליף גם את שורות 262 וגם 319-322.)
-
-### שינוי 2: `supabase/functions/backfill-property-data-jina/index.ts` — Yad2 path
-
-כש-`detailResult` מגיע מ-next-data ו-`features.parking` חסר, להריץ Cheerio כ-fallback **רק לשדה parking** (קל וזול), כדי שנוכל לקרוא את `parking-value`. אם גם הוא לא מספק תשובה — להשאיר את הערך הקיים ב-DB ולא לדרוס.
-
-מימוש (סביב שורה 944):
-
-```ts
-// If next-data couldn't determine parking, ask Cheerio just for that field
-if (detailResult && detailResult.features && detailResult.features.parking === undefined) {
-  try {
-    const cheerioForParking = await fetchYad2DetailFeatures(prop.source_url);
-    if (cheerioForParking?.features?.parking !== undefined) {
-      detailResult.features.parking = cheerioForParking.features.parking;
-      if (cheerioForParking.parkingSpots) {
-        detailResult.parkingSpots = cheerioForParking.parkingSpots;
-      }
+for (const [key, value] of Object.entries(detailResult.features)) {
+  if (key === 'parking') {
+    // parking is authoritative from the parser — allow explicit boolean overwrite
+    if (typeof value === 'boolean') {
+      mergedFeatures[key] = value;
     }
-  } catch (_) { /* non-fatal */ }
+  } else if (mergedFeatures[key] === undefined || mergedFeatures[key] === null) {
+    mergedFeatures[key] = value;
+  }
 }
 ```
 
-### שינוי 3 (קוסמטי): logging לאישור
+**מה זה משנה:**
+- `parking` בלבד — יכול להיכתב מחדש כש-parser מחזיר `true` או `false` מפורש.
+- כל שאר השדות (price, size, rooms, floor, mamad, elevator, balcony וכו') — נשארים מוגנים בדיוק כמו היום (נכתבים רק אם null).
 
-הוספת `console.log` שמדפיס את הערך הסופי של `parking` ו-`parkingSpots` לפני ה-update לדאטא-בייס, כדי שנוכל לוודא בלוגים שהתיקון עובד.
+**מה זה לא נוגע בו:**
+- שום שינוי ב-DB / RLS / migrations / cron / matching.
+- שום שינוי ב-parser-ים (`yad2-detail-nextdata.ts`, Cheerio, Madlan).
+- שום שינוי בלוגיקת ה-scout.
 
-## בדיקת תוצאה (אחרי הפעלה מחדש על-ידי המשתמש)
+### לוג קצר לאימות
 
-לאחר שהמשתמש מריץ שוב את ה-backfill, נבצע query על 20-30 הנכסים האחרונים:
-- האם יש כעת מגוון `parking=true` ו-`parking=false` (לא הכל true)?
-- האם בלוגים מופיעה ההחלטה הסופית של parking לכל נכס?
+מוסיפים `console.log` אחד לפני ה-update:
+```
+[backfill] property=<id> parking before=<old> after=<new>
+```
+כדי שנוכל לראות בלוגים שהדריסה אכן קורית.
 
-## חזרה למצב קודם
+## שלב 2 — הרצה מחדש של ~200 הנכסים מהחלון הפגום
 
-אם התיקון יצור בעיה חדשה, ניתן להחזיר 3 שינויים נקודתיים בקלות:
-1. ב-`yad2-detail-nextdata.ts` — להחזיר את 2 הבלוקים (`if typeof ad.parkingSpacesCount` ו-`Derive parking from parkingSpots`).
-2. ב-`backfill-property-data-jina/index.ts` — למחוק את בלוק ה-Cheerio fallback של parking.
-3. למחוק את שורת ה-log.
+לאחר אישור שהתיקון עובד, נריץ query שמאפס `backfill_status` ל-`pending` עבור הנכסים מ-Yad2 שעברו backfill בחלון הזמן הבעייתי (מאז התיקון הקודם שלי) ויש להם `features.parking = true` ללא `parkingSpots` — קבוצה שכוללת עם ביטחון גבוה את הנכסים שזיהינו לא נכון.
 
-## מה **לא** עושים
+זה ייעשה כ-**SQL migration נפרדת לאישור** אחרי שנראה שהתיקון בקוד עובד על נכסים חדשים. לא נוגע באף נכס שמחוץ לחלון הזה.
 
-- לא מתקנים את 30 הנכסים שכבר קיבלו parking שגוי בריצה האחרונה. נטפל בהם בנפרד אחרי שנוודא שהתיקון עובד (אפשר פשוט לאפס להם `backfill_status='pending'` ולהריץ שוב).
-- לא נוגעים ב-RLS / DB schema / cron / matching.
-- לא משנים את ה-Cheerio parser (כבר עובד).
+## חזרה למצב קודם (אם משהו משתבש)
+
+מחיקת 4 שורות הקוד שנוספו (החריג של `parking` + ה-log). זהו.
+
+## מה אני **לא** עושה
+
+- לא מתקן 30+ הנכסים המקוריים מהריצה השגויה הראשונה — זה מטופל יחד עם ה-200 בשלב 2.
+- לא נוגע ב-`yad2-detail-nextdata.ts` (התוכנית הקודמת בקובץ `.lovable/plan.md` מבוטלת).
+- לא משנה את החלטת ה-merge עבור אף שדה אחר.
