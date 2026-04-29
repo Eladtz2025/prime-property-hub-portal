@@ -1,56 +1,78 @@
+## הבעיה
 
-## מצב נוכחי לפני התיקון
+הריצה הנוכחית מתבססת על `__NEXT_DATA__` (CF Worker) — מקור הנתונים העיקרי ל-Yad2.
+ב-`yad2-detail-nextdata.ts` ה-parking נקבע מ-`item.inProperty` (מיפוי כללי) או מ-`parkingSpacesCount`.
 
-מתוך 583 הנכסים שאיפסנו ל-pending אתמול:
-- **68 כבר נבדקו** ב-6 השעות האחרונות (מתוכם 18/19 שנדגמו עדיין שגויים)
-- **515 עדיין ממתינים** (pending)
+**בפועל**: ב-30 הנכסים שעברו backfill עכשיו, כולם נשמרו עם `parking=true` ו-`parkingSpots=null`,
+למרות שב-logs של ה-Cheerio fallback (כשהוא רץ) רואים בבירור `raw="ללא"`.
 
-עצרת את הריצה — טוב שעצרת. צריך לתקן 3 באגים ב-parser לפני שנמשיך.
+המשמעות: ה-`inProperty` ב-Yad2 next-data מחזיר את `parking` כ-included גם כשאין חניה, או שהמיפוי שלנו לא מזהה את המצב ה-disabled שלו. ה-Cheerio תיקון שעשיתי בריצה הקודמת עובד נכון — אבל ב-Yad2 הוא בכלל לא רץ כי next-data מצליח עם 11 features.
 
-## אבחון הבאגים
+## פתרון מינימליסטי וזהיר
 
-הבעיה היחידה שורש כל הנזק: בקובץ `supabase/functions/_shared/yad2-detail-parser.ts`, ה-CSS selectors של `data-testid` (כמו `parking-value`, `floor-value`, `price`) מחזירים לפעמים טקסט שכולל את ה-label פעמיים או את ה-value מוכפל (לדוגמה: `"קומה33"`, `"₪44804480"`). הקוד הנוכחי מסיר את כל מה שאינו ספרה עם `replace(/[^\d]/g, '')`, מה שמשאיר את הספרות מחוברות יחד → `33`, `44804480`, `83008300`.
+תיקון נקודתי ב-2 מקומות בלבד. **שום שינוי ב-DB, שום מיגרציה**.
 
-באג נוסף: בלוק parking (שורות 197-206) מגדיר `features.parking = true` רק כש-`parkingSpots > 0`, אבל **לא מגדיר אותו ל-`false`** כשאין אלמנט parking-value בכלל. אז ה-fallback regex בהמשך (שורה 297) רץ על כל "חניה" בטקסט (כולל "אין חניה" שלא מכוסה בכל הניסוחים) ומחזיר `true`.
+### שינוי 1: `supabase/functions/_shared/yad2-detail-nextdata.ts`
 
-## התיקון המוצע (שינוי קוד יחיד, ממוקד)
+החלפת הלוגיקה של derive parking, כך שתסמוך **אך ורק** על `parkingSpacesCount`:
 
-**קובץ:** `supabase/functions/_shared/yad2-detail-parser.ts`
+```ts
+// Derive parking ONLY from parkingSpacesCount (authoritative).
+// inProperty's parking flag is unreliable (often true even when no parking).
+if (typeof ad.parkingSpacesCount === 'number') {
+  result.features.parking = ad.parkingSpacesCount > 0;
+  if (ad.parkingSpacesCount > 0) {
+    result.parkingSpots = ad.parkingSpacesCount;
+  }
+} else {
+  // Authoritative source missing → remove parking from features so the
+  // Cheerio fallback or detail parser can fill it correctly.
+  delete result.features.parking;
+}
+```
 
-### שינוי 1 — חילוץ מספר ראשון בלבד מ-data-testid
+(זה מחליף גם את שורות 262 וגם 319-322.)
 
-החלפת `parseInt(el.text().replace(/[^\d]/g, ''))` בפונקציית עזר שמחלצת את המספר **הראשון** בלבד (regex `match(/[\d.]+/)`). זה ימנע שרשור גם אם הטקסט הוא "קומה 3" וגם אם הוא "₪ 4,480 ₪ 4,480".
+### שינוי 2: `supabase/functions/backfill-property-data-jina/index.ts` — Yad2 path
 
-תיקון יחול על: `parkingSpots` (שורה 200), `pricePerSqm` (211), `floor` (227), `rooms` (234), `price` (243), `size` (181), `totalFloors` (190).
+כש-`detailResult` מגיע מ-next-data ו-`features.parking` חסר, להריץ Cheerio כ-fallback **רק לשדה parking** (קל וזול), כדי שנוכל לקרוא את `parking-value`. אם גם הוא לא מספק תשובה — להשאיר את הערך הקיים ב-DB ולא לדרוס.
 
-### שינוי 2 — קביעה מפורשת של parking=false כשאין parking-value
+מימוש (סביב שורה 944):
 
-אם האלמנט `[data-testid="parking-value"]` קיים אבל המספר 0 או חסר → `features.parking = false` ו-`parkingSpots` לא מוגדר.
-אם האלמנט לא קיים בכלל → להמשיך ל-fallback regex כרגיל (לא לשנות את לוגיקת ה-fallback).
+```ts
+// If next-data couldn't determine parking, ask Cheerio just for that field
+if (detailResult && detailResult.features && detailResult.features.parking === undefined) {
+  try {
+    const cheerioForParking = await fetchYad2DetailFeatures(prop.source_url);
+    if (cheerioForParking?.features?.parking !== undefined) {
+      detailResult.features.parking = cheerioForParking.features.parking;
+      if (cheerioForParking.parkingSpots) {
+        detailResult.parkingSpots = cheerioForParking.parkingSpots;
+      }
+    }
+  } catch (_) { /* non-fatal */ }
+}
+```
 
-### שינוי 3 — הוספת לוג השוואה
+### שינוי 3 (קוסמטי): logging לאישור
 
-לוג שמדפיס לפני/אחרי לכל שדה מספרי, כדי שנוכל לאמת בלוגי edge-functions שהתיקון עובד על המקרים הראשונים שירוצו.
+הוספת `console.log` שמדפיס את הערך הסופי של `parking` ו-`parkingSpots` לפני ה-update לדאטא-בייס, כדי שנוכל לוודא בלוגים שהתיקון עובד.
 
-## איך נחזור אחורה אם התיקון שובר משהו
+## בדיקת תוצאה (אחרי הפעלה מחדש על-ידי המשתמש)
 
-כל השינוי הוא **בקובץ אחד** (`yad2-detail-parser.ts`) שמשמש רק את ה-backfill של Yad2. כדי לחזור:
-1. לחץ על כפתור ה-revert מתחת להודעת ה-AI שביצעה את השינוי, **או**
-2. בקש ממני "תחזיר את `yad2-detail-parser.ts` למצב הקודם" — הקוד הקיים שמור בהיסטוריית הקובץ.
+לאחר שהמשתמש מריץ שוב את ה-backfill, נבצע query על 20-30 הנכסים האחרונים:
+- האם יש כעת מגוון `parking=true` ו-`parking=false` (לא הכל true)?
+- האם בלוגים מופיעה ההחלטה הסופית של parking לכל נכס?
 
-לא נוגעים ב:
-- מבנה ה-DB
-- שום edge function אחרת
-- לוגיקת ה-fallback regex של parking (נשארת כגיבוי)
-- פונקציית `extractFeatureItems` (שורות 332+) שמטפלת ב-features הרגילים
+## חזרה למצב קודם
 
-## אחרי התיקון
+אם התיקון יצור בעיה חדשה, ניתן להחזיר 3 שינויים נקודתיים בקלות:
+1. ב-`yad2-detail-nextdata.ts` — להחזיר את 2 הבלוקים (`if typeof ad.parkingSpacesCount` ו-`Derive parking from parkingSpots`).
+2. ב-`backfill-property-data-jina/index.ts` — למחוק את בלוק ה-Cheerio fallback של parking.
+3. למחוק את שורת ה-log.
 
-1. אעדכן את הקובץ.
-2. אבקש ממך להריץ שוב את ה-backfill על 515 הממתינים.
-3. אחרי 10-20 נכסים שירוצו, אבדוק במסד אם המחיר/קומה תקינים והאם parking נראה הגיוני (גם false וגם true עם parkingSpots).
-4. אם משהו עדיין לא נכון — נחזור אחורה מיד.
+## מה **לא** עושים
 
-## מה לגבי 68 הנכסים שכבר רצו עם הקוד השבור?
-
-הם נשארו עם נתונים שגויים (price doubled, floor doubled). אחרי שנאמת שהתיקון עובד, אציע לאפס גם אותם ל-pending כדי שירוצו שוב נקי. אבל זה צעד נפרד שאשאל עליו אישור.
+- לא מתקנים את 30 הנכסים שכבר קיבלו parking שגוי בריצה האחרונה. נטפל בהם בנפרד אחרי שנוודא שהתיקון עובד (אפשר פשוט לאפס להם `backfill_status='pending'` ולהריץ שוב).
+- לא נוגעים ב-RLS / DB schema / cron / matching.
+- לא משנים את ה-Cheerio parser (כבר עובד).
