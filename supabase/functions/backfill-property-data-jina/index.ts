@@ -1035,6 +1035,7 @@ Deno.serve(async (req) => {
               }
 
               if (!dry_run) {
+                console.log(`💾 Yad2 final update for ${prop.id}: parking=${updates.features?.parking}, parkingSpots=${updates.features?.parkingSpots ?? 'n/a'}`);
                 await supabase.from('scouted_properties').update(updates).eq('id', prop.id);
               }
 
