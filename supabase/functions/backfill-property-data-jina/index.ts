@@ -961,21 +961,8 @@ Deno.serve(async (req) => {
             if (detailResult && (hasFeatures || hasContent)) {
               const existingFeatures = (prop.features || {}) as Record<string, any>;
               const mergedFeatures = { ...existingFeatures };
-              // FIX 2026-04-29: detail-page features are AUTHORITATIVE for these keys —
-              // they should overwrite the (often wrong) values inherited from the scout
-              // list page. Specifically, parking from inProperty in scout was always true;
-              // the detail page (Cheerio parking-value or parkingSpacesCount) is reliable.
-              const AUTHORITATIVE_KEYS = new Set([
-                'parking', 'elevator', 'balcony', 'mamad', 'storage',
-                'airConditioner', 'renovated', 'furnished', 'accessible',
-                'bars', 'sunHeater', 'pets', 'tadiran', 'roof', 'yard',
-                'pandorDoors', 'kosherKitchen'
-              ]);
               for (const [key, value] of Object.entries(detailResult.features || {})) {
-                if (AUTHORITATIVE_KEYS.has(key) && (value === true || value === false)) {
-                  // Detail-page boolean wins over scout-page guess
-                  mergedFeatures[key] = value;
-                } else if (mergedFeatures[key] === undefined || mergedFeatures[key] === null) {
+                if (mergedFeatures[key] === undefined || mergedFeatures[key] === null) {
                   mergedFeatures[key] = value;
                 }
               }
