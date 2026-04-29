@@ -1,41 +1,85 @@
-## הבעיה המאומתת
+## שלב 1: חילוץ טלפונים מ-Homeless
 
-מאז ההפצה ב-14:26, כל נכס Yad2 שלא היה לו `parkingSpacesCount` ב-`__NEXT_DATA__` עורר **קריאה שנייה** דרך `fetchYad2DetailFeatures` (Cheerio/Jina) רק כדי לקבל את ה-parking. זה הכפיל את עומס הקריאות ל-Yad2 ופגע ב-rate limit אחרי ~70 נכסים — מאותו רגע כל הנכסים מקבלים `Yad2: no usable data from detail page`.
+### מטרה
+לחלץ אוטומטית מספרי טלפון של בעלי נכסים פרטיים מ-Homeless ולשמור אותם ב-`scouted_properties.owner_phone`. עבודה איטית, עקבית, ללא חסימות, חינם לחלוטין.
 
-קוד הבעיה: `supabase/functions/backfill-property-data-jina/index.ts` שורות 940–955.
+### היקף ראשוני
+- **רק Homeless** בשלב הזה (Yad2/Madlan ייבדקו בשלב 2 אחרי probe).
+- כ-2,297 נכסים פרטיים אקטיביים ללא טלפון (יורדים בהדרגה ככל ש-Homeless יחזיר תוצאות).
 
-## התיקון — שינוי אחד בלבד
+### 1. מיגרציית DB (דורש אישור)
 
-### קובץ: `supabase/functions/backfill-property-data-jina/index.ts`
+הוספת עמודות ל-`scouted_properties`:
+- `phone_extraction_status TEXT` — `pending` / `success` / `failed` / `not_found` / `skipped`
+- `phone_extraction_attempts INT DEFAULT 0`
+- `phone_extracted_at TIMESTAMPTZ`
+- `phone_extraction_last_error TEXT`
 
-מחיקת בלוק ה-Cheerio fallback (שורות 940–955) במלואו. אחרי המחיקה, אם `parkingSpacesCount` חסר ב-next-data, השדה `parking` פשוט לא ייכתב — והערך הקיים ב-DB יישאר כפי שהוא (במקום ניחוש שגוי).
+טבלה חדשה `phone_extraction_runs`:
+- `id, started_at, ended_at, status, properties_attempted, phones_found, errors_count, source, triggered_by, notes`
+- RLS: read לאדמינים בלבד, write ל-service role.
 
-### קובץ: `supabase/functions/_shared/yad2-detail-nextdata.ts`
+אינדקס חלקי לזירוז ה-worker:
+```sql
+CREATE INDEX idx_sp_phone_extraction_queue 
+ON scouted_properties(phone_extraction_status, phone_extraction_attempts) 
+WHERE is_active = true 
+  AND is_private = true 
+  AND (owner_phone IS NULL OR owner_phone = '')
+  AND source = 'homeless';
+```
 
-שינוי קטן בשורות שמוחקות `features.parking` כש-`parkingSpacesCount` חסר: במקום `delete result.features.parking`, פשוט לא לכתוב את השדה מלכתחילה (התנהגות זהה אבל ברורה יותר). שינוי קוסמטי בלבד — אפשר גם להשאיר כמו שזה.
+**אפס שינוי על עמודות קיימות. אפס טריגרים חדשים.**
 
-### מה **נשאר** מהתיקון הקודם (החלק שעובד)
+### 2. Edge Functions
 
-1. ב-`yad2-detail-nextdata.ts`: `features.parking = parkingSpacesCount > 0` כשהשדה קיים. זה הוכיח את עצמו — 73 נכסים עם `parking: false` נכון.
-2. ב-`backfill-property-data-jina/index.ts` שורות 965–971 (לולאת ה-merge): החריג שמאפשר ל-`parking` boolean מפורש לדרוס ערך קיים. אין כאן עומס רשת — נשאר.
+**`extract-phone`** (stateless)
+- Input: `{ property_id, source_url, source }`
+- Logic ל-Homeless: `fetch(source_url)` → regex על `var phone = "0\d{8,9}"` או `tel:` ב-HTML → ניקוי/ולידציה (10 ספרות, מתחיל ב-0, פורמט ישראלי) → מחזיר phone או null.
+- כותב ל-DB: `owner_phone`, `phone_extraction_status`, `phone_extracted_at`, `phone_extraction_attempts++`.
+- שומר על `data-integrity-preservation` — לא נוגע בשום עמודה אחרת.
 
-## מה זה **לא** עושה
+**`phone-extraction-worker`** (cron)
+- בדיקת kill switch ב-`feature_flags` (`phone_extraction_enabled`).
+- בדיקת חלון זמן: 09:00–22:00 שעון ישראל (אם מחוץ — exit שקט).
+- שולף נכס אחד מהתור (Homeless, פרטי, אקטיבי, ללא טלפון, attempts<3, status≠success).
+- קורא ל-`extract-phone`.
+- delay אקראי 15–45s לפני exit (כדי לא להיראות כמו בוט גם אם cron יקפיץ מהר).
+- מתעד ב-`phone_extraction_runs`.
 
-- לא נוגע ב-Madlan, Homeless, scout, matching, RLS, cron, או DB schema.
-- לא משנה את לוגיקת ה-merge עבור שום שדה אחר.
-- לא מאפס את 32 הנכסים שנכשלו ב-14:26–14:30 — זה יטופל בנפרד אחרי שנאמת שהתיקון עובד.
+### 3. Cron
+- כל דקה (`* * * * *`) ב-pg_cron → `phone-extraction-worker`.
+- בקצב הזה: ~60 ניסיונות/שעה × 13 שעות = ~780/יום. כל ה-Homeless הפרטי יסיים תוך 3–4 ימים.
 
-## אימות
+### 4. UI
+כרטיסיה חדשה ב-`/admin-dashboard/scout` (או דשבורד הסקאוט הקיים):
+- סך נכסים בתור / הצליחו / נכשלו / לא נמצא
+- הריצה האחרונה (זמן, תוצאות)
+- Toggle kill switch
+- כפתור "הרץ ידנית עכשיו" (bypass חלון זמן)
+- טבלה של 20 ניסיונות אחרונים
 
-אחרי הדפלוי, להריץ backfill על 5–10 נכסים ולוודא:
-- אין שגיאות `Yad2: no usable data` חדשות.
-- נכסים בלי parkingSpacesCount **לא** משנים את ה-parking הקיים.
-- נכסים עם parkingSpacesCount=0 כן מקבלים `parking: false` (גם אם הערך הקיים היה true).
+### 5. Feature Flag
+הוספת רשומה ל-`feature_flags`: `phone_extraction_enabled = false` (יופעל ידנית אחרי בדיקה).
 
-## חזרה אחורה אם משהו נשבר
+### פרטים טכניים
 
-החזרת בלוק 940–955. בלי DB, בלי migrations.
+**Regex ל-Homeless** (אומת בניסויים קודמים):
+```
+/(?:var\s+phone\s*=\s*["']|tel:|טלפון[^0-9]{0,5})(0(?:5\d|[2-9])-?\d{7})/
+```
+ולידציה: 10 ספרות אחרי הסרת מקפים, מתחיל ב-`05` (סלולרי) או `0[2-4,8-9]` (קווי).
 
-## שלב 2 (אחרי אישור נפרד)
+**בטיחות מערכות קיימות:**
+- אפס שינוי ב-scout, matching, availability check.
+- העמודות החדשות מתווספות עם default ולא NOT NULL.
+- ה-worker עצמאי לחלוטין, לא חולק משאבים עם תהליכים אחרים.
+- Kill switch זמין מהרגע הראשון.
 
-מיגרציה לאיפוס `backfill_status='pending'` ל-32 הנכסים שנכשלו בחלון 14:26–14:30 כדי שירוצו מחדש.
+### מה לא בשלב 1
+- Yad2 (דורש probe נוסף לוודא תוכן ה-JSON של gw.yad2.co.il)
+- Madlan (אותו דבר)
+- אינטגרציה אוטומטית עם WhatsApp templates (הטלפון פשוט יישמר ב-DB, ה-UI הקיים יציג אותו)
+
+### הזמנה לאישור
+מאשר את שלב 1 כפי שמתואר? אם כן — אעבור ל-build mode ואבנה הכל בסשן אחד: מיגרציה → 2 Edge Functions → cron → kill switch → UI tile.
