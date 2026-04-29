@@ -1,28 +1,32 @@
-# הצמדת בדיקת זמינות לכשלון בהשלמת נתונים
+## איפוס 583 נכסי Yad2 חשודים להשלמת נתונים
 
-## הבעיה
+### מה נעשה
+איפוס `backfill_status` מ-`completed` ל-`pending` עבור 583 נכסים שעומדים בתנאים:
+- `source = 'yad2'`
+- `is_active = true`
+- `status IN ('checked','matched','new')`
+- `backfill_status = 'completed'`
+- `features.parking = 'true'` **ללא** `features.parkingSpots` (כלומר Parking הוגדר רק על-ידי ה-fallback regex)
 
-בריצת ההשלמה הנוכחית, כל ה-`scrape_failed` של Yad2 (ו-Madlan חלקית) הם בעצם **מודעות שהוסרו** — לא כשלון פרסור אמיתי. אימתתי בדפדפן (Yad2 מציג "חיפשנו בכל מקום אבל אין לנו עמוד כזה", Madlan עושה redirect לדף הבית). הנכסים האלה ממשיכים להיות פעילים ב-DB ומופיעים ב-matches.
+### מה לא נעשה
+- **לא** מתקנים את הקוד (parser/sanity check) — בהמשך לבקשתך
+- **לא** מוחקים את `features.parking` הקיים — נשאר עד שה-backfill יעבור ויעדכן
+- **לא** נוגעים ב-570 נכסים עם `parking=null` (לא ביקשת)
+- **לא** נוגעים בשום שדה אחר חוץ מ-`backfill_status`
 
-## הפתרון
+### ההשפעה
+ה-cron הלילי הקיים (00:00-02:30) יזהה את 583 הנכסים כ-`pending` ויריץ עליהם backfill מחדש בלילות הקרובים (~3-4 לילות במקצב הנוכחי).
 
-במקום לבנות לוגיקת זיהוי הסרה חדשה ב-`yad2-detail-parser`, **לקרוא ל-`check-property-availability-jina` הקיים** ברגע שהשלמת נתונים נכשלת על נכס. הקוד הזה כבר יודע לזהות הסרות גם ב-Yad2 וגם ב-Madlan דרך `_shared/availability-indicators.ts`.
-
-## שינויים
-
-### 1. `supabase/functions/backfill-property-data-jina/index.ts`
-
-הוספת helper יחיד שנקרא בכל מקום שבו `saveRecentItem({ status: 'scrape_failed' })` נשמר:
-
-```ts
-async function checkAvailabilityAfterFailure(propertyId: string): Promise<'removed' | 'still_available' | 'check_failed'>
+### SQL שיורץ
+```sql
+UPDATE scouted_properties
+SET backfill_status = 'pending'
+WHERE source = 'yad2'
+  AND backfill_status = 'completed'
+  AND is_active = true
+  AND status IN ('checked','matched','new')
+  AND (features->>'parking') = 'true'
+  AND NOT (features ? 'parkingSpots');
 ```
 
-- קורא inline ל-`check-property-availability-jina` עם `{ property_ids: [propertyId] }` (timeout 8s)
-- אם החזיר `isInactive: true` → הפונקציה כבר עדכנה את ה-DB (סימנה `is_available=false`). מחזיר `'removed'`.
-- אם `isInactive: false` → הנכס עדיין חי, הכשלון אמיתי. מחזיר `'still_available'`.
-- שגיאה/timeout → `'check_failed'` (ממשיכים כרגיל).
-
-### 2. שילוב ב-3 נקודות הכשלון הקיימות
-
-ב
+לאחר הביצוע אריץ COUNT לאימות ש-583 נכסים אכן עברו ל-pending.
