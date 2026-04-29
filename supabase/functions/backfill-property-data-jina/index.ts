@@ -937,22 +937,9 @@ Deno.serve(async (req) => {
               }
             }
 
-            // FIX 2026-04-29: If next-data didn't determine parking (parkingSpacesCount missing),
-            // ask the Cheerio parser just for that field — it reads parking-value reliably ("ללא" → false).
-            if (detailResult && detailResult.features && detailResult.features.parking === undefined) {
-              try {
-                const cheerioForParking = await fetchYad2DetailFeatures(prop.source_url);
-                if (cheerioForParking?.features?.parking !== undefined) {
-                  detailResult.features.parking = cheerioForParking.features.parking;
-                  if (cheerioForParking.parkingSpots) {
-                    detailResult.parkingSpots = cheerioForParking.parkingSpots;
-                  }
-                  console.log(`🅿️ Yad2 parking via Cheerio fallback: parking=${cheerioForParking.features.parking}, spots=${cheerioForParking.parkingSpots ?? 'n/a'}`);
-                }
-              } catch (e) {
-                console.warn(`⚠️ Yad2 parking Cheerio fallback failed:`, e instanceof Error ? e.message : e);
-              }
-            }
+            // NOTE 2026-04-29: Removed Cheerio parking fallback — it doubled Yad2 request load
+            // and triggered rate-limiting after ~70 properties. If parkingSpacesCount is missing
+            // in next-data, parking simply stays as-is in DB (no guessing).
 
             // Determine if we have anything useful at all
             const hasFeatures = detailResult && Object.keys(detailResult.features || {}).length > 0;
