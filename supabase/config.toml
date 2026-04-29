@@ -185,3 +185,9 @@ verify_jwt = false
 
 [functions.test-madlan-graphql-search]
 verify_jwt = false
+
+[functions.extract-phone]
+verify_jwt = false
+
+[functions.phone-extraction-worker]
+verify_jwt = false
