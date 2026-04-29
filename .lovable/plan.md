@@ -1,44 +1,28 @@
+# הצמדת בדיקת זמינות לכשלון בהשלמת נתונים
 
-# תוכנית: ייצוב Backfill מול Rate-Limiting של Yad2
+## הבעיה
 
-## הבעיה (מה שראיתי בלייב עכשיו)
-* CF Worker של Yad2 מחזיר **403 קבוע** על כל הבקשות (לא עובד יותר כ-fallback ראשון).
-* Direct HTML fallback מקבל **429 (Too Many Requests)** ב-3 ניסיונות רצופים על חלק מהנכסים.
-* אחוז הצלחה צונח לפעמים ל-50%-78% בדקה (לעומת 100% בדקות אחרות) — סימן קלאסי לחלון rate-limit.
-* ההפרדה בין פריטים בתוך batch היא **1.5 שניות** (`setTimeout 1500`), בלי דיליי בין batches.
-* ה-retry על 429 משתמש ב-backoff של 5s/10s/15s — אבל הוא **בתוך אותו batch**, אז הוא מבזבז זמן ולא משחרר את החלון.
+בריצת ההשלמה הנוכחית, כל ה-`scrape_failed` של Yad2 (ו-Madlan חלקית) הם בעצם **מודעות שהוסרו** — לא כשלון פרסור אמיתי. אימתתי בדפדפן (Yad2 מציג "חיפשנו בכל מקום אבל אין לנו עמוד כזה", Madlan עושה redirect לדף הבית). הנכסים האלה ממשיכים להיות פעילים ב-DB ומופיעים ב-matches.
 
-## הפתרון (שמרני, נגיעות מינימליות)
+## הפתרון
 
-### 1. הגדלת jitter בין פריטים בתוך batch
-**קובץ:** `supabase/functions/backfill-property-data-jina/index.ts` (שורה 1433)
-* מ-`1500ms` קבוע ל-`2500-4000ms` רנדומלי (jitter אמיתי).
-* רק עבור Yad2; Madlan/Homeless נשארים על דיליי קצר יותר.
+במקום לבנות לוגיקת זיהוי הסרה חדשה ב-`yad2-detail-parser`, **לקרוא ל-`check-property-availability-jina` הקיים** ברגע שהשלמת נתונים נכשלת על נכס. הקוד הזה כבר יודע לזהות הסרות גם ב-Yad2 וגם ב-Madlan דרך `_shared/availability-indicators.ts`.
 
-### 2. הוספת דיליי בין batches
-**קובץ:** `useBackfillProgressJina.ts` או trigger logic
-* כיום ה-batch הבא נקרא מיד עם סיום הקודם (`triggering next batch`).
-* להוסיף השהיה של **3 שניות** לפני trigger של batch חדש כשעבדנו על Yad2.
+## שינויים
 
-### 3. הקטנה של retry attempts על 429
-**קובץ:** `supabase/functions/_shared/yad2-detail-parser.ts` (שורה 72)
-* כיום: 3 ניסיונות עם backoff 5s/10s — סה"כ 15 שניות "תקועים" על נכס שכנראה לא יחזור.
-* הצעה: על **429 ספציפית**, לעצור אחרי ניסיון אחד (fail fast), כדי לא להוסיף עוד עומס לחלון rate-limit.
-* על שגיאות אחרות (timeout, 5xx) — להשאיר 3 ניסיונות.
+### 1. `supabase/functions/backfill-property-data-jina/index.ts`
 
-### 4. ללא שינויים ב-Madlan
-* Madlan עובד דרך GraphQL ולא חוטף 429 — לא נוגעים.
+הוספת helper יחיד שנקרא בכל מקום שבו `saveRecentItem({ status: 'scrape_failed' })` נשמר:
 
-## למה זה בטוח
-* **לא משנה** את ה-DB schema, RLS, או לוגיקה עסקית.
-* **לא משבית** את ה-fallback chain — רק מוסיף נשימות.
-* האטה צפויה: ~30% איטיות (משעה ל-1:20), אבל אחוז הצלחה צפוי לעלות מ-85% ל-95%+.
-* הריצה הנוכחית **לא תופרע** — השינוי ייכנס לתוקף בריצה הבאה.
+```ts
+async function checkAvailabilityAfterFailure(propertyId: string): Promise<'removed' | 'still_available' | 'check_failed'>
+```
 
-## מה לא נעשה
-* **לא** מקטינים את `BATCH_SIZE` (5) — שינוי גדול יותר, נחוץ רק אם השמרני לא עוזר.
-* **לא** מוסיפים proxies חדשים או שירותים חיצוניים (לפי מדיניות "Direct APIs only").
-* **לא** משנים את הריצה הפעילה — היא תמשיך כרגיל.
+- קורא inline ל-`check-property-availability-jina` עם `{ property_ids: [propertyId] }` (timeout 8s)
+- אם החזיר `isInactive: true` → הפונקציה כבר עדכנה את ה-DB (סימנה `is_available=false`). מחזיר `'removed'`.
+- אם `isInactive: false` → הנכס עדיין חי, הכשלון אמיתי. מחזיר `'still_available'`.
+- שגיאה/timeout → `'check_failed'` (ממשיכים כרגיל).
 
-## אישור
-מאשר ליישם את 4 השינויים?
+### 2. שילוב ב-3 נקודות הכשלון הקיימות
+
+ב
