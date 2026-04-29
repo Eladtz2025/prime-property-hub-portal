@@ -629,6 +629,51 @@ Deno.serve(async (req) => {
       }
     }
 
+    /**
+     * Reuse the existing availability checker (check-property-availability-jina)
+     * to determine whether a backfill failure is actually a removed listing.
+     * The checker already updates `is_available=false` in the DB when removed.
+     * Returns:
+     *   'removed'         - listing confirmed removed; DB already updated
+     *   'still_available' - listing alive; backfill failure is real
+     *   'check_failed'    - availability check itself failed/timed out
+     */
+    async function checkAvailabilityAfterFailure(propertyId: string): Promise<'removed' | 'still_available' | 'check_failed'> {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const resp = await fetch(`${supabaseUrl}/functions/v1/check-property-availability-jina`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'apikey': supabaseServiceKey,
+          },
+          body: JSON.stringify({ property_ids: [propertyId] }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (!resp.ok) {
+          console.warn(`⚠️ post-fail availability check HTTP ${resp.status} for ${propertyId}`);
+          return 'check_failed';
+        }
+        const data = await resp.json().catch(() => null) as any;
+        const results = Array.isArray(data?.results) ? data.results : [];
+        const r = results.find((x: any) => x?.id === propertyId) ?? results[0];
+        if (!r) return 'check_failed';
+        if (r.error) return 'check_failed';
+        if (r.isInactive) {
+          console.log(`🗑️ post-fail: confirmed REMOVED (${r.reason || 'no reason'}) for ${propertyId}`);
+          return 'removed';
+        }
+        console.log(`👀 post-fail: listing still available (${r.reason || 'no reason'}) for ${propertyId}`);
+        return 'still_available';
+      } catch (e) {
+        console.warn(`⚠️ post-fail availability check error for ${propertyId}:`, e instanceof Error ? e.message : e);
+        return 'check_failed';
+      }
+    }
+
     const batchStats = {
       total_processed: 0,
       address_attempted_upgrade: 0,
@@ -729,14 +774,17 @@ Deno.serve(async (req) => {
               batchStats.scrape_failed++;
               batchStats.total_processed++;
               await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+              const availResult = await checkAvailabilityAfterFailure(prop.id);
               await saveRecentItem({
                 address: prop.address || prop.title,
                 neighborhood: prop.neighborhood,
                 source: prop.source,
                 source_url: prop.source_url,
-                status: 'scrape_failed',
+                status: availResult === 'removed' ? 'removed_auto' : 'scrape_failed',
                 timestamp: new Date().toISOString(),
-                error_reason: 'No features extracted from detail page',
+                error_reason: availResult === 'removed'
+                  ? 'הוסר מהאתר (זוהה ע"י בדיקת זמינות)'
+                  : 'No features extracted from detail page',
               });
             }
           } catch (homelessError) {
@@ -833,14 +881,17 @@ Deno.serve(async (req) => {
               batchStats.scrape_failed++;
               batchStats.total_processed++;
               await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+              const availResult = await checkAvailabilityAfterFailure(prop.id);
               await saveRecentItem({
                 address: prop.address || prop.title,
                 neighborhood: prop.neighborhood,
                 source: prop.source,
                 source_url: prop.source_url,
-                status: 'scrape_failed',
+                status: availResult === 'removed' ? 'removed_auto' : 'scrape_failed',
                 timestamp: new Date().toISOString(),
-                error_reason: 'Madlan: no features extracted (both direct and GraphQL failed)',
+                error_reason: availResult === 'removed'
+                  ? 'הוסר ממדל"ן (זוהה ע"י בדיקת זמינות)'
+                  : 'Madlan: no features extracted (both direct and GraphQL failed)',
               });
             }
           } catch (madlanError) {
@@ -1004,14 +1055,17 @@ Deno.serve(async (req) => {
               batchStats.scrape_failed++;
               batchStats.total_processed++;
               await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+              const availResult = await checkAvailabilityAfterFailure(prop.id);
               await saveRecentItem({
                 address: prop.address || prop.title,
                 neighborhood: prop.neighborhood,
                 source: prop.source,
                 source_url: prop.source_url,
-                status: 'scrape_failed',
+                status: availResult === 'removed' ? 'removed_auto' : 'scrape_failed',
                 timestamp: new Date().toISOString(),
-                error_reason: 'Yad2: no usable data from detail page (next-data + cheerio both empty)',
+                error_reason: availResult === 'removed'
+                  ? 'הוסר מיד2 (זוהה ע"י בדיקת זמינות)'
+                  : 'Yad2: no usable data from detail page (next-data + cheerio both empty)',
               });
             }
           } catch (yad2Error) {

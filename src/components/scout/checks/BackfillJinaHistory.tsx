@@ -82,6 +82,7 @@ const fieldLabels: Record<string, string> = {
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   ok: { label: 'הצלחה', variant: 'default' },
   scrape_failed: { label: 'סריקה נכשלה', variant: 'destructive' },
+  removed_auto: { label: 'הוסר מהאתר', variant: 'secondary' },
   timeout_skipped: { label: 'חריגת זמן', variant: 'destructive' },
   blacklisted: { label: 'חסום', variant: 'secondary' },
   no_new_data: { label: 'אין נתונים חדשים', variant: 'outline' },
@@ -96,7 +97,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 
 const getStatusInfo = (status: string) => statusConfig[status] || { label: status, variant: 'outline' as const };
 
-const isSuccessStatus = (status: string) => status === 'ok';
+const isSuccessStatus = (status: string) => status === 'ok' || status === 'removed_auto';
 
 export const BackfillJinaHistory: React.FC = () => {
   const [filter, setFilter] = useState<StatusFilter>('all');
