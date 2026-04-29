@@ -961,10 +961,19 @@ Deno.serve(async (req) => {
             if (detailResult && (hasFeatures || hasContent)) {
               const existingFeatures = (prop.features || {}) as Record<string, any>;
               const mergedFeatures = { ...existingFeatures };
+              const _parkingBefore = mergedFeatures.parking;
               for (const [key, value] of Object.entries(detailResult.features || {})) {
-                if (mergedFeatures[key] === undefined || mergedFeatures[key] === null) {
+                if (key === 'parking') {
+                  // parking is authoritative from the parser — allow explicit boolean overwrite
+                  if (typeof value === 'boolean') {
+                    mergedFeatures[key] = value;
+                  }
+                } else if (mergedFeatures[key] === undefined || mergedFeatures[key] === null) {
                   mergedFeatures[key] = value;
                 }
+              }
+              if (_parkingBefore !== mergedFeatures.parking) {
+                console.log(`[backfill][yad2] property=${prop.id} parking before=${_parkingBefore} after=${mergedFeatures.parking}`);
               }
 
               // Store extended metadata inside features jsonb
