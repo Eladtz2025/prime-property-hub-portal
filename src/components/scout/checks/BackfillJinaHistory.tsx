@@ -82,6 +82,7 @@ const fieldLabels: Record<string, string> = {
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   ok: { label: 'הצלחה', variant: 'default' },
   scrape_failed: { label: 'סריקה נכשלה', variant: 'destructive' },
+  removed_auto: { label: 'הוסר מהאתר', variant: 'secondary' },
   timeout_skipped: { label: 'חריגת זמן', variant: 'destructive' },
   blacklisted: { label: 'חסום', variant: 'secondary' },
   no_new_data: { label: 'אין נתונים חדשים', variant: 'outline' },
