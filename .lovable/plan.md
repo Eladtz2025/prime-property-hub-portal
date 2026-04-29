@@ -1,57 +1,41 @@
-## הבעיה (אישור סופי לפי הצילומים שלך)
+## הבעיה המאומתת
 
-- בדיאלוג "השלמת נתונים" של מונטיפיורי 22 רואים בבירור שהפרסר מזהה נכון: **אין חניה** (`parking` לא מופיע ברשימת התגים).
-- אבל ב-record שנשמר ב-DB (טבלת `scouted_properties`) השדה `features.parking` נשאר `true`.
-- הסיבה: בקוד ה-merge ב-`backfill-property-data-jina/index.ts`, השדה `parking` נכתב רק אם הערך הקיים הוא `null`/`undefined`. כשהערך הקיים הוא כבר `true` (משלב ה-scout המקורי), ה-`false` שמגיע מהפרסר נדחה בשקט.
+מאז ההפצה ב-14:26, כל נכס Yad2 שלא היה לו `parkingSpacesCount` ב-`__NEXT_DATA__` עורר **קריאה שנייה** דרך `fetchYad2DetailFeatures` (Cheerio/Jina) רק כדי לקבל את ה-parking. זה הכפיל את עומס הקריאות ל-Yad2 ופגע ב-rate limit אחרי ~70 נכסים — מאותו רגע כל הנכסים מקבלים `Yad2: no usable data from detail page`.
 
-## הפתרון — שינוי אחד מבודד בלבד
+קוד הבעיה: `supabase/functions/backfill-property-data-jina/index.ts` שורות 940–955.
 
-### שינוי יחיד: `supabase/functions/backfill-property-data-jina/index.ts`
+## התיקון — שינוי אחד בלבד
 
-בלולאת ה-merge של `features` (שם בודקים אם `mergedFeatures[key]` הוא null/undefined), להוסיף חריג נקודתי **רק לשדה `parking`**:
+### קובץ: `supabase/functions/backfill-property-data-jina/index.ts`
 
-```ts
-for (const [key, value] of Object.entries(detailResult.features)) {
-  if (key === 'parking') {
-    // parking is authoritative from the parser — allow explicit boolean overwrite
-    if (typeof value === 'boolean') {
-      mergedFeatures[key] = value;
-    }
-  } else if (mergedFeatures[key] === undefined || mergedFeatures[key] === null) {
-    mergedFeatures[key] = value;
-  }
-}
-```
+מחיקת בלוק ה-Cheerio fallback (שורות 940–955) במלואו. אחרי המחיקה, אם `parkingSpacesCount` חסר ב-next-data, השדה `parking` פשוט לא ייכתב — והערך הקיים ב-DB יישאר כפי שהוא (במקום ניחוש שגוי).
 
-**מה זה משנה:**
-- `parking` בלבד — יכול להיכתב מחדש כש-parser מחזיר `true` או `false` מפורש.
-- כל שאר השדות (price, size, rooms, floor, mamad, elevator, balcony וכו') — נשארים מוגנים בדיוק כמו היום (נכתבים רק אם null).
+### קובץ: `supabase/functions/_shared/yad2-detail-nextdata.ts`
 
-**מה זה לא נוגע בו:**
-- שום שינוי ב-DB / RLS / migrations / cron / matching.
-- שום שינוי ב-parser-ים (`yad2-detail-nextdata.ts`, Cheerio, Madlan).
-- שום שינוי בלוגיקת ה-scout.
+שינוי קטן בשורות שמוחקות `features.parking` כש-`parkingSpacesCount` חסר: במקום `delete result.features.parking`, פשוט לא לכתוב את השדה מלכתחילה (התנהגות זהה אבל ברורה יותר). שינוי קוסמטי בלבד — אפשר גם להשאיר כמו שזה.
 
-### לוג קצר לאימות
+### מה **נשאר** מהתיקון הקודם (החלק שעובד)
 
-מוסיפים `console.log` אחד לפני ה-update:
-```
-[backfill] property=<id> parking before=<old> after=<new>
-```
-כדי שנוכל לראות בלוגים שהדריסה אכן קורית.
+1. ב-`yad2-detail-nextdata.ts`: `features.parking = parkingSpacesCount > 0` כשהשדה קיים. זה הוכיח את עצמו — 73 נכסים עם `parking: false` נכון.
+2. ב-`backfill-property-data-jina/index.ts` שורות 965–971 (לולאת ה-merge): החריג שמאפשר ל-`parking` boolean מפורש לדרוס ערך קיים. אין כאן עומס רשת — נשאר.
 
-## שלב 2 — הרצה מחדש של ~200 הנכסים מהחלון הפגום
+## מה זה **לא** עושה
 
-לאחר אישור שהתיקון עובד, נריץ query שמאפס `backfill_status` ל-`pending` עבור הנכסים מ-Yad2 שעברו backfill בחלון הזמן הבעייתי (מאז התיקון הקודם שלי) ויש להם `features.parking = true` ללא `parkingSpots` — קבוצה שכוללת עם ביטחון גבוה את הנכסים שזיהינו לא נכון.
+- לא נוגע ב-Madlan, Homeless, scout, matching, RLS, cron, או DB schema.
+- לא משנה את לוגיקת ה-merge עבור שום שדה אחר.
+- לא מאפס את 32 הנכסים שנכשלו ב-14:26–14:30 — זה יטופל בנפרד אחרי שנאמת שהתיקון עובד.
 
-זה ייעשה כ-**SQL migration נפרדת לאישור** אחרי שנראה שהתיקון בקוד עובד על נכסים חדשים. לא נוגע באף נכס שמחוץ לחלון הזה.
+## אימות
 
-## חזרה למצב קודם (אם משהו משתבש)
+אחרי הדפלוי, להריץ backfill על 5–10 נכסים ולוודא:
+- אין שגיאות `Yad2: no usable data` חדשות.
+- נכסים בלי parkingSpacesCount **לא** משנים את ה-parking הקיים.
+- נכסים עם parkingSpacesCount=0 כן מקבלים `parking: false` (גם אם הערך הקיים היה true).
 
-מחיקת 4 שורות הקוד שנוספו (החריג של `parking` + ה-log). זהו.
+## חזרה אחורה אם משהו נשבר
 
-## מה אני **לא** עושה
+החזרת בלוק 940–955. בלי DB, בלי migrations.
 
-- לא מתקן 30+ הנכסים המקוריים מהריצה השגויה הראשונה — זה מטופל יחד עם ה-200 בשלב 2.
-- לא נוגע ב-`yad2-detail-nextdata.ts` (התוכנית הקודמת בקובץ `.lovable/plan.md` מבוטלת).
-- לא משנה את החלטת ה-merge עבור אף שדה אחר.
+## שלב 2 (אחרי אישור נפרד)
+
+מיגרציה לאיפוס `backfill_status='pending'` ל-32 הנכסים שנכשלו בחלון 14:26–14:30 כדי שירוצו מחדש.
