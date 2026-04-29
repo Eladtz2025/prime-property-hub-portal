@@ -97,7 +97,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 
 const getStatusInfo = (status: string) => statusConfig[status] || { label: status, variant: 'outline' as const };
 
-const isSuccessStatus = (status: string) => status === 'ok';
+const isSuccessStatus = (status: string) => status === 'ok' || status === 'removed_auto';
 
 export const BackfillJinaHistory: React.FC = () => {
   const [filter, setFilter] = useState<StatusFilter>('all');
