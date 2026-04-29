@@ -173,7 +173,21 @@ export function parseYad2Html(html: string): Yad2DetailResult | null {
   // ====================================================
   // SECTION 2: "פרטים נוספים" — Structured details via data-testid
   // ====================================================
-  
+
+  // FIX 2026-04-29: Yad2 testid elements often duplicate the value in the inner text
+  // (e.g. "₪ 4,480 ₪ 4,480" or "קומה 33"). Stripping all non-digits with /[^\d]/g
+  // concatenated those duplicates. We now extract only the FIRST numeric token.
+  const firstNum = (raw: string | undefined | null, allowDecimal = false): number | null => {
+    if (!raw) return null;
+    // Normalize commas + Hebrew/RTL marks, keep digits + optional dot
+    const cleaned = raw.replace(/[\u200E\u200F\u202A-\u202E,]/g, '');
+    const re = allowDecimal ? /(\d+(?:\.\d+)?)/ : /(\d+)/;
+    const m = cleaned.match(re);
+    if (!m) return null;
+    const n = allowDecimal ? parseFloat(m[1]) : parseInt(m[1], 10);
+    return Number.isFinite(n) ? n : null;
+  };
+
   // Property condition (מצב הנכס)
   const conditionEl = $('[data-testid="property-condition-value"]');
   if (conditionEl.length) {
@@ -183,33 +197,41 @@ export function parseYad2Html(html: string): Yad2DetailResult | null {
   // Size (מ"ר בנוי)
   const sizeEl = $('[data-testid="square-meter-build-value"]');
   if (sizeEl.length) {
-    const sizeNum = parseInt(sizeEl.text().replace(/[^\d]/g, ''));
-    if (sizeNum > 10 && sizeNum < 2000) result.size = sizeNum;
+    const raw = sizeEl.text();
+    const sizeNum = firstNum(raw);
+    if (sizeNum !== null && sizeNum > 10 && sizeNum < 2000) result.size = sizeNum;
+    console.log(`🔧 Yad2 size: raw="${raw.trim().slice(0,40)}" parsed=${sizeNum}`);
   }
 
   // Total floors in building (קומות בבניין)
   const totalFloorsEl = $('[data-testid="building-top-floor-value"]');
   if (totalFloorsEl.length) {
-    const tf = parseInt(totalFloorsEl.text().replace(/[^\d]/g, ''));
-    if (tf > 0 && tf < 200) result.totalFloors = tf;
+    const raw = totalFloorsEl.text();
+    const tf = firstNum(raw);
+    if (tf !== null && tf > 0 && tf < 200) result.totalFloors = tf;
+    console.log(`🔧 Yad2 totalFloors: raw="${raw.trim().slice(0,40)}" parsed=${tf}`);
   }
 
-  // Parking spots (חניות)
+  // Parking spots (חניות) — explicit true/false based on structured value
   const parkingEl = $('[data-testid="parking-value"]');
   if (parkingEl.length) {
-    const spots = parseInt(parkingEl.text().replace(/[^\d]/g, ''));
-    if (spots > 0 && spots < 20) {
+    const raw = parkingEl.text();
+    const spots = firstNum(raw);
+    if (spots !== null && spots > 0 && spots < 20) {
       result.parkingSpots = spots;
-      // Also set parking feature to true if parking spots > 0
       features.parking = true;
+    } else {
+      // Element exists but no valid spot count → no parking
+      features.parking = false;
     }
+    console.log(`🔧 Yad2 parking: raw="${raw.trim().slice(0,40)}" spots=${spots} → parking=${features.parking}`);
   }
 
   // Price per sqm (מחיר למ"ר)
   const pricePerSqmEl = $('[data-testid="price-per-squaremeter-value"]');
   if (pricePerSqmEl.length) {
-    const pps = parseInt(pricePerSqmEl.text().replace(/[^\d]/g, ''));
-    if (pps > 100 && pps < 500000) result.pricePerSqm = pps;
+    const pps = firstNum(pricePerSqmEl.text());
+    if (pps !== null && pps > 100 && pps < 500000) result.pricePerSqm = pps;
   }
 
   // Entry date (תאריך כניסה)
@@ -224,15 +246,17 @@ export function parseYad2Html(html: string): Yad2DetailResult | null {
   // Floor — from header details or structured
   const floorEl = $('[data-testid="floor-value"]');
   if (floorEl.length) {
-    const floorNum = parseInt(floorEl.text().replace(/[^\d]/g, ''));
-    if (floorNum >= 0 && floorNum < 200) result.floor = floorNum;
+    const raw = floorEl.text();
+    const floorNum = firstNum(raw);
+    if (floorNum !== null && floorNum >= 0 && floorNum < 200) result.floor = floorNum;
+    console.log(`🔧 Yad2 floor: raw="${raw.trim().slice(0,40)}" parsed=${floorNum}`);
   }
 
   // Rooms — from header
   const roomsEl = $('[data-testid="rooms-value"]');
   if (roomsEl.length) {
-    const roomsNum = parseFloat(roomsEl.text().replace(/[^\d.]/g, ''));
-    if (roomsNum > 0 && roomsNum <= 20) result.rooms = roomsNum;
+    const roomsNum = firstNum(roomsEl.text(), true);
+    if (roomsNum !== null && roomsNum > 0 && roomsNum <= 20) result.rooms = roomsNum;
   }
 
   // ====================================================
@@ -240,9 +264,10 @@ export function parseYad2Html(html: string): Yad2DetailResult | null {
   // ====================================================
   const priceEl = $('[data-testid="price"]');
   if (priceEl.length) {
-    const priceText = priceEl.text().replace(/[^\d]/g, '');
-    const price = parseInt(priceText);
-    if (price > 500 && price < 100000000) result.price = price;
+    const raw = priceEl.text();
+    const price = firstNum(raw);
+    if (price !== null && price > 500 && price < 100000000) result.price = price;
+    console.log(`🔧 Yad2 price: raw="${raw.trim().slice(0,40)}" parsed=${price}`);
   }
 
   // ====================================================

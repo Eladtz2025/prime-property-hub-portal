@@ -1,32 +1,56 @@
-## איפוס 583 נכסי Yad2 חשודים להשלמת נתונים
 
-### מה נעשה
-איפוס `backfill_status` מ-`completed` ל-`pending` עבור 583 נכסים שעומדים בתנאים:
-- `source = 'yad2'`
-- `is_active = true`
-- `status IN ('checked','matched','new')`
-- `backfill_status = 'completed'`
-- `features.parking = 'true'` **ללא** `features.parkingSpots` (כלומר Parking הוגדר רק על-ידי ה-fallback regex)
+## מצב נוכחי לפני התיקון
 
-### מה לא נעשה
-- **לא** מתקנים את הקוד (parser/sanity check) — בהמשך לבקשתך
-- **לא** מוחקים את `features.parking` הקיים — נשאר עד שה-backfill יעבור ויעדכן
-- **לא** נוגעים ב-570 נכסים עם `parking=null` (לא ביקשת)
-- **לא** נוגעים בשום שדה אחר חוץ מ-`backfill_status`
+מתוך 583 הנכסים שאיפסנו ל-pending אתמול:
+- **68 כבר נבדקו** ב-6 השעות האחרונות (מתוכם 18/19 שנדגמו עדיין שגויים)
+- **515 עדיין ממתינים** (pending)
 
-### ההשפעה
-ה-cron הלילי הקיים (00:00-02:30) יזהה את 583 הנכסים כ-`pending` ויריץ עליהם backfill מחדש בלילות הקרובים (~3-4 לילות במקצב הנוכחי).
+עצרת את הריצה — טוב שעצרת. צריך לתקן 3 באגים ב-parser לפני שנמשיך.
 
-### SQL שיורץ
-```sql
-UPDATE scouted_properties
-SET backfill_status = 'pending'
-WHERE source = 'yad2'
-  AND backfill_status = 'completed'
-  AND is_active = true
-  AND status IN ('checked','matched','new')
-  AND (features->>'parking') = 'true'
-  AND NOT (features ? 'parkingSpots');
-```
+## אבחון הבאגים
 
-לאחר הביצוע אריץ COUNT לאימות ש-583 נכסים אכן עברו ל-pending.
+הבעיה היחידה שורש כל הנזק: בקובץ `supabase/functions/_shared/yad2-detail-parser.ts`, ה-CSS selectors של `data-testid` (כמו `parking-value`, `floor-value`, `price`) מחזירים לפעמים טקסט שכולל את ה-label פעמיים או את ה-value מוכפל (לדוגמה: `"קומה33"`, `"₪44804480"`). הקוד הנוכחי מסיר את כל מה שאינו ספרה עם `replace(/[^\d]/g, '')`, מה שמשאיר את הספרות מחוברות יחד → `33`, `44804480`, `83008300`.
+
+באג נוסף: בלוק parking (שורות 197-206) מגדיר `features.parking = true` רק כש-`parkingSpots > 0`, אבל **לא מגדיר אותו ל-`false`** כשאין אלמנט parking-value בכלל. אז ה-fallback regex בהמשך (שורה 297) רץ על כל "חניה" בטקסט (כולל "אין חניה" שלא מכוסה בכל הניסוחים) ומחזיר `true`.
+
+## התיקון המוצע (שינוי קוד יחיד, ממוקד)
+
+**קובץ:** `supabase/functions/_shared/yad2-detail-parser.ts`
+
+### שינוי 1 — חילוץ מספר ראשון בלבד מ-data-testid
+
+החלפת `parseInt(el.text().replace(/[^\d]/g, ''))` בפונקציית עזר שמחלצת את המספר **הראשון** בלבד (regex `match(/[\d.]+/)`). זה ימנע שרשור גם אם הטקסט הוא "קומה 3" וגם אם הוא "₪ 4,480 ₪ 4,480".
+
+תיקון יחול על: `parkingSpots` (שורה 200), `pricePerSqm` (211), `floor` (227), `rooms` (234), `price` (243), `size` (181), `totalFloors` (190).
+
+### שינוי 2 — קביעה מפורשת של parking=false כשאין parking-value
+
+אם האלמנט `[data-testid="parking-value"]` קיים אבל המספר 0 או חסר → `features.parking = false` ו-`parkingSpots` לא מוגדר.
+אם האלמנט לא קיים בכלל → להמשיך ל-fallback regex כרגיל (לא לשנות את לוגיקת ה-fallback).
+
+### שינוי 3 — הוספת לוג השוואה
+
+לוג שמדפיס לפני/אחרי לכל שדה מספרי, כדי שנוכל לאמת בלוגי edge-functions שהתיקון עובד על המקרים הראשונים שירוצו.
+
+## איך נחזור אחורה אם התיקון שובר משהו
+
+כל השינוי הוא **בקובץ אחד** (`yad2-detail-parser.ts`) שמשמש רק את ה-backfill של Yad2. כדי לחזור:
+1. לחץ על כפתור ה-revert מתחת להודעת ה-AI שביצעה את השינוי, **או**
+2. בקש ממני "תחזיר את `yad2-detail-parser.ts` למצב הקודם" — הקוד הקיים שמור בהיסטוריית הקובץ.
+
+לא נוגעים ב:
+- מבנה ה-DB
+- שום edge function אחרת
+- לוגיקת ה-fallback regex של parking (נשארת כגיבוי)
+- פונקציית `extractFeatureItems` (שורות 332+) שמטפלת ב-features הרגילים
+
+## אחרי התיקון
+
+1. אעדכן את הקובץ.
+2. אבקש ממך להריץ שוב את ה-backfill על 515 הממתינים.
+3. אחרי 10-20 נכסים שירוצו, אבדוק במסד אם המחיר/קומה תקינים והאם parking נראה הגיוני (גם false וגם true עם parkingSpots).
+4. אם משהו עדיין לא נכון — נחזור אחורה מיד.
+
+## מה לגבי 68 הנכסים שכבר רצו עם הקוד השבור?
+
+הם נשארו עם נתונים שגויים (price doubled, floor doubled). אחרי שנאמת שהתיקון עובד, אציע לאפס גם אותם ל-pending כדי שירוצו שוב נקי. אבל זה צעד נפרד שאשאל עליו אישור.
