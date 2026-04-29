@@ -1973,6 +1973,48 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_extraction_runs: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          errors_count: number
+          id: string
+          notes: Json | null
+          phones_found: number
+          properties_attempted: number
+          source: string
+          started_at: string
+          status: string
+          triggered_by: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          errors_count?: number
+          id?: string
+          notes?: Json | null
+          phones_found?: number
+          properties_attempted?: number
+          source?: string
+          started_at?: string
+          status?: string
+          triggered_by?: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          errors_count?: number
+          id?: string
+          notes?: Json | null
+          phones_found?: number
+          properties_attempted?: number
+          source?: string
+          started_at?: string
+          status?: string
+          triggered_by?: string
+        }
+        Relationships: []
+      }
       pipeline_runs: {
         Row: {
           branch: string | null
@@ -3322,6 +3364,10 @@ export type Database = {
           matched_leads: Json | null
           neighborhood: string | null
           owner_phone: string | null
+          phone_extracted_at: string | null
+          phone_extraction_attempts: number
+          phone_extraction_last_error: string | null
+          phone_extraction_status: string | null
           price: number | null
           property_type: string | null
           raw_data: Json | null
@@ -3361,6 +3407,10 @@ export type Database = {
           matched_leads?: Json | null
           neighborhood?: string | null
           owner_phone?: string | null
+          phone_extracted_at?: string | null
+          phone_extraction_attempts?: number
+          phone_extraction_last_error?: string | null
+          phone_extraction_status?: string | null
           price?: number | null
           property_type?: string | null
           raw_data?: Json | null
@@ -3400,6 +3450,10 @@ export type Database = {
           matched_leads?: Json | null
           neighborhood?: string | null
           owner_phone?: string | null
+          phone_extracted_at?: string | null
+          phone_extraction_attempts?: number
+          phone_extraction_last_error?: string | null
+          phone_extraction_status?: string | null
           price?: number | null
           property_type?: string | null
           raw_data?: Json | null
