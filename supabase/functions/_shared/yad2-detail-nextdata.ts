@@ -259,7 +259,12 @@ export function parseYad2DetailNextData(html: string): Yad2DetailNextResult | nu
   if (typeof ad.squareMeter === 'number' && ad.squareMeter > 10) result.size = ad.squareMeter;
   if (typeof ad.squareMeterBuild === 'number' && ad.squareMeterBuild > 10) result.sizeBuild = ad.squareMeterBuild;
   if (typeof ad.buildingTopFloor === 'number' && ad.buildingTopFloor > 0) result.totalFloors = ad.buildingTopFloor;
-  if (typeof ad.parkingSpacesCount === 'number') result.parkingSpots = ad.parkingSpacesCount;
+  // FIX 2026-04-29: parkingSpacesCount is the AUTHORITATIVE source for parking
+  // (inProperty's parking flag is unreliable — often "true" even when no parking).
+  // We capture spots here, then overwrite features.parking below regardless of inProperty.
+  if (typeof ad.parkingSpacesCount === 'number' && ad.parkingSpacesCount > 0) {
+    result.parkingSpots = ad.parkingSpacesCount;
+  }
   if (typeof ad.balconiesCount === 'number') result.balconiesCount = ad.balconiesCount;
   if (typeof ad.entranceDate === 'string') result.entryDate = ad.entranceDate;
   if (ad.propertyCondition?.text) result.propertyCondition = ad.propertyCondition.text;
@@ -316,14 +321,20 @@ export function parseYad2DetailNextData(html: string): Yad2DetailNextResult | nu
     }
   }
 
-  // Derive parking feature from parkingSpots
-  if (result.parkingSpots !== undefined && result.features.parking === undefined) {
-    result.features.parking = result.parkingSpots > 0;
+  // FIX 2026-04-29: parking is derived ONLY from parkingSpacesCount.
+  // inProperty's parking flag is unreliable in Yad2 next-data (often true when no parking).
+  if (typeof ad.parkingSpacesCount === 'number') {
+    result.features.parking = ad.parkingSpacesCount > 0;
+  } else {
+    // Authoritative source missing → drop parking so the Cheerio fallback
+    // (or existing DB value) can supply it instead of the wrong inProperty flag.
+    delete result.features.parking;
   }
   // Derive balcony from balconiesCount
   if (result.balconiesCount !== undefined && result.features.balcony === undefined) {
     result.features.balcony = result.balconiesCount > 0;
   }
+  console.log(`🅿️ Yad2 next-data parking: parkingSpacesCount=${ad.parkingSpacesCount} → features.parking=${result.features.parking}`);
 
   const featCount = Object.keys(result.features).length;
   console.log(`✅ Yad2 next-data parsed: desc=${result.description?.length || 0}ch, imgs=${result.images?.length || 0}, features=${featCount}, price=${result.price}, rooms=${result.rooms}, size=${result.size}, neighborhood=${result.neighborhood}, adType=${result.adType}`);
