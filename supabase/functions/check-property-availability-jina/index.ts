@@ -40,7 +40,7 @@ async function checkMadlanDirect(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-    console.log(`🟠 Madlan-Direct availability check for ${url}`);
+    console.log(`🟠 Madlan-Direct availability check for ${url} [v2-iphone-ua]`);
 
     // CRITICAL: Madlan WAF (April 2026+ update) now blocks "minimal headers" too —
     // verified live 2026-04-30: Accept+Accept-Language alone returns 403 Captcha.
