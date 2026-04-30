@@ -519,12 +519,12 @@ export async function calculateMatch(
     
     if (lead.furnished_required === 'fully_furnished') {
       if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת מלא - אין או לא ידוע'], priority: 0 };
+        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת מלא - אין או לא ידוע'], priority: 0, needsBackfill: true };
       }
       reasons.push('מרוהטת מלא (חובה) ✓');
     } else if (lead.furnished_required === 'partially_furnished') {
       if (propertyFurnished !== 'fully_furnished' && propertyFurnished !== 'partially_furnished' && propertyFurnished !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת - אין או לא ידוע'], priority: 0 };
+        return { lead, matchScore: 0, matchReasons: ['נדרשת דירה מרוהטת - אין או לא ידוע'], priority: 0, needsBackfill: true };
       }
       reasons.push('מרוהטת (חובה) ✓');
     }
