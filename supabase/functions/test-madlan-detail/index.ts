@@ -65,6 +65,19 @@ Deno.serve(async (req) => {
 
   const reqUrl = new URL(req.url);
   const target = reqUrl.searchParams.get('url') || 'https://www.madlan.co.il/listings/C5KeZ2T5nXN';
+  const mode = reqUrl.searchParams.get('mode') || 'all'; // 'all' | 'parser' | 'probe'
+
+  // Mode: parser only — runs production fetcher+parser end-to-end
+  if (mode === 'parser') {
+    const start = Date.now();
+    const result = await fetchMadlanDetailFeatures(target);
+    return new Response(JSON.stringify({
+      url: target,
+      elapsedMs: Date.now() - start,
+      featureCount: result ? Object.keys(result.features).length : 0,
+      result,
+    }, null, 2), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
 
   const results: any[] = [];
   for (const s of STRATEGIES) {
@@ -93,11 +106,20 @@ Deno.serve(async (req) => {
     } catch (e) {
       results.push({ strategy: s.name, error: String(e), ms: Date.now() - start });
     }
-    // small delay between strategies
     await new Promise(r => setTimeout(r, 500));
   }
 
-  return new Response(JSON.stringify({ url: target, results }, null, 2), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+  // Also run parser end-to-end
+  const pStart = Date.now();
+  const parsed = await fetchMadlanDetailFeatures(target);
+
+  return new Response(JSON.stringify({
+    url: target,
+    probes: results,
+    parser: {
+      elapsedMs: Date.now() - pStart,
+      featureCount: parsed ? Object.keys(parsed.features).length : 0,
+      result: parsed,
+    },
+  }, null, 2), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 });
