@@ -565,7 +565,7 @@ export const ChecksDashboard: React.FC = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
-
+  return (
     <div className="space-y-4" dir="rtl">
 
       {/* Live Monitor */}
