@@ -268,7 +268,7 @@ async function processPropertiesInParallel(
   async function processMadlanParallel(): Promise<CheckResult[]> {
     const results: CheckResult[] = [];
     const parallelism = 1;
-    const delayBetweenBatches = 6000;
+    const delayBetweenBatches = 3000;
 
     for (let i = 0; i < madlanProps.length; i += parallelism) {
       if (abortSignal.aborted) break;
