@@ -332,11 +332,10 @@ async function processPropertiesInParallel(
     return results;
   }
 
-  // Run both in parallel — Madlan batches + Jina sequential don't compete
-  const [madlanResults, jinaResults] = await Promise.all([
-    processMadlanParallel(),
-    processJinaSequential(),
-  ]);
+  // Run sequentially: Madlan first, then Jina — guarantees only 1 request in flight at any time
+  // (prevents burst of madlan+jina hitting external services simultaneously)
+  const madlanResults = await processMadlanParallel();
+  const jinaResults = await processJinaSequential();
 
   const allResults = [...madlanResults, ...jinaResults];
   console.log(`✅ Combined results: ${madlanResults.length} Madlan + ${jinaResults.length} Jina = ${allResults.length} total`);
