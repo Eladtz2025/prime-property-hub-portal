@@ -1,0 +1,1 @@
+UPDATE feature_flags SET is_enabled = false, updated_at = now() WHERE name = 'backfill_madlan_disabled';
