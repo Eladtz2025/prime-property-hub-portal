@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  Database, Copy, Users, Search, Shield, RotateCcw, Loader2,
+  Database, Copy, Users, Search, Shield, RotateCcw, Loader2, Phone,
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/social/ConfirmDialog';
 import { format } from 'date-fns';
