@@ -113,7 +113,7 @@ export const ChecksDashboard: React.FC = () => {
       const { data } = await supabase
         .from('feature_flags')
         .select('name, is_enabled')
-        .in('name', ['process_scans', 'process_availability', 'process_duplicates', 'process_matching', 'process_backfill', 'process_availability_jina', 'process_backfill_jina', 'process_scans_jina']);
+        .in('name', ['process_scans', 'process_availability', 'process_duplicates', 'process_matching', 'process_backfill', 'process_availability_jina', 'process_backfill_jina', 'process_scans_jina', 'process_phone_extraction']);
       const flags: Record<string, boolean> = {};
       data?.forEach(f => { flags[f.name] = f.is_enabled ?? true; });
       return flags;
