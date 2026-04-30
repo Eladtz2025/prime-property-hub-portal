@@ -494,7 +494,78 @@ export const ChecksDashboard: React.FC = () => {
     return `${date} (${duration})`;
   };
 
-  return (
+  // ===== Phone extraction queries =====
+  const { data: phoneStats } = useQuery({
+    queryKey: ['phone-extraction-stats'],
+    queryFn: async () => {
+      const baseQ = () => supabase
+        .from('scouted_properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true)
+        .eq('is_private', true)
+        .eq('source', 'homeless');
+
+      const [pendingRes, successRes, withPhoneRes] = await Promise.all([
+        baseQ().or('owner_phone.is.null,owner_phone.eq.').lt('phone_extraction_attempts', 3).not('phone_extraction_status', 'eq', 'success').not('phone_extraction_status', 'eq', 'not_found'),
+        baseQ().eq('phone_extraction_status', 'success'),
+        baseQ().not('owner_phone', 'is', null).not('owner_phone', 'eq', ''),
+      ]);
+      return {
+        pending: pendingRes.count ?? 0,
+        success: successRes.count ?? 0,
+        totalWithPhone: withPhoneRes.count ?? 0,
+      };
+    },
+    refetchInterval: 15000,
+  });
+
+  const { data: lastPhoneRun } = useQuery({
+    queryKey: ['phone-extraction-last-run'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('phone_extraction_runs')
+        .select('*')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    refetchInterval: 10000,
+  });
+
+  const { data: phoneRuns } = useQuery({
+    queryKey: ['phone-extraction-runs'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('phone_extraction_runs')
+        .select('*')
+        .order('started_at', { ascending: false })
+        .limit(20);
+      return data ?? [];
+    },
+    refetchInterval: 15000,
+  });
+
+  const triggerPhoneExtraction = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('phone-extraction-worker', {
+        body: { manual: true },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      if (data?.skipped) toast.info(`דולג: ${data.reason}`);
+      else if (data?.phone_found) toast.success('נמצא טלפון!');
+      else toast.info('הריצה הסתיימה (ללא טלפון)');
+      queryClient.invalidateQueries({ queryKey: ['phone-extraction-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['phone-extraction-runs'] });
+      queryClient.invalidateQueries({ queryKey: ['phone-extraction-last-run'] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+
     <div className="space-y-4" dir="rtl">
 
       {/* Live Monitor */}
