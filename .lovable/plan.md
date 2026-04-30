@@ -1,63 +1,75 @@
-## תיקון: כרטיסיית מערכת במקום טאב
 
-### מה קרה
-בטעות הוספתי טאב שלישי "חילוץ טלפונים" ב-`AdminPropertyScout`, במקום להוסיף **ProcessCard** ב-grid של "דשבורד בדיקות" — שם מופיעות כל שאר המערכות (סריקות, בדיקת זמינות, כפילויות, התאמות, השלמת חוסרים).
+# Deals Detector — דירות מציאה במרכז ת"א וצפון ישן
 
-### מה אעשה
+## הגדרת "דירת מציאה" (הלב של המערכת)
 
-**1. הסרת הטאב**
-- מחיקת ה-`TabsTrigger value="phones"` וה-`TabsContent value="phones"` מ-`src/pages/AdminPropertyScout.tsx`.
-- החזרת ה-`TabsList` ל-2 עמודות (dashboard + properties).
-- מחיקת ה-import של `PhoneExtractionDashboard` מהעמוד.
+מציאה = נכס שמחירו **חריג כלפי מטה** ביחס לדומים לו, **ופעיל ועדיין באוויר**. מבוססת על שילוב של 3 סיגנלים:
 
-**2. הוספת ProcessCard ב-`ChecksDashboard.tsx`**
-כרטיסייה שישית ב-grid הקיים, עם בדיוק אותה תבנית כמו האחרות:
-- **title:** "חילוץ טלפונים"
-- **icon:** `<Phone />` בצבע ענברי
-- **status:** running/completed/idle לפי הריצה האחרונה ב-`phone_extraction_runs`
-- **primaryValue:** מספר הנכסים בתור (Homeless פרטיים בלי טלפון, attempts < 3)
-- **primaryLabel:** "ממתינים לחילוץ"
-- **secondaryLine:** "X טלפונים נמצאו" (סה"כ עם owner_phone)
-- **insight:** "Y הצליחו השבוע" / "אין פריטים חדשים לטיפול"
-- **lastRun:** מהריצה האחרונה
-- **onRun:** `supabase.functions.invoke('phone-extraction-worker', { body: { manual: true } })`
-- **enabled / onToggleEnabled:** קשור ל-`phone_extraction_enabled` ב-`feature_flags` (אותו kill switch שכבר קיים)
-- **historyContent:** טבלת 20 הריצות האחרונות (מה שהיה בדשבורד)
-- **settingsContent:** `LogicDescription` עם הסבר + הצגת חלון הפעילות (09:00–22:00) והקצב (15–45ש׳ בין נכסים)
+### סיגנל 1: מחיר למ"ר חריג (Primary)
+משווים לבנצ'מרק של אותה שכונה + סוג עסקה (מנתוני ה-DB שלנו):
 
-**3. שינוי שם הדגל לעקביות**
-לעקביות עם שאר המערכות (`process_scans`, `process_availability`...), אעדכן גם את ה-flag מ-`phone_extraction_enabled` ל-`process_phone_extraction`. ה-worker יקרא לדגל החדש (`isProcessEnabled(supabase, 'phone_extraction')`). מיגרציה קטנה תעביר את ה-state הקיים.
+| שכונה | מדיאן ₪/מ"ר השכרה | מדיאן ₪/מ"ר מכירה |
+|---|---|---|
+| מרכז העיר | 142 | 59,031 |
+| צפון ישן | 140 | 57,031 |
 
-**4. מחיקת הקובץ הישן**
-`src/components/scout/PhoneExtractionDashboard.tsx` יוסר (החלקים הרלוונטיים יעברו ל-history/settings של ה-ProcessCard).
+**ספי מציאה:**
+- `discount_pct = (median_per_sqm - actual_per_sqm) / median_per_sqm`
+- **מציאה רגילה:** הנחה של 15%–25% מהמדיאן
+- **מציאה חזקה:** הנחה של 25%–40%
+- **חשוד / outlier:** הנחה > 40% (כנראה טעות, נכס פגום, או scam — מסומן בנפרד לבדיקה ידנית, לא נחשב מציאה אוטומטית)
 
----
+### סיגנל 2: מחיר מוחלט לפי חדרים (Secondary)
+חיתוך לפי חדרים באותה שכונה — נכס שהוא מתחת ל-P25 (רבעון תחתון) של החדרים שלו.
+דוגמה (3 חדרים, מרכז+צפון ישן): P25 = 9,300 ₪ השכרה / 3.66M ₪ מכירה.
 
-## שאלה 2: מתי המערכת אמורה לעבוד?
+### סיגנל 3: איכות הנכס (Quality gate — מונע false positives)
+מציאה אמיתית = מחיר נמוך **למרות** מאפיינים טובים. מסננים החוצה:
+- אין `size` או `rooms` → לא ניתן לחשב, לא יוצג
+- `price < 3,000` להשכרה / `< 800,000` למכירה → כנראה טעות הקלדה
+- שכונה לא ב-whitelist (`מרכז העיר`, `לב העיר`, `לב תל אביב`, `הצפון הישן`, `צפון ישן`)
+- מסומן `is_active=false`
+- `first_seen_at` ישן יותר מ-21 יום (כבר לא "תופסים מהר" — סביר שזה נשאר באוויר כי משהו לא בסדר)
+- duplicate שאינו ה-`is_primary_listing`
 
-הנה התשובה הברורה (כך הגדרתי אותה בשלב 1):
+### Deal Score (0–100)
+ציון משוקלל להצגה בראש הרשימה:
+```
+score = (discount_pct * 60) + (recency_bonus * 25) + (private_bonus * 15)
+  - discount_pct: 0–1 (capped at 0.4)
+  - recency_bonus: 1.0 אם <24h, 0.6 אם <72h, 0.3 אם <7d, 0 אחרת
+  - private_bonus: 1.0 אם is_private=true, 0.5 לא ידוע, 0 ברוקר
+```
+תוצאה: דירות חדשות + פרטיות + מתחת למחיר = למעלה.
 
-| פרמטר | ערך |
-|---|---|
-| **תדירות הקרון** | כל דקה (`* * * * *`) |
-| **חלון פעילות** | 09:00–22:00 שעון ישראל בלבד |
-| **קצב** | נכס אחד בכל ריצה + השהייה רנדומלית 15–45 שניות |
-| **קיבולת תיאורטית** | ~50–60 נכסים בשעה → ~650–780 נכסים ביום |
-| **kill switch** | כבוי כברירת מחדל — צריך להפעיל ידנית מהכרטיסייה |
-| **מקור נוכחי** | Homeless בלבד (שלב 1) |
-| **תקרת ניסיונות** | 3 לכל נכס. אחרי 3 כישלונות → סטטוס `failed` ולא ננסה שוב |
+## תוכנית הביצוע
 
-**מחוץ לחלון** (22:00–09:00): הקרון רץ אבל מדלג מיד עם `outside_working_hours`. זה כדי לא להתנהג כבוט שעובד 24/7.
+### שלב 1: DB function (נטו SQL, ללא טבלאות חדשות)
+פונקציית `get_deal_listings(p_property_type text, p_limit int)` ש:
+1. מחשבת `median_per_sqm` per (neighborhood, property_type) ב-CTE
+2. מחזירה רק נכסים בשכונות whitelist עם `discount_pct BETWEEN 0.15 AND 0.40`
+3. מחשבת `deal_score` ו-`deal_tier` (`strong` / `regular` / `suspicious`)
+4. מסננת duplicates ו-inactive
+5. ממיינת לפי `deal_score DESC`
 
-**ריצה ידנית מתעלמת מהחלון** — אם תלחץ "הרץ ידנית", זה ירוץ גם ב-2 בלילה.
+### שלב 2: Hook ו-UI
+- **`src/hooks/useDealListings.ts`** — קורא ל-`supabase.rpc('get_deal_listings', ...)`, cache 5 דקות
+- **`src/components/scout/DealsDashboard.tsx`** — טאב חדש (`דירות מציאה`) ב-`AdminPropertyScout.tsx`:
+  - שני tabs פנימיים: `השכרה` / `מכירה`
+  - כל כרטיס: כותרת, שכונה, חדרים/מ"ר, מחיר בפועל, מדיאן באזור, **% הנחה** (badge ירוק/כתום/אדום), `deal_score`, `first_seen_at`, פרטי/ברוקר, קישור למקור, כפתור "צור קשר ב-WhatsApp"
+  - פילטרים מהירים: רק חדש (24h), רק פרטי, מינ' חדרים
+  - מספר תוצאות + last refresh time
 
----
+### שלב 3: לא נדרש cron
+המידע מחושב on-demand מ-`scouted_properties`. כשהסקאוט הקיים מוסיף נכסים, הם מופיעים אוטומטית. אין כתיבה ל-DB, אין רעש, אין סיכון לשבירת מערכות אחרות.
 
-## קבצים שיושפעו
-- `src/pages/AdminPropertyScout.tsx` — מחיקת הטאב
-- `src/components/scout/ChecksDashboard.tsx` — הוספת ProcessCard + queries לטלפונים
-- `src/components/scout/PhoneExtractionDashboard.tsx` — נמחק (תוכן עובר ל-history/settings sheet)
-- `supabase/functions/phone-extraction-worker/index.ts` — קריאה לדגל החדש
-- מיגרציה קטנה — שינוי שם דגל ב-`feature_flags`
+## מה לא נעשה (כדי לשמור על יציבות)
+- לא נוגעים ב-scout engines הקיימים
+- לא משנים schema של `scouted_properties`
+- לא מוסיפים cron jobs
+- לא שולחים WhatsApp אוטומטי (הכפתור פותח שיחה ידנית, לפי הזיכרון של "no auto WhatsApp")
+- לא חורגים מטל אביב (whitelist קשיח)
 
-מאשר? ברגע שתאשר אעבור ל-build mode ואבצע את כל ה-4 שלבים בסשן אחד.
+## Open question (לאישור לפני בנייה)
+1. **רף הנחה — 15% מציאה אמיתית או נמוך מדי?** האפשרויות: A) 15%/25%/40% (יותר תוצאות), B) 20%/30%/45% (קפדני יותר), C) להגדיר בעצמך בממשק עם slider.
+2. **שכונות** — להישאר רק מרכז + צפון ישן, או להוסיף גם רוטשילד / נווה צדק / כרם התימנים שהן באותו אזור גיאוגרפי?

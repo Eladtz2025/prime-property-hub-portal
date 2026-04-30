@@ -4344,6 +4344,36 @@ export type Database = {
           title: string
         }[]
       }
+      get_deal_listings: {
+        Args: {
+          p_limit?: number
+          p_max_discount?: number
+          p_min_discount?: number
+          p_property_type?: string
+        }
+        Returns: {
+          address: string
+          city: string
+          created_at: string
+          deal_score: number
+          deal_tier: string
+          discount_pct: number
+          first_seen_at: string
+          floor: number
+          id: string
+          is_private: boolean
+          median_per_sqm: number
+          neighborhood: string
+          price: number
+          price_per_sqm: number
+          property_type: string
+          rooms: number
+          size: number
+          source: string
+          source_url: string
+          title: string
+        }[]
+      }
       get_matches_by_hour: {
         Args: { end_date: string; start_date: string }
         Returns: {
