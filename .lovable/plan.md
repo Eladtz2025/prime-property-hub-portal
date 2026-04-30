@@ -1,75 +1,121 @@
+## מערכת התאמות מאוחדת ונקייה
 
-# Deals Detector — דירות מציאה במרכז ת"א וצפון ישן
+אתה צודק — הצעתי המקורית (לשכפל את `_shared/matching.ts` ל-frontend helper) הייתה גרועה. שתי מערכות התאמה במקביל, כפילות לוגיקה, client-side filtering איטי. הגישה הנכונה: **מערכת אחת ב-DB**.
 
-## הגדרת "דירת מציאה" (הלב של המערכת)
+---
 
-מציאה = נכס שמחירו **חריג כלפי מטה** ביחס לדומים לו, **ופעיל ועדיין באוויר**. מבוססת על שילוב של 3 סיגנלים:
+## הארכיטקטורה החדשה
 
-### סיגנל 1: מחיר למ"ר חריג (Primary)
-משווים לבנצ'מרק של אותה שכונה + סוג עסקה (מנתוני ה-DB שלנו):
+### מקור אמת אחד: `match_property_to_lead(property_jsonb, lead)` ב-SQL
 
-| שכונה | מדיאן ₪/מ"ר השכרה | מדיאן ₪/מ"ר מכירה |
-|---|---|---|
-| מרכז העיר | 142 | 59,031 |
-| צפון ישן | 140 | 57,031 |
+פונקציה אחת שמקבלת נכס (בפורמט מאוחד) + ליד, ומחזירה `{score, priority, reasons[], rejected, rejection_reason}`. כל החוקים — מחיר, חדרים, גודל, פיצ'רים, שכונה, תאריך כניסה — נמצאים פה.
 
-**ספי מציאה:**
-- `discount_pct = (median_per_sqm - actual_per_sqm) / median_per_sqm`
-- **מציאה רגילה:** הנחה של 15%–25% מהמדיאן
-- **מציאה חזקה:** הנחה של 25%–40%
-- **חשוד / outlier:** הנחה > 40% (כנראה טעות, נכס פגום, או scam — מסומן בנפרד לבדיקה ידנית, לא נחשב מציאה אוטומטית)
+### Adapter views: כולם נראים אותו דבר
 
-### סיגנל 2: מחיר מוחלט לפי חדרים (Secondary)
-חיתוך לפי חדרים באותה שכונה — נכס שהוא מתחת ל-P25 (רבעון תחתון) של החדרים שלו.
-דוגמה (3 חדרים, מרכז+צפון ישן): P25 = 9,300 ₪ השכרה / 3.66M ₪ מכירה.
+```text
+v_unified_listings (view):
+   id | source_table | title | city | neighborhood | price | rooms 
+   size | property_type | features (jsonb) | is_active | first_seen_at
 
-### סיגנל 3: איכות הנכס (Quality gate — מונע false positives)
-מציאה אמיתית = מחיר נמוך **למרות** מאפיינים טובים. מסננים החוצה:
-- אין `size` או `rooms` → לא ניתן לחשב, לא יוצג
-- `price < 3,000` להשכרה / `< 800,000` למכירה → כנראה טעות הקלדה
-- שכונה לא ב-whitelist (`מרכז העיר`, `לב העיר`, `לב תל אביב`, `הצפון הישן`, `צפון ישן`)
-- מסומן `is_active=false`
-- `first_seen_at` ישן יותר מ-21 יום (כבר לא "תופסים מהר" — סביר שזה נשאר באוויר כי משהו לא בסדר)
-- duplicate שאינו ה-`is_primary_listing`
-
-### Deal Score (0–100)
-ציון משוקלל להצגה בראש הרשימה:
+המקורות:
+   scouted_properties → source_table='scouted'
+   properties (שלנו) → source_table='own', עם המרת:
+      monthly_rent → price (לפי property_type)
+      property_size → size  
+      {parking, has_elevator, balcony, mamad, ...} → features jsonb
 ```
-score = (discount_pct * 60) + (recency_bonus * 25) + (private_bonus * 15)
-  - discount_pct: 0–1 (capped at 0.4)
-  - recency_bonus: 1.0 אם <24h, 0.6 אם <72h, 0.3 אם <7d, 0 אחרת
-  - private_bonus: 1.0 אם is_private=true, 0.5 לא ידוע, 0 ברוקר
+
+זה פותר את ההבדל בין `properties.has_elevator` (boolean column) ל-`scouted.features.elevator` (jsonb) — view אחד מאחד אותם.
+
+### `get_unified_customer_matches(customer_uuid, include_dismissed)` — RPC חדש
+
+```text
+לכל נכס ב-v_unified_listings (פעיל):
+   קרא ל-match_property_to_lead(...)
+   אם לא דחוי → החזר עם score, priority, reasons
+   
+מסנן: dismissed_matches מתייחס גם ל-properties.id וגם ל-scouted.id
+ממיין: priority DESC, score DESC, recency DESC
 ```
-תוצאה: דירות חדשות + פרטיות + מתחת למחיר = למעלה.
 
-## תוכנית הביצוע
+### Frontend: hook אחד, UI אחד
 
-### שלב 1: DB function (נטו SQL, ללא טבלאות חדשות)
-פונקציית `get_deal_listings(p_property_type text, p_limit int)` ש:
-1. מחשבת `median_per_sqm` per (neighborhood, property_type) ב-CTE
-2. מחזירה רק נכסים בשכונות whitelist עם `discount_pct BETWEEN 0.15 AND 0.40`
-3. מחשבת `deal_score` ו-`deal_tier` (`strong` / `regular` / `suspicious`)
-4. מסננת duplicates ו-inactive
-5. ממיינת לפי `deal_score DESC`
+`useCustomerMatches` (כבר קיים) מקבל את כל ההתאמות מ-RPC היחיד, מסומנות `source_table` כדי שה-UI יציג badge "הנכס שלנו" / "scout".
 
-### שלב 2: Hook ו-UI
-- **`src/hooks/useDealListings.ts`** — קורא ל-`supabase.rpc('get_deal_listings', ...)`, cache 5 דקות
-- **`src/components/scout/DealsDashboard.tsx`** — טאב חדש (`דירות מציאה`) ב-`AdminPropertyScout.tsx`:
-  - שני tabs פנימיים: `השכרה` / `מכירה`
-  - כל כרטיס: כותרת, שכונה, חדרים/מ"ר, מחיר בפועל, מדיאן באזור, **% הנחה** (badge ירוק/כתום/אדום), `deal_score`, `first_seen_at`, פרטי/ברוקר, קישור למקור, כפתור "צור קשר ב-WhatsApp"
-  - פילטרים מהירים: רק חדש (24h), רק פרטי, מינ' חדרים
-  - מספר תוצאות + last refresh time
+`useOwnPropertyMatches` נמחק. הקומפוננטות ש-מציגות "נכסים שלנו תואמים" משתמשות באותו hook עם `filter(m => m.source_table === 'own')`.
 
-### שלב 3: לא נדרש cron
-המידע מחושב on-demand מ-`scouted_properties`. כשהסקאוט הקיים מוסיף נכסים, הם מופיעים אוטומטית. אין כתיבה ל-DB, אין רעש, אין סיכון לשבירת מערכות אחרות.
+---
 
-## מה לא נעשה (כדי לשמור על יציבות)
-- לא נוגעים ב-scout engines הקיימים
-- לא משנים schema של `scouted_properties`
-- לא מוסיפים cron jobs
-- לא שולחים WhatsApp אוטומטי (הכפתור פותח שיחה ידנית, לפי הזיכרון של "no auto WhatsApp")
-- לא חורגים מטל אביב (whitelist קשיח)
+## חוקי ההתאמה החדשים (מאוחדים)
 
-## Open question (לאישור לפני בנייה)
-1. **רף הנחה — 15% מציאה אמיתית או נמוך מדי?** האפשרויות: A) 15%/25%/40% (יותר תוצאות), B) 20%/30%/45% (קפדני יותר), C) להגדיר בעצמך בממשק עם slider.
-2. **שכונות** — להישאר רק מרכז + צפון ישן, או להוסיף גם רוטשילד / נווה צדק / כרם התימנים שהן באותו אזור גיאוגרפי?
+### Strict (סף לפסילה — לא יוצג כלל אם נכשל)
+- **מחיר**: בתוך `[budget_min*0.95, budget_max*1.05]`. אם נכשל → דחוי.
+- **חדרים**: בתוך `[rooms_min, rooms_max]` עם סבילות 0.5. אם נכשל → דחוי.
+- **גודל (חדש)**: `size >= size_min*0.85 AND size <= size_max*1.15`. אם `size IS NULL` → **דחוי** (לא ניתן לאמת). אם חוצה את הגמישות → **דחוי**.
+- **עיר**: חייב להיות ב-`preferred_cities`. אם נכשל → דחוי.
+- **שכונה**: חייב להיות ב-`preferred_neighborhoods` (עם normalization של underscore↔space). אם נכשל → דחוי.
+- **סוג נכס**: rental↔rent, purchase↔sale. אם נכשל → דחוי.
+- **פיצ'ר חובה (חניה/מעלית/מרפסת/ממ"ד) עם flexible=false**:
+  - `features->>'X' = 'true'` → עובר ✓
+  - `features->>'X' = 'false'` → **דחוי**
+  - `features->>'X' IS NULL` → **דחוי** + מסמן `availability_check_reason='needs_enrichment'` (חוזר לתור השלמה)
+- **חיות מחמד / immediate entry**: לפי הזיכרון הקיים — נשמר כפי שהיה (לא מסנן strict).
+
+### Flexible (משפיע על priority, לא דוחה)
+- פיצ'ר `_flexible=true` חסר → -10 priority + reason "מעלית לא ידועה ⚠"
+- גודל קצת קטן (בתוך 15%) → -5 priority + reason "גודל גבולי"
+- מחיר קצת מעל budget (בתוך 5%) → -5 priority
+
+### Score (0-100)
+משוקלל מ-priority + bonuses (פרטי, חדש, התאמה מושלמת ל-rooms/budget).
+
+---
+
+## טיפול ב-538 הנכסים החסרים features
+
+לפי בחירתך לפיצ'רים strict בלי features = דחוי, וגם החזרה לתור השלמה:
+
+הוספה ל-`match_property_to_lead`: כשנכס נדחה כי `features->>'parking' IS NULL`, הוא מתויג ב-`scouted_properties.availability_check_reason = 'needs_enrichment'` ו-`availability_checked_at = NULL` כדי ש-`get_properties_needing_availability_check` יבחר אותו עם עדיפות. ה-backfill הקיים (`check-property-availability-jina`) שעובד טוב יחזיר את ה-features.
+
+עבור הטבלה `properties` (שלנו) — אין features חסרים בפועל (יש עמודות boolean), אבל אם יש NULL זה אומר "לא הוזן". לליד strict — דחוי.
+
+---
+
+## גמישות גודל 15% ב-`_shared/matching.ts` (תיקון 2)
+
+מתבצע **בנוסף** למערכת המאוחדת — כי `_shared/matching.ts` עדיין רץ ב-`match-batch` Edge Function כדי לאכלס את `scouted_properties.matched_leads` (זה ה-cache שה-RPC יקרא ממנו במקום לחשב מחדש בכל request).
+
+עדכון אחד ב-`calculateMatch`:
+```text
+size_min check:
+   property.size >= lead.size_min * 0.85 → עובר
+   property.size <  lead.size_min * 0.85 → reject
+   property.size IS NULL                  → reject (חדש)
+```
+
+---
+
+## פירוט קבצים
+
+| קובץ | פעולה |
+|---|---|
+| `supabase/migrations/...` | חדש: view `v_unified_listings`, function `match_property_to_lead`, RPC `get_unified_customer_matches` |
+| `supabase/functions/_shared/matching.ts` | תיקון size strict + 15% (משקף את חוקי ה-SQL) |
+| `src/hooks/useCustomerMatches.ts` | קריאה ל-RPC החדש, החזרת `source_table` |
+| `src/hooks/useOwnPropertyMatches.ts` | **נמחק** — מוחלף ב-filter על useCustomerMatches |
+| Components שמשתמשים ב-`useOwnPropertyMatches` | עדכון לשימוש ב-`useCustomerMatches` עם filter |
+
+## מה לא משתנה
+- `match-batch` Edge Function ו-`scouted_properties.matched_leads` cache — ממשיכים לעבוד
+- חוקי neighborhood normalization
+- `dismissed_matches` schema
+
+## סיכון ובקרה
+- **סיכון**: מיגרציה משנה איך התאמות מחושבות — ייתכן שיופיעו פחות התאמות זמנית (כי strict על size+features אמיתי).
+- **בקרה**: אריץ before/after diff — לכל ליד eligible, כמה התאמות לפני ואחרי. אם ירידה דרסטית (>50%) ביותר מ-3 לידים, נחזור לבדוק לפני שמפעילים.
+
+---
+
+## אישור אחרון לפני התחלה
+
+האם לאשר את כיוון הארכיטקטורה? (זה מקום אחד לשנות חוקים, מהיר, בלי כפילות)
