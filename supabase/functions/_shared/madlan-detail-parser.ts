@@ -52,14 +52,17 @@ async function fetchWithBypassHeaders(sourceUrl: string): Promise<MadlanDetailRe
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      // Use the SAME minimal headers as scout-madlan-jina (proven to work, ~88% success).
-      // Heavier browser-like headers (User-Agent/Referer/Origin) trigger Madlan blocking.
+      // iPhone Safari UA — verified live (2026-04-30) to bypass Madlan WAF that started
+      // returning 403 to the previous Next.js JSON header strategy. Returns full SSR HTML
+      // with JSON-LD additionalProperty + __SSR_HYDRATED_CONTEXT__ poi data.
       const response = await fetch(sourceUrl, {
         method: 'GET',
         headers: {
-          'Accept': 'application/json',
-          'X-Nextjs-Data': '1',
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'he-IL,he;q=0.9',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
         },
         signal: controller.signal,
       });
