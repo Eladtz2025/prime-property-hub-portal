@@ -80,17 +80,8 @@ async function fetchWithBypassHeaders(sourceUrl: string): Promise<MadlanDetailRe
         continue;
       }
 
-      // Try JSON response first (Next.js data route)
-      if (html.startsWith('{') || html.startsWith('[')) {
-        try {
-          const jsonData = JSON.parse(html);
-          const result = parseNextJsJson(jsonData);
-          if (result && (Object.keys(result.features).length > 0 || result.size || result.floor)) {
-            console.log(`✅ Madlan Detail (JSON): ${Object.keys(result.features).length} features`);
-            return result;
-          }
-        } catch (e) { /* fall through to HTML parsing */ }
-      }
+      // Response is always SSR HTML now (iPhone UA strategy). The JSON.parse early-exit
+      // was needed for the old X-Nextjs-Data strategy and is no longer relevant.
 
       // Check for PerimeterX captcha page
       if (html.length < 50000 && html.includes('_pxAppId') && !html.includes('data-auto=')) {
