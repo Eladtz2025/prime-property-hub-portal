@@ -430,7 +430,7 @@ export async function calculateMatch(
   // Elevator
   if (lead.elevator_required && lead.elevator_flexible === false) {
     if (property.features?.elevator !== true) {
-      return { lead, matchScore: 0, matchReasons: ['נדרשת מעלית - אין או לא ידוע'], priority: 0 };
+      return { lead, matchScore: 0, matchReasons: ['נדרשת מעלית - אין או לא ידוע'], priority: 0, needsBackfill: true };
     }
     reasons.push('יש מעלית (חובה) ✓');
   } else if (lead.elevator_required && property.features?.elevator === true) {
@@ -440,7 +440,7 @@ export async function calculateMatch(
   // Parking
   if (lead.parking_required && lead.parking_flexible === false) {
     if (property.features?.parking !== true) {
-      return { lead, matchScore: 0, matchReasons: ['נדרשת חניה - אין או לא ידוע'], priority: 0 };
+      return { lead, matchScore: 0, matchReasons: ['נדרשת חניה - אין או לא ידוע'], priority: 0, needsBackfill: true };
     }
     reasons.push('יש חניה (חובה) ✓');
   } else if (lead.parking_required && property.features?.parking === true) {
@@ -477,14 +477,14 @@ export async function calculateMatch(
           if (opt === 'roof') return 'גג';
           return opt;
         }).join(' או ');
-        return { lead, matchScore: 0, matchReasons: [`נדרש ${optionsText} - אין או לא ידוע`], priority: 0 };
+        return { lead, matchScore: 0, matchReasons: [`נדרש ${optionsText} - אין או לא ידוע`], priority: 0, needsBackfill: true };
       }
     }
   } else {
     // AND mode: each feature is checked individually — strict
     if (lead.balcony_required && lead.balcony_flexible === false) {
       if (property.features?.balcony !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - אין או לא ידוע'], priority: 0 };
+        return { lead, matchScore: 0, matchReasons: ['נדרשת מרפסת - אין או לא ידוע'], priority: 0, needsBackfill: true };
       }
       reasons.push('יש מרפסת (חובה) ✓');
     } else if (lead.balcony_required && property.features?.balcony === true) {
@@ -493,7 +493,7 @@ export async function calculateMatch(
     
     if (lead.yard_required && lead.yard_flexible === false) {
       if (property.features?.yard !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - אין או לא ידוע'], priority: 0 };
+        return { lead, matchScore: 0, matchReasons: ['נדרשת חצר - אין או לא ידוע'], priority: 0, needsBackfill: true };
       }
       reasons.push('יש חצר (חובה) ✓');
     } else if (lead.yard_required && property.features?.yard === true) {
@@ -502,7 +502,7 @@ export async function calculateMatch(
     
     if (lead.roof_required && lead.roof_flexible === false) {
       if (property.features?.roof !== true) {
-        return { lead, matchScore: 0, matchReasons: ['נדרש גג - אין או לא ידוע'], priority: 0 };
+        return { lead, matchScore: 0, matchReasons: ['נדרש גג - אין או לא ידוע'], priority: 0, needsBackfill: true };
       }
       reasons.push('יש גג (חובה) ✓');
     } else if (lead.roof_required && property.features?.roof === true) {
