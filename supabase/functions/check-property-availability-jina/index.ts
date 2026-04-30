@@ -254,11 +254,15 @@ async function processPropertiesInParallel(
 ): Promise<CheckResult[]> {
   const perPropertyTimeout = settings.per_property_timeout_ms || 25000;
 
-  // Split properties: Madlan uses Direct Fetch (no rate limit), Yad2/Homeless use Jina (20 RPM limit)
-  const madlanProps = properties.filter(p => p.source === 'madlan');
-  const jinaProps = properties.filter(p => p.source !== 'madlan');
+  // Split properties: Madlan uses Direct Fetch, Yad2/Homeless use Jina.
+  // Per user requirement (2026-04-30): process at most 1 Madlan + 1 Jina per invocation
+  // to eliminate 429 rate-limiting and per-batch timeouts. Self-chain handles the rest.
+  const allMadlan = properties.filter(p => p.source === 'madlan');
+  const allJina = properties.filter(p => p.source !== 'madlan');
+  const madlanProps = allMadlan.slice(0, 1);
+  const jinaProps = allJina.slice(0, 1);
 
-  console.log(`📊 Split: ${madlanProps.length} Madlan (parallel), ${jinaProps.length} Jina (sequential 3.5s delay)`);
+  console.log(`📊 Per-invocation cap: ${madlanProps.length}/${allMadlan.length} Madlan, ${jinaProps.length}/${allJina.length} Jina (1+1 strategy)`);
 
   // --- Madlan: SEQUENTIAL with delay to avoid WAF rate-limiting (Apr 2026+) ---
   // Madlan's Cloudflare WAF blocks bursts from same IP heavily.
