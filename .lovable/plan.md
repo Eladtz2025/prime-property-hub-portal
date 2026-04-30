@@ -1,63 +1,53 @@
-## בדיקת ריצת ההשלמה הנוכחית (30/04 09:00–09:14)
+## תיקון Madlan — iPhone UA לשני הזרימות (אומת חי)
 
-### מה רואים בנתונים האמיתיים
+### מה אומת בפועל (לא תיאוריה)
+הרצתי `diagnose-madlan` עם iPhone UA על listing אמיתי `PwReNp4Hu2U`. התוצאה:
 
-מצב backfill כללי בנכסים פעילים:
-- pending: **1,592** (homeless 181, madlan 443, yad2 965 + failed 60)
-- completed: 2,172
-- failed: 60 (כמעט כולם madlan)
+| בדיקה | תוצאה |
+|---|---|
+| HTTP status | **200** |
+| HTML size | 3.25MB |
+| Cloudflare challenge | לא |
+| JSON-LD עם additionalProperty | ✅ 12 amenities עם כן/לא (מיזוג, מרפסת, מעלית, מקלט, דוד שמש...) |
+| `offers.price` | ✅ 8500 |
+| `size` | ✅ "70 מ׳׳ר" |
+| `__SSR_HYDRATED_CONTEXT__` poi | ✅ beds=3.5, floor=3, area=70, poc.type="private" |
+| titleTag + ogTitle | ✅ "דירה להשכרה: החשמונאים 10..." |
 
-ב-2 השעות האחרונות:
-| source | completed_2h | failed_2h | pending |
-|---|---|---|---|
-| yad2 | 153 | 4 | 962 |
-| homeless | 30 | 0 | 180 |
-| madlan | **0** | **59** | 443 |
+המשמעות: **הפרסרים הקיימים** (`parseDetailHtml` עם JSON-LD/data-auto, ו-`parseMadlanSsrHtml` עם SSR_HYDRATED_CONTEXT) יקבלו בדיוק את ה-HTML שהם מצפים לו. **אין צורך בפרסר חדש**.
 
-### מה באמת קורה ב-madlan (זו הבעיה)
+לעומת זאת — אסטרטגיית ה-headers הנוכחית של ה-scout (`Accept: text/html` בלבד) מחזירה **403** מ-Edge runtime עכשיו (Madlan חיזקה WAF בלילה).
 
-בלוגים של `backfill-property-data-jina`:
+### השינויים — שתי החלפות headers בלבד
 
+**1. `supabase/functions/_shared/madlan-detail-parser.ts`** (backfill)
+שורות 59–63 — להחליף את ה-headers ל:
+```ts
+headers: {
+  'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'he-IL,he;q=0.9',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+}
 ```
-⚠️ Madlan Detail attempt 1: HTTP 403
-⚠️ Madlan Detail attempt 2: HTTP 403
-⚠️ Madlan GraphQL: Cannot extract ID from /listings/r9BQhU3exof
-❌ Madlan Detail: All methods failed
-👀 post-fail: listing still available (madlan_direct_status_403)
-```
+שורות 81–90 — להסיר את בלוק `JSON.parse(html)` המוקדם (התשובה תהיה תמיד HTML SSR; ה-fallback ל-`parseDetailHtml` כבר מטפל בכל מה שצריך).
 
-**זה לא בעיית קצב/דיליי.** זה Madlan שמחזיר 403 על *כל* בקשה לפרטי נכס מאז סביבות תחילת הריצה. כל 59 ה-failed נכשלו עם אותו סיגנל בדיוק. הדיליי הקיים (1500ms בין נכסים, 3000ms בין batches) לא משנה כשהשרת עונה 403 מיידי.
+**2. `supabase/functions/scout-madlan-direct/index.ts`** (scout)
+שורות 50–53 — אותו block headers בדיוק.
+לעדכן את הקומנט בראש הקובץ (שורות 13–17) כך שיתעד את ה-WAF החדש.
 
-זה גם מתיישב עם זה שאתמול זה עבד יופי – מנגנון עקיפת ה-WAF של Madlan נשבר בשלב כלשהו (כנראה שינוי headers/חתימה אצל Madlan, או חסימת ה-IP של ה-edge functions).
+זהו. אין שינוי בפרסרים, אין מיגרציות, אין נגיעה ב-Yad2/Homeless/CF Worker.
 
-### מה כן עובד טוב
+### שלבי ביצוע אחרי אישור
+1. שני edits.
+2. ממתין לפריסה אוטומטית.
+3. **בדיקה אמיתית #1 — backfill:** מריץ `backfill-property-data-jina` ידני על batch קטן של 3 נכסי madlan (אחרי הסרת הflag זמנית ב-batch הזה בלבד), ובודק ב-logs:
+   - `branch=direct success` (לא graphql fallback)
+   - `features` >= 5
+   - הנתון נכתב ב-DB.
+4. **בדיקה אמיתית #2 — scout:** מפעיל `scout-madlan-direct` ידני על דף אחד עם config קיים, בודק ש-200, found > 0, parser=`direct-ssr`.
+5. רק אחרי ששתי הבדיקות עוברות — מבקש ממך להחליף את הflag `backfill_madlan_disabled` ל-`false`.
+6. אם בדיקה כלשהי נכשלת — אעצור ואדווח לפני כל שינוי נוסף, כפי שביקשת.
 
-- **Yad2**: רץ יציב (153 הצלחות, 4 כשלונות ב-2 שעות). הדיליי 2.5–4s בין בקשות + 3s בין batches מספיק.
-- **Homeless**: 30 הצלחות, 0 כשלונות.
-- ה-CF Worker של Yad2 פולט הרבה `upstream=403 html=334` אבל זה רק על ה-`yad2-detail-nextdata` הראשון שלפני הירידה ל-HTML — זה לא נכשל בפועל.
-
-### למה הוספת דיליי ל-Madlan לא תעזור
-
-מדובר ב-403 מיידי ב-attempt 1 וב-attempt 2 (אחרי ~4s). זה blocking לפי חתימה/IP, לא לפי throttling. אם נגדיל את הדיליי, פשוט נעשה פחות בקשות — אבל עדיין כל בקשה תיכשל.
-
-### תוכנית פעולה
-
-1. **עצירת ניסיונות backfill ל-Madlan עד שיתוקן ה-fetcher** – להחזיר את 443+59 הנכסים של Madlan ל-`pending` *לא* בתור backfill אלא לסמן `backfill_status='not_needed'` זמנית, או להשאיר `pending` אבל לדלג עליהם בשאילתת ה-batch כדי לא לשרוף ניסיונות לשווא.
-
-   הצעה: להוסיף ב-`backfill-property-data-jina` תנאי דילוג זמני על `source='madlan'` בשאילתת הסלקציה, מבוקר ע"י feature flag (`backfill_madlan_disabled`).
-
-2. **לתקן את Madlan fetcher** – לבדוק את `parser-madlan-ssr` / `scout-madlan-direct` (אותו endpoint שעובד היום ב-scout) ולהשתמש *באותו* נתיב בדיוק גם ב-backfill, במקום הנתיב הישן ש-403 עליו. הזיכרון מתעד שזו האסטרטגיה הנוכחית של Madlan: minimal headers, בלי UA/Referer.
-
-3. **השארת yad2/homeless כפי שהם** – לא להגדיל דיליי. הנתונים מראים שהם עובדים טוב (97%+ הצלחה ב-2 השעות האחרונות). הגדלת דיליי תאט אותם בלי טובת תועלת.
-
-### סיכון
-
-- שלב 1 (דילוג Madlan) – אפס סיכון, רק חוסך CPU וזמן.
-- שלב 2 (תיקון fetcher) – שינוי לוגיקה, אבל מוגבל לפונקציה אחת ולמקור אחד.
-
-### מה אני מבקש לאשר
-
-(א) להפעיל kill-switch ל-Madlan ב-backfill (דילוג בשאילתה) **ו**
-(ב) להחליף את Madlan fetcher של ה-backfill לזה של `scout-madlan-direct` שעובד.
-
-אם רוצה, אפשר לעשות רק (א) עכשיו ולתקן (ב) בשלב הבא.
+מאשר?

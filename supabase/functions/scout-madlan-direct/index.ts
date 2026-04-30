@@ -9,15 +9,13 @@ import { updatePageStatus, incrementRunStats, checkAndFinalizeRun, isRunStopped 
 /**
  * Madlan Scout — Direct Fetch (SSR Hydration parser).
  *
- * Why Direct Fetch (not Jina, not CF Worker)?
- * As of late April 2026, Madlan's Cloudflare WAF rules changed:
- *   - Requests with `User-Agent` (browser-like) → 403 Captcha
- *   - Requests with `X-Nextjs-Data: 1` → 403 Captcha
- *   - Requests with ONLY `Accept: text/html` + `Accept-Language: he-IL` → 200 OK ✅
- * Verified via test-madlan-direct: 588KB HTML, includes __SSR_HYDRATED_CONTEXT__, ~330ms.
+ * WAF strategy (verified live 2026-04-30):
+ * Madlan's Cloudflare WAF was tightened overnight; the previous "minimal headers" strategy
+ * (`Accept: text/html` only, no User-Agent) now returns 403. The working strategy is an
+ * iPhone Safari User-Agent + standard navigation headers, which returns 200 with full SSR
+ * HTML (~3MB, includes __SSR_HYDRATED_CONTEXT__ and JSON-LD additionalProperty).
  *
- * Jina Reader's free tier now returns 402 InsufficientBalance on Madlan, so
- * Direct Fetch is the only working zero-cost path.
+ * Same headers used by the backfill fetcher (_shared/madlan-detail-parser.ts) — keep in sync.
  */
 
 const MADLAN_CONFIG = {
@@ -48,8 +46,11 @@ async function fetchMadlanPage(url: string, attempt: number): Promise<FetchResul
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'text/html',
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'he-IL,he;q=0.9',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
       },
       signal: controller.signal,
     });
