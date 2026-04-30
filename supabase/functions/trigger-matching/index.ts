@@ -91,6 +91,8 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
   const rejectionCounts: Record<string, number> = {};
   let totalRejected = 0;
 
+  const propertiesNeedingBackfill: string[] = [];
+
   const matchResults = await Promise.all(
     properties.map(async (property) => {
       const matchResult = await calculateMatch(property as ScoutedProperty, lead as ContactLead, matchingSettings);
@@ -131,6 +133,11 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
         
         totalRejected++;
         rejectionCounts[category] = (rejectionCounts[category] || 0) + 1;
+
+        // Track properties rejected solely for missing strict features → push to backfill
+        if (matchResult.needsBackfill) {
+          propertiesNeedingBackfill.push(property.id);
+        }
       }
       
       return {
@@ -141,6 +148,20 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
       };
     })
   );
+
+  // Mark properties that need feature enrichment for the backfill cron
+  if (propertiesNeedingBackfill.length > 0) {
+    try {
+      await supabase
+        .from('scouted_properties')
+        .update({ backfill_status: 'pending', backfill_attempted_at: null })
+        .in('id', propertiesNeedingBackfill)
+        .neq('backfill_status', 'pending');
+      console.log(`📝 Marked ${propertiesNeedingBackfill.length} properties for backfill (missing strict features)`);
+    } catch (e) {
+      console.warn('Failed to mark properties for backfill:', e);
+    }
+  }
 
   // Batch update properties - group by 100 for efficiency
   const BATCH_SIZE = 100;

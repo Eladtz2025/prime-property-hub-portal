@@ -1,53 +1,51 @@
+## תוכנית: סימון אוטומטי ל-backfill כשנכס נדחה בגלל features חסרים + ניקוי תג מטעה
 
+### מצב נוכחי (אומת מול ה-DB)
+- 1,837 נכסים עם `availability_check_reason = 'needs_enrichment'` — תג טקסטואלי בלבד, לא משפיע על תור בדיקת הזמינות
+- אותם 1,837 כבר מסומנים `backfill_status = 'pending'` (התיקון הקודם עבד) — backfill אמור לעבוד עליהם
+- אין שום הצפה אמיתית של בודק הזמינות
 
-## תיקון: החזרת 1,837 הנכסים לתור השלמת הנתונים האמיתי
+### למה צריך תיקון
+1. **מניעה עתידית:** היום, כשהמטצ'ר דוחה נכס בגלל feature חסר, הוא רק מתייג את הנכס בעמודה לא-מתאימה. אין דחיפה אוטומטית ל-backfill. בעוד חודש-חודשיים נחזור ל"אלפי נכסים תקועים".
+2. **בלבול תפעולי:** התג `needs_enrichment` בעמודת availability גורם להתבלבל (כמו שראינו בשיחה הזו).
 
-### הבעיה
-המיגרציה הקודמת איפסה `availability_checked_at` - זה שולח נכסים ל**בודק הזמינות** (`check-property-availability-jina` כשהוא רץ במצב availability), לא ל**השלמת הנתונים**. בפועל הם לא ייכנסו להשלמת נתונים כי `backfill_status = 'completed'` חוסם אותם.
+---
 
-### התיקון
+### שלב 1: עדכון לוגיקת המטצ'ר (`supabase/functions/_shared/matching.ts`)
 
-**1. מיגרציית SQL - איפוס נכון של דגלי backfill:**
+בכל מקום שבו המטצ'ר מחזיר `matchScore: 0` בגלל feature חסר (שורות 425, 435, 473, 479, 488, 497, 514, 519) — לסמן את הנכס ל-backfill.
 
+**מימוש:**
+- להוסיף import של `createClient` ו-service role key (כבר קיים בקובץ).
+- ליצור פונקציית עזר `markScoutedForBackfill(supabase, propertyId)` שמריצה:
+  ```sql
+  UPDATE scouted_properties 
+  SET backfill_status = 'pending', backfill_attempted_at = NULL
+  WHERE id = $1 AND backfill_status != 'pending'
+  ```
+- לקרוא לה מהפונקציה הראשית `matchProperty` כשהדחייה היא בגלל feature חסר (parking/elevator/balcony/yard/roof/mamad/furnished שהליד דורש strict).
+- להעביר את ה-supabase client + property.id כפרמטרים לפונקציית `matchProperty` (כבר זמינים ב-callers הקיימים: `trigger-matching`, `match-batch`).
+- **הגנה:** לסמן רק עבור `scouted_properties` (לא עבור `properties` הפנימיים — אין להם backfill). הזיהוי: ה-caller כבר יודע אם זה scouted או own; נוסיף פרמטר `source: 'scouted' | 'own'` ל-`matchProperty` (default 'scouted').
+
+### שלב 2: ניקוי התג המטעה (data update)
+
+הרצת UPDATE על 1,837 הנכסים:
 ```sql
--- החזרת 1,837 הנכסים לתור השלמת הנתונים
 UPDATE scouted_properties
-SET 
-  backfill_status = 'pending',           -- מאפשר ל-backfill לבחור אותם
-  backfill_attempted_at = NULL,          -- כדי שלא יסונן כ"ניסיתי לאחרונה"
-  availability_checked_at = OLD_VALUE    -- מחזירים לערך המקורי כדי לא להציף את בודק הזמינות
-WHERE is_active = true
-  AND availability_check_reason = 'needs_enrichment'
-  AND (
-    features IS NULL 
-    OR features = '{}'::jsonb
-    OR NOT (features ? 'parking')
-    OR NOT (features ? 'elevator')
-    OR NOT (features ? 'balcony')
-    OR NOT (features ? 'mamad')
-  );
+SET availability_check_reason = NULL
+WHERE is_active = true 
+  AND availability_check_reason = 'needs_enrichment';
 ```
 
-הערה: לא נוכל לשחזר את `availability_checked_at` המקורי (הוא נדרס). פשוט נחזיר אותו ל-`now() - interval '1 day'` כדי שלא ייכנס לתור הבדיקה המיידי.
+זה לא נוגע ב-`backfill_status` (נשאר pending — הם בתור backfill כרגיל), לא נוגע ב-`availability_checked_at`, רק מנקה תג טקסטואלי.
 
-**2. בדיקה ב-`backfill-property-data-jina`:** לוודא שהשאילתה שלו בוחרת לפי `backfill_status IN ('pending', NULL)` ולא לפי `availability_checked_at`. אם השאילתה שונה - להתאים את המיגרציה.
-
-**3. עדכון `match-own-properties` ו-`_shared/matching.ts`:** כשנכס נדחה כי features חסרים, לסמן `backfill_status = 'pending'` במקום `availability_check_reason = 'needs_enrichment'`. זו התנהגות הדחיפה הנכונה לתור השלמת נתונים.
-
-**4. הפרדה ברורה בקוד:**
-- `availability_check_reason` + `availability_checked_at` → בדיקת קישור חי (האם המודעה עדיין באוויר)
-- `backfill_status` + `backfill_attempted_at` → השלמת שדות חסרים (price, rooms, features וכו')
-
-### וידוא לאחר התיקון
-שאילתה שתוודא:
-- `SELECT COUNT(*) WHERE backfill_status = 'pending'` → צפוי כ-1,837
-- בדיקה שהשלמת נתונים מתחילה לרוץ עליהם (ידנית או cron הבא)
-
-### למה זה נכון
-- features חסרים = עבודה של השלמת נתונים, שעובדת טוב
-- בדיקת זמינות לא יודעת למלא features - היא רק בודקת אם ה-URL חי
-- אחרי ש-backfill ימלא את ה-features, ההתאמות ל-Shiri (וכל מי שדורש parking strict) יחזרו לעבוד נכון
+### שלב 3: וידוא לאחר ביצוע
+- `SELECT COUNT(*) WHERE availability_check_reason = 'needs_enrichment'` → 0
+- `SELECT COUNT(*) WHERE backfill_status = 'pending'` → ~1,837 (לא משתנה)
+- backfill cron הבא (00:00) יעבוד עליהם כרגיל
 
 ### סיכון
-נמוך. שינוי נתונים בלבד, לא לוגיקה. אם משהו ישתבש - אפשר להחזיר ל-`completed` בשאילתה אחת.
+- שלב 1: שינוי לוגיקה קטן + UPDATE אסינכרוני אחד לכל דחיית features. אם ה-UPDATE נכשל — לא חוסם את המטצ'ר (try/catch).
+- שלב 2: data-only, ניתן לחזרה בשאילתה אחת.
 
+מאשר ביצוע?

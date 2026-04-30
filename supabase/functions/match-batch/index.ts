@@ -134,16 +134,32 @@ serve(async (req) => {
 
     for (const property of properties) {
       const matches: MatchResult[] = [];
+      let needsBackfill = false;
 
       for (const lead of leads) {
         const matchResult = await calculateMatch(property as ScoutedProperty, lead as ContactLead, matchingSettings);
         
         if (matchResult.matchScore >= 60) {
           matches.push(matchResult);
+        } else if (matchResult.needsBackfill) {
+          needsBackfill = true;
         }
       }
       
       processedCount++;
+
+      // Mark scouted property for backfill if it was rejected for missing strict features
+      if (needsBackfill) {
+        try {
+          await supabase
+            .from('scouted_properties')
+            .update({ backfill_status: 'pending', backfill_attempted_at: null })
+            .eq('id', property.id)
+            .neq('backfill_status', 'pending');
+        } catch (e) {
+          console.warn(`Failed to mark ${property.id} for backfill:`, e);
+        }
+      }
 
       // Sort by priority (higher = better quality match)
       matches.sort((a, b) => b.priority - a.priority);
