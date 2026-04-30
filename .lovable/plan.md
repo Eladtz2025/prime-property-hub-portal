@@ -1,62 +1,67 @@
-## אתה צודק לגמרי
+## הבעיה האמיתית בשורה אחת
 
-בדקתי חי עכשיו את אותו URL מ-Supabase, ב-5 אסטרטגיות שונות. התוצאות חד משמעיות:
+הקוד **כבר** מנסה לרוץ אחד-אחד עם דיליי, אבל יש שורה אחת שמקלקלת את זה:
 
-| אסטרטגיה | סטטוס | תוצאה |
-|---|---|---|
-| A. Headers של בדיקת הזמינות (`Accept` + `Accept-Language` בלבד) | **403** | Captcha |
-| B. אותה אסטרטגיה ללא UA | **403** | Captcha |
-| **C. iPhone UA + Sec-Fetch (מה ש-backfill משתמש בו)** | **200** | ✅ 47KB SSR |
-| D. Desktop Chrome UA | **403** | Captcha |
-| E. iPhone UA בלי Sec-Fetch | **200** | ✅ |
-
-## מה קורה
-
-ה-backfill כבר עובד מצוין כי הוא קורא ל-`madlan-detail-parser.ts` ב-`_shared/`, ושם **כבר מוגדר ה-iPhone UA הנכון** (תוקן לפני כמה ימים).
-
-בדיקת הזמינות (`check-property-availability-jina/index.ts`) כתבה לעצמה פונקציה נפרדת `checkMadlanDirect` עם הערה ישנה:
-```
-// CRITICAL: Madlan WAF... Only minimal headers pass through.
-```
-ההערה הזו **כבר לא נכונה** — מדלן שינו את ה-WAF, וה-headers ה"מינימליים" עכשיו מקבלים 403 קבוע. זאת הסיבה שאתה רואה שכל ה-Madlan נכשלים.
-
-## התיקון המוצע
-
-**קובץ אחד, ~6 שורות:** `supabase/functions/check-property-availability-jina/index.ts`, שורות 48-55
-
-החלפת ה-headers הנוכחיים:
 ```typescript
-headers: {
-  'Accept': 'text/html',
-  'Accept-Language': 'he-IL,he;q=0.9',
-}
+// check-property-availability-jina/index.ts שורה 336
+const [madlanResults, jinaResults] = await Promise.all([
+  processMadlanParallel(),    // 1 madlan כל 6s
+  processJinaSequential(),    // 1 jina כל 3.5s
+]);
 ```
 
-ב-headers הזהים לאלה שב-`_shared/madlan-detail-parser.ts` (אסטרטגיה C שהחזירה 200):
+`Promise.all` גורם לשני הזרמים לרוץ **במקביל** - אז madlan + jina נשלחים בו-זמנית, וכשיש chains כפולים זה הופך ל-burst.
+
+## ההצעה: שני שינויים זעירים בקובץ אחד
+
+**קובץ:** `supabase/functions/check-property-availability-jina/index.ts` בלבד.
+
+### שינוי 1: הפיכת Madlan→Jina לסדרתי (שורה 336)
+
 ```typescript
-headers: {
-  'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'Accept-Language': 'he-IL,he;q=0.9',
-  'Sec-Fetch-Dest': 'document',
-  'Sec-Fetch-Mode': 'navigate',
-}
+// לפני:
+const [madlanResults, jinaResults] = await Promise.all([
+  processMadlanParallel(),
+  processJinaSequential(),
+]);
+
+// אחרי:
+const madlanResults = await processMadlanParallel();
+const jinaResults = await processJinaSequential();
+const allResults = [...madlanResults, ...jinaResults];
 ```
 
-ועדכון ההערה למעלה כך שתשקף את המציאות הנוכחית.
+**תוצאה:** רק נכס אחד נשלח ברגע נתון - madlan קודם (אחד-אחד, 3s דיליי), אז jina (אחד-אחד, 3s דיליי).
 
-## מה אני **לא** נוגע
+### שינוי 2: דיליי אחיד 3 שניות (שורות 271 ו-307)
 
-- ❌ ה-backfill (עובד מושלם, אין סיבה לגעת)
-- ❌ Yad2 / Homeless (לוגיקת Jina נפרדת באותו קובץ — לא משתנה)
-- ❌ לוגיקת תור / self-chain
-- ❌ Database / RLS / migrations
-- ❌ פרונט-אנד
+```typescript
+// Madlan: שורה 271
+const delayBetweenBatches = 3000; // היה 6000
 
-## סיכון
+// Jina: שורה 307
+const JINA_DELAY_MS = 3000; // היה 3500
+```
 
-**אפסי.** זאת בדיוק אותה שיטה שכבר רצה היום בהצלחה ב-backfill על אותם URLs. אם משהו ישתבש (לא צפוי), הנכס פשוט נשאר בתור — אין סיכוי לסמן בטעות נכס פעיל כ"לא זמין".
+3 שניות בין כל בקשה = 20 בקשות בדקה (בדיוק במגבלת Jina, וגם בטוח ל-Madlan WAF).
 
-## אישור
+### חישוב זמן batch של 10 נכסים
+- היום (במקביל + race): 25-35 שניות עם הרבה rate_limited
+- אחרי (סדרתי 3s): 10 × 3 = **30 שניות** עם 0 race
 
-מאשר שאעשה את השינוי הנקודתי הזה?
+## מה לא משתנה
+- **קובץ אחד בלבד** נוגע (`check-property-availability-jina/index.ts`)
+- **0 שינויי DB**
+- **0 שינוי schema**
+- ה-headers של Madlan
+- `trigger-availability-check-jina` (שזה הקובץ הקריטי עם cron/watchdog/lock)
+- כל פונקציה אחרת במערכת
+- ה-UI
+
+## אם משהו ישתבש
+מחזירים את 3 השורות לקדמותן בעריכה אחת. מקסימום 30 שניות לחזור אחורה.
+
+## מה אני מבקש
+אישור לשינוי **3 שורות** בקובץ אחד. ללא נגיעה ב-DB, ללא נגיעה בקוד אחר.
+
+מאשר?
