@@ -43,11 +43,11 @@ Deno.serve(async (req) => {
   }
   const manual = body.manual === true;
 
-  // 1. Kill switch
+  // 1. Kill switch (renamed to process_phone_extraction for consistency)
   const { data: flag } = await supabase
     .from('feature_flags')
     .select('is_enabled')
-    .eq('name', 'phone_extraction_enabled')
+    .eq('name', 'process_phone_extraction')
     .single();
 
   if (!flag?.is_enabled) {

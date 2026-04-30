@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  Database, Copy, Users, Search, Shield, RotateCcw, Loader2,
+  Database, Copy, Users, Search, Shield, RotateCcw, Loader2, Phone,
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/social/ConfirmDialog';
 import { format } from 'date-fns';
@@ -113,7 +113,7 @@ export const ChecksDashboard: React.FC = () => {
       const { data } = await supabase
         .from('feature_flags')
         .select('name, is_enabled')
-        .in('name', ['process_scans', 'process_availability', 'process_duplicates', 'process_matching', 'process_backfill', 'process_availability_jina', 'process_backfill_jina', 'process_scans_jina']);
+        .in('name', ['process_scans', 'process_availability', 'process_duplicates', 'process_matching', 'process_backfill', 'process_availability_jina', 'process_backfill_jina', 'process_scans_jina', 'process_phone_extraction']);
       const flags: Record<string, boolean> = {};
       data?.forEach(f => { flags[f.name] = f.is_enabled ?? true; });
       return flags;
@@ -494,6 +494,77 @@ export const ChecksDashboard: React.FC = () => {
     return `${date} (${duration})`;
   };
 
+  // ===== Phone extraction queries =====
+  const { data: phoneStats } = useQuery({
+    queryKey: ['phone-extraction-stats'],
+    queryFn: async () => {
+      const baseQ = () => supabase
+        .from('scouted_properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true)
+        .eq('is_private', true)
+        .eq('source', 'homeless');
+
+      const [pendingRes, successRes, withPhoneRes] = await Promise.all([
+        baseQ().or('owner_phone.is.null,owner_phone.eq.').lt('phone_extraction_attempts', 3).not('phone_extraction_status', 'eq', 'success').not('phone_extraction_status', 'eq', 'not_found'),
+        baseQ().eq('phone_extraction_status', 'success'),
+        baseQ().not('owner_phone', 'is', null).not('owner_phone', 'eq', ''),
+      ]);
+      return {
+        pending: pendingRes.count ?? 0,
+        success: successRes.count ?? 0,
+        totalWithPhone: withPhoneRes.count ?? 0,
+      };
+    },
+    refetchInterval: 15000,
+  });
+
+  const { data: lastPhoneRun } = useQuery({
+    queryKey: ['phone-extraction-last-run'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('phone_extraction_runs')
+        .select('*')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    refetchInterval: 10000,
+  });
+
+  const { data: phoneRuns } = useQuery({
+    queryKey: ['phone-extraction-runs'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('phone_extraction_runs')
+        .select('*')
+        .order('started_at', { ascending: false })
+        .limit(20);
+      return data ?? [];
+    },
+    refetchInterval: 15000,
+  });
+
+  const triggerPhoneExtraction = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('phone-extraction-worker', {
+        body: { manual: true },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      if (data?.skipped) toast.info(`דולג: ${data.reason}`);
+      else if (data?.phone_found) toast.success('נמצא טלפון!');
+      else toast.info('הריצה הסתיימה (ללא טלפון)');
+      queryClient.invalidateQueries({ queryKey: ['phone-extraction-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['phone-extraction-runs'] });
+      queryClient.invalidateQueries({ queryKey: ['phone-extraction-last-run'] });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   return (
     <div className="space-y-4" dir="rtl">
 
@@ -689,6 +760,75 @@ export const ChecksDashboard: React.FC = () => {
           settingsTitle="הגדרות השלמת נתונים"
           enabled={processFlags?.process_backfill_jina ?? true}
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_backfill_jina', enabled: v })}
+          isTogglePending={toggleFlag.isPending}
+        />
+
+        {/* Phone Extraction (Homeless) */}
+        <ProcessCard
+          title="חילוץ טלפונים"
+          icon={<Phone className="h-4 w-4 text-amber-600" />}
+          status={lastPhoneRun?.status === 'running' ? 'running' : lastPhoneRun ? 'completed' : 'idle'}
+          primaryValue={phoneStats?.pending ?? 0}
+          primaryLabel="ממתינים לחילוץ"
+          secondaryLine={`${(phoneStats?.totalWithPhone ?? 0).toLocaleString('he-IL')} טלפונים נמצאו`}
+          insight={
+            (phoneStats?.pending ?? 0) === 0
+              ? 'אין פריטים בתור'
+              : `${(phoneStats?.success ?? 0).toLocaleString('he-IL')} חולצו עד כה`
+          }
+          insightType={(phoneStats?.pending ?? 0) === 0 ? 'ok' : 'info'}
+          lastRun={formatLastRun(lastPhoneRun?.started_at, lastPhoneRun?.ended_at)}
+          onRun={() => triggerPhoneExtraction.mutate()}
+          isRunPending={triggerPhoneExtraction.isPending}
+          historyContent={
+            <div className="space-y-2">
+              {(phoneRuns ?? []).length === 0 && (
+                <p className="text-sm text-muted-foreground py-4 text-center">אין ריצות עדיין</p>
+              )}
+              {(phoneRuns ?? []).map((r: any) => (
+                <div key={r.id} className="flex items-center justify-between text-xs border-b pb-2">
+                  <span className="text-muted-foreground">
+                    {format(new Date(r.started_at), 'dd/MM HH:mm:ss', { locale: he })}
+                  </span>
+                  <span>{r.triggered_by === 'manual' ? 'ידני' : 'אוטומטי'}</span>
+                  <span className={r.phones_found > 0 ? 'text-green-600 font-medium' : 'text-muted-foreground'}>
+                    {r.phones_found > 0 ? `נמצא טלפון` : 'לא נמצא'}
+                  </span>
+                  {r.errors_count > 0 && <span className="text-destructive">שגיאה</span>}
+                </div>
+              ))}
+            </div>
+          }
+          historyTitle="היסטוריית חילוץ טלפונים"
+          settingsContent={
+            <div className="space-y-6">
+              <LogicDescription lines={[
+                'מחלץ מספרי טלפון של בעלי דירות פרטיות מ-Homeless בלבד (שלב 1).',
+                'הקרון רץ כל דקה, אבל פועל רק בחלון 09:00–22:00 שעון ישראל.',
+                'בכל ריצה מטופל נכס אחד עם השהייה רנדומלית של 15–45 שניות — קצב איטי ובטוח שלא נחסם.',
+                'אחרי 3 ניסיונות כושלים נכס מסומן כ-failed ולא ייבדק שוב.',
+                'הטלפון שמתגלה נשמר ב-owner_phone של הנכס לצמיתות.',
+                'ריצה ידנית מתעלמת מחלון השעות.',
+              ]} />
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-muted/40 rounded p-2">
+                  <p className="text-xs text-muted-foreground">בתור</p>
+                  <p className="text-lg font-bold">{(phoneStats?.pending ?? 0).toLocaleString('he-IL')}</p>
+                </div>
+                <div className="bg-muted/40 rounded p-2">
+                  <p className="text-xs text-muted-foreground">חולצו</p>
+                  <p className="text-lg font-bold text-green-600">{(phoneStats?.success ?? 0).toLocaleString('he-IL')}</p>
+                </div>
+                <div className="bg-muted/40 rounded p-2">
+                  <p className="text-xs text-muted-foreground">סה״כ עם טלפון</p>
+                  <p className="text-lg font-bold text-blue-600">{(phoneStats?.totalWithPhone ?? 0).toLocaleString('he-IL')}</p>
+                </div>
+              </div>
+            </div>
+          }
+          settingsTitle="הגדרות חילוץ טלפונים"
+          enabled={processFlags?.process_phone_extraction ?? false}
+          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_phone_extraction', enabled: v })}
           isTogglePending={toggleFlag.isPending}
         />
       </div>

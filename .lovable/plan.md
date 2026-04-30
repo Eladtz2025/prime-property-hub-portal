@@ -1,85 +1,63 @@
-## שלב 1: חילוץ טלפונים מ-Homeless
+## תיקון: כרטיסיית מערכת במקום טאב
 
-### מטרה
-לחלץ אוטומטית מספרי טלפון של בעלי נכסים פרטיים מ-Homeless ולשמור אותם ב-`scouted_properties.owner_phone`. עבודה איטית, עקבית, ללא חסימות, חינם לחלוטין.
+### מה קרה
+בטעות הוספתי טאב שלישי "חילוץ טלפונים" ב-`AdminPropertyScout`, במקום להוסיף **ProcessCard** ב-grid של "דשבורד בדיקות" — שם מופיעות כל שאר המערכות (סריקות, בדיקת זמינות, כפילויות, התאמות, השלמת חוסרים).
 
-### היקף ראשוני
-- **רק Homeless** בשלב הזה (Yad2/Madlan ייבדקו בשלב 2 אחרי probe).
-- כ-2,297 נכסים פרטיים אקטיביים ללא טלפון (יורדים בהדרגה ככל ש-Homeless יחזיר תוצאות).
+### מה אעשה
 
-### 1. מיגרציית DB (דורש אישור)
+**1. הסרת הטאב**
+- מחיקת ה-`TabsTrigger value="phones"` וה-`TabsContent value="phones"` מ-`src/pages/AdminPropertyScout.tsx`.
+- החזרת ה-`TabsList` ל-2 עמודות (dashboard + properties).
+- מחיקת ה-import של `PhoneExtractionDashboard` מהעמוד.
 
-הוספת עמודות ל-`scouted_properties`:
-- `phone_extraction_status TEXT` — `pending` / `success` / `failed` / `not_found` / `skipped`
-- `phone_extraction_attempts INT DEFAULT 0`
-- `phone_extracted_at TIMESTAMPTZ`
-- `phone_extraction_last_error TEXT`
+**2. הוספת ProcessCard ב-`ChecksDashboard.tsx`**
+כרטיסייה שישית ב-grid הקיים, עם בדיוק אותה תבנית כמו האחרות:
+- **title:** "חילוץ טלפונים"
+- **icon:** `<Phone />` בצבע ענברי
+- **status:** running/completed/idle לפי הריצה האחרונה ב-`phone_extraction_runs`
+- **primaryValue:** מספר הנכסים בתור (Homeless פרטיים בלי טלפון, attempts < 3)
+- **primaryLabel:** "ממתינים לחילוץ"
+- **secondaryLine:** "X טלפונים נמצאו" (סה"כ עם owner_phone)
+- **insight:** "Y הצליחו השבוע" / "אין פריטים חדשים לטיפול"
+- **lastRun:** מהריצה האחרונה
+- **onRun:** `supabase.functions.invoke('phone-extraction-worker', { body: { manual: true } })`
+- **enabled / onToggleEnabled:** קשור ל-`phone_extraction_enabled` ב-`feature_flags` (אותו kill switch שכבר קיים)
+- **historyContent:** טבלת 20 הריצות האחרונות (מה שהיה בדשבורד)
+- **settingsContent:** `LogicDescription` עם הסבר + הצגת חלון הפעילות (09:00–22:00) והקצב (15–45ש׳ בין נכסים)
 
-טבלה חדשה `phone_extraction_runs`:
-- `id, started_at, ended_at, status, properties_attempted, phones_found, errors_count, source, triggered_by, notes`
-- RLS: read לאדמינים בלבד, write ל-service role.
+**3. שינוי שם הדגל לעקביות**
+לעקביות עם שאר המערכות (`process_scans`, `process_availability`...), אעדכן גם את ה-flag מ-`phone_extraction_enabled` ל-`process_phone_extraction`. ה-worker יקרא לדגל החדש (`isProcessEnabled(supabase, 'phone_extraction')`). מיגרציה קטנה תעביר את ה-state הקיים.
 
-אינדקס חלקי לזירוז ה-worker:
-```sql
-CREATE INDEX idx_sp_phone_extraction_queue 
-ON scouted_properties(phone_extraction_status, phone_extraction_attempts) 
-WHERE is_active = true 
-  AND is_private = true 
-  AND (owner_phone IS NULL OR owner_phone = '')
-  AND source = 'homeless';
-```
+**4. מחיקת הקובץ הישן**
+`src/components/scout/PhoneExtractionDashboard.tsx` יוסר (החלקים הרלוונטיים יעברו ל-history/settings של ה-ProcessCard).
 
-**אפס שינוי על עמודות קיימות. אפס טריגרים חדשים.**
+---
 
-### 2. Edge Functions
+## שאלה 2: מתי המערכת אמורה לעבוד?
 
-**`extract-phone`** (stateless)
-- Input: `{ property_id, source_url, source }`
-- Logic ל-Homeless: `fetch(source_url)` → regex על `var phone = "0\d{8,9}"` או `tel:` ב-HTML → ניקוי/ולידציה (10 ספרות, מתחיל ב-0, פורמט ישראלי) → מחזיר phone או null.
-- כותב ל-DB: `owner_phone`, `phone_extraction_status`, `phone_extracted_at`, `phone_extraction_attempts++`.
-- שומר על `data-integrity-preservation` — לא נוגע בשום עמודה אחרת.
+הנה התשובה הברורה (כך הגדרתי אותה בשלב 1):
 
-**`phone-extraction-worker`** (cron)
-- בדיקת kill switch ב-`feature_flags` (`phone_extraction_enabled`).
-- בדיקת חלון זמן: 09:00–22:00 שעון ישראל (אם מחוץ — exit שקט).
-- שולף נכס אחד מהתור (Homeless, פרטי, אקטיבי, ללא טלפון, attempts<3, status≠success).
-- קורא ל-`extract-phone`.
-- delay אקראי 15–45s לפני exit (כדי לא להיראות כמו בוט גם אם cron יקפיץ מהר).
-- מתעד ב-`phone_extraction_runs`.
+| פרמטר | ערך |
+|---|---|
+| **תדירות הקרון** | כל דקה (`* * * * *`) |
+| **חלון פעילות** | 09:00–22:00 שעון ישראל בלבד |
+| **קצב** | נכס אחד בכל ריצה + השהייה רנדומלית 15–45 שניות |
+| **קיבולת תיאורטית** | ~50–60 נכסים בשעה → ~650–780 נכסים ביום |
+| **kill switch** | כבוי כברירת מחדל — צריך להפעיל ידנית מהכרטיסייה |
+| **מקור נוכחי** | Homeless בלבד (שלב 1) |
+| **תקרת ניסיונות** | 3 לכל נכס. אחרי 3 כישלונות → סטטוס `failed` ולא ננסה שוב |
 
-### 3. Cron
-- כל דקה (`* * * * *`) ב-pg_cron → `phone-extraction-worker`.
-- בקצב הזה: ~60 ניסיונות/שעה × 13 שעות = ~780/יום. כל ה-Homeless הפרטי יסיים תוך 3–4 ימים.
+**מחוץ לחלון** (22:00–09:00): הקרון רץ אבל מדלג מיד עם `outside_working_hours`. זה כדי לא להתנהג כבוט שעובד 24/7.
 
-### 4. UI
-כרטיסיה חדשה ב-`/admin-dashboard/scout` (או דשבורד הסקאוט הקיים):
-- סך נכסים בתור / הצליחו / נכשלו / לא נמצא
-- הריצה האחרונה (זמן, תוצאות)
-- Toggle kill switch
-- כפתור "הרץ ידנית עכשיו" (bypass חלון זמן)
-- טבלה של 20 ניסיונות אחרונים
+**ריצה ידנית מתעלמת מהחלון** — אם תלחץ "הרץ ידנית", זה ירוץ גם ב-2 בלילה.
 
-### 5. Feature Flag
-הוספת רשומה ל-`feature_flags`: `phone_extraction_enabled = false` (יופעל ידנית אחרי בדיקה).
+---
 
-### פרטים טכניים
+## קבצים שיושפעו
+- `src/pages/AdminPropertyScout.tsx` — מחיקת הטאב
+- `src/components/scout/ChecksDashboard.tsx` — הוספת ProcessCard + queries לטלפונים
+- `src/components/scout/PhoneExtractionDashboard.tsx` — נמחק (תוכן עובר ל-history/settings sheet)
+- `supabase/functions/phone-extraction-worker/index.ts` — קריאה לדגל החדש
+- מיגרציה קטנה — שינוי שם דגל ב-`feature_flags`
 
-**Regex ל-Homeless** (אומת בניסויים קודמים):
-```
-/(?:var\s+phone\s*=\s*["']|tel:|טלפון[^0-9]{0,5})(0(?:5\d|[2-9])-?\d{7})/
-```
-ולידציה: 10 ספרות אחרי הסרת מקפים, מתחיל ב-`05` (סלולרי) או `0[2-4,8-9]` (קווי).
-
-**בטיחות מערכות קיימות:**
-- אפס שינוי ב-scout, matching, availability check.
-- העמודות החדשות מתווספות עם default ולא NOT NULL.
-- ה-worker עצמאי לחלוטין, לא חולק משאבים עם תהליכים אחרים.
-- Kill switch זמין מהרגע הראשון.
-
-### מה לא בשלב 1
-- Yad2 (דורש probe נוסף לוודא תוכן ה-JSON של gw.yad2.co.il)
-- Madlan (אותו דבר)
-- אינטגרציה אוטומטית עם WhatsApp templates (הטלפון פשוט יישמר ב-DB, ה-UI הקיים יציג אותו)
-
-### הזמנה לאישור
-מאשר את שלב 1 כפי שמתואר? אם כן — אעבור ל-build mode ואבנה הכל בסשן אחד: מיגרציה → 2 Edge Functions → cron → kill switch → UI tile.
+מאשר? ברגע שתאשר אעבור ל-build mode ואבצע את כל ה-4 שלבים בסשן אחד.
