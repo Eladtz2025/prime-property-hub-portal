@@ -3,10 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Activity, Hourglass, CheckCircle, Database, Phone } from 'lucide-react';
+import { Search, Activity, Hourglass, CheckCircle, Database } from 'lucide-react';
 import { ScoutedPropertiesTable } from '@/components/scout/ScoutedPropertiesTable';
 import { ChecksDashboard } from '@/components/scout/ChecksDashboard';
-import { PhoneExtractionDashboard } from '@/components/scout/PhoneExtractionDashboard';
 import { ScoutMetricTile } from '@/components/scout/ScoutMetricTile';
 import { ScoutPieChart } from '@/components/scout/ScoutPieChart';
 
