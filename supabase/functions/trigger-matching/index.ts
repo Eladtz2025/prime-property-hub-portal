@@ -175,6 +175,17 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
 
   console.log(`✅ Lead ${leadId} re-matched: ${updatedCount} properties matched, ${totalRejected} rejected`);
 
+  // Also re-match this lead against our OWN properties (fire-and-forget)
+  fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/match-own-properties`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ lead_id: leadId })
+  }).then(r => r.ok ? console.log('✅ own-properties re-match triggered') : console.error(`❌ own-properties: ${r.status}`))
+    .catch(e => console.error('❌ own-properties trigger error:', e?.message));
+
   return new Response(JSON.stringify({
     success: true,
     lead_id: leadId,
@@ -376,6 +387,17 @@ serve(async (req) => {
     }
 
     console.log(`✅ Matching orchestration complete: ${triggeredCount}/${batches.length} batches triggered`);
+
+    // Also trigger our OWN properties matching (fire-and-forget) — runs against ALL eligible leads
+    fetch(`${supabaseUrl}/functions/v1/match-own-properties`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({})
+    }).then(r => r.ok ? console.log('✅ own-properties full match triggered') : console.error(`❌ own-properties: ${r.status}`))
+      .catch(e => console.error('❌ own-properties trigger error:', e?.message));
 
     return new Response(JSON.stringify({
       success: true,

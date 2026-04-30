@@ -1835,6 +1835,54 @@ export type Database = {
           },
         ]
       }
+      own_property_matches: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          match_reasons: string[]
+          match_score: number
+          priority: number
+          property_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          match_reasons?: string[]
+          match_score?: number
+          priority?: number
+          property_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          match_reasons?: string[]
+          match_score?: number
+          priority?: number
+          property_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "own_property_matches_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "contact_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "own_property_matches_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           action: string
@@ -4390,6 +4438,31 @@ export type Database = {
         }
         Returns: {
           id: string
+        }[]
+      }
+      get_unified_customer_matches: {
+        Args: { customer_uuid: string; include_dismissed?: boolean }
+        Returns: {
+          address: string
+          city: string
+          created_at: string
+          duplicate_group_id: string
+          duplicates_count: number
+          id: string
+          is_dismissed: boolean
+          is_private: boolean
+          match_reasons: string[]
+          match_score: number
+          neighborhood: string
+          price: number
+          priority: number
+          property_type: string
+          rooms: number
+          size: number
+          source: string
+          source_table: string
+          source_url: string
+          title: string
         }[]
       }
       has_role: {

@@ -372,18 +372,28 @@ export async function calculateMatch(
     return { lead, matchScore: 0, matchReasons: ['לא צוינו חדרים בנכס'], priority: 0 };
   }
   
-  // ===== SIZE MUST BE IN RANGE =====
-  if (property.size && property.size > 0) {
-    if (lead.size_min && property.size < lead.size_min) {
-      return { lead, matchScore: 0, matchReasons: [`נדרש מינימום ${lead.size_min} מ״ר, בנכס יש ${property.size}`], priority: 0 };
+  // ===== SIZE MUST BE IN RANGE (with 15% flexibility) =====
+  // Strict policy: size missing → reject; size beyond 15% flex → reject.
+  const SIZE_FLEX = 0.15;
+  if (lead.size_min || lead.size_max) {
+    if (!property.size || property.size <= 0) {
+      return { lead, matchScore: 0, matchReasons: ['לא צוין גודל בנכס'], priority: 0 };
     }
-    if (lead.size_max && property.size > lead.size_max) {
-      return { lead, matchScore: 0, matchReasons: [`נדרש מקסימום ${lead.size_max} מ״ר, בנכס יש ${property.size}`], priority: 0 };
+    if (lead.size_min) {
+      const minAllowed = lead.size_min * (1 - SIZE_FLEX);
+      if (property.size < minAllowed) {
+        return { lead, matchScore: 0, matchReasons: [`נדרש מינימום ${lead.size_min} מ״ר (גמיש ${Math.round(minAllowed)}), בנכס יש ${property.size}`], priority: 0 };
+      }
+    }
+    if (lead.size_max) {
+      const maxAllowed = lead.size_max * (1 + SIZE_FLEX);
+      if (property.size > maxAllowed) {
+        return { lead, matchScore: 0, matchReasons: [`נדרש מקסימום ${lead.size_max} מ״ר (גמיש ${Math.round(maxAllowed)}), בנכס יש ${property.size}`], priority: 0 };
+      }
     }
     reasons.push(`${property.size} מ״ר ✓`);
-  } else if ((lead.size_min || lead.size_max) && property.property_type === 'sale') {
-    // Sale properties without size data when lead requires size — disqualify
-    return { lead, matchScore: 0, matchReasons: ['לא צוין גודל בנכס (מכירה)'], priority: 0 };
+  } else if (property.size && property.size > 0) {
+    reasons.push(`${property.size} מ״ר ✓`);
   }
   
   // ===== FLOOR PREFERENCE (sale only) =====
