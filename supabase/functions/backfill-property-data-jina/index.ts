@@ -551,6 +551,8 @@ Deno.serve(async (req) => {
 
     if (source_filter) {
       query = query.eq('source', source_filter);
+    } else if (madlanDisabled) {
+      query = query.neq('source', 'madlan');
     }
 
     if (only_recent) {
