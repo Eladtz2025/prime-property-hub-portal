@@ -65,6 +65,13 @@ export interface MatchResult {
   matchScore: number;
   matchReasons: string[];
   priority: number; // 0-100, higher = better match quality
+  /**
+   * True when the property was rejected SPECIFICALLY because a feature the lead
+   * marked as strict (parking/elevator/balcony/yard/roof/furnished) is missing
+   * or unknown on the property. Callers should mark scouted properties for
+   * backfill when this is set, so feature data gets enriched on the next cron.
+   */
+  needsBackfill?: boolean;
 }
 
 // ===== HELPER FUNCTIONS =====
