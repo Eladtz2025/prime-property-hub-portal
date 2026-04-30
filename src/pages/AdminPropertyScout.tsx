@@ -256,7 +256,7 @@ const AdminPropertyScout: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3" dir="ltr">
+          <TabsList className="grid w-full grid-cols-2" dir="ltr">
             <TabsTrigger value="dashboard" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <Activity className="h-4 w-4 shrink-0" />
               <span className="text-xs sm:text-sm">דשבורד בדיקות</span>
@@ -264,10 +264,6 @@ const AdminPropertyScout: React.FC = () => {
             <TabsTrigger value="properties" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
               <Search className="h-4 w-4 shrink-0" />
               <span className="text-xs sm:text-sm">דירות שנמצאו</span>
-            </TabsTrigger>
-            <TabsTrigger value="phones" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-3">
-              <Phone className="h-4 w-4 shrink-0" />
-              <span className="text-xs sm:text-sm">חילוץ טלפונים</span>
             </TabsTrigger>
           </TabsList>
 
@@ -277,10 +273,6 @@ const AdminPropertyScout: React.FC = () => {
 
           <TabsContent value="dashboard" className="mt-6">
             {activeTab === 'dashboard' && <ChecksDashboard />}
-          </TabsContent>
-
-          <TabsContent value="phones" className="mt-6">
-            {activeTab === 'phones' && <PhoneExtractionDashboard />}
           </TabsContent>
         </Tabs>
       </div>
