@@ -1,5 +1,8 @@
 // Debug edge function: probe several header strategies against a Madlan listing URL
 // from the Supabase edge runtime IP, to find what bypasses 403.
+// Also runs the production parser end-to-end to verify feature extraction.
+
+import { fetchMadlanDetailFeatures } from "../_shared/madlan-detail-parser.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
