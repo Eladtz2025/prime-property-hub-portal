@@ -762,6 +762,75 @@ export const ChecksDashboard: React.FC = () => {
           onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_backfill_jina', enabled: v })}
           isTogglePending={toggleFlag.isPending}
         />
+
+        {/* Phone Extraction (Homeless) */}
+        <ProcessCard
+          title="חילוץ טלפונים"
+          icon={<Phone className="h-4 w-4 text-amber-600" />}
+          status={lastPhoneRun?.status === 'running' ? 'running' : lastPhoneRun ? 'completed' : 'idle'}
+          primaryValue={phoneStats?.pending ?? 0}
+          primaryLabel="ממתינים לחילוץ"
+          secondaryLine={`${(phoneStats?.totalWithPhone ?? 0).toLocaleString('he-IL')} טלפונים נמצאו`}
+          insight={
+            (phoneStats?.pending ?? 0) === 0
+              ? 'אין פריטים בתור'
+              : `${(phoneStats?.success ?? 0).toLocaleString('he-IL')} חולצו עד כה`
+          }
+          insightType={(phoneStats?.pending ?? 0) === 0 ? 'ok' : 'info'}
+          lastRun={formatLastRun(lastPhoneRun?.started_at, lastPhoneRun?.ended_at)}
+          onRun={() => triggerPhoneExtraction.mutate()}
+          isRunPending={triggerPhoneExtraction.isPending}
+          historyContent={
+            <div className="space-y-2">
+              {(phoneRuns ?? []).length === 0 && (
+                <p className="text-sm text-muted-foreground py-4 text-center">אין ריצות עדיין</p>
+              )}
+              {(phoneRuns ?? []).map((r: any) => (
+                <div key={r.id} className="flex items-center justify-between text-xs border-b pb-2">
+                  <span className="text-muted-foreground">
+                    {format(new Date(r.started_at), 'dd/MM HH:mm:ss', { locale: he })}
+                  </span>
+                  <span>{r.triggered_by === 'manual' ? 'ידני' : 'אוטומטי'}</span>
+                  <span className={r.phones_found > 0 ? 'text-green-600 font-medium' : 'text-muted-foreground'}>
+                    {r.phones_found > 0 ? `נמצא טלפון` : 'לא נמצא'}
+                  </span>
+                  {r.errors_count > 0 && <span className="text-destructive">שגיאה</span>}
+                </div>
+              ))}
+            </div>
+          }
+          historyTitle="היסטוריית חילוץ טלפונים"
+          settingsContent={
+            <div className="space-y-6">
+              <LogicDescription lines={[
+                'מחלץ מספרי טלפון של בעלי דירות פרטיות מ-Homeless בלבד (שלב 1).',
+                'הקרון רץ כל דקה, אבל פועל רק בחלון 09:00–22:00 שעון ישראל.',
+                'בכל ריצה מטופל נכס אחד עם השהייה רנדומלית של 15–45 שניות — קצב איטי ובטוח שלא נחסם.',
+                'אחרי 3 ניסיונות כושלים נכס מסומן כ-failed ולא ייבדק שוב.',
+                'הטלפון שמתגלה נשמר ב-owner_phone של הנכס לצמיתות.',
+                'ריצה ידנית מתעלמת מחלון השעות.',
+              ]} />
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-muted/40 rounded p-2">
+                  <p className="text-xs text-muted-foreground">בתור</p>
+                  <p className="text-lg font-bold">{(phoneStats?.pending ?? 0).toLocaleString('he-IL')}</p>
+                </div>
+                <div className="bg-muted/40 rounded p-2">
+                  <p className="text-xs text-muted-foreground">חולצו</p>
+                  <p className="text-lg font-bold text-green-600">{(phoneStats?.success ?? 0).toLocaleString('he-IL')}</p>
+                </div>
+                <div className="bg-muted/40 rounded p-2">
+                  <p className="text-xs text-muted-foreground">סה״כ עם טלפון</p>
+                  <p className="text-lg font-bold text-blue-600">{(phoneStats?.totalWithPhone ?? 0).toLocaleString('he-IL')}</p>
+                </div>
+              </div>
+            </div>
+          }
+          settingsTitle="הגדרות חילוץ טלפונים"
+          enabled={processFlags?.process_phone_extraction ?? false}
+          onToggleEnabled={(v) => toggleFlag.mutate({ name: 'process_phone_extraction', enabled: v })}
+          isTogglePending={toggleFlag.isPending}
+        />
       </div>
 
 
