@@ -1,0 +1,1 @@
+UPDATE public.scout_settings SET setting_value = '2', updated_at = now() WHERE category='availability' AND setting_key='batch_size';

@@ -1,67 +1,65 @@
-## הבעיה האמיתית בשורה אחת
+## הבעיה
 
-הקוד **כבר** מנסה לרוץ אחד-אחד עם דיליי, אבל יש שורה אחת שמקלקלת את זה:
+כרגע `batch_size` ב-`scout_settings` נמצא כנראה על 10. בכל הפעלה של `trigger-availability-check-jina` נמשכים עד 10 נכסים, נשלחים יחד ל-`check-property-availability-jina`, ושם הם מעובדים סדרתית — אבל בפועל זה אומר רצף ארוך של בקשות:
+- ~3 נכסי Madlan (Direct) עם 3s דיליי
+- ~7 נכסי Jina (yad2/homeless) עם 3s דיליי
+- סה"כ ~36 שניות של בקשות → קרוב מדי לטיימאאוט (55s) וגורם ל-429 ב-Jina
 
-```typescript
-// check-property-availability-jina/index.ts שורה 336
-const [madlanResults, jinaResults] = await Promise.all([
-  processMadlanParallel(),    // 1 madlan כל 6s
-  processJinaSequential(),    // 1 jina כל 3.5s
-]);
+## מה אתה רוצה (כפי שהבנתי)
+
+כל הפעלה תעבד **בדיוק 2 נכסים**:
+- 1 Madlan
+- 1 Jina (yad2 או homeless — הראשון בתור)
+
+עם דיליי של 3s ביניהם (אופציונלי, כי זה רק 2 בקשות).
+ה-self-chain ייקח את ה-2 הבאים ב-cron הבא או מיד.
+
+## התוכנית
+
+### 1. שינוי ב-`check-property-availability-jina/index.ts`
+
+בתוך `processPropertiesInParallel`, לאחר הפיצול ל-`madlanProps` ו-`jinaProps`, **לקחת רק את הראשון מכל קבוצה**:
+
+```ts
+const madlanToCheck = madlanProps.slice(0, 1);
+const jinaToCheck = jinaProps.slice(0, 1);
 ```
 
-`Promise.all` גורם לשני הזרמים לרוץ **במקביל** - אז madlan + jina נשלחים בו-זמנית, וכשיש chains כפולים זה הופך ל-burst.
+הנכסים שלא נבדקו פשוט לא יקבלו `availability_checked_at` חדש, ולכן ייבחרו שוב ב-batch הבא של ה-cron. (ה-RPC `get_properties_needing_availability_check` בלאו הכי ממיינת לפי גיל.)
 
-## ההצעה: שני שינויים זעירים בקובץ אחד
+### 2. עדכון לוגיקת ה-self-chain ב-`trigger-availability-check-jina/index.ts`
 
-**קובץ:** `supabase/functions/check-property-availability-jina/index.ts` בלבד.
+כרגע: `shouldSelfChain = hadFullBatch && remainingDailyQuota > 0 && !endTimeReached`.
+ה-`hadFullBatch` בודק `propertyIds.length >= batchSize`. אם `batchSize=10` ואנחנו מביאים 10 אבל בודקים רק 2 — זה ימשיך להשתשרשר וזה בסדר.
 
-### שינוי 1: הפיכת Madlan→Jina לסדרתי (שורה 336)
+**אבל** צריך לוודא שהמונה היומי (`dailyLimit`) מתעדכן נכון: כרגע `processedThisRun = result.checked` מחזיר 2 (לא 10), אז זה כבר עובד נכון.
 
-```typescript
-// לפני:
-const [madlanResults, jinaResults] = await Promise.all([
-  processMadlanParallel(),
-  processJinaSequential(),
-]);
+### 3. הקטנת `batch_size` ב-`scout_settings`
 
-// אחרי:
-const madlanResults = await processMadlanParallel();
-const jinaResults = await processJinaSequential();
-const allResults = [...madlanResults, ...jinaResults];
-```
+לעדכן את הערך ל-**2** במקום 10, כדי ש:
+- `fetchLimit` יביא רק 2 נכסים מהמסד (חיסכון בקריאות DB)
+- `hadFullBatch` עדיין יעבוד נכון (2 ≥ 2 → self-chain)
 
-**תוצאה:** רק נכס אחד נשלח ברגע נתון - madlan קודם (אחד-אחד, 3s דיליי), אז jina (אחד-אחד, 3s דיליי).
+זה יתבצע בעדכון רשומה בטבלת `scout_settings` (קטגוריה `availability`).
 
-### שינוי 2: דיליי אחיד 3 שניות (שורות 271 ו-307)
+### 4. ללא שינוי
 
-```typescript
-// Madlan: שורה 271
-const delayBetweenBatches = 3000; // היה 6000
+- לוגיקת זיהוי הסרה (`isListingRemoved`, parsers) — לא נוגעים. אם נכסים ב-yad2/homeless לא מזוהים כמוסרים זו בעיה נפרדת לטיפול בהמשך.
+- מנגנון ה-watchdog, ה-locks, ה-cleanup — נשארים כמו שהם.
+- תדירות ה-cron — נשארת כמו שהיא; ה-self-chain ימשיך לרוץ ברצף עד שיגמרו הנכסים או יושג הליימיט היומי.
 
-// Jina: שורה 307
-const JINA_DELAY_MS = 3000; // היה 3500
-```
+## תוצאה צפויה
 
-3 שניות בין כל בקשה = 20 בקשות בדקה (בדיוק במגבלת Jina, וגם בטוח ל-Madlan WAF).
+- כל invocation: 1 בקשה ל-Madlan + 1 בקשה ל-Jina = ~6-8 שניות סך הכל
+- אין יותר 429 מ-Jina
+- אין יותר טיימאאוטים ברמת ה-batch
+- הקצב הכולל נשאר דומה (self-chain רץ ברצף)
 
-### חישוב זמן batch של 10 נכסים
-- היום (במקביל + race): 25-35 שניות עם הרבה rate_limited
-- אחרי (סדרתי 3s): 10 × 3 = **30 שניות** עם 0 race
+## קבצים שיושפעו
 
-## מה לא משתנה
-- **קובץ אחד בלבד** נוגע (`check-property-availability-jina/index.ts`)
-- **0 שינויי DB**
-- **0 שינוי schema**
-- ה-headers של Madlan
-- `trigger-availability-check-jina` (שזה הקובץ הקריטי עם cron/watchdog/lock)
-- כל פונקציה אחרת במערכת
-- ה-UI
+- `supabase/functions/check-property-availability-jina/index.ts` — הוספת `.slice(0, 1)` לכל קבוצה
+- `scout_settings` (DB) — עדכון `batch_size` ל-2 בקטגוריה `availability`
 
-## אם משהו ישתבש
-מחזירים את 3 השורות לקדמותן בעריכה אחת. מקסימום 30 שניות לחזור אחורה.
+## שאלה לפני ביצוע
 
-## מה אני מבקש
-אישור לשינוי **3 שורות** בקובץ אחד. ללא נגיעה ב-DB, ללא נגיעה בקוד אחר.
-
-מאשר?
+האם להשאיר את הדיליי של 3s בין 2 הבקשות (לבטיחות), או לוותר עליו (מהר יותר, פחות בטוח)? ברירת המחדל שלי: **להשאיר 3s**.
