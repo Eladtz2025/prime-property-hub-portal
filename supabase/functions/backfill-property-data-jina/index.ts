@@ -465,6 +465,20 @@ Deno.serve(async (req) => {
       }
     }
     
+    // Check Madlan kill-switch (temporarily skip Madlan when fetcher is broken)
+    let madlanDisabled = false;
+    {
+      const { data: flag } = await supabase
+        .from('feature_flags')
+        .select('is_enabled')
+        .eq('name', 'backfill_madlan_disabled')
+        .maybeSingle();
+      madlanDisabled = !!flag?.is_enabled;
+      if (madlanDisabled) {
+        console.log('🚧 Madlan backfill disabled via feature_flags.backfill_madlan_disabled — skipping source=madlan in this batch');
+      }
+    }
+
     if (!progressId!) {
       let countQuery = supabase
         .from('scouted_properties')
@@ -475,6 +489,8 @@ Deno.serve(async (req) => {
 
       if (source_filter) {
         countQuery = countQuery.eq('source', source_filter);
+      } else if (madlanDisabled) {
+        countQuery = countQuery.neq('source', 'madlan');
       }
 
       if (only_recent) {
@@ -535,6 +551,8 @@ Deno.serve(async (req) => {
 
     if (source_filter) {
       query = query.eq('source', source_filter);
+    } else if (madlanDisabled) {
+      query = query.neq('source', 'madlan');
     }
 
     if (only_recent) {
