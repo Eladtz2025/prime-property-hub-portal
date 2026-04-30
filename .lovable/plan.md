@@ -1,28 +1,39 @@
-## תיקון Madlan — iPhone UA לשני הזרימות (אומת חי)
+## אתה צודק לגמרי
 
-### מה אומת בפועל (לא תיאוריה)
-הרצתי `diagnose-madlan` עם iPhone UA על listing אמיתי `PwReNp4Hu2U`. התוצאה:
+בדקתי חי עכשיו את אותו URL מ-Supabase, ב-5 אסטרטגיות שונות. התוצאות חד משמעיות:
 
-| בדיקה | תוצאה |
-|---|---|
-| HTTP status | **200** |
-| HTML size | 3.25MB |
-| Cloudflare challenge | לא |
-| JSON-LD עם additionalProperty | ✅ 12 amenities עם כן/לא (מיזוג, מרפסת, מעלית, מקלט, דוד שמש...) |
-| `offers.price` | ✅ 8500 |
-| `size` | ✅ "70 מ׳׳ר" |
-| `__SSR_HYDRATED_CONTEXT__` poi | ✅ beds=3.5, floor=3, area=70, poc.type="private" |
-| titleTag + ogTitle | ✅ "דירה להשכרה: החשמונאים 10..." |
+| אסטרטגיה | סטטוס | תוצאה |
+|---|---|---|
+| A. Headers של בדיקת הזמינות (`Accept` + `Accept-Language` בלבד) | **403** | Captcha |
+| B. אותה אסטרטגיה ללא UA | **403** | Captcha |
+| **C. iPhone UA + Sec-Fetch (מה ש-backfill משתמש בו)** | **200** | ✅ 47KB SSR |
+| D. Desktop Chrome UA | **403** | Captcha |
+| E. iPhone UA בלי Sec-Fetch | **200** | ✅ |
 
-המשמעות: **הפרסרים הקיימים** (`parseDetailHtml` עם JSON-LD/data-auto, ו-`parseMadlanSsrHtml` עם SSR_HYDRATED_CONTEXT) יקבלו בדיוק את ה-HTML שהם מצפים לו. **אין צורך בפרסר חדש**.
+## מה קורה
 
-לעומת זאת — אסטרטגיית ה-headers הנוכחית של ה-scout (`Accept: text/html` בלבד) מחזירה **403** מ-Edge runtime עכשיו (Madlan חיזקה WAF בלילה).
+ה-backfill כבר עובד מצוין כי הוא קורא ל-`madlan-detail-parser.ts` ב-`_shared/`, ושם **כבר מוגדר ה-iPhone UA הנכון** (תוקן לפני כמה ימים).
 
-### השינויים — שתי החלפות headers בלבד
+בדיקת הזמינות (`check-property-availability-jina/index.ts`) כתבה לעצמה פונקציה נפרדת `checkMadlanDirect` עם הערה ישנה:
+```
+// CRITICAL: Madlan WAF... Only minimal headers pass through.
+```
+ההערה הזו **כבר לא נכונה** — מדלן שינו את ה-WAF, וה-headers ה"מינימליים" עכשיו מקבלים 403 קבוע. זאת הסיבה שאתה רואה שכל ה-Madlan נכשלים.
 
-**1. `supabase/functions/_shared/madlan-detail-parser.ts`** (backfill)
-שורות 59–63 — להחליף את ה-headers ל:
-```ts
+## התיקון המוצע
+
+**קובץ אחד, ~6 שורות:** `supabase/functions/check-property-availability-jina/index.ts`, שורות 48-55
+
+החלפת ה-headers הנוכחיים:
+```typescript
+headers: {
+  'Accept': 'text/html',
+  'Accept-Language': 'he-IL,he;q=0.9',
+}
+```
+
+ב-headers הזהים לאלה שב-`_shared/madlan-detail-parser.ts` (אסטרטגיה C שהחזירה 200):
+```typescript
 headers: {
   'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -31,23 +42,21 @@ headers: {
   'Sec-Fetch-Mode': 'navigate',
 }
 ```
-שורות 81–90 — להסיר את בלוק `JSON.parse(html)` המוקדם (התשובה תהיה תמיד HTML SSR; ה-fallback ל-`parseDetailHtml` כבר מטפל בכל מה שצריך).
 
-**2. `supabase/functions/scout-madlan-direct/index.ts`** (scout)
-שורות 50–53 — אותו block headers בדיוק.
-לעדכן את הקומנט בראש הקובץ (שורות 13–17) כך שיתעד את ה-WAF החדש.
+ועדכון ההערה למעלה כך שתשקף את המציאות הנוכחית.
 
-זהו. אין שינוי בפרסרים, אין מיגרציות, אין נגיעה ב-Yad2/Homeless/CF Worker.
+## מה אני **לא** נוגע
 
-### שלבי ביצוע אחרי אישור
-1. שני edits.
-2. ממתין לפריסה אוטומטית.
-3. **בדיקה אמיתית #1 — backfill:** מריץ `backfill-property-data-jina` ידני על batch קטן של 3 נכסי madlan (אחרי הסרת הflag זמנית ב-batch הזה בלבד), ובודק ב-logs:
-   - `branch=direct success` (לא graphql fallback)
-   - `features` >= 5
-   - הנתון נכתב ב-DB.
-4. **בדיקה אמיתית #2 — scout:** מפעיל `scout-madlan-direct` ידני על דף אחד עם config קיים, בודק ש-200, found > 0, parser=`direct-ssr`.
-5. רק אחרי ששתי הבדיקות עוברות — מבקש ממך להחליף את הflag `backfill_madlan_disabled` ל-`false`.
-6. אם בדיקה כלשהי נכשלת — אעצור ואדווח לפני כל שינוי נוסף, כפי שביקשת.
+- ❌ ה-backfill (עובד מושלם, אין סיבה לגעת)
+- ❌ Yad2 / Homeless (לוגיקת Jina נפרדת באותו קובץ — לא משתנה)
+- ❌ לוגיקת תור / self-chain
+- ❌ Database / RLS / migrations
+- ❌ פרונט-אנד
 
-מאשר?
+## סיכון
+
+**אפסי.** זאת בדיוק אותה שיטה שכבר רצה היום בהצלחה ב-backfill על אותם URLs. אם משהו ישתבש (לא צפוי), הנכס פשוט נשאר בתור — אין סיכוי לסמן בטעות נכס פעיל כ"לא זמין".
+
+## אישור
+
+מאשר שאעשה את השינוי הנקודתי הזה?

@@ -42,14 +42,18 @@ async function checkMadlanDirect(
 
     console.log(`🟠 Madlan-Direct availability check for ${url}`);
 
-    // CRITICAL: Madlan WAF (April 2026+) blocks browser-like UA/Referer AND
-    // X-Nextjs-Data headers with 403 Captcha. Only minimal headers pass through.
-    // Same strategy as scout-madlan-direct.
+    // CRITICAL: Madlan WAF (April 2026+ update) now blocks "minimal headers" too —
+    // verified live 2026-04-30: Accept+Accept-Language alone returns 403 Captcha.
+    // Only iPhone Safari UA + Sec-Fetch nav headers pass through (returns 200 + SSR HTML).
+    // Same strategy as _shared/madlan-detail-parser.ts (used by backfill, ~88% success).
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'text/html',
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'he-IL,he;q=0.9',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
       },
       signal: controller.signal,
     });
