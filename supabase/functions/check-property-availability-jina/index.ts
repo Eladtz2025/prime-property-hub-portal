@@ -304,7 +304,7 @@ async function processPropertiesInParallel(
   // --- Jina (Yad2/Homeless): sequential with 3.5s delay to stay under 20 RPM ---
   async function processJinaSequential(): Promise<CheckResult[]> {
     const results: CheckResult[] = [];
-    const JINA_DELAY_MS = 3500; // ~17 RPM, safely under 20 RPM limit
+    const JINA_DELAY_MS = 3000; // 1 request every 3s = 20 RPM, safely at Jina limit
 
     for (let i = 0; i < jinaProps.length; i++) {
       if (abortSignal.aborted) break;
