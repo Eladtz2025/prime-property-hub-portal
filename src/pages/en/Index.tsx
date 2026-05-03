@@ -119,7 +119,7 @@ const EnglishIndex = () => {
       <EnglishHeader />
 
       {/* Hero Section */}
-      <VideoHero title="CITY MARKET" imageUrl="/images/en/hero-last-one.png" />
+      <VideoHero title="CITY MARKET" />
 
       {/* Consultation Modal */}
       <ConsultationModal open={isConsultationOpen} onOpenChange={setIsConsultationOpen} />
