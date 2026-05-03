@@ -1,30 +1,16 @@
-## הבעיה
-ה-worker מחזיר `queue_empty` למרות שיש 304 נכסים פרטיים זמינים. הסיבה: filter פגום ב-PostgREST:
-```
-.not('phone_extraction_status', 'eq', 'success')
-```
-מתורגם ל-`status != 'success'` שמחזיר `NULL` (לא `true`) עבור שורות שבהן `status IS NULL` — כלומר כל הנכסים שעדיין לא נוסו מסוננים החוצה.
+## תיקון ספירת "ממתינים לחילוץ"
 
-## התיקון (קובץ אחד, שורה אחת)
-`supabase/functions/phone-extraction-worker/index.ts` — שורה 77:
+עדכון שאילתת ה-UI ב-`src/components/scout/ChecksDashboard.tsx` (שורה 509) כך שתכלול גם נכסים עם `phone_extraction_status = NULL` (אותם ~304 נכסים שנוספו לפני שמערכת החילוץ הופעלה).
 
-**במקום:**
-```ts
-.not('phone_extraction_status', 'eq', 'success')
+### שינוי טכני
+החלפה של:
 ```
-
-**להחליף ב:**
-```ts
+.not('phone_extraction_status', 'eq', 'success').not('phone_extraction_status', 'eq', 'not_found')
+```
+ל:
+```
 .or('phone_extraction_status.is.null,and(phone_extraction_status.neq.success,phone_extraction_status.neq.not_found)')
 ```
 
-זה תופס גם NULL וגם כל סטטוס שאינו `success`/`not_found`.
-
-## אימות אחרי
-- ללחוץ "הרץ עכשיו" בכרטיס "חילוץ טלפונים" → אמור להופיע ריצה ראשונה (לא `queue_empty`).
-- לבדוק ש"בתור" יורד מ-304.
-
-## אפס סיכון
-- שינוי בקובץ edge function אחד בלבד.
-- לא נוגעים ב-DB, ב-cron, או בקבצים אחרים.
-- אם משהו לא טוב — מכבים את ה-toggle מה-UI.
+### תוצאה צפויה
+מונה "בתור" יקפוץ מ-0 ל-~304, וה-Worker (שכבר תוקן) יתחיל לעבד אותם אחד-אחד לפי שעון 09:00–22:00.

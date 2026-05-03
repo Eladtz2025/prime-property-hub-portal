@@ -506,7 +506,7 @@ export const ChecksDashboard: React.FC = () => {
         .eq('source', 'homeless');
 
       const [pendingRes, successRes, withPhoneRes] = await Promise.all([
-        baseQ().or('owner_phone.is.null,owner_phone.eq.').lt('phone_extraction_attempts', 3).not('phone_extraction_status', 'eq', 'success').not('phone_extraction_status', 'eq', 'not_found'),
+        baseQ().or('owner_phone.is.null,owner_phone.eq.').lt('phone_extraction_attempts', 3).or('phone_extraction_status.is.null,and(phone_extraction_status.neq.success,phone_extraction_status.neq.not_found)'),
         baseQ().eq('phone_extraction_status', 'success'),
         baseQ().not('owner_phone', 'is', null).not('owner_phone', 'eq', ''),
       ]);
