@@ -22,32 +22,55 @@ function normalizePhone(raw: string): string | null {
   return digits;
 }
 
-function extractPhoneFromHomelessHtml(html: string): string | null {
-  // Strategy 1: var phone = "..."
-  const m1 = html.match(/var\s+phone\s*=\s*["']([^"']+)["']/i);
-  if (m1) {
-    const p = normalizePhone(m1[1]);
-    if (p) return p;
+function parseHomelessUrl(url: string): { boardType: string; adId: string } | null {
+  // e.g. https://www.homeless.co.il/sale/viewad,257070.aspx
+  const m = url.match(/homeless\.co\.il\/([^\/]+)\/viewad,(\d+)\.aspx/i);
+  if (!m) return null;
+  return { boardType: m[1], adId: m[2] };
+}
+
+async function fetchHomelessPhone(sourceUrl: string): Promise<{ phone: string | null; httpStatus: number; error: string | null }> {
+  const parsed = parseHomelessUrl(sourceUrl);
+  if (!parsed) return { phone: null, httpStatus: 0, error: 'invalid_homeless_url' };
+
+  const resp = await fetch('https://www.homeless.co.il/TrackEngagement.ashx', {
+    method: 'POST',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': '*/*',
+      'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
+      'X-Requested-With': 'XMLHttpRequest',
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'Referer': sourceUrl,
+      'Origin': 'https://www.homeless.co.il',
+    },
+    body: `action=phonereveal&boardType=${encodeURIComponent(parsed.boardType)}&adId=${encodeURIComponent(parsed.adId)}`,
+  });
+
+  if (!resp.ok) {
+    return { phone: null, httpStatus: resp.status, error: `http_${resp.status}` };
   }
-  // Strategy 2: tel: links
-  const telMatches = html.matchAll(/tel:([+\d\-\s()]+)/gi);
-  for (const m of telMatches) {
-    const p = normalizePhone(m[1]);
-    if (p) return p;
+
+  const text = await resp.text();
+  let raw: string | null = null;
+  try {
+    const j = JSON.parse(text);
+    raw = typeof j?.d === 'string' ? j.d : null;
+  } catch {
+    raw = text;
   }
-  // Strategy 3: Hebrew label "טלפון"
-  const m3 = html.match(/טלפון[^0-9]{0,10}([\d\-\s]{9,15})/);
-  if (m3) {
-    const p = normalizePhone(m3[1]);
-    if (p) return p;
+
+  if (!raw || raw.trim() === '' || raw.trim() === '0') {
+    return { phone: null, httpStatus: resp.status, error: null };
   }
-  // Strategy 4: any 050-9999999 / 03-1234567 pattern within "contact" sections
-  const generic = html.match(/\b(0(?:5\d|[2-4]|[7-9]\d?)[-\s]?\d{6,7})\b/);
-  if (generic) {
-    const p = normalizePhone(generic[1]);
-    if (p) return p;
+
+  // raw can be "050-XXXXXXX" or "050-XXXXXXX,03-YYYYYYY"
+  const candidates = raw.split(',').map((s) => s.trim()).filter(Boolean);
+  for (const c of candidates) {
+    const p = normalizePhone(c);
+    if (p) return { phone: p, httpStatus: resp.status, error: null };
   }
-  return null;
+  return { phone: null, httpStatus: resp.status, error: null };
 }
 
 Deno.serve(async (req) => {
@@ -70,21 +93,10 @@ Deno.serve(async (req) => {
 
     try {
       if (source === 'homeless' || source_url.includes('homeless')) {
-        const resp = await fetch(source_url, {
-          headers: {
-            'Accept': 'text/html,application/xhtml+xml',
-            'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          },
-        });
-        httpStatus = resp.status;
-        if (resp.ok) {
-          const html = await resp.text();
-          phone = extractPhoneFromHomelessHtml(html);
-        } else {
-          errorMsg = `http_${resp.status}`;
-          await resp.text().catch(() => {});
-        }
+        const r = await fetchHomelessPhone(source_url);
+        phone = r.phone;
+        httpStatus = r.httpStatus;
+        errorMsg = r.error;
       } else {
         errorMsg = `source_not_supported:${source}`;
       }

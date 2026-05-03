@@ -1,16 +1,25 @@
-## תיקון ספירת "ממתינים לחילוץ"
+## תיקון חילוץ טלפונים מ-Homeless + הבהרה לגבי הכפתור לעצור
 
-עדכון שאילתת ה-UI ב-`src/components/scout/ChecksDashboard.tsx` (שורה 509) כך שתכלול גם נכסים עם `phone_extraction_status = NULL` (אותם ~304 נכסים שנוספו לפני שמערכת החילוץ הופעלה).
+### בעיה 1: לא מחלץ — סיבה מאומתת
+ה-HTML של homeless.co.il כבר לא מכיל את הטלפון. הוא מוצג רק אחרי לחיצה על "הצגת מספר טלפון", שמפעילה קריאת AJAX:
+```
+POST https://www.homeless.co.il/TrackEngagement.ashx
+Body: action=phonereveal&boardType=sale&adId=257070
+Response: {"d":"050-4063715"}
+```
+בדקתי ידנית — הקריאה מחזירה את הטלפון בהצלחה ללא חסימות.
 
-### שינוי טכני
-החלפה של:
-```
-.not('phone_extraction_status', 'eq', 'success').not('phone_extraction_status', 'eq', 'not_found')
-```
-ל:
-```
-.or('phone_extraction_status.is.null,and(phone_extraction_status.neq.success,phone_extraction_status.neq.not_found)')
-```
+### בעיה 2: כפתור עצור
+הכפתור הקיים זה ה-**Toggle "מופעל/כבוי"** בכרטיס (למעלה משמאל). כשמכבים אותו, ה-Worker מחזיר `feature_flag_disabled` בריצה הבאה ולא מבצע כלום. זה ה"עצור" — אין צורך בכפתור נפרד.
+
+ה-Worker כבר מעבד נכס אחד בלבד בכל ריצה (השהייה 15-45ש), לכן אין "ריצה ארוכה" שצריך להפסיק באמצע.
+
+### תיקון
+בקובץ `supabase/functions/extract-phone/index.ts`, להחליף את הלוגיקה של Homeless:
+1. לחלץ `boardType` ו-`adId` מה-URL (regex על תבנית `/{boardType}/viewad,{adId}.aspx`).
+2. לקרוא ישירות ל-`POST /TrackEngagement.ashx` עם הכותרות הנדרשות (`X-Requested-With: XMLHttpRequest`, `Referer`).
+3. לפרסר את `data.d` (יכול להיות גם "050-X,03-Y" — לקחת את הראשון התקין).
+4. אם `d` ריק או "0" — סטטוס `not_found`.
 
 ### תוצאה צפויה
-מונה "בתור" יקפוץ מ-0 ל-~304, וה-Worker (שכבר תוקן) יתחיל לעבד אותם אחד-אחד לפי שעון 09:00–22:00.
+תוך דקות בודדות יתחילו להיווצר רשומות `phones_found: 1` ב-`phone_extraction_runs`, והמונה "טלפונים נמצאו" יעלה.
