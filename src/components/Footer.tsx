@@ -85,7 +85,15 @@ const Footer = () => {
 
         <div className="border-t border-luxury-foreground/20 mt-6 md:mt-8 pt-6 md:pt-8">
           <p className="text-sm text-luxury-foreground/60 text-center">
-            © {currentYear} City Market Properties. כל הזכויות שמורות.
+            <Link
+              to="/he/sitemap"
+              title="מפת האתר"
+              aria-label="מפת האתר"
+              className="hover:text-secondary transition-colors cursor-pointer"
+            >
+              ©
+            </Link>
+            {" "}{currentYear} City Market Properties. כל הזכויות שמורות.
           </p>
         </div>
       </div>

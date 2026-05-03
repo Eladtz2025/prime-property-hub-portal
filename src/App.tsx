@@ -43,6 +43,8 @@ const HebrewNeveTzedek = React.lazy(() => import('./pages/he/neighborhoods/NeveT
 const HebrewFlorentin = React.lazy(() => import('./pages/he/neighborhoods/Florentin'));
 const HebrewDizengoff = React.lazy(() => import('./pages/he/neighborhoods/Dizengoff'));
 const HebrewOldNorth = React.lazy(() => import('./pages/he/neighborhoods/OldNorth'));
+const HebrewSitemap = React.lazy(() => import('./pages/he/Sitemap'));
+const EnglishSitemap = React.lazy(() => import('./pages/en/Sitemap'));
 const Properties = React.lazy(() => import('./pages/Properties').then(m => ({ default: m.Properties })));
 const HebrewInsights = React.lazy(() => import('./pages/he/Insights'));
 const HebrewInsightDetail = React.lazy(() => import('./pages/he/InsightDetail'));
@@ -191,6 +193,9 @@ const AppContent: React.FC = () => {
           <Route path="/he/property/:id" element={<PropertyDetailPage />} />
           <Route path="/he/insights" element={<HebrewInsights />} />
           <Route path="/he/insights/:id" element={<HebrewInsightDetail />} />
+          <Route path="/he/sitemap" element={<HebrewSitemap />} />
+          <Route path="/en/sitemap" element={<EnglishSitemap />} />
+          <Route path="/site-map" element={<Navigate to="/he/sitemap" replace />} />
           
           {/* English Public Routes */}
             <Route path="/en" element={<EnglishIndex />} />

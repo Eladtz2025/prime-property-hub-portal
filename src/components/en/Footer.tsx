@@ -172,7 +172,17 @@ const EnglishFooter = () => {
         {/* Copyright */}
         <div className="text-center">
           <p className="font-montserrat text-xs text-background/50">
-            © {currentYear} City Market Properties. All rights reserved.
+            <span
+              onClick={() => navigate('/en/sitemap')}
+              title="Sitemap"
+              role="link"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter') navigate('/en/sitemap'); }}
+              className="hover:text-background transition-colors cursor-pointer"
+            >
+              ©
+            </span>
+            {" "}{currentYear} City Market Properties. All rights reserved.
           </p>
         </div>
       </div>
