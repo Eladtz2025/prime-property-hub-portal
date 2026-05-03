@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     .eq('source', 'homeless')
     .or('owner_phone.is.null,owner_phone.eq.')
     .lt('phone_extraction_attempts', 3)
-    .not('phone_extraction_status', 'eq', 'success')
+    .or('phone_extraction_status.is.null,and(phone_extraction_status.neq.success,phone_extraction_status.neq.not_found)')
     .not('source_url', 'is', null)
     .order('phone_extraction_attempts', { ascending: true })
     .order('created_at', { ascending: true })

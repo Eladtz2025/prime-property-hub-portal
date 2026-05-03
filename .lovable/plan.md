@@ -1,30 +1,30 @@
-## מטרה
-להפעיל את חילוץ הטלפונים על ~304 נכסי Homeless פרטיים, ללא נגיעה בקוד או במערכות אחרות.
+## הבעיה
+ה-worker מחזיר `queue_empty` למרות שיש 304 נכסים פרטיים זמינים. הסיבה: filter פגום ב-PostgREST:
+```
+.not('phone_extraction_status', 'eq', 'success')
+```
+מתורגם ל-`status != 'success'` שמחזיר `NULL` (לא `true`) עבור שורות שבהן `status IS NULL` — כלומר כל הנכסים שעדיין לא נוסו מסוננים החוצה.
 
-## מצב נוכחי (אין צורך לבנות שום דבר)
-- Edge Functions `phone-extraction-worker` + `extract-phone` — כבר קיימים ופעילים.
-- Cron `phone-extraction-worker-every-min` — רץ כל דקה, מסונן לחלון 09:00–22:00 ישראל.
-- UI ב-`ChecksDashboard.tsx` (תחת AdminPropertyScout) כבר כולל:
-  - כפתור הפעלה/כיבוי (toggle ל-`process_phone_extraction`)
-  - מד התקדמות: בתור / חולצו / סה״כ עם טלפון
-  - היסטוריית ריצות + הגדרות
-- Safety: השהייה רנדומלית 15–45 שניות בין נכסים, מקס׳ 3 נסיונות, מקור Homeless בלבד.
+## התיקון (קובץ אחד, שורה אחת)
+`supabase/functions/phone-extraction-worker/index.ts` — שורה 77:
 
-## הפעולה היחידה הנדרשת
-שינוי ערך אחד ב-`feature_flags`:
-```sql
-UPDATE feature_flags
-SET enabled = true, updated_at = now()
-WHERE name = 'process_phone_extraction';
+**במקום:**
+```ts
+.not('phone_extraction_status', 'eq', 'success')
 ```
 
-## אפס סיכון למערכות אחרות
-- לא נוגעים בשום קובץ קוד, לא בסכמת DB, לא ב-cron, לא ב-edge function.
-- כל שינוי אחר (סקאוט, התאמות, זמינות, backfill) ממשיך לעבוד בדיוק כפי שהוא היום — ה-flag הזה מבודד.
-- אם משהו לא טוב — מכבים בלחיצה אחת מה-UI (אותו toggle).
+**להחליף ב:**
+```ts
+.or('phone_extraction_status.is.null,and(phone_extraction_status.neq.success,phone_extraction_status.neq.not_found)')
+```
 
-## קצב צפוי
-~1 נכס לדקה בחלון 09:00–22:00 (13 שעות = ~780 ניסיונות ביום). 304 נכסים יסתיימו ביום עבודה אחד עד יומיים, תלוי בכמות הצלחות מול נסיונות חוזרים.
+זה תופס גם NULL וגם כל סטטוס שאינו `success`/`not_found`.
 
-## מעקב
-דרך הכרטיס "חילוץ טלפונים" ב-Property Scout — מספר ה"בתור" ירד, "חולצו" יעלה. אם רואים עלייה חריגה ב-failed או חסימות — מכבים את ה-toggle.
+## אימות אחרי
+- ללחוץ "הרץ עכשיו" בכרטיס "חילוץ טלפונים" → אמור להופיע ריצה ראשונה (לא `queue_empty`).
+- לבדוק ש"בתור" יורד מ-304.
+
+## אפס סיכון
+- שינוי בקובץ edge function אחד בלבד.
+- לא נוגעים ב-DB, ב-cron, או בקבצים אחרים.
+- אם משהו לא טוב — מכבים את ה-toggle מה-UI.
