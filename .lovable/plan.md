@@ -1,51 +1,42 @@
-## מפת אתר (Sitemap Page)
+# תוכנית אופטימיזציית מהירות האתר
 
-יצירת עמוד מפת אתר ציבורי בסגנון מינימליסטי-יוקרתי תואם למותג (Playfair Display, גוונים זהובים #D4AF37, RTL לעברית, LTR לאנגלית), עם קישור אליו דרך אייקון ה-© בתחתית העמוד.
+## מטרה
+להאיץ משמעותית את טעינת הפרונט הציבורי (HE + EN) על ידי דחיסת תמונות כבדות ותיקון טעינת ה-Hero, ללא שינוי ויזואלי מורגש.
 
-### 1. עמודי Sitemap חדשים
+## מה ישתנה
 
-**`src/pages/he/Sitemap.tsx`** — עמוד עברית עם `dir="rtl"`:
-- כותרת ראשית: "מפת האתר" + תת-כותרת "SITEMAP" + אייקון מפה (Lucide `Map`)
-- רקע כהה לאזור הכותרת (luxury), תוכן על רקע בהיר
-- כרטיסים בגריד 3 עמודות (1 במובייל), כל כרטיס עם אייקון + כותרת + רשימת קישורים. כל פריט מציג: שם בעברית מימין, ה-path הטכני משמאל בפונט מונוספייס.
+### 1. דחיסת אייקון ולוגו
+- `public/images/city-market-icon.png` (2.1MB) → גרסת WebP ב-192px (~8-15KB)
+- `public/city-market-logo.png` (1.2MB) → גרסת WebP ב-512px (~20KB) לשימוש ב-OG
+- שימוש ב-`<picture>` עם fallback ל-PNG הקיים לדפדפנים ישנים
 
-קבוצות:
-- **עמודים ראשיים** — דף הבית, השכרות, מכירות, ניהול נכסים, פרויקטים חדשים, שכונות, תובנות, אודות, צור קשר
-- **שכונות** — רוטשילד, נווה צדק, פלורנטין, דיזנגוף, צפון ישן
-- **טפסים ושירותים** — טופס לקוח (client-intake), בעלי מקצוע (professionals/shared)
-- **שפות** — מעבר ל-English (קישור ל-`/en/sitemap`)
+### 2. תיקון טעינת ה-Hero
+- ב-`src/pages/Index.tsx` וב-`src/pages/en/Index.tsx`: הסרת `imageUrl` קשיח שמכריח טעינת PNG כבד
+- וידוא ש-`VideoHero` משתמש ב-srcset הרספונסיבי הקיים (640w/1024w/1920w WebP)
+- דחיסה מחדש של `hero-last-one*.webp` לאיכות 80-82 (~400-600KB במקום ~2MB)
 
-**`src/pages/en/Sitemap.tsx`** — מקבילה באנגלית עם `dir="ltr"`, אותו מבנה, קישור ל-`/he/sitemap`.
+### 3. Preload ל-LCP
+- ב-`index.html`: הוספת `<link rel="preload" as="image" href="/images/en/hero-last-one-1024w.webp" imagesrcset="..." imagesizes="100vw">`
+- מאפשר לדפדפן להתחיל להוריד את תמונת ה-Hero מיד, במקביל ל-JS
 
-### 2. ראוטים ב-`src/App.tsx`
+### 4. ניקוי קבצים מיותרים
+- מחיקת `public/images/en/hero-options/` (2.7MB, לא בשימוש)
+- מחיקת קבצי PNG ישנים שכבר יש להם תחליף WebP
 
-הוספת:
-```
-<Route path="/he/sitemap" element={<HebrewSitemap />} />
-<Route path="/en/sitemap" element={<EnglishSitemap />} />
-<Route path="/sitemap" element={<Navigate to="/he/sitemap" replace />} />
-```
-(lazy-loaded כמו שאר העמודים)
+### 5. Lazy loading
+- מעבר על קומפוננטות גלריה/כרטיסי נכסים ווידוא `loading="lazy"` ו-`decoding="async"` בכל תמונה שמתחת לקיפול
 
-### 3. עדכון Footer — הפיכת © לקישור
+## תוצאה צפויה
+- אייקון: 2.1MB → ~10KB (חיסכון פי 200)
+- לוגו: 1.2MB → ~20KB
+- Hero: 3.1MB → ~500KB
+- **סך הכל**: ~6MB → ~600KB בטעינה ראשונית של דף הבית
+- LCP צפוי לרדת מ-4-6 שניות ל-1-2 שניות בחיבור סביר
 
-**`src/components/Footer.tsx`** (עברית):
-שינוי שורת הקופירייט מ-`<p>` ל-`<Link to="/he/sitemap">` עטוף סביב הסימן ©, עם hover לזהב (`hover:text-secondary`). שאר הטקסט נשאר רגיל.
+## ללא שינוי ויזואלי
+WebP באיכות 80-85 זהה לעין לעומת המקור. הגדלים החדשים תואמים את הגדלים שבהם התמונות מוצגות בפועל.
 
-**`src/components/en/Footer.tsx`** (אנגלית):
-אותו דבר, ה-© הופך ל-`<Link to="/en/sitemap">`.
-
-הסימן © יקבל `cursor-pointer`, `transition-colors`, ו-`title="מפת האתר"` / `title="Sitemap"` לנגישות.
-
-### 4. עיצוב
-
-- Playfair Display לכותרות, Inter/Montserrat לגוף
-- מסגרות זהב עדינות (`border-secondary/30`) על הכרטיסים
-- רווחים נדיבים, אייקונים מ-Lucide (Home, Building2, MapPin, FileText, Languages)
-- מותאם מובייל (גריד מתכווץ), שומר על RTL/LTR לפי שפה
-
-### הערות טכניות
-
-- אין צורך ב-DB או edge functions — תוכן סטטי.
-- הקישורים נבנים ידנית מתוך הראוטים הקיימים ב-`App.tsx` (לא דינמי).
-- לא נוגעים ב-`public/sitemap.xml` (זה ה-XML ל-SEO, נשאר כמו שהוא).
+## פרטים טכניים
+- הדחיסה נעשית עם `sharp` או `cwebp` במהלך הריצה (script חד-פעמי) ולא דרך הדפדפן
+- שמירה על שמות קבצים קיימים (`-640w.webp`, `-1024w.webp`, `-1920w.webp`) כך שה-srcset הקיים ימשיך לעבוד
+- אין שינויים ב-DB, אין migrations, אין שינוי בלוגיקה עסקית
