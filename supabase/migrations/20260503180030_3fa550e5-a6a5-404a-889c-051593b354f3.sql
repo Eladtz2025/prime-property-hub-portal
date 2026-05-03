@@ -1,0 +1,1 @@
+UPDATE public.feature_flags SET is_enabled = true, updated_at = now() WHERE name = 'process_phone_extraction';
