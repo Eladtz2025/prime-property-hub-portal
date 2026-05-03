@@ -1,65 +1,51 @@
-## הבעיה
+## מפת אתר (Sitemap Page)
 
-כרגע `batch_size` ב-`scout_settings` נמצא כנראה על 10. בכל הפעלה של `trigger-availability-check-jina` נמשכים עד 10 נכסים, נשלחים יחד ל-`check-property-availability-jina`, ושם הם מעובדים סדרתית — אבל בפועל זה אומר רצף ארוך של בקשות:
-- ~3 נכסי Madlan (Direct) עם 3s דיליי
-- ~7 נכסי Jina (yad2/homeless) עם 3s דיליי
-- סה"כ ~36 שניות של בקשות → קרוב מדי לטיימאאוט (55s) וגורם ל-429 ב-Jina
+יצירת עמוד מפת אתר ציבורי בסגנון מינימליסטי-יוקרתי תואם למותג (Playfair Display, גוונים זהובים #D4AF37, RTL לעברית, LTR לאנגלית), עם קישור אליו דרך אייקון ה-© בתחתית העמוד.
 
-## מה אתה רוצה (כפי שהבנתי)
+### 1. עמודי Sitemap חדשים
 
-כל הפעלה תעבד **בדיוק 2 נכסים**:
-- 1 Madlan
-- 1 Jina (yad2 או homeless — הראשון בתור)
+**`src/pages/he/Sitemap.tsx`** — עמוד עברית עם `dir="rtl"`:
+- כותרת ראשית: "מפת האתר" + תת-כותרת "SITEMAP" + אייקון מפה (Lucide `Map`)
+- רקע כהה לאזור הכותרת (luxury), תוכן על רקע בהיר
+- כרטיסים בגריד 3 עמודות (1 במובייל), כל כרטיס עם אייקון + כותרת + רשימת קישורים. כל פריט מציג: שם בעברית מימין, ה-path הטכני משמאל בפונט מונוספייס.
 
-עם דיליי של 3s ביניהם (אופציונלי, כי זה רק 2 בקשות).
-ה-self-chain ייקח את ה-2 הבאים ב-cron הבא או מיד.
+קבוצות:
+- **עמודים ראשיים** — דף הבית, השכרות, מכירות, ניהול נכסים, פרויקטים חדשים, שכונות, תובנות, אודות, צור קשר
+- **שכונות** — רוטשילד, נווה צדק, פלורנטין, דיזנגוף, צפון ישן
+- **טפסים ושירותים** — טופס לקוח (client-intake), בעלי מקצוע (professionals/shared)
+- **שפות** — מעבר ל-English (קישור ל-`/en/sitemap`)
 
-## התוכנית
+**`src/pages/en/Sitemap.tsx`** — מקבילה באנגלית עם `dir="ltr"`, אותו מבנה, קישור ל-`/he/sitemap`.
 
-### 1. שינוי ב-`check-property-availability-jina/index.ts`
+### 2. ראוטים ב-`src/App.tsx`
 
-בתוך `processPropertiesInParallel`, לאחר הפיצול ל-`madlanProps` ו-`jinaProps`, **לקחת רק את הראשון מכל קבוצה**:
-
-```ts
-const madlanToCheck = madlanProps.slice(0, 1);
-const jinaToCheck = jinaProps.slice(0, 1);
+הוספת:
 ```
+<Route path="/he/sitemap" element={<HebrewSitemap />} />
+<Route path="/en/sitemap" element={<EnglishSitemap />} />
+<Route path="/sitemap" element={<Navigate to="/he/sitemap" replace />} />
+```
+(lazy-loaded כמו שאר העמודים)
 
-הנכסים שלא נבדקו פשוט לא יקבלו `availability_checked_at` חדש, ולכן ייבחרו שוב ב-batch הבא של ה-cron. (ה-RPC `get_properties_needing_availability_check` בלאו הכי ממיינת לפי גיל.)
+### 3. עדכון Footer — הפיכת © לקישור
 
-### 2. עדכון לוגיקת ה-self-chain ב-`trigger-availability-check-jina/index.ts`
+**`src/components/Footer.tsx`** (עברית):
+שינוי שורת הקופירייט מ-`<p>` ל-`<Link to="/he/sitemap">` עטוף סביב הסימן ©, עם hover לזהב (`hover:text-secondary`). שאר הטקסט נשאר רגיל.
 
-כרגע: `shouldSelfChain = hadFullBatch && remainingDailyQuota > 0 && !endTimeReached`.
-ה-`hadFullBatch` בודק `propertyIds.length >= batchSize`. אם `batchSize=10` ואנחנו מביאים 10 אבל בודקים רק 2 — זה ימשיך להשתשרשר וזה בסדר.
+**`src/components/en/Footer.tsx`** (אנגלית):
+אותו דבר, ה-© הופך ל-`<Link to="/en/sitemap">`.
 
-**אבל** צריך לוודא שהמונה היומי (`dailyLimit`) מתעדכן נכון: כרגע `processedThisRun = result.checked` מחזיר 2 (לא 10), אז זה כבר עובד נכון.
+הסימן © יקבל `cursor-pointer`, `transition-colors`, ו-`title="מפת האתר"` / `title="Sitemap"` לנגישות.
 
-### 3. הקטנת `batch_size` ב-`scout_settings`
+### 4. עיצוב
 
-לעדכן את הערך ל-**2** במקום 10, כדי ש:
-- `fetchLimit` יביא רק 2 נכסים מהמסד (חיסכון בקריאות DB)
-- `hadFullBatch` עדיין יעבוד נכון (2 ≥ 2 → self-chain)
+- Playfair Display לכותרות, Inter/Montserrat לגוף
+- מסגרות זהב עדינות (`border-secondary/30`) על הכרטיסים
+- רווחים נדיבים, אייקונים מ-Lucide (Home, Building2, MapPin, FileText, Languages)
+- מותאם מובייל (גריד מתכווץ), שומר על RTL/LTR לפי שפה
 
-זה יתבצע בעדכון רשומה בטבלת `scout_settings` (קטגוריה `availability`).
+### הערות טכניות
 
-### 4. ללא שינוי
-
-- לוגיקת זיהוי הסרה (`isListingRemoved`, parsers) — לא נוגעים. אם נכסים ב-yad2/homeless לא מזוהים כמוסרים זו בעיה נפרדת לטיפול בהמשך.
-- מנגנון ה-watchdog, ה-locks, ה-cleanup — נשארים כמו שהם.
-- תדירות ה-cron — נשארת כמו שהיא; ה-self-chain ימשיך לרוץ ברצף עד שיגמרו הנכסים או יושג הליימיט היומי.
-
-## תוצאה צפויה
-
-- כל invocation: 1 בקשה ל-Madlan + 1 בקשה ל-Jina = ~6-8 שניות סך הכל
-- אין יותר 429 מ-Jina
-- אין יותר טיימאאוטים ברמת ה-batch
-- הקצב הכולל נשאר דומה (self-chain רץ ברצף)
-
-## קבצים שיושפעו
-
-- `supabase/functions/check-property-availability-jina/index.ts` — הוספת `.slice(0, 1)` לכל קבוצה
-- `scout_settings` (DB) — עדכון `batch_size` ל-2 בקטגוריה `availability`
-
-## שאלה לפני ביצוע
-
-האם להשאיר את הדיליי של 3s בין 2 הבקשות (לבטיחות), או לוותר עליו (מהר יותר, פחות בטוח)? ברירת המחדל שלי: **להשאיר 3s**.
+- אין צורך ב-DB או edge functions — תוכן סטטי.
+- הקישורים נבנים ידנית מתוך הראוטים הקיימים ב-`App.tsx` (לא דינמי).
+- לא נוגעים ב-`public/sitemap.xml` (זה ה-XML ל-SEO, נשאר כמו שהוא).
