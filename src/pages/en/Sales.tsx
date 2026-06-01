@@ -29,7 +29,7 @@ const EnglishSales = () => {
     city: prop.city,
     neighborhood: prop.neighborhood_en || 'Tel Aviv',
     status: prop.status,
-    price: prop.price || prop.monthly_rent || 0,
+    price: prop.price || 0,
     rooms: prop.rooms,
     property_size: prop.property_size,
     description: prop.description_en || prop.description || '',
@@ -114,7 +114,7 @@ const EnglishSales = () => {
                       }}
                     />
                     <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded font-bold text-sm">
-                      ₪ {property.price.toLocaleString()}
+                      {property.price ? `₪ ${property.price.toLocaleString()}` : 'Price on request'}
                     </div>
                     {/* Status Badge for Sold Properties */}
                     {(property as any).status === 'occupied' && (
