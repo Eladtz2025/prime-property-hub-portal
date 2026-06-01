@@ -62,7 +62,7 @@ const EnglishManagement = () => {
   const { translations, isLoading: isTranslating } = useTranslation(textsToTranslate);
 
   const filteredProperties = (properties || []).filter((property) => {
-    const locationLabel = property.neighborhood_en || property.neighborhood || property.city || '';
+    const locationLabel = property.neighborhood_en || 'Tel Aviv';
     const matchesSearch = locationLabel.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
@@ -150,7 +150,7 @@ const EnglishManagement = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => {
                 // Use neighborhood instead of street address for privacy
-                const locationLabel = property.neighborhood_en || property.neighborhood || property.city || '';
+                const locationLabel = property.neighborhood_en || 'Tel Aviv';
                 
                 // Create English titles based on property data
                 const buildingType = property.property_size && property.property_size > 400 

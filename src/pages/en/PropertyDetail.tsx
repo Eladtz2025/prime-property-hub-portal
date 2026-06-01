@@ -24,7 +24,7 @@ const EnglishPropertyDetail = () => {
   // Get English texts from database
   const translatedTitle = property?.title_en || property?.title || '';
   const translatedDescription = property?.description_en || property?.description || '';
-  const translatedNeighborhood = property?.neighborhood_en || property?.neighborhood || property?.city || '';
+  const translatedNeighborhood = property?.neighborhood_en || 'Tel Aviv';
 
   // Convert property images to PropertyImage format
   const allImages: (PropertyImage & { isFurnished?: boolean })[] = property?.images.map(img => ({

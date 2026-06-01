@@ -84,7 +84,7 @@ const NewDevelopments = () => {
 
   // Group by neighborhood (English)
   const grouped = projects.reduce<Record<string, typeof projects>>((acc, project) => {
-    const key = project.neighborhood_en || project.neighborhood || project.city || "Other";
+    const key = project.neighborhood_en || "Other";
     if (!acc[key]) acc[key] = [];
     acc[key].push(project);
     return acc;
@@ -140,7 +140,7 @@ const NewDevelopments = () => {
                     key={project.id}
                     id={project.id}
                     name={project.title_en || project.title || project.address}
-                    neighborhood={project.neighborhood_en || project.neighborhood || ''}
+                    neighborhood={project.neighborhood_en || ''}
                     city={translateCity(project.city || '')}
                     description={project.description_en || project.description || undefined}
                     roomsRange={project.rooms_range || undefined}

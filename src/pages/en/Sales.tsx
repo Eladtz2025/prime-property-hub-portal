@@ -27,7 +27,7 @@ const EnglishSales = () => {
     title: prop.title_en || prop.title || '',
     address: prop.address,
     city: prop.city,
-    neighborhood: prop.neighborhood_en || prop.neighborhood || prop.city,
+    neighborhood: prop.neighborhood_en || 'Tel Aviv',
     status: prop.status,
     price: prop.price || prop.monthly_rent || 0,
     rooms: prop.rooms,
