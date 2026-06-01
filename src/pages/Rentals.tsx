@@ -15,118 +15,33 @@ import { Helmet } from "react-helmet";
 import HreflangMeta from '@/components/seo/HreflangMeta';
 import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from '@/components/seo/SchemaOrg';
 
-// Use real database data
-const USE_REAL_DATA = true;
-
 const Rentals = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [cityFilter, setCityFilter] = useState('all');
   const [roomsFilter, setRoomsFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState('');
-  
+
   // Fetch real data from database
   const { data: realProperties, isLoading } = usePublicProperties({ propertyType: 'rental' });
 
-  // Mock data - נכסים לדוגמה
-  const mockProperties = [
-    {
-      id: '1',
-      title: 'דירת 4 חדרים משופצת ברחוב דיזנגוף',
-      address: 'דיזנגוף 125, תל אביב',
-      city: 'תל אביב',
-      monthly_rent: 8500,
-      rooms: 4,
-      property_size: 95,
-      description: 'דירה יפהפייה ומשופצת בלב הצפון הישן, תקרות גבוהות, ריצוף מקורי, מרפסת גדולה עם נוף לשדרות. במרחק הליכה מהים, בתי קפה ומסעדות.',
-      image: '/images/properties/rental-dizengoff-interior.jpg',
-      parking: true,
-      elevator: true,
-      balcony: true,
-      yard: false
-    },
-    {
-      id: '2',
-      title: 'דירת 3 חדרים בשכונת בן יהודה',
-      address: 'בן יהודה 43, תל אביב',
-      city: 'תל אביב',
-      monthly_rent: 7200,
-      rooms: 3,
-      property_size: 75,
-      description: 'דירה מקסימה עם אופי בשכונה שקטה, 2 חדרי שינה מרווחים, מטבח מודרני, מזגן בכל חדר. קרוב לתחבורה ציבורית ולכל השירותים.',
-      image: '/images/properties/rental-ben-yehuda-kitchen.jpg',
-      parking: false,
-      elevator: false,
-      balcony: true,
-      yard: false
-    },
-    {
-      id: '3',
-      title: 'דירת 3 חדרים משופצת ברחוב גורדון',
-      address: 'גורדון 18, תל אביב',
-      city: 'תל אביב',
-      monthly_rent: 6800,
-      rooms: 3,
-      property_size: 65,
-      description: 'דירה חמודה ומשופצת בשכונת נווה צדק, קרוב לחוף הים, 2 חדרי שינה, סלון מואר, מטבח מעוצב. מתאים לזוג או משפחה קטנה.',
-      image: '/images/properties/rental-gordon-bedroom.jpg',
-      parking: false,
-      elevator: false,
-      balcony: true,
-      yard: false
-    },
-    {
-      id: '4',
-      title: 'סטודיו מרוהט ברחוב פרישמן',
-      address: 'פרישמן 45, תל אביב',
-      city: 'תל אביב',
-      monthly_rent: 4500,
-      rooms: 1,
-      property_size: 32,
-      description: 'סטודיו מעוצב ומרוהט, מטבח פתוח, אזור מיטה מופרד, מרפסת קטנה. מתאים לעצמאי או זוג צעיר. במרחק הליכה מהים.',
-      image: '/images/properties/studio-frishman.jpg',
-      parking: false,
-      elevator: true,
-      balcony: true,
-      yard: false
-    },
-    {
-      id: '5',
-      title: 'דירת 2 חדרים ברחוב ביאליק',
-      address: 'ביאליק 12, תל אביב',
-      city: 'תל אביב',
-      monthly_rent: 5500,
-      rooms: 2,
-      property_size: 55,
-      description: 'דירה נעימה במיקום מרכזי, חדר שינה אחד, סלון בהיר, מטבח מאובזר. קרוב לתחנת רכבת ולמרכזי קניות. מתאים ליחיד או זוג.',
-      image: '/images/properties/2br-bialik.jpg',
-      parking: false,
-      elevator: false,
-      balcony: false,
-      yard: false
-    }
-  ];
-
-  // Use real data or mock data based on toggle
-  const properties = USE_REAL_DATA 
-    ? (realProperties || []).map(prop => ({
-        id: prop.id,
-        title: prop.title || '',
-        address: prop.address,
-        city: prop.city,
-        neighborhood: (prop as any).neighborhood,
-        status: prop.status,
-        monthly_rent: prop.monthly_rent || 0,
-        rooms: prop.rooms,
-        property_size: prop.property_size,
-        description: prop.description || '',
-        image: prop.images[0]?.image_url || '',
-        parking: prop.parking,
-        elevator: prop.elevator,
-        balcony: prop.balcony,
-        yard: prop.yard
-      }))
-    : mockProperties;
+  const properties = (realProperties || []).map(prop => ({
+      id: prop.id,
+      title: prop.title || '',
+      address: prop.address,
+      city: prop.city,
+      neighborhood: (prop as any).neighborhood,
+      status: prop.status,
+      monthly_rent: prop.monthly_rent || 0,
+      rooms: prop.rooms,
+      property_size: prop.property_size,
+      description: prop.description || '',
+      image: prop.images[0]?.image_url || '',
+      parking: prop.parking,
+      elevator: prop.elevator,
+      balcony: prop.balcony,
+      yard: prop.yard
+    }));
 
   const filteredProperties = properties.filter((property) => {
     const matchesSearch = ((property as any).neighborhood || property.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||

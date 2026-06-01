@@ -150,40 +150,40 @@ const Contact = () => {
             <div>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
+                  <label htmlFor="en-contact-name" className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
                     Name *
                   </label>
-                  <input type="text" required value={formData.name} onChange={e => setFormData({
+                  <input id="en-contact-name" name="name" type="text" required value={formData.name} onChange={e => setFormData({
                   ...formData,
                   name: e.target.value
                 })} className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat" placeholder="Your name" />
                 </div>
 
                 <div>
-                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
+                  <label htmlFor="en-contact-email" className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
                     Email *
                   </label>
-                  <input type="email" required value={formData.email} onChange={e => setFormData({
+                  <input id="en-contact-email" name="email" type="email" required value={formData.email} onChange={e => setFormData({
                   ...formData,
                   email: e.target.value
                 })} className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat" placeholder="your@email.com" />
                 </div>
 
                 <div>
-                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
+                  <label htmlFor="en-contact-phone" className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
                     Phone
                   </label>
-                  <input type="tel" value={formData.phone} onChange={e => setFormData({
+                  <input id="en-contact-phone" name="phone" type="tel" value={formData.phone} onChange={e => setFormData({
                   ...formData,
                   phone: e.target.value
                 })} className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat" placeholder="+972-XX-XXXXXXX" />
                 </div>
 
                 <div>
-                  <label className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
+                  <label htmlFor="en-contact-message" className="font-montserrat text-sm tracking-wide uppercase text-foreground mb-2 block">
                     Message *
                   </label>
-                  <textarea required value={formData.message} onChange={e => setFormData({
+                  <textarea id="en-contact-message" name="message" required value={formData.message} onChange={e => setFormData({
                   ...formData,
                   message: e.target.value
                 })} rows={6} className="w-full px-6 py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat resize-none" placeholder="Tell us about your property needs..." />

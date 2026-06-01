@@ -73,7 +73,7 @@ const WhatsAppFloat = () => {
         touchAction: 'none',
       }}
       className="fixed z-[9999] h-14 w-14 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 bg-[#25D366] hover:bg-[#128C7E] border-0 cursor-pointer flex items-center justify-center p-0 select-none"
-      aria-label="צור קשר בוואטסאפ - WhatsApp"
+      aria-label={location.pathname.startsWith('/en') ? "Contact us on WhatsApp" : "צור קשר בוואטסאפ - WhatsApp"}
     >
       <svg 
         viewBox="0 0 32 32" 

@@ -15,92 +15,34 @@ import { Helmet } from "react-helmet";
 import HreflangMeta from '@/components/seo/HreflangMeta';
 import { BreadcrumbSchema, OrganizationSchema, WebSiteSchema } from '@/components/seo/SchemaOrg';
 
-// Use real database data
-const USE_REAL_DATA = true;
-
 const Sales = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [cityFilter, setCityFilter] = useState('all');
   const [roomsFilter, setRoomsFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState('');
-  
+
   // Fetch real data from database
   const { data: realProperties, isLoading } = usePublicProperties({ propertyType: 'sale' });
 
-  // Mock data - נכסים לדוגמה
-  const mockProperties = [
-    {
-      id: '1',
-      title: 'דירת 5 חדרים משופצת ברחוב רוטשילד',
-      address: 'רוטשילד 88, תל אביב',
-      city: 'תל אביב',
-      price: 5200000,
-      rooms: 5,
-      property_size: 130,
-      description: 'דירת יוקרה בבניין בוטיק משופץ, תקרות גבוהות, חלונות גדולים, מרפסת מרווחה. מיקום פרימיום על השדרה היוקרתית.',
-      image: '/images/properties/sale-rothschild-exterior.jpg',
-      features: ['חניה', 'מעלית', 'מרפסת']
-    },
-    {
-      id: '2',
-      title: 'פנטהאוז 4 חדרים ברחוב אלנבי',
-      address: 'אלנבי 234, תל אביב',
-      city: 'תל אביב',
-      price: 6800000,
-      rooms: 4,
-      property_size: 140,
-      description: 'פנטהאוז מדהים עם גג פרטי מרהיב, נוף לעיר, עיצוב מודרני, מטבח שף, 2 חדרי רחצה יוקרתיים. חניה כפולה.',
-      image: '/images/properties/penthouse-allenby.jpg',
-      features: ['חניה', 'מעלית', 'מרפסת', 'נוף פנורמי']
-    },
-    {
-      id: '3',
-      title: 'דירת 3 חדרים בסגנון באוהאוס ברחוב נחמני',
-      address: 'נחמני 14, תל אביב',
-      city: 'תל אביב',
-      price: 3900000,
-      rooms: 3,
-      property_size: 85,
-      description: 'דירה קלאסית בבניין באוהאוס משופץ, שימור אדריכלי, פרקט מקורי, תקרות גבוהות. קרוב לרוטשילד ולבתי קפה טרנדיים.',
-      image: '/images/properties/classic-nahmani.jpg',
-      features: ['מרפסת', 'סגנון באוהאוס']
-    },
-    {
-      id: '4',
-      title: 'דירת 4 חדרים עם מרפסת גדולה ברחוב דיזנגוף',
-      address: 'דיזנגוף 201, תל אביב',
-      city: 'תל אביב',
-      price: 4500000,
-      rooms: 4,
-      property_size: 120,
-      description: 'דירת גן משופצת, מרפסת ענקית 60 מ"ר, 3 חדרי שינה, סלון מרווח, מטבח חדש. אידיאלי למשפחה.',
-      image: '/images/properties/sale-dizengoff-terrace.jpg',
-      features: ['חניה', 'מעלית', 'מרפסת גדולה']
-    }
-  ];
-
-  // Use real data or mock data based on toggle
-  const properties = USE_REAL_DATA 
-    ? (realProperties || []).map(prop => ({
-        id: prop.id,
-        title: prop.title || '',
-        address: prop.address,
-        city: prop.city,
-        neighborhood: (prop as any).neighborhood,
-        status: prop.status,
-        price: prop.price || prop.monthly_rent || 0,
-        rooms: prop.rooms,
-        property_size: prop.property_size,
-        description: prop.description || '',
-        image: prop.images[0]?.image_url || '',
-        features: [
-          prop.parking ? 'חניה' : null,
-          prop.elevator ? 'מעלית' : null,
-          prop.balcony ? 'מרפסת' : null,
-        ].filter(Boolean) as string[]
-      }))
-    : mockProperties;
+  const properties = (realProperties || []).map(prop => ({
+      id: prop.id,
+      title: prop.title || '',
+      address: prop.address,
+      city: prop.city,
+      neighborhood: (prop as any).neighborhood,
+      status: prop.status,
+      price: prop.price || 0,
+      rooms: prop.rooms,
+      property_size: prop.property_size,
+      description: prop.description || '',
+      image: prop.images[0]?.image_url || '',
+      features: [
+        prop.parking ? 'חניה' : null,
+        prop.elevator ? 'מעלית' : null,
+        prop.balcony ? 'מרפסת' : null,
+      ].filter(Boolean) as string[]
+    }));
 
   const filteredProperties = properties.filter((property) => {
     const matchesSearch = ((property as any).neighborhood || property.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -1,8 +1,7 @@
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
 
 const EnglishFooter = () => {
-  const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -51,36 +50,11 @@ const EnglishFooter = () => {
               Services
             </h4>
             <div className="space-y-2 font-montserrat text-sm text-background/70">
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/sales')}
-              >
-                Buy
-              </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/rentals')}
-              >
-                Rent
-              </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/management')}
-              >
-                Property Management
-              </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/new-developments')}
-              >
-                New Developments
-              </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/insights')}
-              >
-                Insights
-              </p>
+              <Link to="/en/sales" className="block hover:text-background transition-colors">Buy</Link>
+              <Link to="/en/rentals" className="block hover:text-background transition-colors">Rent</Link>
+              <Link to="/en/management" className="block hover:text-background transition-colors">Property Management</Link>
+              <Link to="/en/new-developments" className="block hover:text-background transition-colors">New Developments</Link>
+              <Link to="/en/insights" className="block hover:text-background transition-colors">Insights</Link>
             </div>
           </div>
 
@@ -90,30 +64,10 @@ const EnglishFooter = () => {
               Areas
             </h4>
             <div className="space-y-2 font-montserrat text-sm text-background/70">
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/neighborhoods/neve-tzedek')}
-              >
-                Neve Tzedek
-              </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/neighborhoods/rothschild')}
-              >
-                Rothschild
-              </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/neighborhoods/florentin')}
-              >
-                Florentin
-              </p>
-              <p 
-                className="cursor-pointer hover:text-background transition-colors"
-                onClick={() => navigate('/en/neighborhoods/old-north')}
-              >
-                Old North
-              </p>
+              <Link to="/en/neighborhoods/neve-tzedek" className="block hover:text-background transition-colors">Neve Tzedek</Link>
+              <Link to="/en/neighborhoods/rothschild" className="block hover:text-background transition-colors">Rothschild</Link>
+              <Link to="/en/neighborhoods/florentin" className="block hover:text-background transition-colors">Florentin</Link>
+              <Link to="/en/neighborhoods/old-north" className="block hover:text-background transition-colors">Old North</Link>
             </div>
           </div>
 
@@ -146,26 +100,11 @@ const EnglishFooter = () => {
         {/* Bottom Links Bar */}
         <div className="border-t border-background/20 pt-6 mb-6">
           <div className="flex flex-wrap justify-center gap-6 font-montserrat text-xs text-background/60">
-            <span 
-              className="cursor-pointer hover:text-background transition-colors"
-              onClick={() => navigate('/en')}
-            >
-              Home
-            </span>
+            <Link to="/en" className="hover:text-background transition-colors">Home</Link>
             <span className="text-background/30">|</span>
-            <span 
-              className="cursor-pointer hover:text-background transition-colors"
-              onClick={() => navigate('/en/about')}
-            >
-              About
-            </span>
+            <Link to="/en/about" className="hover:text-background transition-colors">About</Link>
             <span className="text-background/30">|</span>
-            <span 
-              className="cursor-pointer hover:text-background transition-colors"
-              onClick={() => navigate('/en/contact')}
-            >
-              Contact
-            </span>
+            <Link to="/en/contact" className="hover:text-background transition-colors">Contact</Link>
           </div>
         </div>
 

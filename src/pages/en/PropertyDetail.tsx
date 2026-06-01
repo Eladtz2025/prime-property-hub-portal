@@ -147,6 +147,7 @@ const EnglishPropertyDetail = () => {
         <meta name="twitter:description" content={ogDescription} />
         <meta name="twitter:image" content={ogImage} />
       </Helmet>
+      <main>
       {/* Mobile Layout */}
       <div className="lg:hidden">
         {/* Breadcrumbs */}
@@ -160,7 +161,7 @@ const EnglishPropertyDetail = () => {
               {property.property_type === 'sale' ? 'For Sale' : 'For Rent'}
             </Link>
           <ChevronRight className="h-4 w-4" />
-            <span className="text-foreground">Property #{property.property_number}</span>
+            <span className="text-foreground">{translatedNeighborhood || property.address}</span>
           </nav>
         </div>
 
@@ -242,7 +243,7 @@ const EnglishPropertyDetail = () => {
 
           {/* Description */}
           <div>
-            <h3 className="text-lg font-playfair font-semibold mb-3">Property Description</h3>
+            <h2 className="text-lg font-playfair font-semibold mb-3">Property Description</h2>
             <p className="text-muted-foreground font-montserrat leading-relaxed">
               {translatedDescription}
             </p>
@@ -250,7 +251,7 @@ const EnglishPropertyDetail = () => {
 
           {/* Key Points */}
           <div>
-            <h3 className="text-lg font-playfair font-semibold mb-3">Key Features</h3>
+            <h2 className="text-lg font-playfair font-semibold mb-3">Key Features</h2>
             <div className="space-y-2">
               {getKeyPoints().map((point, index) => (
                 <div key={index} className="flex items-center gap-2">
@@ -441,23 +442,25 @@ const EnglishPropertyDetail = () => {
           }}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 font-montserrat">Full Name *</label>
-                <Input placeholder="Enter your full name" required />
+                <label htmlFor="prop-inquiry-name" className="block text-sm font-medium mb-2 font-montserrat">Full Name *</label>
+                <Input id="prop-inquiry-name" name="name" placeholder="Enter your full name" required />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 font-montserrat">Email *</label>
-                <Input type="email" placeholder="example@email.com" required />
+                <label htmlFor="prop-inquiry-email" className="block text-sm font-medium mb-2 font-montserrat">Email *</label>
+                <Input id="prop-inquiry-email" name="email" type="email" placeholder="example@email.com" required />
               </div>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2 font-montserrat">Phone</label>
-              <Input type="tel" placeholder="050-1234567" />
+              <label htmlFor="prop-inquiry-phone" className="block text-sm font-medium mb-2 font-montserrat">Phone</label>
+              <Input id="prop-inquiry-phone" name="phone" type="tel" placeholder="050-1234567" />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium mb-2 font-montserrat">Message *</label>
-              <textarea 
+              <label htmlFor="prop-inquiry-message" className="block text-sm font-medium mb-2 font-montserrat">Message *</label>
+              <textarea
+                id="prop-inquiry-message"
+                name="message"
                 className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm font-montserrat ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Tell us what you're looking for..."
                 required
@@ -471,6 +474,7 @@ const EnglishPropertyDetail = () => {
         </Card>
       </div>
 
+      </main>
       <EnglishFooter />
     </div>
   );

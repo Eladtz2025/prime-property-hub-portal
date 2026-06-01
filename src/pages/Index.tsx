@@ -225,21 +225,25 @@ const Index = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div className="space-y-4">
-                <input type="text" placeholder="שם" value={contactForm.name} onChange={e => setContactForm({
+                <label htmlFor="home-contact-name" className="sr-only">שם</label>
+                <input id="home-contact-name" name="name" type="text" placeholder="שם" value={contactForm.name} onChange={e => setContactForm({
                 ...contactForm,
                 name: e.target.value
               })} className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-sm md:text-base" />
-                <input type="email" placeholder="אימייל" value={contactForm.email} onChange={e => setContactForm({
+                <label htmlFor="home-contact-email" className="sr-only">אימייל</label>
+                <input id="home-contact-email" name="email" type="email" placeholder="אימייל" value={contactForm.email} onChange={e => setContactForm({
                 ...contactForm,
                 email: e.target.value
               })} className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-sm md:text-base" />
               </div>
               <div className="space-y-4">
-                <input type="tel" placeholder="054-123-4567" value={contactForm.phone} onChange={e => setContactForm({
+                <label htmlFor="home-contact-phone" className="sr-only">טלפון</label>
+                <input id="home-contact-phone" name="phone" type="tel" placeholder="054-123-4567" value={contactForm.phone} onChange={e => setContactForm({
                 ...contactForm,
                 phone: e.target.value
               })} className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat text-sm md:text-base" />
-                <textarea placeholder="הודעה" rows={4} value={contactForm.message} onChange={e => setContactForm({
+                <label htmlFor="home-contact-message" className="sr-only">הודעה</label>
+                <textarea id="home-contact-message" name="message" placeholder="הודעה" rows={4} value={contactForm.message} onChange={e => setContactForm({
                 ...contactForm,
                 message: e.target.value
               })} className="w-full px-4 md:px-6 py-3 md:py-4 bg-background border border-border focus:border-primary outline-none transition-colors font-montserrat resize-none text-sm md:text-base" />

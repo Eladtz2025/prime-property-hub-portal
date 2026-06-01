@@ -1,8 +1,7 @@
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
 
 const HebrewFooter = () => {
-  const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
 
   return <footer className="bg-foreground text-background" dir="rtl">
@@ -38,21 +37,11 @@ const HebrewFooter = () => {
               שירותים
             </h4>
             <div className="space-y-2 text-sm text-background/70">
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/sales')}>
-                מכירות
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/rentals')}>
-                השכרות
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/management')}>
-                ניהול נכסים
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/new-developments')}>
-                פרויקטים חדשים
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/insights')}>
-                תובנות
-              </p>
+              <Link to="/he/sales" className="block hover:text-background transition-colors">מכירות</Link>
+              <Link to="/he/rentals" className="block hover:text-background transition-colors">השכרות</Link>
+              <Link to="/he/management" className="block hover:text-background transition-colors">ניהול נכסים</Link>
+              <Link to="/he/new-developments" className="block hover:text-background transition-colors">פרויקטים חדשים</Link>
+              <Link to="/he/insights" className="block hover:text-background transition-colors">תובנות</Link>
             </div>
           </div>
 
@@ -62,18 +51,10 @@ const HebrewFooter = () => {
               אזורים
             </h4>
             <div className="space-y-2 text-sm text-background/70">
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/neve-tzedek')}>
-                נווה צדק
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/rothschild')}>
-                רוטשילד
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/old-north')}>
-                הצפון הישן
-              </p>
-              <p className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/neighborhoods/florentin')}>
-                פלורנטין
-              </p>
+              <Link to="/he/neighborhoods/neve-tzedek" className="block hover:text-background transition-colors">נווה צדק</Link>
+              <Link to="/he/neighborhoods/rothschild" className="block hover:text-background transition-colors">רוטשילד</Link>
+              <Link to="/he/neighborhoods/old-north" className="block hover:text-background transition-colors">הצפון הישן</Link>
+              <Link to="/he/neighborhoods/florentin" className="block hover:text-background transition-colors">פלורנטין</Link>
             </div>
           </div>
 
@@ -106,17 +87,11 @@ const HebrewFooter = () => {
         {/* Bottom Links Bar */}
         <div className="border-t border-background/20 pt-6 mb-6">
           <div className="flex flex-wrap justify-center gap-6 text-xs text-background/60">
-            <span className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he')}>
-              בית
-            </span>
+            <Link to="/he" className="hover:text-background transition-colors">בית</Link>
             <span className="text-background/30">|</span>
-            <span className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/about')}>
-              אודות
-            </span>
+            <Link to="/he/about" className="hover:text-background transition-colors">אודות</Link>
             <span className="text-background/30">|</span>
-            <span className="cursor-pointer hover:text-background transition-colors" onClick={() => navigate('/he/contact')}>
-              צור קשר
-            </span>
+            <Link to="/he/contact" className="hover:text-background transition-colors">צור קשר</Link>
           </div>
         </div>
 
