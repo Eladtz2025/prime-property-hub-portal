@@ -85,7 +85,7 @@ const HebrewFooter = () => {
             <ul className="space-y-3 text-sm text-background/70">
               <li className="flex items-center gap-2 justify-start">
                 <Phone className="h-4 w-4" />
-                <a href="tel:0545503055" className="hover:text-background transition-colors">
+                <a href="tel:+972545503055" className="hover:text-background transition-colors">
                   054-550-3055
                 </a>
               </li>
@@ -123,7 +123,16 @@ const HebrewFooter = () => {
         {/* Copyright */}
         <div className="text-center">
           <p className="text-xs text-background/50">
-            © {currentYear} City Market Properties. כל הזכויות שמורות.
+            © {currentYear} City Market Properties. כל הזכויות שמורות.{" "}
+            <span
+              onClick={() => navigate('/he/sitemap')}
+              role="link"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter') navigate('/he/sitemap'); }}
+              className="underline hover:text-background transition-colors cursor-pointer"
+            >
+              מפת האתר
+            </span>
           </p>
         </div>
       </div>

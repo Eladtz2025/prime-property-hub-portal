@@ -125,7 +125,7 @@ const EnglishFooter = () => {
             <ul className="space-y-3 font-montserrat text-sm text-background/70">
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
-                <a href="tel:0545503055" className="hover:text-background transition-colors">
+                <a href="tel:+972545503055" className="hover:text-background transition-colors">
                   054-550-3055
                 </a>
               </li>
@@ -172,17 +172,16 @@ const EnglishFooter = () => {
         {/* Copyright */}
         <div className="text-center">
           <p className="font-montserrat text-xs text-background/50">
+            © {currentYear} City Market Properties. All rights reserved.{" "}
             <span
               onClick={() => navigate('/en/sitemap')}
-              title="Sitemap"
               role="link"
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter') navigate('/en/sitemap'); }}
-              className="hover:text-background transition-colors cursor-pointer"
+              className="underline hover:text-background transition-colors cursor-pointer"
             >
-              ©
+              Sitemap
             </span>
-            {" "}{currentYear} City Market Properties. All rights reserved.
           </p>
         </div>
       </div>

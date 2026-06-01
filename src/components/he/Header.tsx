@@ -142,10 +142,10 @@ const HebrewHeader = () => {
           {/* Bottom: Social + contact info */}
           <div className="absolute bottom-10 left-0 right-0 flex flex-col items-center gap-4">
             <div className="flex items-center gap-6">
-              <a href="https://www.facebook.com/Ctmarket" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white transition-colors">
+              <a href="https://www.facebook.com/Ctmarket" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-white/60 hover:text-white transition-colors">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="https://www.instagram.com/citymarket/" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white transition-colors">
+              <a href="https://www.instagram.com/citymarket/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-white/60 hover:text-white transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
             </div>

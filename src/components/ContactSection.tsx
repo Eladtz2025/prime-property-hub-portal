@@ -49,7 +49,7 @@ const ContactSection = () => {
             </div>
             <h3 className="font-bold mb-2">שעות פעילות</h3>
             <p className="text-muted-foreground">
-              24/7<br />זמינים תמיד
+              א׳–ה׳: 9:00–18:00<br />ו׳: 9:00–14:00
             </p>
           </Card>
         </div>

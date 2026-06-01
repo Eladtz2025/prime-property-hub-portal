@@ -1,0 +1,30 @@
+# CITY MARKET Properties
+
+Real estate brokerage in Tel Aviv, Israel. Specializing in apartment rentals, property sales, and full property management services since 2008.
+
+## Pages
+
+- https://www.ctmarketproperties.com/he — Hebrew homepage
+- https://www.ctmarketproperties.com/en — English homepage
+- https://www.ctmarketproperties.com/he/rentals — Rental properties (Hebrew)
+- https://www.ctmarketproperties.com/en/rentals — Rental properties (English)
+- https://www.ctmarketproperties.com/he/sales — Properties for sale (Hebrew)
+- https://www.ctmarketproperties.com/en/sales — Properties for sale (English)
+- https://www.ctmarketproperties.com/he/management — Property management services (Hebrew)
+- https://www.ctmarketproperties.com/en/management — Property management services (English)
+- https://www.ctmarketproperties.com/he/new-developments — New development projects (Hebrew)
+- https://www.ctmarketproperties.com/en/new-developments — New development projects (English)
+- https://www.ctmarketproperties.com/he/neighborhoods — Tel Aviv neighborhoods guide (Hebrew)
+- https://www.ctmarketproperties.com/en/neighborhoods — Tel Aviv neighborhoods guide (English)
+- https://www.ctmarketproperties.com/he/insights — Real estate market insights (Hebrew)
+- https://www.ctmarketproperties.com/en/insights — Real estate market insights (English)
+- https://www.ctmarketproperties.com/he/about — About us (Hebrew)
+- https://www.ctmarketproperties.com/en/about — About us (English)
+- https://www.ctmarketproperties.com/he/contact — Contact page (Hebrew)
+- https://www.ctmarketproperties.com/en/contact — Contact page (English)
+
+## Contact
+
+Phone: +972-54-550-3055
+Email: citymarketlv@gmail.com
+Location: Tel Aviv, Israel

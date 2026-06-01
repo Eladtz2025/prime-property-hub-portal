@@ -340,6 +340,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                 <Button
                   variant="secondary"
                   size="icon"
+                  aria-label="Next image"
                   className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 h-10 w-10 md:h-12 md:w-12 shadow-lg z-20 opacity-80 hover:opacity-100"
                   onClick={goNext}
                 >
@@ -348,6 +349,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                 <Button
                   variant="secondary"
                   size="icon"
+                  aria-label="Previous image"
                   className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 h-10 w-10 md:h-12 md:w-12 shadow-lg z-20 opacity-80 hover:opacity-100"
                   onClick={goPrev}
                 >
@@ -449,6 +451,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Next image"
                   className="absolute left-2 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 h-12 w-12"
                   onClick={goNext}
                 >
@@ -457,6 +460,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Previous image"
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 h-12 w-12"
                   onClick={goPrev}
                 >

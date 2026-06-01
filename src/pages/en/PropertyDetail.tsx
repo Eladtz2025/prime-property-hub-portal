@@ -58,8 +58,7 @@ const EnglishPropertyDetail = () => {
   };
 
   const getShareUrl = () => {
-    const baseEdgeFunctionUrl = 'https://jswumsdymlooeobrxict.supabase.co/functions/v1/og-property';
-    return `${baseEdgeFunctionUrl}?id=${id}&lang=en`;
+    return `https://www.ctmarketproperties.com/en/property/${id}`;
   };
 
   const handleShare = async () => {
