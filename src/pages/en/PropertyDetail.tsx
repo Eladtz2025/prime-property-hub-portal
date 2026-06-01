@@ -298,7 +298,7 @@ const EnglishPropertyDetail = () => {
             {property.property_type === 'sale' ? 'For Sale' : 'For Rent'}
           </Link>
           <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground">Property #{property.property_number}</span>
+          <span className="text-foreground">{translatedNeighborhood || property.address}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
