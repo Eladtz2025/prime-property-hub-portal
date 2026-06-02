@@ -362,6 +362,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
               <Button
                 variant="secondary"
                 size="icon"
+                aria-label={isMusicPlaying ? "Mute background music" : "Play background music"}
                 className="absolute top-3 left-3 h-9 w-9 shadow-lg z-20"
                 onClick={toggleMusic}
               >
@@ -373,6 +374,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
               <Button
                 variant="secondary"
                 size="icon"
+                aria-label="View image fullscreen"
                 className="absolute top-3 right-3 h-9 w-9 shadow-lg z-20"
                 onClick={() => setIsFullscreen(true)}
               >
@@ -425,6 +427,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Close fullscreen"
             className="absolute top-4 right-4 z-50 text-white hover:bg-white/10 h-10 w-10"
             onClick={() => setIsFullscreen(false)}
           >
