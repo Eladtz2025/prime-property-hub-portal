@@ -102,7 +102,7 @@ const GoogleReviews = () => {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold truncate">{review.name}</h4>
+                        <div className="font-semibold truncate">{review.name}</div>
                         <p className="text-xs text-muted-foreground">{review.date}</p>
                       </div>
                     </div>

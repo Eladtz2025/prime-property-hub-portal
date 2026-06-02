@@ -179,7 +179,7 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
-            {neighborhoods.map(neighborhood => <div key={neighborhood.id} onClick={() => navigate(`/he/neighborhoods/${neighborhood.id}`)} className="group relative aspect-[3/4] overflow-hidden cursor-pointer" role="button" aria-label={`חקור את שכונת ${neighborhood.name}`} tabIndex={0} onKeyDown={e => {
+            {neighborhoods.map(neighborhood => <div key={neighborhood.id} onClick={() => navigate(`/he/neighborhoods/${neighborhood.id}`)} className="group relative aspect-[3/4] overflow-hidden cursor-pointer" role="button" aria-label={`${neighborhood.name} — חקור את השכונה`} tabIndex={0} onKeyDown={e => {
             if (e.key === 'Enter' || e.key === ' ') {
               navigate(`/he/neighborhoods/${neighborhood.id}`);
             }
@@ -251,7 +251,7 @@ const Index = () => {
             </div>
 
             <form onSubmit={handleContactSubmit} className="text-center mt-6 md:mt-8">
-              <button type="submit" className="reliz-button" aria-label="שלח הודעת WhatsApp">
+              <button type="submit" className="reliz-button" aria-label="שלח הודעה בוואטסאפ">
                 שלח הודעה
               </button>
             </form>
