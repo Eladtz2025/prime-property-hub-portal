@@ -179,7 +179,7 @@ Come explore with us the colorful mosaic of Tel Aviv.
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {neighborhoods.map(neighborhood => <div key={neighborhood.id} onClick={() => navigate(`/en/neighborhoods/${neighborhood.id}`)} className="group relative aspect-[3/4] overflow-hidden cursor-pointer" role="button" aria-label={neighborhood.name} tabIndex={0} onKeyDown={e => {
+            {neighborhoods.map(neighborhood => <div key={neighborhood.id} onClick={() => navigate(`/en/neighborhoods/${neighborhood.id}`)} className="group relative aspect-[3/4] overflow-hidden cursor-pointer" role="button" aria-label={`Explore ${neighborhood.name} neighborhood`} tabIndex={0} onKeyDown={e => {
             if (e.key === 'Enter' || e.key === ' ') {
               navigate(`/en/neighborhoods/${neighborhood.id}`);
             }
