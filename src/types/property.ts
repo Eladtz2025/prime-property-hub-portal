@@ -27,6 +27,8 @@ export interface Property {
   balcony?: boolean;
   mamad?: boolean;
   yard?: boolean;
+  roof?: boolean;
+  furnished?: boolean;
   balconyYardSize?: number;
   buildingFloors?: number;
   municipalTax?: number;

@@ -28,7 +28,9 @@ function adaptOwnProperty(p: Record<string, unknown>): ScoutedProperty {
   if (p.balcony !== null && p.balcony !== undefined) features.balcony = p.balcony as boolean;
   if (p.mamad !== null && p.mamad !== undefined) features.mamad = p.mamad as boolean;
   if (p.yard !== null && p.yard !== undefined) features.yard = p.yard as boolean;
+  if (p.roof !== null && p.roof !== undefined) features.roof = p.roof as boolean;
   if (p.has_storage !== null && p.has_storage !== undefined) (features as Record<string, unknown>).storage = p.has_storage;
+  if (p.furnished !== null && p.furnished !== undefined) features.furnished = p.furnished as boolean;
 
   const price = (propertyType === 'sale')
     ? (p.current_market_value as number) || (p.acquisition_cost as number) || 0
@@ -69,7 +71,7 @@ serve(async (req) => {
     // Fetch properties
     let propsQuery = supabase
       .from('properties')
-      .select('id, title, address, city, neighborhood, monthly_rent, current_market_value, acquisition_cost, rooms, property_size, floor, property_type, parking, elevator, balcony, mamad, yard, has_storage, description, available')
+      .select('id, title, address, city, neighborhood, monthly_rent, current_market_value, acquisition_cost, rooms, property_size, floor, property_type, parking, elevator, balcony, mamad, yard, has_storage, roof, furnished, description, available')
       .eq('available', true)
       .in('property_type', ['rental', 'sale']);
 

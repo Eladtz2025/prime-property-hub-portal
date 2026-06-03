@@ -298,7 +298,10 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
           parking: formData.parking || false,
           elevator: formData.elevator || false,
           balcony: formData.balcony || false,
+          mamad: formData.mamad || false,
           yard: formData.yard || false,
+          roof: formData.roof || false,
+          furnished: formData.furnished || false,
           balcony_yard_size: formData.balconyYardSize || null,
           bathrooms: (formData as any).bathrooms || null,
           building_floors: (formData as any).buildingFloors || null,
@@ -838,6 +841,24 @@ export const PropertyEditModal: React.FC<PropertyEditModalProps> = ({
                         onCheckedChange={(checked) => handleInputChange('yard', checked)}
                       />
                       <Label htmlFor="yard" className="cursor-pointer text-sm">חצר</Label>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-3 border rounded-md">
+                      <Switch
+                        id="roof"
+                        checked={formData.roof || false}
+                        onCheckedChange={(checked) => handleInputChange('roof', checked)}
+                      />
+                      <Label htmlFor="roof" className="cursor-pointer text-sm">גג</Label>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-3 border rounded-md">
+                      <Switch
+                        id="furnished"
+                        checked={formData.furnished || false}
+                        onCheckedChange={(checked) => handleInputChange('furnished', checked)}
+                      />
+                      <Label htmlFor="furnished" className="cursor-pointer text-sm">מרוהט</Label>
                     </div>
 
                     <div>

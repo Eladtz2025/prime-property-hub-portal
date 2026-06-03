@@ -67,6 +67,8 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     elevator: false,
     balcony: false,
     yard: false,
+    roof: false,
+    furnished: false,
     balconyYardSize: '',
     
     // Owner
@@ -271,6 +273,8 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           elevator: formData.elevator,
           balcony: formData.balcony,
           yard: formData.yard,
+          roof: formData.roof,
+          furnished: formData.furnished,
           balconyYardSize: (formData.balcony || formData.yard) && formData.balconyYardSize ? parseFloat(formData.balconyYardSize) : undefined,
         }),
         
@@ -364,6 +368,8 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         elevator: false,
         balcony: false,
         yard: false,
+        roof: false,
+        furnished: false,
         balconyYardSize: '',
         ownerName: '',
         ownerPhone: '',
@@ -760,6 +766,22 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                           onCheckedChange={(checked) => handleInputChange('yard', !!checked)}
                         />
                         <Label htmlFor="yard" className="cursor-pointer">חצר</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="roof"
+                          checked={formData.roof}
+                          onCheckedChange={(checked) => handleInputChange('roof', !!checked)}
+                        />
+                        <Label htmlFor="roof" className="cursor-pointer">גג</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="furnished"
+                          checked={formData.furnished}
+                          onCheckedChange={(checked) => handleInputChange('furnished', !!checked)}
+                        />
+                        <Label htmlFor="furnished" className="cursor-pointer">מרוהט</Label>
                       </div>
                       {(formData.balcony || formData.yard) && (
                         <div>

@@ -2698,6 +2698,8 @@ export type Database = {
           units_count: number | null
           updated_at: string
           yard: boolean | null
+          roof: boolean | null
+          furnished: boolean | null
         }
         Insert: {
           acquisition_cost?: number | null
@@ -2753,6 +2755,8 @@ export type Database = {
           units_count?: number | null
           updated_at?: string
           yard?: boolean | null
+          roof?: boolean | null
+          furnished?: boolean | null
         }
         Update: {
           acquisition_cost?: number | null
@@ -2808,6 +2812,8 @@ export type Database = {
           units_count?: number | null
           updated_at?: string
           yard?: boolean | null
+          roof?: boolean | null
+          furnished?: boolean | null
         }
         Relationships: [
           {
