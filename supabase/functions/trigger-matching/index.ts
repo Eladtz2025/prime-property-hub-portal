@@ -123,6 +123,7 @@ async function rematchSingleLead(leadId: string, supabase: any): Promise<Respons
         else if (reason.includes('חדרים')) category = 'חדרים לא בטווח';
         else if (reason.includes('מעלית')) category = 'אין מעלית';
         else if (reason.includes('חניה')) category = 'אין חניה';
+        else if (reason.includes('ממ״ד') || reason.includes('ממ"ד')) category = 'אין ממ״ד';
         else if (reason.includes('מרפסת') || reason.includes('חצר') || reason.includes('גג')) category = 'אין מרחב חיצוני';
         else if (reason.includes('כתובת') || reason.includes('שכונה מוגדרת')) category = 'כתובת חסרה/לא ספציפית';
         else if (reason.includes('תאריך כניסה') || reason.includes('לא פנוי')) category = 'תאריך כניסה לא מתאים';

@@ -446,7 +446,17 @@ export async function calculateMatch(
   } else if (lead.parking_required && property.features?.parking === true) {
     reasons.push('יש חניה ✓');
   }
-  
+
+  // Mamad (safe room / ממ"ד)
+  if (lead.mamad_required && lead.mamad_flexible === false) {
+    if (property.features?.mamad !== true) {
+      return { lead, matchScore: 0, matchReasons: ['נדרש ממ״ד - אין או לא ידוע'], priority: 0, needsBackfill: true };
+    }
+    reasons.push('יש ממ״ד (חובה) ✓');
+  } else if (lead.mamad_required && property.features?.mamad === true) {
+    reasons.push('יש ממ״ד ✓');
+  }
+
   // Outdoor space - OR mode vs AND mode
   if (lead.outdoor_space_any) {
     // OR mode: at least one of the selected outdoor features MUST be explicitly true
@@ -680,11 +690,17 @@ export function calculatePriorityScore(property: ScoutedProperty, lead: ContactL
   }
   
   // Parking: +8 pts
-  if (lead.parking_required && lead.parking_flexible && 
+  if (lead.parking_required && lead.parking_flexible &&
       property.features?.parking === true) {
     priority += 8;
   }
-  
+
+  // Mamad: +8 pts
+  if (lead.mamad_required && lead.mamad_flexible &&
+      property.features?.mamad === true) {
+    priority += 8;
+  }
+
   
   // Balcony: +6 pts
   if (lead.balcony_required && lead.balcony_flexible && 
@@ -719,6 +735,9 @@ export function calculatePriorityScore(property: ScoutedProperty, lead: ContactL
     priority -= 5;
   }
   if (lead.parking_required && !lead.parking_flexible && property.features?.parking == null) {
+    priority -= 5;
+  }
+  if (lead.mamad_required && !lead.mamad_flexible && property.features?.mamad == null) {
     priority -= 5;
   }
   if (lead.balcony_required && !lead.balcony_flexible && property.features?.balcony == null) {
