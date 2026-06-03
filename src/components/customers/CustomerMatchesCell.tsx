@@ -68,7 +68,12 @@ export const CustomerMatchesCell = ({
       const aPrivacy = getPrivacyOrder(a.matches[0]?.is_private);
       const bPrivacy = getPrivacyOrder(b.matches[0]?.is_private);
       if (aPrivacy !== bPrivacy) return aPrivacy - bPrivacy;
-      // Within same privacy level, keep score-based order
+      // Within same privacy level, best match-quality first (priority is the
+      // real 0-100 quality score; matchScore is binary 100 so it can't rank).
+      const aPriority = Math.max(...a.matches.map(m => m.priority));
+      const bPriority = Math.max(...b.matches.map(m => m.priority));
+      if (bPriority !== aPriority) return bPriority - aPriority;
+      // Final tiebreak: match score
       const aScore = Math.max(...a.matches.map(m => m.matchScore));
       const bScore = Math.max(...b.matches.map(m => m.matchScore));
       return bScore - aScore;
