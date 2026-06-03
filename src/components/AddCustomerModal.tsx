@@ -476,7 +476,6 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
                 <SelectContent>
                   <SelectItem value="rental">השכרה</SelectItem>
                   <SelectItem value="sale">מכירה</SelectItem>
-                  <SelectItem value="both">שניהם</SelectItem>
                 </SelectContent>
               </Select>
             </div>

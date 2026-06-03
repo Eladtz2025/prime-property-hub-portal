@@ -340,7 +340,6 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
                 <SelectContent>
                   <SelectItem value="rental">השכרה</SelectItem>
                   <SelectItem value="sale">מכירה</SelectItem>
-                  <SelectItem value="both">שניהם</SelectItem>
                 </SelectContent>
               </Select>
             </div>
