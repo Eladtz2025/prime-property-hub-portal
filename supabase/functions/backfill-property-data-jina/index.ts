@@ -15,6 +15,36 @@ const corsHeaders = {
 };
 
 // ============================================
+// Backfill retry policy (Fix 4: feature-data completeness)
+// ============================================
+// A failed scrape (429 rate-limit, WAF/403, timeout, parse miss) used to set
+// backfill_status='failed' permanently, stranding the property's features as null
+// forever (the processing query only picks up null/'pending' rows). Instead, re-queue
+// as 'pending' so the next batch retries it, up to MAX_BACKFILL_ATTEMPTS, then mark it
+// terminally 'failed'. This only re-attempts scraping — it never fabricates data, so it
+// cannot create wrong matches. Self-fetches the attempt count so it works regardless of
+// which columns a given SELECT requested.
+const MAX_BACKFILL_ATTEMPTS = 3;
+async function markBackfillFailed(supabase: any, propId: string): Promise<void> {
+  let attempts = MAX_BACKFILL_ATTEMPTS; // default to terminal if the read below fails
+  try {
+    const { data } = await supabase
+      .from('scouted_properties')
+      .select('backfill_attempts')
+      .eq('id', propId)
+      .single();
+    attempts = ((data?.backfill_attempts as number | null) ?? 0) + 1;
+  } catch (_e) {
+    // keep terminal failure — never loop forever
+  }
+  const status = attempts >= MAX_BACKFILL_ATTEMPTS ? 'failed' : 'pending';
+  await supabase
+    .from('scouted_properties')
+    .update({ backfill_status: status, backfill_attempts: attempts })
+    .eq('id', propId);
+}
+
+// ============================================
 // Blacklist Locations (Non-Tel Aviv)
 // ============================================
 
@@ -225,7 +255,7 @@ Deno.serve(async (req) => {
 
       let query = supabase
         .from('scouted_properties')
-        .update({ backfill_status: 'pending' }, { count: 'exact' })
+        .update({ backfill_status: 'pending', backfill_attempts: 0 }, { count: 'exact' })
         .eq('is_active', true)
         .in('backfill_status', statuses);
 
@@ -331,9 +361,7 @@ Deno.serve(async (req) => {
           }
 
           if (!detailResult || !detailResult.features || Object.keys(detailResult.features).length === 0) {
-            await supabase.from('scouted_properties')
-              .update({ backfill_status: 'failed' })
-              .eq('id', prop.id);
+            await markBackfillFailed(supabase, prop.id);
             r.status = 'scrape_failed';
             r.detail_raw = detailResult;
             results.push(r);
@@ -385,9 +413,7 @@ Deno.serve(async (req) => {
           r.images_count = updates.images?.length || 0;
           results.push(r);
         } catch (err: any) {
-          await supabase.from('scouted_properties')
-            .update({ backfill_status: 'failed' })
-            .eq('id', prop.id);
+          await markBackfillFailed(supabase, prop.id);
           r.status = 'error';
           r.error = err?.message || String(err);
           results.push(r);
@@ -732,7 +758,7 @@ Deno.serve(async (req) => {
         if (!prop.source_url || !prop.source_url.includes('http')) {
           failCount++;
           batchStats.total_processed++;
-          await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+          await markBackfillFailed(supabase, prop.id);
           continue;
         }
 
@@ -791,7 +817,7 @@ Deno.serve(async (req) => {
               failCount++;
               batchStats.scrape_failed++;
               batchStats.total_processed++;
-              await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+              await markBackfillFailed(supabase, prop.id);
               const availResult = await checkAvailabilityAfterFailure(prop.id);
               await saveRecentItem({
                 address: prop.address || prop.title,
@@ -810,7 +836,7 @@ Deno.serve(async (req) => {
             failCount++;
             batchStats.scrape_failed++;
             batchStats.total_processed++;
-            await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+            await markBackfillFailed(supabase, prop.id);
           }
           await new Promise(r => setTimeout(r, 500));
           continue; // Skip Jina path for homeless
@@ -898,7 +924,7 @@ Deno.serve(async (req) => {
               failCount++;
               batchStats.scrape_failed++;
               batchStats.total_processed++;
-              await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+              await markBackfillFailed(supabase, prop.id);
               const availResult = await checkAvailabilityAfterFailure(prop.id);
               await saveRecentItem({
                 address: prop.address || prop.title,
@@ -917,7 +943,7 @@ Deno.serve(async (req) => {
             failCount++;
             batchStats.scrape_failed++;
             batchStats.total_processed++;
-            await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+            await markBackfillFailed(supabase, prop.id);
           }
           await new Promise(r => setTimeout(r, 300));
           continue; // Skip Jina path for madlan
@@ -1086,7 +1112,7 @@ Deno.serve(async (req) => {
               failCount++;
               batchStats.scrape_failed++;
               batchStats.total_processed++;
-              await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+              await markBackfillFailed(supabase, prop.id);
               const availResult = await checkAvailabilityAfterFailure(prop.id);
               await saveRecentItem({
                 address: prop.address || prop.title,
@@ -1105,7 +1131,7 @@ Deno.serve(async (req) => {
             failCount++;
             batchStats.scrape_failed++;
             batchStats.total_processed++;
-            await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+            await markBackfillFailed(supabase, prop.id);
           }
           await new Promise(r => setTimeout(r, 500));
           continue; // Skip Jina markdown path for yad2
@@ -1139,7 +1165,7 @@ Deno.serve(async (req) => {
             failCount++;
             batchStats.timeout_skipped++;
             batchStats.total_processed++;
-            await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+            await markBackfillFailed(supabase, prop.id);
             await saveRecentItem({
               address: prop.address || prop.title,
               neighborhood: prop.neighborhood,
@@ -1171,7 +1197,7 @@ Deno.serve(async (req) => {
           failCount++;
           batchStats.scrape_failed++;
           batchStats.total_processed++;
-          await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+          await markBackfillFailed(supabase, prop.id);
           await saveRecentItem({
             address: prop.address || prop.title,
             neighborhood: prop.neighborhood,
@@ -1191,7 +1217,7 @@ Deno.serve(async (req) => {
           failCount++;
           batchStats.no_content++;
           batchStats.total_processed++;
-          await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+          await markBackfillFailed(supabase, prop.id);
           await saveRecentItem({
             address: prop.address || prop.title,
             neighborhood: prop.neighborhood,
@@ -1471,7 +1497,7 @@ Deno.serve(async (req) => {
             failCount++;
             batchStats.update_db_error++;
             batchStats.total_processed++;
-            await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+            await markBackfillFailed(supabase, prop.id);
             await saveRecentItem({
               address: prop.address || prop.title,
               neighborhood: prop.neighborhood,
@@ -1527,7 +1553,7 @@ Deno.serve(async (req) => {
         console.error(`Error processing ${prop.id}:`, propError);
         failCount++;
         batchStats.total_processed++;
-        await supabase.from('scouted_properties').update({ backfill_status: 'failed' }).eq('id', prop.id);
+        await markBackfillFailed(supabase, prop.id);
       }
     }
 
