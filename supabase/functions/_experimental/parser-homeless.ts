@@ -64,7 +64,7 @@ export async function parseHomelessHtml(
       // Skip if not enough cells
       if (tds.length < 5) {
         errors.push(`Row ${index}: Not enough cells (${tds.length})`);
-        return;
+        continue;
       }
       
       // Extract row ID for source_id

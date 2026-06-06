@@ -465,31 +465,35 @@ export async function saveProperty(
   if (existingSameSource) {
     // Update existing property with latest data and reactivate if needed
     console.log(`🔄 Same-source duplicate found: ${property.source_url} matches ${existingSameSource.source_url}`);
+
+    // Always refresh: price, rooms, type, activity, source identifiers.
+    // Never overwrite enriched fields (features, size, etc.) with empty list-page data —
+    // doing so would undo Backfill's Jina enrichment every night.
+    const sameSourceUpdate: Record<string, any> = {
+      source_url: normalizedSourceUrl,
+      source_id: property.source_id,
+      price: property.price,
+      title: property.title,
+      city: normalizedCity,
+      address: property.address,
+      rooms: property.rooms,
+      raw_data: property.raw_data,
+      property_type: property.property_type,
+      is_private: safeIsPrivate,
+      is_active: true,
+      last_seen_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    if (normalizedNeighborhood) sameSourceUpdate.neighborhood = normalizedNeighborhood;
+    if (property.size) sameSourceUpdate.size = property.size;
+    if (property.floor !== null && property.floor !== undefined) sameSourceUpdate.floor = property.floor;
+    if (property.description) sameSourceUpdate.description = property.description;
+    if (property.images?.length) sameSourceUpdate.images = property.images;
+    if (property.features && Object.keys(property.features).length > 0) sameSourceUpdate.features = property.features;
+
     const { error: updateError } = await supabase
       .from('scouted_properties')
-      .update({
-        source_url: normalizedSourceUrl,
-        source_id: property.source_id,
-        price: property.price,
-        title: property.title,
-        city: normalizedCity,
-        neighborhood: normalizedNeighborhood,
-        address: property.address,
-        rooms: property.rooms,
-        size: property.size,
-        floor: property.floor,
-        description: property.description,
-        images: property.images || [],
-        features: property.features || {},
-        raw_data: property.raw_data,
-        property_type: property.property_type,
-        is_private: safeIsPrivate,
-        // NOTE: Do NOT reset status or availability_check_reason here.
-        // The property may already be 'matched' or have availability data.
-        is_active: true,
-        last_seen_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+      .update(sameSourceUpdate)
       .eq('id', existingSameSource.id);
 
     if (updateError) {
@@ -604,13 +608,21 @@ export async function saveProperty(
   let upsertError: any = null;
 
   if (existedBefore) {
-    // UPDATE existing property — preserve status, availability_check_reason, dedup_checked_at
+    // UPDATE existing property — preserve status, availability_check_reason, dedup_checked_at.
+    // Also protect enriched fields: don't overwrite features/size/floor/etc. with empty list-page data.
+    const updateFields: Record<string, any> = { ...propertyData, updated_at: new Date().toISOString() };
+    if (!updateFields.neighborhood) delete updateFields.neighborhood;
+    if (!updateFields.features || Object.keys(updateFields.features).length === 0) delete updateFields.features;
+    if (!updateFields.size) delete updateFields.size;
+    if (updateFields.floor === null || updateFields.floor === undefined) delete updateFields.floor;
+    if (!updateFields.description) delete updateFields.description;
+    if (!updateFields.images?.length) delete updateFields.images;
+    // Backfill owns its own status — don't let a re-scrape downgrade 'completed' back to 'pending'
+    delete updateFields.backfill_status;
+
     const { data, error } = await supabase
       .from('scouted_properties')
-      .update({
-        ...propertyData,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateFields)
       .eq('source', property.source)
       .eq('source_url', normalizedSourceUrl)
       .select('id')
