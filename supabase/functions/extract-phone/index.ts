@@ -1,5 +1,5 @@
-// Phone extraction (Homeless only - Phase 1)
-// Stateless: receives a property, fetches its source URL, extracts phone, writes to DB.
+// Phone extraction — Homeless (TrackEngagement API), Yad2 (CF Worker proxy), Madlan (Jina regex)
+// Stateless: receives a property, fetches phone, writes to DB.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
@@ -9,6 +9,9 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const CF_WORKER_URL = 'https://yad2-proxy.taylor-kelly88.workers.dev/';
+
+// ==================== Phone normalization ====================
 
 function normalizePhone(raw: string): string | null {
   const digits = raw.replace(/\D/g, '');
@@ -17,13 +20,13 @@ function normalizePhone(raw: string): string | null {
   }
   if (digits.length !== 10) return null;
   if (!digits.startsWith('0')) return null;
-  // Israeli mobile (05X) or landline (02/03/04/08/09/072/073/074/076/077)
   if (!/^0(5\d|[2-4]|[7-9])/.test(digits)) return null;
   return digits;
 }
 
+// ==================== Homeless ====================
+
 function parseHomelessUrl(url: string): { boardType: string; adId: string } | null {
-  // e.g. https://www.homeless.co.il/sale/viewad,257070.aspx
   const m = url.match(/homeless\.co\.il\/([^\/]+)\/viewad,(\d+)\.aspx/i);
   if (!m) return null;
   return { boardType: m[1], adId: m[2] };
@@ -47,9 +50,7 @@ async function fetchHomelessPhone(sourceUrl: string): Promise<{ phone: string | 
     body: `action=phonereveal&boardType=${encodeURIComponent(parsed.boardType)}&adId=${encodeURIComponent(parsed.adId)}`,
   });
 
-  if (!resp.ok) {
-    return { phone: null, httpStatus: resp.status, error: `http_${resp.status}` };
-  }
+  if (!resp.ok) return { phone: null, httpStatus: resp.status, error: `http_${resp.status}` };
 
   const text = await resp.text();
   let raw: string | null = null;
@@ -64,7 +65,6 @@ async function fetchHomelessPhone(sourceUrl: string): Promise<{ phone: string | 
     return { phone: null, httpStatus: resp.status, error: null };
   }
 
-  // raw can be "050-XXXXXXX" or "050-XXXXXXX,03-YYYYYYY"
   const candidates = raw.split(',').map((s) => s.trim()).filter(Boolean);
   for (const c of candidates) {
     const p = normalizePhone(c);
@@ -72,6 +72,123 @@ async function fetchHomelessPhone(sourceUrl: string): Promise<{ phone: string | 
   }
   return { phone: null, httpStatus: resp.status, error: null };
 }
+
+// ==================== Yad2 ====================
+
+function parseYad2Token(sourceUrl: string): string | null {
+  const m = sourceUrl.match(/yad2\.co\.il\/realestate\/item\/(?:[^\/]+\/)?([a-zA-Z0-9]+)/i);
+  return m ? m[1] : null;
+}
+
+async function fetchYad2Phone(sourceUrl: string, propertyType: string): Promise<{ phone: string | null; httpStatus: number; error: string | null }> {
+  const token = parseYad2Token(sourceUrl);
+  if (!token) return { phone: null, httpStatus: 0, error: 'invalid_yad2_url' };
+
+  const proxyKey = Deno.env.get('YAD2_PROXY_KEY');
+  if (!proxyKey) return { phone: null, httpStatus: 0, error: 'missing_proxy_key' };
+
+  // Try matching type first, then the other (listing could be in either path)
+  const types = propertyType === 'sale' ? ['forsale', 'rent'] : ['rent', 'forsale'];
+
+  for (const pathType of types) {
+    const phoneApiUrl = `https://gw.yad2.co.il/feed-search-legacy/realestate/${pathType}/contact-info?token=${token}`;
+    try {
+      const resp = await fetch(CF_WORKER_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-proxy-key': proxyKey },
+        body: JSON.stringify({ url: phoneApiUrl, target: 'yad2' }),
+      });
+
+      if (!resp.ok) continue;
+
+      const workerJson = await resp.json();
+      const body: string = workerJson.html || workerJson.body || '';
+      const status: number = workerJson.status || 0;
+
+      // 404 = wrong type (rent vs forsale), try the other
+      if (status === 404) continue;
+
+      // Auth failure or WAF block
+      if (status === 401 || status === 403) {
+        return { phone: null, httpStatus: status, error: 'auth_required' };
+      }
+
+      // WAF block in body
+      if (body.includes('Radware') || /Bot\s*Manager\s*Captcha/i.test(body)) {
+        return { phone: null, httpStatus: status, error: 'waf_blocked' };
+      }
+
+      // Parse the JSON response from Yad2's API
+      try {
+        const data = JSON.parse(body);
+        const contactPhone =
+          data?.data?.contact_phone ||
+          data?.contact_phone ||
+          data?.data?.phone ||
+          data?.phone ||
+          null;
+
+        if (contactPhone) {
+          const normalized = normalizePhone(String(contactPhone));
+          if (normalized) return { phone: normalized, httpStatus: status, error: null };
+        }
+
+        // API returned valid JSON but no phone — auth gating returns null data
+        if (data !== null && typeof data === 'object') {
+          return { phone: null, httpStatus: status, error: data?.data === null ? 'auth_required' : null };
+        }
+      } catch {
+        // Body is not JSON — unexpected response
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return { phone: null, httpStatus: 0, error: 'no_phone_found' };
+}
+
+// ==================== Madlan ====================
+
+async function fetchMadlanPhone(sourceUrl: string): Promise<{ phone: string | null; httpStatus: number; error: string | null }> {
+  // Fetch detail page via Jina and regex for visible Israeli phone numbers.
+  // Madlan broker listings often show the office number without a reveal click.
+  // Private seller phones are gated — this catches what's visible in the page.
+  try {
+    const jinaApiKey = Deno.env.get('JINA_API_KEY');
+    const headers: Record<string, string> = {
+      'Accept': 'text/markdown',
+      'X-No-Cache': 'true',
+      'X-Timeout': '20',
+    };
+    if (jinaApiKey) headers['Authorization'] = `Bearer ${jinaApiKey}`;
+
+    const resp = await fetch(`https://r.jina.ai/${sourceUrl}`, { headers });
+    if (!resp.ok) return { phone: null, httpStatus: resp.status, error: `http_${resp.status}` };
+
+    const text = await resp.text();
+
+    // Israeli phone patterns: mobile 05X-XXXXXXX, landline 0X-XXXXXXX
+    const patterns = [
+      /\b(0[5][0-9][\-\s]?\d{3}[\-\s]?\d{4})\b/g,
+      /\b(0[2-4][\-\s]?\d{7})\b/g,
+      /\b(0[7-9][\-\s]?\d{7})\b/g,
+    ];
+
+    for (const pattern of patterns) {
+      for (const match of text.matchAll(pattern)) {
+        const normalized = normalizePhone(match[1]);
+        if (normalized) return { phone: normalized, httpStatus: resp.status, error: null };
+      }
+    }
+
+    return { phone: null, httpStatus: resp.status, error: null };
+  } catch (e) {
+    return { phone: null, httpStatus: 0, error: `fetch_error:${(e as Error).message}`.slice(0, 100) };
+  }
+}
+
+// ==================== Main handler ====================
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -87,6 +204,16 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
+    // Read current state + property_type in one query
+    const { data: cur } = await supabase
+      .from('scouted_properties')
+      .select('phone_extraction_attempts, owner_phone, property_type')
+      .eq('id', property_id)
+      .single();
+
+    const propertyType: string = cur?.property_type || 'rent';
+    const newAttempts = (cur?.phone_extraction_attempts ?? 0) + 1;
+
     let phone: string | null = null;
     let errorMsg: string | null = null;
     let httpStatus = 0;
@@ -94,30 +221,19 @@ Deno.serve(async (req) => {
     try {
       if (source === 'homeless' || source_url.includes('homeless')) {
         const r = await fetchHomelessPhone(source_url);
-        phone = r.phone;
-        httpStatus = r.httpStatus;
-        errorMsg = r.error;
+        phone = r.phone; httpStatus = r.httpStatus; errorMsg = r.error;
+      } else if (source === 'yad2' || source_url.includes('yad2')) {
+        const r = await fetchYad2Phone(source_url, propertyType);
+        phone = r.phone; httpStatus = r.httpStatus; errorMsg = r.error;
+      } else if (source === 'madlan' || source_url.includes('madlan')) {
+        const r = await fetchMadlanPhone(source_url);
+        phone = r.phone; httpStatus = r.httpStatus; errorMsg = r.error;
       } else {
         errorMsg = `source_not_supported:${source}`;
       }
     } catch (e) {
       errorMsg = `fetch_error:${(e as Error).message}`.slice(0, 200);
     }
-
-    // Update DB - preserve all other fields (data integrity)
-    const updates: Record<string, unknown> = {
-      phone_extraction_attempts: undefined, // we'll increment via RPC-less raw
-      phone_extracted_at: new Date().toISOString(),
-    };
-
-    // Get current attempts to increment
-    const { data: cur } = await supabase
-      .from('scouted_properties')
-      .select('phone_extraction_attempts, owner_phone')
-      .eq('id', property_id)
-      .single();
-
-    const newAttempts = (cur?.phone_extraction_attempts ?? 0) + 1;
 
     const updatePayload: Record<string, unknown> = {
       phone_extraction_attempts: newAttempts,

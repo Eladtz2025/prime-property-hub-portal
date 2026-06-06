@@ -65,13 +65,13 @@ Deno.serve(async (req) => {
     );
   }
 
-  // 3. Pick one property from the queue
+  // 3. Pick one property from the queue — all three sources, private listings only
   const { data: candidates, error: qErr } = await supabase
     .from('scouted_properties')
     .select('id, source, source_url, owner_phone, phone_extraction_status, phone_extraction_attempts')
     .eq('is_active', true)
     .eq('is_private', true)
-    .eq('source', 'homeless')
+    .in('source', ['homeless', 'yad2', 'madlan'])
     .or('owner_phone.is.null,owner_phone.eq.')
     .lt('phone_extraction_attempts', 3)
     .or('phone_extraction_status.is.null,and(phone_extraction_status.neq.success,phone_extraction_status.neq.not_found)')
@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
     .from('phone_extraction_runs')
     .insert({
       status: 'running',
-      source: 'homeless',
+      source: target.source,
       triggered_by: manual ? 'manual' : 'cron',
       properties_attempted: 1,
     })
