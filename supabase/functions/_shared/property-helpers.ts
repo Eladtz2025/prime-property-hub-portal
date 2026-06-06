@@ -4,7 +4,7 @@
  */
 
 import { normalizeCityName, isInvalidAddress } from "./broker-detection.ts";
-import { NEIGHBORHOODS, CITY_ALIASES, type Neighborhood } from "./locations.ts";
+import { NEIGHBORHOODS, CITY_ALIASES, type Neighborhood, extractHouseNumber } from "./locations.ts";
 
 // ==================== Neighborhood Normalization ====================
 
@@ -39,44 +39,31 @@ export async function normalizeNeighborhood(
   neighborhood: string | null,
   city: string
 ): Promise<string | null> {
+  // Strip markdown link remnants that leak from the Jina parser (e.g. "רמת החייל](http://...")
+  if (neighborhood) {
+    neighborhood = neighborhood.replace(/\]\(https?:\/\/[^)]*\)/g, '').replace(/\[/g, '').trim() || null;
+  }
+
   // Skip city-as-neighborhood (e.g. "תל אביב יפו")
   if (neighborhood) {
-    const normalizedCity = city.toLowerCase();
     const normalizedHood = neighborhood.trim().toLowerCase();
-    // Check if it's a city name alias
     for (const [canonical, aliases] of Object.entries(CITY_ALIASES)) {
-      if (normalizedHood === canonical.toLowerCase() || 
+      if (normalizedHood === canonical.toLowerCase() ||
           aliases.some(a => a.toLowerCase() === normalizedHood)) {
-        // Don't use city name as neighborhood - fall through to street lookup
         neighborhood = null;
         break;
       }
     }
   }
 
-  // 1. Try alias mapping
+  // 1. Try alias mapping (source neighborhood → canonical name)
   if (neighborhood) {
     const canonical = NEIGHBORHOOD_ALIAS_MAP[neighborhood.trim().toLowerCase()];
     if (canonical) return canonical;
   }
 
-  // 2. Try street_neighborhoods lookup
-  if (address) {
-    const streetName = address.replace(/[0-9].*$/, '').trim();
-    if (streetName && streetName.length > 1) {
-      const { data } = await supabase
-        .from('street_neighborhoods')
-        .select('neighborhood')
-        .eq('city', city)
-        .eq('street_name', streetName)
-        .limit(1)
-        .maybeSingle();
-      
-      if (data?.neighborhood) return data.neighborhood;
-    }
-  }
-
-  // 3. If neighborhood is already a canonical label, keep it
+  // 2. If neighborhood is already a canonical label, trust the source and return it
+  //    (must happen BEFORE the street lookup so a correct source isn't overridden by the table)
   if (neighborhood) {
     for (const neighborhoods of Object.values(NEIGHBORHOODS)) {
       for (const n of neighborhoods) {
@@ -85,7 +72,42 @@ export async function normalizeNeighborhood(
     }
   }
 
-  // 4. Return original (may be non-canonical but better than null)
+  // 3. Street_neighborhoods lookup — only reached when source neighborhood is absent/unrecognized.
+  //    Range-aware first, then street-only fallback ordered by confidence.
+  if (address) {
+    const streetName = address.replace(/[0-9].*$/, '').trim();
+    if (streetName && streetName.length > 1) {
+      const houseNumber = extractHouseNumber(address);
+
+      // 3a. Range-aware: find the segment whose number_from–number_to brackets this house number
+      if (houseNumber) {
+        const { data: rangeData } = await supabase
+          .from('street_neighborhoods')
+          .select('neighborhood')
+          .eq('city', city)
+          .eq('street_name', streetName)
+          .lte('number_from', houseNumber)
+          .gte('number_to', houseNumber)
+          .order('confidence', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (rangeData?.neighborhood) return rangeData.neighborhood;
+      }
+
+      // 3b. Fallback: best-confidence row for this street (no range constraint)
+      const { data: streetData } = await supabase
+        .from('street_neighborhoods')
+        .select('neighborhood')
+        .eq('city', city)
+        .eq('street_name', streetName)
+        .order('confidence', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (streetData?.neighborhood) return streetData.neighborhood;
+    }
+  }
+
+  // 4. Return original source value as best-effort (non-canonical but better than null)
   return neighborhood?.trim() || null;
 }
 
