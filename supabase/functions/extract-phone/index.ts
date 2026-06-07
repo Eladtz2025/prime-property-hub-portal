@@ -109,38 +109,54 @@ async function fetchYad2Phone(sourceUrl: string, _propertyType: string): Promise
 // ==================== Madlan ====================
 
 async function fetchMadlanPhone(sourceUrl: string): Promise<{ phone: string | null; httpStatus: number; error: string | null }> {
-  // Fetch detail page via Jina and regex for visible Israeli phone numbers.
-  // Madlan broker listings often show the office number without a reveal click.
-  // Private seller phones are gated — this catches what's visible in the page.
-  try {
-    const jinaApiKey = Deno.env.get('JINA_API_KEY');
-    const headers: Record<string, string> = {
-      'Accept': 'text/markdown',
-      'X-No-Cache': 'true',
-      'X-Timeout': '20',
-    };
-    if (jinaApiKey) headers['Authorization'] = `Bearer ${jinaApiKey}`;
+  // Madlan GraphQL API (api2) — same endpoint used by the backfill parser.
+  // Phone is in data.poiByIds[0].phone or contactPhone (confirmed 2026-06-07).
+  // Alphanumeric token extracted from /listings/{token} URL.
+  const tokenMatch = sourceUrl.match(/madlan\.co\.il\/(?:listings|item|rent|buy|for-rent|for-sale)\/([A-Za-z0-9_-]{4,})/i);
+  if (!tokenMatch) return { phone: null, httpStatus: 0, error: 'invalid_madlan_url' };
+  const propertyId = tokenMatch[1];
 
-    const resp = await fetch(`https://r.jina.ai/${sourceUrl}`, { headers });
+  try {
+    const resp = await fetch('https://www.madlan.co.il/api2', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Referer': sourceUrl,
+        'Origin': 'https://www.madlan.co.il',
+      },
+      body: JSON.stringify({
+        operationName: 'poiByIds',
+        variables: { ids: [propertyId] },
+        query: `query poiByIds($ids: [String!]!) { poiByIds(ids: $ids) { id phone contactPhone additionalProperty { name value } } }`,
+      }),
+    });
+
     if (!resp.ok) return { phone: null, httpStatus: resp.status, error: `http_${resp.status}` };
 
-    const text = await resp.text();
+    const json = await resp.json();
+    const poi = json?.data?.poiByIds?.[0];
+    if (!poi) return { phone: null, httpStatus: resp.status, error: 'no_poi_in_response' };
 
-    // Israeli phone patterns: mobile 05X-XXXXXXX, landline 0X-XXXXXXX
-    const patterns = [
-      /\b(0[5][0-9][\-\s]?\d{3}[\-\s]?\d{4})\b/g,
-      /\b(0[2-4][\-\s]?\d{7})\b/g,
-      /\b(0[7-9][\-\s]?\d{7})\b/g,
-    ];
+    // Try direct phone fields first
+    const rawPhone = poi.phone || poi.contactPhone || null;
+    if (rawPhone) {
+      const normalized = normalizePhone(String(rawPhone));
+      if (normalized) return { phone: normalized, httpStatus: resp.status, error: null };
+    }
 
-    for (const pattern of patterns) {
-      for (const match of text.matchAll(pattern)) {
-        const normalized = normalizePhone(match[1]);
-        if (normalized) return { phone: normalized, httpStatus: resp.status, error: null };
+    // Fall back to additionalProperty array
+    if (Array.isArray(poi.additionalProperty)) {
+      for (const prop of poi.additionalProperty) {
+        if (prop?.name?.toLowerCase().includes('phone') || prop?.name?.toLowerCase().includes('contact')) {
+          const normalized = normalizePhone(String(prop.value || ''));
+          if (normalized) return { phone: normalized, httpStatus: resp.status, error: null };
+        }
       }
     }
 
-    return { phone: null, httpStatus: resp.status, error: null };
+    return { phone: null, httpStatus: resp.status, error: 'no_phone_in_response' };
   } catch (e) {
     return { phone: null, httpStatus: 0, error: `fetch_error:${(e as Error).message}`.slice(0, 100) };
   }
