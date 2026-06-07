@@ -109,54 +109,41 @@ async function fetchYad2Phone(sourceUrl: string, _propertyType: string): Promise
 // ==================== Madlan ====================
 
 async function fetchMadlanPhone(sourceUrl: string): Promise<{ phone: string | null; httpStatus: number; error: string | null }> {
-  // Madlan GraphQL API (api2) — same endpoint used by the backfill parser.
-  // Phone is in data.poiByIds[0].phone or contactPhone (confirmed 2026-06-07).
-  // Alphanumeric token extracted from /listings/{token} URL.
-  const tokenMatch = sourceUrl.match(/madlan\.co\.il\/(?:listings|item|rent|buy|for-rent|for-sale)\/([A-Za-z0-9_-]{4,})/i);
-  if (!tokenMatch) return { phone: null, httpStatus: 0, error: 'invalid_madlan_url' };
-  const propertyId = tokenMatch[1];
-
+  // Fetch the Madlan listing detail page with the same iPhone strategy used by scout-madlan-direct.
+  // The phone is embedded in the SSR HTML as a 10-digit string (no dashes), e.g. "0738088803".
+  // Jina is blocked by PerimeterX; direct fetch from Supabase Edge Function runtime bypasses it.
   try {
-    const resp = await fetch('https://www.madlan.co.il/api2', {
-      method: 'POST',
+    const resp = await fetch(sourceUrl, {
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        'Referer': sourceUrl,
-        'Origin': 'https://www.madlan.co.il',
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'he-IL,he;q=0.9',
       },
-      body: JSON.stringify({
-        operationName: 'poiByIds',
-        variables: { ids: [propertyId] },
-        query: `query poiByIds($ids: [String!]!) { poiByIds(ids: $ids) { id phone contactPhone additionalProperty { name value } } }`,
-      }),
     });
-
     if (!resp.ok) return { phone: null, httpStatus: resp.status, error: `http_${resp.status}` };
 
-    const json = await resp.json();
-    const poi = json?.data?.poiByIds?.[0];
-    if (!poi) return { phone: null, httpStatus: resp.status, error: 'no_poi_in_response' };
+    const html = await resp.text();
 
-    // Try direct phone fields first
-    const rawPhone = poi.phone || poi.contactPhone || null;
-    if (rawPhone) {
-      const normalized = normalizePhone(String(rawPhone));
-      if (normalized) return { phone: normalized, httpStatus: resp.status, error: null };
-    }
+    // PerimeterX challenge page is ~12KB — real listing pages are 500KB+
+    if (html.length < 50000) return { phone: null, httpStatus: resp.status, error: 'waf_blocked' };
 
-    // Fall back to additionalProperty array
-    if (Array.isArray(poi.additionalProperty)) {
-      for (const prop of poi.additionalProperty) {
-        if (prop?.name?.toLowerCase().includes('phone') || prop?.name?.toLowerCase().includes('contact')) {
-          const normalized = normalizePhone(String(prop.value || ''));
-          if (normalized) return { phone: normalized, httpStatus: resp.status, error: null };
-        }
+    // Israeli phone patterns — try no-dash format first (how Madlan stores in HTML)
+    const patterns = [
+      /\b(0[5][0-9]\d{7})\b/g,      // mobile 05X 7 digits (no dash)
+      /\b(0[7-9]\d{7})\b/g,          // VoIP/business 07X-09X (no dash)
+      /\b(0[2-4]\d{7})\b/g,          // landline 02X-04X (no dash)
+      /\b(0[5][0-9][\-\s]\d{3}[\-\s]\d{4})\b/g,  // mobile with dashes
+      /\b(0[7-9][\-\s]\d{7})\b/g,    // VoIP with dash
+    ];
+
+    for (const pattern of patterns) {
+      for (const match of html.matchAll(pattern)) {
+        const normalized = normalizePhone(match[1]);
+        if (normalized) return { phone: normalized, httpStatus: resp.status, error: null };
       }
     }
 
-    return { phone: null, httpStatus: resp.status, error: 'no_phone_in_response' };
+    return { phone: null, httpStatus: resp.status, error: 'no_phone_in_html' };
   } catch (e) {
     return { phone: null, httpStatus: 0, error: `fetch_error:${(e as Error).message}`.slice(0, 100) };
   }
