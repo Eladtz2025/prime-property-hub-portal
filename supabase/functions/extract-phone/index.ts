@@ -80,72 +80,30 @@ function parseYad2Token(sourceUrl: string): string | null {
   return m ? m[1] : null;
 }
 
-async function fetchYad2Phone(sourceUrl: string, propertyType: string): Promise<{ phone: string | null; httpStatus: number; error: string | null }> {
+async function fetchYad2Phone(sourceUrl: string, _propertyType: string): Promise<{ phone: string | null; httpStatus: number; error: string | null }> {
   const token = parseYad2Token(sourceUrl);
   if (!token) return { phone: null, httpStatus: 0, error: 'invalid_yad2_url' };
 
-  const proxyKey = Deno.env.get('YAD2_PROXY_KEY');
-  if (!proxyKey) return { phone: null, httpStatus: 0, error: 'missing_proxy_key' };
-
-  // Try matching type first, then the other (listing could be in either path)
-  const types = propertyType === 'sale' ? ['forsale', 'rent'] : ['rent', 'forsale'];
-
-  for (const pathType of types) {
-    const phoneApiUrl = `https://gw.yad2.co.il/feed-search-legacy/realestate/${pathType}/contact-info?token=${token}`;
-    try {
-      const resp = await fetch(CF_WORKER_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-proxy-key': proxyKey },
-        body: JSON.stringify({ url: phoneApiUrl, target: 'yad2' }),
-      });
-
-      if (!resp.ok) continue;
-
-      const workerJson = await resp.json();
-      const body: string = workerJson.html || workerJson.body || '';
-      const status: number = workerJson.status || 0;
-
-      // 404 = wrong type (rent vs forsale), try the other
-      if (status === 404) continue;
-
-      // Auth failure or WAF block
-      if (status === 401 || status === 403) {
-        return { phone: null, httpStatus: status, error: 'auth_required' };
-      }
-
-      // WAF block in body
-      if (body.includes('Radware') || /Bot\s*Manager\s*Captcha/i.test(body)) {
-        return { phone: null, httpStatus: status, error: 'waf_blocked' };
-      }
-
-      // Parse the JSON response from Yad2's API
-      try {
-        const data = JSON.parse(body);
-        const contactPhone =
-          data?.data?.contact_phone ||
-          data?.contact_phone ||
-          data?.data?.phone ||
-          data?.phone ||
-          null;
-
-        if (contactPhone) {
-          const normalized = normalizePhone(String(contactPhone));
-          if (normalized) return { phone: normalized, httpStatus: status, error: null };
-        }
-
-        // API returned valid JSON but no phone — auth gating returns null data
-        if (data !== null && typeof data === 'object') {
-          return { phone: null, httpStatus: status, error: data?.data === null ? 'auth_required' : null };
-        }
-      } catch {
-        // Body is not JSON — unexpected response
-      }
-    } catch {
-      continue;
-    }
+  // gw.yad2.co.il/realestate-item/{token}/customer returns the owner phone publicly
+  // (no auth required — confirmed 2026-06-07). Standard iPhone headers bypass the WAF.
+  try {
+    const resp = await fetch(`https://gw.yad2.co.il/realestate-item/${token}/customer`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+        'Accept': 'application/json, text/plain, */*',
+        'Origin': 'https://www.yad2.co.il',
+        'Referer': 'https://www.yad2.co.il/',
+      },
+    });
+    if (!resp.ok) return { phone: null, httpStatus: resp.status, error: `http_${resp.status}` };
+    const data = await resp.json();
+    const raw = data?.data?.phone || data?.data?.brokerPhone || null;
+    if (!raw) return { phone: null, httpStatus: resp.status, error: 'no_phone_in_response' };
+    const normalized = normalizePhone(String(raw));
+    return { phone: normalized, httpStatus: resp.status, error: normalized ? null : 'invalid_phone_format' };
+  } catch (e) {
+    return { phone: null, httpStatus: 0, error: `fetch_error:${(e as Error).message}`.slice(0, 100) };
   }
-
-  return { phone: null, httpStatus: 0, error: 'no_phone_found' };
 }
 
 // ==================== Madlan ====================
