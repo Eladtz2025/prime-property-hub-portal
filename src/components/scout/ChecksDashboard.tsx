@@ -169,7 +169,7 @@ export const ChecksDashboard: React.FC = () => {
         .from('scouted_properties')
         .select('id', { count: 'exact', head: true })
         .eq('is_active', true)
-        .or('backfill_status.is.null,backfill_status.eq.pending,backfill_status.eq.failed');
+        .or('backfill_status.is.null,backfill_status.eq.pending');
       return count ?? 0;
     },
     refetchInterval: 60000,
@@ -728,8 +728,8 @@ export const ChecksDashboard: React.FC = () => {
           primaryValue={backfillRemaining ?? 0}
           primaryLabel="ממתינים להשלמה"
           secondaryLine={`${(backfillJina.progress?.successful_items ?? 0).toLocaleString('he-IL')} הושלמו${backfillJina.failedCount > 0 ? ` · ${backfillJina.failedCount.toLocaleString('he-IL')} נכשלו` : ''}`}
-          insight={backfillRemaining === 0 ? 'כל הנתונים טופלו' : backfillJina.isRunning ? `${backfillJina.progress?.processed_items ?? 0}/${backfillJina.progress?.total_items ?? '?'}` : 'לא זוהו עיכובים'}
-          insightType={backfillRemaining === 0 ? 'ok' : backfillJina.isRunning ? 'info' : 'warning'}
+          insight={backfillRemaining === 0 ? 'כל הנתונים טופלו' : backfillJina.isRunning ? `${backfillJina.progress?.processed_items ?? 0}/${backfillJina.progress?.total_items ?? '?'}` : 'ממתין להפעלה'}
+          insightType={backfillRemaining === 0 ? 'ok' : backfillJina.isRunning ? 'info' : 'info'}
           onRun={backfillJina.start}
           onStop={backfillJina.stop}
           isRunPending={backfillJina.isStarting}
@@ -753,7 +753,7 @@ export const ChecksDashboard: React.FC = () => {
             <div className="space-y-6">
               <LogicDescription lines={[
                 'משלים נתונים חסרים לדירות שנסרקו באמצעות Jina AI Reader.',
-                'מטפל בנכסים עם backfill_status=null או failed.',
+                'מטפל בנכסים עם backfill_status=null או pending.',
               ]} />
             </div>
           }
