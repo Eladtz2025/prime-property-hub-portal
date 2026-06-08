@@ -8,6 +8,18 @@ import { Copy, ExternalLink, Download, Clock, CheckCircle, XCircle, Loader2, Use
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
+// The Chrome extension reports automation failures in English; surface a Hebrew
+// label to the user while keeping the raw text available on hover (title attr).
+function translateGroupError(msg: string): string {
+  const m = (msg || '').toLowerCase();
+  if (m.includes('not found') || m.includes('not clickable')) return 'תיבת הפרסום לא נמצאה בקבוצה';
+  if (m.includes('timeout') || m.includes('timed out')) return 'תם הזמן הקצוב לפרסום';
+  if (m.includes('not logged') || m.includes('login') || m.includes('log in')) return 'נדרשת התחברות לפייסבוק';
+  if (m.includes('blocked') || m.includes('permission') || m.includes('not allowed')) return 'הפרסום נחסם על ידי פייסבוק';
+  if (m.includes('network') || m.includes('failed to fetch')) return 'שגיאת רשת';
+  return msg; // unknown error — show it rather than hide it
+}
+
 const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'ממתין', color: 'bg-blue-100 text-blue-700', icon: <Clock className="h-3 w-3" /> },
   publishing: { label: 'בתהליך', color: 'bg-yellow-100 text-yellow-700', icon: <Loader2 className="h-3 w-3 animate-spin" /> },
@@ -145,7 +157,7 @@ export const GroupQueueManager: React.FC = () => {
                     )}
                     {item.status === 'failed' && item.error_message && (
                       <span className="text-[9px] text-red-500 truncate max-w-[100px]" title={item.error_message}>
-                        {item.error_message}
+                        {translateGroupError(item.error_message)}
                       </span>
                     )}
                   </div>

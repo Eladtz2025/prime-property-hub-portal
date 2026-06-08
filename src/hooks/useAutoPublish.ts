@@ -20,6 +20,7 @@ export function useSaveAutoPublishQueue() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
+    retry: false, // non-idempotent (INSERTs on create path)
     mutationFn: async (queue: {
       id?: string;
       name: string;
@@ -108,6 +109,7 @@ export function useSaveAutoPublishItem() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
+    retry: false, // non-idempotent (INSERTs on create path)
     mutationFn: async (item: {
       id?: string;
       queue_id: string;

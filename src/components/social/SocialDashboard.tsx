@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Settings, CheckCircle, Clock, FileText, Send, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { SocialAccountSetup } from './SocialAccountSetup';
 

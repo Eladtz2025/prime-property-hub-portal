@@ -49,6 +49,7 @@ export const AutoPublishArticles: React.FC<Props> = ({ queueId }) => {
   };
 
   const handleSave = () => {
+    if (!title.trim() || !content.trim()) return; // don't queue blank articles
     saveItem.mutate({
       ...(editId ? { id: editId } : {}),
       queue_id: queueId,
@@ -130,7 +131,7 @@ export const AutoPublishArticles: React.FC<Props> = ({ queueId }) => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialog(false)} className="text-sm h-8">ביטול</Button>
-            <Button onClick={handleSave} disabled={saveItem.isPending} className="text-sm h-8">
+            <Button onClick={handleSave} disabled={saveItem.isPending || !title.trim() || !content.trim()} className="text-sm h-8">
               {saveItem.isPending ? 'שומר...' : 'שמור'}
             </Button>
           </DialogFooter>

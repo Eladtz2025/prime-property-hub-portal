@@ -23,11 +23,11 @@ export const SocialAccountSetup: React.FC = () => {
   const fbAccount = accounts?.find(a => a.platform === 'facebook');
   const igAccount = accounts?.find(a => a.platform === 'instagram');
 
-  // Auto-fill from existing accounts
+  // Auto-fill from existing accounts (one-time, once the data loads)
   React.useEffect(() => {
     if (fbAccount?.page_id && !pageId) setPageId(fbAccount.page_id);
     if (igAccount?.ig_user_id && !igUserId) setIgUserId(igAccount.ig_user_id);
-  }, [fbAccount, igAccount]);
+  }, [fbAccount?.page_id, igAccount?.ig_user_id, pageId, igUserId]);
 
   const handleVerifyAndSave = async () => {
     const effectivePageId = pageId || fbAccount?.page_id;
@@ -69,7 +69,7 @@ export const SocialAccountSetup: React.FC = () => {
         page_name: data.page_name,
         access_token: data.page_access_token,
         ig_user_id: data.ig_user_id || undefined,
-        token_expires_at: tokenExpiry || undefined,
+        token_expires_at: tokenExpiry, // null for permanent tokens — explicitly clears any stale expiry
       });
 
       // If IG user ID verified, save Instagram account too
@@ -80,7 +80,7 @@ export const SocialAccountSetup: React.FC = () => {
           page_name: data.page_name + ' (Instagram)',
           access_token: data.page_access_token,
           ig_user_id: data.ig_user_id,
-          token_expires_at: tokenExpiry || undefined,
+          token_expires_at: tokenExpiry, // null for permanent tokens — explicitly clears any stale expiry
         });
       }
 
@@ -132,39 +132,48 @@ export const SocialAccountSetup: React.FC = () => {
           <CardTitle className="text-base">סטטוס חיבור</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {fbAccount?.is_active ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              ) : (
-                <XCircle className="h-4 w-4 text-destructive" />
-              )}
-              <span className="text-sm font-medium">פייסבוק דף עסקי</span>
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              טוען סטטוס חיבור...
             </div>
-            {fbAccount?.is_active && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">{fbAccount.page_name}</span>
-                {getStatusDisplay(fbAccount)}
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {fbAccount?.is_active ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-destructive" />
+                  )}
+                  <span className="text-sm font-medium">פייסבוק דף עסקי</span>
+                </div>
+                {fbAccount?.is_active && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{fbAccount.page_name}</span>
+                    {getStatusDisplay(fbAccount)}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {igAccount?.is_active ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              ) : (
-                <XCircle className="h-4 w-4 text-muted-foreground" />
-              )}
-              <span className="text-sm font-medium">אינסטגרם</span>
-            </div>
-            {igAccount?.is_active && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">{igAccount.page_name}</span>
-                {getStatusDisplay(igAccount)}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {igAccount?.is_active ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="text-sm font-medium">אינסטגרם</span>
+                </div>
+                {igAccount?.is_active && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{igAccount.page_name}</span>
+                    {getStatusDisplay(igAccount)}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

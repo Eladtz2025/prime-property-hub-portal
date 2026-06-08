@@ -8,9 +8,11 @@ export function useSocialAccounts() {
   return useQuery({
     queryKey: ['social-accounts'],
     queryFn: async () => {
+      // SECURITY: never select access_token into the browser — the UI only needs
+      // these columns; tokens stay server-side in the edge functions.
       const { data, error } = await supabase
         .from('social_accounts')
-        .select('*')
+        .select('id, platform, page_id, page_name, ig_user_id, token_expires_at, is_active, created_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
@@ -22,13 +24,14 @@ export function useSaveSocialAccount() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
+    retry: false, // non-idempotent (can INSERT a duplicate account on retry)
     mutationFn: async (account: {
       platform: string;
       page_id?: string;
       page_name?: string;
       ig_user_id?: string;
       access_token: string;
-      token_expires_at?: string;
+      token_expires_at?: string | null;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -89,6 +92,7 @@ export function useCreateSocialPost() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
+    retry: false, // non-idempotent (INSERTs a post)
     mutationFn: async (post: {
       platform: string;
       post_type?: string;
@@ -197,6 +201,7 @@ export function useSaveSocialTemplate() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
+    retry: false, // non-idempotent (INSERTs on create path)
     mutationFn: async (template: {
       id?: string;
       name: string;
@@ -260,6 +265,7 @@ export function useSaveFacebookGroup() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
+    retry: false, // non-idempotent (INSERTs on create path)
     mutationFn: async (group: {
       id?: string;
       group_name: string;
