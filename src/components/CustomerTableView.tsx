@@ -130,6 +130,11 @@ export const CustomerTableView = ({
     setBulkDeleteDialogOpen(false);
   };
 
+  const handleBulkStatusChange = (status: string) => {
+    Array.from(selectedIds).forEach(id => onUpdateStatus(id, status));
+    setSelectedIds(new Set());
+  };
+
   const SortableHeader = ({ label, sortKey }: { label: string; sortKey: string }) => {
     const parts = sortBy.split('_');
     const curDir = parts[parts.length - 1];
@@ -216,6 +221,7 @@ export const CustomerTableView = ({
         onClearSelection={() => setSelectedIds(new Set())}
         onHideClick={handleBulkHide}
         onDeleteClick={() => setBulkDeleteDialogOpen(true)}
+        onStatusChange={handleBulkStatusChange}
         label="לקוחות"
       />
 

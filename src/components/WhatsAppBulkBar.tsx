@@ -1,5 +1,16 @@
 import { Button } from '@/components/ui/button';
-import { MessageSquare, EyeOff, Trash2, X } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MessageSquare, EyeOff, Trash2, X, ChevronDown } from 'lucide-react';
+
+const STATUS_OPTIONS = [
+  { value: 'new', label: 'חדש', color: 'bg-blue-500' },
+  { value: 'contacted', label: 'נוצר קשר', color: 'bg-yellow-500' },
+  { value: 'active', label: 'פעיל', color: 'bg-green-500' },
+  { value: 'viewing_scheduled', label: 'צפייה קבועה', color: 'bg-purple-500' },
+  { value: 'offer_made', label: 'הצעה בוצעה', color: 'bg-orange-500' },
+  { value: 'closed_won', label: 'נסגר בהצלחה', color: 'bg-gray-400' },
+  { value: 'closed_lost', label: 'לא סגר', color: 'bg-red-400' },
+];
 
 interface WhatsAppBulkBarProps {
   selectedCount: number;
@@ -7,6 +18,7 @@ interface WhatsAppBulkBarProps {
   onClearSelection: () => void;
   onHideClick?: () => void;
   onDeleteClick?: () => void;
+  onStatusChange?: (status: string) => void;
   label?: string;
   templateCategory?: string;
 }
@@ -17,6 +29,7 @@ export const WhatsAppBulkBar = ({
   onClearSelection,
   onHideClick,
   onDeleteClick,
+  onStatusChange,
   label = 'פריטים',
 }: WhatsAppBulkBarProps) => {
   if (selectedCount === 0) return null;
@@ -35,6 +48,24 @@ export const WhatsAppBulkBar = ({
         <MessageSquare className="h-4 w-4" />
         WhatsApp
       </Button>
+      {onStatusChange && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline" className="gap-1.5 rounded-lg">
+              שנה סטטוס
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" dir="rtl">
+            {STATUS_OPTIONS.map(opt => (
+              <DropdownMenuItem key={opt.value} onClick={() => onStatusChange(opt.value)} className="gap-2">
+                <span className={`h-2 w-2 rounded-full ${opt.color} shrink-0`} />
+                {opt.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
       {onHideClick && (
         <Button
           size="sm"
