@@ -11,7 +11,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 function isWithinWorkingHours(): boolean {
-  // Israel time 09:00–22:00
+  // Israel time 09:00–21:00 (stops before Madlan evening scout at 21:00)
   const now = new Date();
   // Get Israel hour (UTC+2 / UTC+3 depending on DST, approximate via Intl)
   const israelHour = parseInt(
@@ -22,7 +22,7 @@ function isWithinWorkingHours(): boolean {
     }).format(now),
     10,
   );
-  return israelHour >= 9 && israelHour < 22;
+  return israelHour >= 9 && israelHour < 21;
 }
 
 async function sleep(ms: number) {
