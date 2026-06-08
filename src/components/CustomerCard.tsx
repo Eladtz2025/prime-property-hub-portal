@@ -52,7 +52,7 @@ const statusLabels: Record<string, string> = {
   offer_made: 'הצעה בוצעה',
   closed_won: 'נסגר בהצלחה',
   closed_lost: 'נסגר ללא הצלחה',
-  old_needs_check: 'ישן - לבדיקה',
+  old_needs_check: 'לבדיקה',
 };
 
 const priorityLabels: Record<string, string> = {

@@ -67,7 +67,7 @@ const statusLabels: Record<string, string> = {
   offer_made: 'הצעה',
   closed_won: 'נסגר',
   closed_lost: 'אבוד',
-  old_needs_check: 'ישן - לבדיקה',
+  old_needs_check: 'לבדיקה',
 };
 
 const priorityColors: Record<string, string> = {
