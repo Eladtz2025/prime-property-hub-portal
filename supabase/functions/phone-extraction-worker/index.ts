@@ -10,19 +10,20 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-function isWithinWorkingHours(): boolean {
-  // Israel time 09:00–21:00 (stops before Madlan evening scout at 21:00)
-  const now = new Date();
-  // Get Israel hour (UTC+2 / UTC+3 depending on DST, approximate via Intl)
-  const israelHour = parseInt(
+function israelHourNow(): number {
+  return parseInt(
     new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Jerusalem',
       hour: '2-digit',
       hour12: false,
-    }).format(now),
+    }).format(new Date()),
     10,
   );
-  return israelHour >= 9 && israelHour < 21;
+}
+
+function isWithinWindow(startHour: number, endHour: number): boolean {
+  const h = israelHourNow();
+  return h >= startHour && h < endHour;
 }
 
 async function sleep(ms: number) {
@@ -43,24 +44,33 @@ Deno.serve(async (req) => {
   }
   const manual = body.manual === true;
 
-  // 1. Kill switch (renamed to process_phone_extraction for consistency)
-  const { data: flag } = await supabase
-    .from('feature_flags')
-    .select('is_enabled')
-    .eq('name', 'process_phone_extraction')
-    .single();
+  // 1. Kill switch + time window config (parallel DB reads)
+  const [flagRes, windowRes] = await Promise.all([
+    supabase.from('feature_flags').select('is_enabled').eq('name', 'process_phone_extraction').single(),
+    supabase.from('scout_settings')
+      .select('setting_key, setting_value')
+      .eq('category', 'phoneExtraction')
+      .in('setting_key', ['window_start', 'window_end']),
+  ]);
 
-  if (!flag?.is_enabled) {
+  if (!flagRes.data?.is_enabled) {
     return new Response(
       JSON.stringify({ skipped: true, reason: 'feature_flag_disabled' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 
+  // Parse window from DB, fall back to 09:00–21:00
+  const rows = windowRes.data ?? [];
+  const rawStart = rows.find(r => r.setting_key === 'window_start')?.setting_value ?? '09:00';
+  const rawEnd   = rows.find(r => r.setting_key === 'window_end')?.setting_value   ?? '21:00';
+  const startHour = parseInt(String(rawStart).replace(/"/g, '').split(':')[0], 10) || 9;
+  const endHour   = parseInt(String(rawEnd).replace(/"/g, '').split(':')[0], 10)   || 21;
+
   // 2. Time window (skip if manual)
-  if (!manual && !isWithinWorkingHours()) {
+  if (!manual && !isWithinWindow(startHour, endHour)) {
     return new Response(
-      JSON.stringify({ skipped: true, reason: 'outside_working_hours' }),
+      JSON.stringify({ skipped: true, reason: 'outside_working_hours', window: `${startHour}–${endHour}` }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }

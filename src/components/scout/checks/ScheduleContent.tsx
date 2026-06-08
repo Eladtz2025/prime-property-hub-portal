@@ -8,19 +8,20 @@ interface ScheduleItem {
   time: string;
   endTime?: string;
   label: string;
-  type: 'scan' | 'matching' | 'availability' | 'backfill' | 'cleanup';
+  type: 'scan' | 'matching' | 'availability' | 'backfill' | 'cleanup' | 'phoneExtraction';
   isInterval?: boolean;
   source?: string;
   propertyType?: string;
 }
 
 const TYPE_COLORS: Record<string, { dot: string }> = {
-  'scan-rent':    { dot: 'bg-cyan-500' },
-  'scan-sale':    { dot: 'bg-cyan-600' },
-  'matching':     { dot: 'bg-emerald-500' },
-  'availability': { dot: 'bg-blue-500' },
-  'backfill':     { dot: 'bg-orange-500' },
-  'cleanup':      { dot: 'bg-violet-400' },
+  'scan-rent':       { dot: 'bg-cyan-500' },
+  'scan-sale':       { dot: 'bg-cyan-600' },
+  'matching':        { dot: 'bg-emerald-500' },
+  'availability':    { dot: 'bg-blue-500' },
+  'backfill':        { dot: 'bg-orange-500' },
+  'cleanup':         { dot: 'bg-violet-400' },
+  'phoneExtraction': { dot: 'bg-amber-500' },
 };
 
 const getTypeKey = (type: string, propertyType?: string) => {
@@ -113,6 +114,10 @@ export const ScheduleContent: React.FC = () => {
     matchingTimes.forEach(time => {
       items.push({ time, endTime: settings?.matching?.schedule_end_time, label: 'התאמה ללקוחות', type: 'matching' });
     });
+
+    const phoneStart = settings?.phoneExtraction?.window_start || '09:00';
+    const phoneEnd = settings?.phoneExtraction?.window_end || '21:00';
+    items.push({ time: phoneStart, endTime: phoneEnd, label: 'חילוץ טלפונים', type: 'phoneExtraction' });
 
     scoutConfigs?.forEach(config => {
       const times = (config as any).schedule_times as string[] | null;

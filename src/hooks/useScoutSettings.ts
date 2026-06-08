@@ -70,6 +70,10 @@ export interface ScoutSettings {
   brokerBackfill: {
     scrapeFromSource: boolean;
   };
+  phoneExtraction: {
+    window_start: string;
+    window_end: string;
+  };
 }
 
 // Default values - simplified
@@ -127,6 +131,10 @@ export const defaultSettings: ScoutSettings = {
   },
   brokerBackfill: {
     scrapeFromSource: false,
+  },
+  phoneExtraction: {
+    window_start: '09:00',
+    window_end: '21:00',
   },
 };
 
@@ -216,6 +224,9 @@ export function useScoutSettings(category?: keyof ScoutSettings) {
         } else if (cat === 'brokerBackfill' && setting_key in settings.brokerBackfill) {
           const key = setting_key as keyof typeof settings.brokerBackfill;
           (settings.brokerBackfill as any)[key] = parseSettingValue(setting_value, defaultSettings.brokerBackfill[key]);
+        } else if (cat === 'phoneExtraction' && setting_key in settings.phoneExtraction) {
+          const key = setting_key as keyof typeof settings.phoneExtraction;
+          (settings.phoneExtraction as any)[key] = parseSettingValue(setting_value, defaultSettings.phoneExtraction[key]);
         }
       }
       

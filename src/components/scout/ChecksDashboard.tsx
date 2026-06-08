@@ -20,6 +20,7 @@ import { BackfillJinaHistory } from './checks/BackfillJinaHistory';
 import { UnifiedScoutSettings } from './UnifiedScoutSettings';
 import { useBackfillProgressJina } from '@/hooks/useBackfillProgressJina';
 import { ScheduleTimeEditor } from './checks/ScheduleTimeEditor';
+import { PhoneWindowEditor } from './checks/PhoneWindowEditor';
 import { PendingPropertiesDialog } from './checks/PendingPropertiesDialog';
 import { logger } from '@/utils/logger';
 
@@ -790,12 +791,13 @@ export const ChecksDashboard: React.FC = () => {
             <div className="space-y-6">
               <LogicDescription lines={[
                 'מחלץ מספרי טלפון של בעלי דירות פרטיות מ-Homeless בלבד (שלב 1).',
-                'הקרון רץ כל דקה, אבל פועל רק בחלון 09:00–21:00 שעון ישראל.',
+                'הקרון רץ כל דקה — הפונקציה בודקת את חלון השעות שמוגדר למטה.',
                 'בכל ריצה מטופל נכס אחד עם השהייה רנדומלית של 15–45 שניות — קצב איטי ובטוח שלא נחסם.',
                 'אחרי 3 ניסיונות כושלים נכס מסומן כ-failed ולא ייבדק שוב.',
                 'הטלפון שמתגלה נשמר ב-owner_phone של הנכס לצמיתות.',
                 'ריצה ידנית מתעלמת מחלון השעות.',
               ]} />
+              <PhoneWindowEditor />
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-muted/40 rounded p-2">
                   <p className="text-xs text-muted-foreground">בתור</p>
