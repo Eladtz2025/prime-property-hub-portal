@@ -28,6 +28,15 @@ async function scrapeHomelessWithJina(url: string, maxRetries = 2, timeoutSecond
 
       if (response.ok) {
         const body = await response.text();
+        // Jina can return a 200 with a Cloudflare challenge page — detect and retry.
+        const isChallenge = body.includes('challenge-platform') &&
+          !body.includes('type="ad"') &&
+          body.length < 80000;
+        if (isChallenge) {
+          console.warn(`⚠️ Homeless-Jina attempt ${attempt + 1} got Cloudflare challenge (${body.length} chars), retrying...`);
+          if (attempt < maxRetries - 1) await new Promise(r => setTimeout(r, 4000 * (attempt + 1)));
+          continue;
+        }
         console.log(`✅ Homeless-Jina scrape successful (${body.length} chars)`);
         return { markdown: '', html: body };
       }
@@ -60,7 +69,7 @@ import { fetchHomelessDetailFeatures } from "../_shared/homeless-detail-parser.t
 
 const HOMELESS_CONFIG = {
   SOURCE: 'homeless',
-  MAX_RETRIES: 2,
+  MAX_RETRIES: 3,
 };
 
 serve(async (req) => {

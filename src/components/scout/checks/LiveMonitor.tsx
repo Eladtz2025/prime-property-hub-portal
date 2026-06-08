@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Monitor, Activity, Loader2, Shield, Search, Database, Copy, Users, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Monitor, Activity, Loader2, Shield, Search, Database, Copy, Users, CheckCircle2, XCircle, Clock, Phone } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMonitorData } from './monitor/useMonitorData';
 import { LiveFeedTab } from './monitor/LiveFeedTab';
 import { FeedItem } from './monitor/useMonitorData';
 import { ScheduleContent } from './ScheduleContent';
+import { PhoneMonitorContent } from './monitor/PhoneMonitorContent';
 
-type TabKey = 'availability' | 'scan' | 'backfill' | 'dedup' | 'matching' | 'schedule';
+type TabKey = 'availability' | 'scan' | 'backfill' | 'dedup' | 'matching' | 'phone' | 'schedule';
 
 const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
   { key: 'availability', label: 'זמינות', icon: Shield },
@@ -15,6 +16,7 @@ const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
   { key: 'backfill', label: 'השלמה', icon: Database },
   { key: 'dedup', label: 'כפילויות', icon: Copy },
   { key: 'matching', label: 'התאמות', icon: Users },
+  { key: 'phone', label: 'טלפון', icon: Phone },
   { key: 'schedule', label: 'לוח זמנים', icon: Clock },
 ];
 
@@ -37,14 +39,14 @@ export const LiveMonitor: React.FC = () => {
 
   // Count items per tab for badges
   const tabCounts = useMemo(() => {
-    const counts: Record<TabKey, number> = { availability: 0, scan: 0, backfill: 0, dedup: 0, matching: 0, schedule: 0 };
+    const counts: Record<TabKey, number> = { availability: 0, scan: 0, backfill: 0, dedup: 0, matching: 0, phone: 0, schedule: 0 };
     feedItems.forEach(f => { if (counts[f.type] !== undefined) counts[f.type]++; });
     return counts;
   }, [feedItems]);
 
   // Filter feed by active tab
   const filteredFeed = useMemo(() => {
-    if (activeTab === 'schedule') return [];
+    if (activeTab === 'schedule' || activeTab === 'phone') return [];
     return feedItems.filter(f => f.type === activeTab).slice(0, 20);
   }, [feedItems, activeTab]);
 
@@ -239,6 +241,8 @@ export const LiveMonitor: React.FC = () => {
           <div className="flex-1 min-h-0">
             {activeTab === 'schedule' ? (
               <ScheduleContent />
+            ) : activeTab === 'phone' ? (
+              <PhoneMonitorContent />
             ) : filteredFeed.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-2">

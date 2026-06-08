@@ -504,28 +504,36 @@ serve(async (req) => {
       try {
         const { data: currentProp } = await supabase
           .from('scouted_properties')
-          .select('availability_check_count')
+          .select('availability_check_count, backfill_status')
           .eq('id', result.id)
           .single();
-        
+
         const currentCount = currentProp?.availability_check_count ?? 0;
-        
+
         const updateData: Record<string, any> = {
           availability_checked_at: new Date().toISOString(),
           availability_check_reason: result.reason,
           availability_check_count: currentCount + 1,
           availability_retry_count: 0, // Reset on successful check
         };
-        
+
         if (result.isInactive) {
           updateData.is_active = false;
           updateData.status = 'inactive';
-          
+
           await supabase
             .from('scouted_properties')
             .update(updateData)
             .eq('id', result.id);
         } else {
+          // If property is still live and backfill previously failed, give it one more cycle.
+          // The post-backfill trigger already routed it here; confirming liveness resets the queue.
+          if (currentProp?.backfill_status === 'failed') {
+            updateData.backfill_status = 'pending';
+            updateData.backfill_attempts = 0;
+            console.log(`🔄 ${result.id} - backfill_status reset to pending (property still live)`);
+          }
+
           const { data: updateResult } = await supabase
             .from('scouted_properties')
             .update(updateData)

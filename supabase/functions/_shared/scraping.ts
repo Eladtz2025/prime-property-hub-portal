@@ -79,6 +79,18 @@ export function validateScrapedContent(
     }
   }
   
+  // Source-specific validation for Homeless
+  if (source === 'homeless') {
+    const hasListingRows = (html || '').includes('type="ad"');
+    const hasPropertyContent = (html || '').includes('homeless.co.il') || hasListingRows ||
+      (html || '').includes('כרגע בלוח');
+    // A challenge page with no ad rows and no Homeless structure is blocked
+    if ((html || '').includes('challenge-platform') && !hasPropertyContent) {
+      return { valid: false, reason: 'Homeless: Cloudflare challenge with no listing content' };
+    }
+    // Otherwise trust the generic length check — an empty results page is still valid
+  }
+
   // Source-specific validation for Madlan
   if (source === 'madlan') {
     // For list pages (/for-rent/, /for-sale/): require /listings/ links
