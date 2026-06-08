@@ -546,36 +546,56 @@ export const ChecksDashboard: React.FC = () => {
     refetchInterval: 15000,
   });
 
-  const triggerPhoneExtraction = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('phone-extraction-worker', {
-        body: { manual: true },
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data: any) => {
-      if (data?.skipped) {
-        const reasonMap: Record<string, string> = {
-          feature_flag_disabled: 'התהליך כבוי — הפעל את המתג',
-          outside_working_hours: `מחוץ לחלון השעות (${data.window ?? ''})`,
-          queue_empty: 'כל הנכסים עובדו — אין יותר בתור',
-        };
-        toast.info(reasonMap[data.reason] ?? `דולג: ${data.reason}`);
-      } else if (data?.processed != null) {
-        const found = data.phones_found ?? 0;
-        const processed = data.processed ?? 0;
-        if (found > 0) toast.success(`עיבד ${processed} נכסים — נמצאו ${found} טלפונים ✓`);
-        else toast.info(`עיבד ${processed} נכסים — לא נמצאו טלפונים`);
-      } else if (data?.phone_found) toast.success('נמצא טלפון!');
-      else toast.info('נכס עובד — לא נמצא טלפון');
+  const [phoneLooping, setPhoneLooping] = React.useState(false);
+  const [phoneLoopStats, setPhoneLoopStats] = React.useState({ processed: 0, found: 0 });
+  const phoneLoopStopRef = React.useRef(false);
+
+  const startPhoneLoop = React.useCallback(async () => {
+    setPhoneLooping(true);
+    setPhoneLoopStats({ processed: 0, found: 0 });
+    phoneLoopStopRef.current = false;
+    let totalProcessed = 0;
+    let totalFound = 0;
+
+    try {
+      while (!phoneLoopStopRef.current) {
+        const { data, error } = await supabase.functions.invoke('phone-extraction-worker', {
+          body: { manual: true },
+        });
+        if (error) throw error;
+
+        if (data?.skipped) {
+          const reasonMap: Record<string, string> = {
+            feature_flag_disabled: 'התהליך כבוי — הפעל את המתג',
+            outside_working_hours: `מחוץ לחלון השעות (${data.window ?? ''})`,
+            queue_empty: 'הושלם! אין יותר נכסים בתור',
+          };
+          toast.success(reasonMap[data.reason] ?? `דולג: ${data.reason}`);
+          break;
+        }
+
+        totalProcessed += data?.processed ?? 0;
+        totalFound += data?.phones_found ?? 0;
+        setPhoneLoopStats({ processed: totalProcessed, found: totalFound });
+        queryClient.invalidateQueries({ queryKey: ['phone-monitor-runs'] });
+      }
+    } catch (err: any) {
+      toast.error(`שגיאה: ${err.message}`);
+    } finally {
+      setPhoneLooping(false);
+      if (phoneLoopStopRef.current) {
+        toast.info(`עצר. עיבד ${totalProcessed} נכסים — נמצאו ${totalFound} טלפונים`);
+      }
       queryClient.invalidateQueries({ queryKey: ['phone-extraction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['phone-extraction-runs'] });
       queryClient.invalidateQueries({ queryKey: ['phone-extraction-last-run'] });
       queryClient.invalidateQueries({ queryKey: ['phone-monitor-runs'] });
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
+    }
+  }, [queryClient]);
+
+  const stopPhoneLoop = React.useCallback(() => {
+    phoneLoopStopRef.current = true;
+  }, []);
 
   return (
     <div className="space-y-4" dir="rtl">
@@ -762,23 +782,26 @@ export const ChecksDashboard: React.FC = () => {
           isTogglePending={toggleFlag.isPending}
         />
 
-        {/* Phone Extraction (Homeless) */}
+        {/* Phone Extraction */}
         <ProcessCard
           title="חילוץ טלפונים"
           icon={<Phone className="h-4 w-4 text-amber-600" />}
-          status={lastPhoneRun?.status === 'running' ? 'running' : lastPhoneRun ? 'completed' : 'idle'}
-          primaryValue={phoneStats?.pending ?? 0}
-          primaryLabel="ממתינים לחילוץ"
-          secondaryLine={`${(phoneStats?.totalWithPhone ?? 0).toLocaleString('he-IL')} טלפונים נמצאו`}
+          status={phoneLooping ? 'running' : lastPhoneRun?.status === 'running' ? 'running' : lastPhoneRun ? 'completed' : 'idle'}
+          primaryValue={phoneLooping ? phoneLoopStats.processed : (phoneStats?.pending ?? 0)}
+          primaryLabel={phoneLooping ? `עיבד · ${phoneLoopStats.found} טלפונים` : 'ממתינים לחילוץ'}
+          secondaryLine={phoneLooping ? 'רץ עד שהתור מתרוקן...' : `${(phoneStats?.totalWithPhone ?? 0).toLocaleString('he-IL')} טלפונים נמצאו`}
           insight={
-            (phoneStats?.pending ?? 0) === 0
-              ? 'אין פריטים בתור'
-              : `${(phoneStats?.success ?? 0).toLocaleString('he-IL')} חולצו עד כה`
+            phoneLooping
+              ? `${(phoneStats?.pending ?? 0).toLocaleString('he-IL')} נותרו בתור`
+              : (phoneStats?.pending ?? 0) === 0
+                ? 'אין פריטים בתור'
+                : `${(phoneStats?.success ?? 0).toLocaleString('he-IL')} חולצו עד כה`
           }
-          insightType={(phoneStats?.pending ?? 0) === 0 ? 'ok' : 'info'}
+          insightType={phoneLooping ? 'info' : (phoneStats?.pending ?? 0) === 0 ? 'ok' : 'info'}
           lastRun={formatLastRun(lastPhoneRun?.started_at, lastPhoneRun?.ended_at)}
-          onRun={() => triggerPhoneExtraction.mutate()}
-          isRunPending={triggerPhoneExtraction.isPending}
+          onRun={phoneLooping ? undefined : startPhoneLoop}
+          onStop={phoneLooping ? stopPhoneLoop : undefined}
+          isRunPending={false}
           historyContent={
             <div className="space-y-2">
               {(phoneRuns ?? []).length === 0 && (
@@ -804,7 +827,7 @@ export const ChecksDashboard: React.FC = () => {
               <LogicDescription lines={[
                 'מחלץ מספרי טלפון של בעלי דירות פרטיות מ-Homeless, Yad2 ו-Madlan.',
                 'הקרון רץ כל דקה — הפונקציה בודקת את חלון השעות שמוגדר למטה.',
-                'כרון: נכס אחד לדקה עם השהייה רנדומלית — בטוח מפני חסימות. ריצה ידנית: 20 נכסים בבת אחת.',
+                'לחיצה על הפעל מריצה לולאה רציפה — 20 נכסים בכל סבב — עד שהתור מתרוקן לגמרי. לחץ עצור לעצירה.',
                 'אחרי 3 ניסיונות כושלים נכס מסומן כ-failed ולא ייבדק שוב.',
                 'הטלפון שמתגלה נשמר ב-owner_phone של הנכס לצמיתות.',
                 'ריצה ידנית מתעלמת מחלון השעות.',
