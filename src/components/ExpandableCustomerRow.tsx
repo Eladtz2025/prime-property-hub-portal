@@ -19,6 +19,7 @@ import type { Customer } from "@/hooks/useCustomerData";
 import { phoneSchema, emailSchema, requiredNameSchema, validateField } from "@/utils/formValidation";
 import { cn } from "@/lib/utils";
 import { CustomerMatchesCell } from "@/components/customers/CustomerMatchesCell";
+import type { OwnPropertyMatch } from "@/components/customers/CustomerMatchesCell";
 import { CitySelectorDropdown } from "@/components/ui/city-selector";
 import { NeighborhoodSelectorDropdown } from "@/components/ui/neighborhood-selector";
 import { COUNTRY_CODES, parsePhoneNumber, combinePhoneNumber } from '@/utils/phoneCountryCodes';
@@ -44,7 +45,28 @@ interface ExpandableCustomerRowProps {
   agents?: Agent[];
   isSelected?: boolean;
   onToggleSelect?: () => void;
+  ownPropertyMatches?: OwnPropertyMatch[];
 }
+
+const statusColors: Record<string, string> = {
+  new: 'bg-blue-500 text-white',
+  contacted: 'bg-yellow-500 text-black',
+  active: 'bg-green-500 text-white',
+  viewing_scheduled: 'bg-purple-500 text-white',
+  offer_made: 'bg-orange-500 text-white',
+  closed_won: 'bg-gray-400 text-white',
+  closed_lost: 'bg-red-400 text-white',
+};
+
+const statusLabels: Record<string, string> = {
+  new: 'חדש',
+  contacted: 'נוצר קשר',
+  active: 'פעיל',
+  viewing_scheduled: 'צפייה',
+  offer_made: 'הצעה',
+  closed_won: 'נסגר',
+  closed_lost: 'אבוד',
+};
 
 const priorityColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -115,6 +137,7 @@ export const ExpandableCustomerRow = React.memo(({
   agents = [],
   isSelected = false,
   onToggleSelect,
+  ownPropertyMatches,
 }: ExpandableCustomerRowProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<Customer>>(() => ({
@@ -380,6 +403,27 @@ export const ExpandableCustomerRow = React.memo(({
             </div>
           </div>
         </TableCell>
+        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+          <Select
+            value={customer.status}
+            onValueChange={(value) => onUpdateStatus(customer.id, value)}
+          >
+            <SelectTrigger className="h-7 text-xs w-[80px] border-0 bg-transparent p-0">
+              <Badge className={`${statusColors[customer.status] ?? 'bg-muted text-muted-foreground'} text-[10px] px-1.5`}>
+                {statusLabels[customer.status] ?? customer.status}
+              </Badge>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="new">חדש</SelectItem>
+              <SelectItem value="contacted">נוצר קשר</SelectItem>
+              <SelectItem value="active">פעיל</SelectItem>
+              <SelectItem value="viewing_scheduled">צפייה קבועה</SelectItem>
+              <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
+              <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
+              <SelectItem value="closed_lost">לא סגר</SelectItem>
+            </SelectContent>
+          </Select>
+        </TableCell>
         <TableCell className="text-right">
           {customer.property_type ? (
             <Badge variant="outline" className="gap-1">
@@ -421,9 +465,9 @@ export const ExpandableCustomerRow = React.memo(({
           </Select>
         </TableCell>
         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-          <CustomerMatchesCell 
-            customerId={customer.id} 
-            customerName={customer.name} 
+          <CustomerMatchesCell
+            customerId={customer.id}
+            customerName={customer.name}
             customerPhone={customer.phone}
             preferredCities={customer.preferred_cities}
             preferredNeighborhoods={customer.preferred_neighborhoods}
@@ -434,6 +478,7 @@ export const ExpandableCustomerRow = React.memo(({
             propertyType={customer.property_type}
             rejectionSummary={customer.rejection_summary}
             onRefresh={onSave}
+            ownMatches={ownPropertyMatches}
           />
         </TableCell>
         <TableCell className="text-right">
@@ -446,7 +491,7 @@ export const ExpandableCustomerRow = React.memo(({
 
       {/* Expanded Edit Section */}
       <TableRow className={isExpanded ? '' : 'hidden'}>
-        <TableCell colSpan={7} className="p-0 border-0">
+        <TableCell colSpan={8} className="p-0 border-0">
           <Collapsible open={isExpanded}>
             <CollapsibleContent className="bg-muted/20 border-t">
               <div className="p-4 space-y-4">

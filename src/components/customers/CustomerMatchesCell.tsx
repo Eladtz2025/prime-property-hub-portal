@@ -2,7 +2,20 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Home, X, Copy, Loader2, RefreshCcw, EyeOff, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { Home, Building2, X, Copy, Loader2, RefreshCcw, EyeOff, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+
+export interface OwnPropertyMatch {
+  id: string;
+  title: string | null;
+  address: string;
+  city: string;
+  neighborhood: string | null;
+  property_type: string;
+  rooms: number | null;
+  monthly_rent: number | null;
+  current_market_value: number | null;
+  property_number: string | null;
+}
 import { useCustomerMatches, GroupedMatch } from "@/hooks/useCustomerMatches";
 import { useDismissMatch, useRestoreMatch } from "@/hooks/useDismissedMatches";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,8 +38,51 @@ interface CustomerMatchesCellProps {
   roomsMax?: number | null;
   propertyType?: string | null;
   rejectionSummary?: { total_rejected: number; reasons: Record<string, number> } | null;
+  ownMatches?: OwnPropertyMatch[];
   onRefresh: () => void;
 }
+
+const OwnMatchesButton = ({ ownMatches, customerName }: { ownMatches: OwnPropertyMatch[]; customerName: string }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100" title="נכסים שלנו">
+          <Building2 className="h-3 w-3" />
+          {ownMatches.length}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md" dir="rtl">
+        <DialogHeader>
+          <DialogTitle>נכסים שלנו המתאימים ל{customerName} ({ownMatches.length})</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto mt-2">
+          {ownMatches.map(prop => {
+            const price = prop.property_type === 'rental' ? prop.monthly_rent : prop.current_market_value;
+            return (
+              <div key={prop.id} className="border rounded-lg p-3 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">{prop.title || prop.address}</p>
+                  <p className="text-xs text-muted-foreground">{prop.city}{prop.neighborhood ? ` · ${prop.neighborhood}` : ''}</p>
+                  <div className="flex items-center gap-2 mt-1 text-xs">
+                    {prop.rooms != null && <span>{prop.rooms} חד'</span>}
+                    {price != null && <span className="font-medium">₪{price.toLocaleString()}</span>}
+                    {prop.property_number && <span className="text-muted-foreground">#{prop.property_number}</span>}
+                  </div>
+                </div>
+                <Button size="sm" variant="ghost" className="shrink-0 h-7 w-7 p-0" asChild>
+                  <a href={`/admin-dashboard/properties`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export const CustomerMatchesCell = ({
   customerId,
@@ -40,6 +96,7 @@ export const CustomerMatchesCell = ({
   roomsMax,
   propertyType,
   rejectionSummary,
+  ownMatches,
   onRefresh
 }: CustomerMatchesCellProps) => {
   const { toast } = useToast();
@@ -213,10 +270,10 @@ export const CustomerMatchesCell = ({
   if (totalActiveMatches === 0 && !showDismissed) {
     return (
       <div className="flex items-center gap-1">
-        <span className="text-muted-foreground text-sm">אין התאמה</span>
-        <Button 
-          size="sm" 
-          variant="ghost" 
+        <span className="text-muted-foreground text-sm">—</span>
+        <Button
+          size="sm"
+          variant="ghost"
           className="h-7 w-7 p-0"
           onClick={handleMatchLead}
           disabled={isMatching}
@@ -224,6 +281,7 @@ export const CustomerMatchesCell = ({
         >
           {isMatching ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCcw className="h-3 w-3" />}
         </Button>
+        {ownMatches && ownMatches.length > 0 && <OwnMatchesButton ownMatches={ownMatches} customerName={customerName} />}
       </div>
     );
   }
@@ -262,21 +320,8 @@ export const CustomerMatchesCell = ({
             )}
           </div>
         </DialogTrigger>
-        {rejectionSummary && rejectionSummary.total_rejected > 0 && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="h-5 w-5 bg-destructive/15 text-destructive rounded-full text-[10px] flex items-center justify-center cursor-help font-medium shrink-0">
-                  !
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs">
-                {rejectionTooltipContent}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-        <Button 
+        {ownMatches && ownMatches.length > 0 && <OwnMatchesButton ownMatches={ownMatches} customerName={customerName} />}
+        <Button
           size="sm" 
           variant="ghost" 
           className="h-7 w-7 p-0"

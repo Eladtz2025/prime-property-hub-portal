@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useQueryClient } from "@tanstack/react-query";
 import { useCustomerData, type Customer } from "@/hooks/useCustomerData";
 import { useBrokerData, type BrokerWithPropertyNames } from "@/hooks/useBrokerData";
+import type { OwnPropertyMatch } from "@/components/customers/CustomerMatchesCell";
 import { CustomerTableView } from "@/components/CustomerTableView";
 import { CustomerMobileTable } from "@/components/CustomerMobileTable";
 import { BrokerTableView } from "@/components/BrokerTableView";
@@ -44,6 +45,8 @@ export default function AdminCustomers() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isMatchingAll, setIsMatchingAll] = useState(false);
   const [isScanningOwn, setIsScanningOwn] = useState(false);
+  const [sortBy, setSortBy] = useState('last_contact_asc');
+  const [ownPropertyMatchesMap, setOwnPropertyMatchesMap] = useState<Map<string, OwnPropertyMatch[]>>(new Map());
   const queryClient = useQueryClient();
 
   const {
@@ -147,9 +150,51 @@ export default function AdminCustomers() {
   const handleScanOwnProperties = async () => {
     setIsScanningOwn(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ['own-property-matches'] });
-      toast.success('ההתאמות לנכסים שלנו עודכנו');
-      fetchCustomers();
+      const { data: ownProps, error } = await supabase
+        .from('properties')
+        .select('id, title, address, city, neighborhood, property_type, rooms, monthly_rent, current_market_value, property_number')
+        .eq('show_on_website', true);
+
+      if (error) throw error;
+
+      const newMap = new Map<string, OwnPropertyMatch[]>();
+      const allCustomers = customers;
+
+      for (const customer of allCustomers) {
+        const matches: OwnPropertyMatch[] = (ownProps ?? []).filter(prop => {
+          // property type
+          const custType = customer.property_type?.toLowerCase();
+          const propType = prop.property_type?.toLowerCase();
+          if (custType && custType !== 'both') {
+            const wantsRental = custType === 'rental' || custType === 'rent';
+            const wantsSale = custType === 'sale' || custType === 'purchase';
+            if (wantsRental && propType !== 'rental') return false;
+            if (wantsSale && propType === 'rental') return false;
+          }
+          // city
+          if (customer.preferred_cities?.length) {
+            const propCity = (prop.city ?? '').toLowerCase();
+            const match = customer.preferred_cities.some(c => c.toLowerCase() === propCity);
+            if (!match) return false;
+          }
+          // rooms
+          const rooms = prop.rooms ?? null;
+          if (customer.rooms_min != null && rooms != null && rooms < customer.rooms_min) return false;
+          if (customer.rooms_max != null && rooms != null && rooms > customer.rooms_max) return false;
+          // budget
+          const price = prop.property_type === 'rental' ? prop.monthly_rent : prop.current_market_value;
+          if (price != null) {
+            if (customer.budget_min != null && price < customer.budget_min) return false;
+            if (customer.budget_max != null && price > customer.budget_max) return false;
+          }
+          return true;
+        });
+        if (matches.length > 0) newMap.set(customer.id, matches);
+      }
+
+      setOwnPropertyMatchesMap(newMap);
+      const totalMatched = newMap.size;
+      toast.success(`נמצאו התאמות לנכסים שלנו עבור ${totalMatched} לקוחות`);
     } catch (error) {
       logger.error('Scan own properties error:', error);
       toast.error('שגיאה בסריקת נכסים');
@@ -221,8 +266,9 @@ export default function AdminCustomers() {
         onHideCustomer={hideCustomer}
         onUnhideCustomer={unhideCustomer}
         agents={agents}
-        sortBy="created_at_desc"
-        onSortChange={() => {}}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        ownPropertyMatchesMap={ownPropertyMatchesMap}
       />
     );
   };
@@ -300,7 +346,7 @@ export default function AdminCustomers() {
                 disabled={isMatchingAll}
                 className="flex-none"
               >
-                <span className="hidden sm:inline">חשב התאמות מחדש</span>
+                <span>חשב התאמות מחדש</span>
                 {isMatchingAll ? (
                   <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
                 ) : (
@@ -314,7 +360,7 @@ export default function AdminCustomers() {
                 disabled={isScanningOwn}
                 className="flex-none bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
               >
-                <span className="hidden sm:inline">סרוק נכסים שלנו</span>
+                <span>סרוק נכסים שלנו</span>
                 {isScanningOwn ? (
                   <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
                 ) : (
@@ -395,8 +441,8 @@ export default function AdminCustomers() {
                   onHideCustomer={() => {}}
                   onUnhideCustomer={(id) => { unhideHiddenCustomer(id); fetchCustomers(); }}
                   agents={agents}
-                  sortBy="created_at_desc"
-                  onSortChange={() => {}}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
                   isHiddenView
                 />
               </div>
