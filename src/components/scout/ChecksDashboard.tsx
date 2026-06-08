@@ -559,10 +559,15 @@ export const ChecksDashboard: React.FC = () => {
         const reasonMap: Record<string, string> = {
           feature_flag_disabled: 'התהליך כבוי — הפעל את המתג',
           outside_working_hours: `מחוץ לחלון השעות (${data.window ?? ''})`,
-          queue_empty: 'אין נכסים בתור לחילוץ',
+          queue_empty: 'כל הנכסים עובדו — אין יותר בתור',
         };
         toast.info(reasonMap[data.reason] ?? `דולג: ${data.reason}`);
-      } else if (data?.phone_found) toast.success(`נמצא טלפון! (${data.result?.phone ?? ''})`);
+      } else if (data?.processed != null) {
+        const found = data.phones_found ?? 0;
+        const processed = data.processed ?? 0;
+        if (found > 0) toast.success(`עיבד ${processed} נכסים — נמצאו ${found} טלפונים ✓`);
+        else toast.info(`עיבד ${processed} נכסים — לא נמצאו טלפונים`);
+      } else if (data?.phone_found) toast.success('נמצא טלפון!');
       else toast.info('נכס עובד — לא נמצא טלפון');
       queryClient.invalidateQueries({ queryKey: ['phone-extraction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['phone-extraction-runs'] });
@@ -798,7 +803,7 @@ export const ChecksDashboard: React.FC = () => {
               <LogicDescription lines={[
                 'מחלץ מספרי טלפון של בעלי דירות פרטיות מ-Homeless, Yad2 ו-Madlan.',
                 'הקרון רץ כל דקה — הפונקציה בודקת את חלון השעות שמוגדר למטה.',
-                'בכל ריצה מטופל נכס אחד עם השהייה רנדומלית של 15–45 שניות — קצב איטי ובטוח שלא נחסם.',
+                'כרון: נכס אחד לדקה עם השהייה רנדומלית — בטוח מפני חסימות. ריצה ידנית: 20 נכסים בבת אחת.',
                 'אחרי 3 ניסיונות כושלים נכס מסומן כ-failed ולא ייבדק שוב.',
                 'הטלפון שמתגלה נשמר ב-owner_phone של הנכס לצמיתות.',
                 'ריצה ידנית מתעלמת מחלון השעות.',

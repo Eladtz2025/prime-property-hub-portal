@@ -1,5 +1,6 @@
-// Phone extraction worker - cron-triggered, processes ONE property per invocation.
-// Slow & safe: random delay, time window check, kill switch.
+// Phone extraction worker
+// - Cron: processes 1 property per invocation with 15–45s human-like delay
+// - Manual (from UI button): processes up to 20 properties, no delay, with 50s wall-clock guard
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
@@ -9,6 +10,9 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+const MANUAL_BATCH_SIZE = 20;
+const WALL_CLOCK_LIMIT_MS = 50_000; // stay well within Supabase's 60s edge-function timeout
 
 function israelHourNow(): number {
   return parseInt(
@@ -34,6 +38,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const startedAt = new Date().toISOString();
+  const wallStart = Date.now();
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
   let body: { manual?: boolean } = {};
@@ -43,6 +48,7 @@ Deno.serve(async (req) => {
     body = {};
   }
   const manual = body.manual === true;
+  const batchSize = manual ? MANUAL_BATCH_SIZE : 1;
 
   // 1. Kill switch + time window config (parallel DB reads)
   const [flagRes, windowRes] = await Promise.all([
@@ -67,7 +73,7 @@ Deno.serve(async (req) => {
   const startHour = parseInt(String(rawStart).replace(/"/g, '').split(':')[0], 10) || 9;
   const endHour   = parseInt(String(rawEnd).replace(/"/g, '').split(':')[0], 10)   || 21;
 
-  // 2. Time window (skip if manual)
+  // 2. Time window (skip if manual — manual always runs)
   if (!manual && !isWithinWindow(startHour, endHour)) {
     return new Response(
       JSON.stringify({ skipped: true, reason: 'outside_working_hours', window: `${startHour}–${endHour}` }),
@@ -75,7 +81,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  // 3. Pick one property from the queue — all three sources, private listings only
+  // 3. Pick up to batchSize properties from the queue
   const { data: candidates, error: qErr } = await supabase
     .from('scouted_properties')
     .select('id, source, source_url, owner_phone, phone_extraction_status, phone_extraction_attempts')
@@ -88,7 +94,7 @@ Deno.serve(async (req) => {
     .not('source_url', 'is', null)
     .order('phone_extraction_attempts', { ascending: true })
     .order('created_at', { ascending: true })
-    .limit(1);
+    .limit(batchSize);
 
   if (qErr) {
     return new Response(
@@ -104,62 +110,81 @@ Deno.serve(async (req) => {
     );
   }
 
-  const target = candidates[0];
-
-  // 4. Create run record
+  // 4. Create a single run record for the whole batch
   const { data: run } = await supabase
     .from('phone_extraction_runs')
     .insert({
       status: 'running',
-      source: target.source,
+      source: candidates[0].source,
       triggered_by: manual ? 'manual' : 'cron',
-      properties_attempted: 1,
+      properties_attempted: candidates.length,
     })
     .select('id')
     .single();
 
-  // 5. Call extract-phone
-  let phoneFound = false;
-  let errorOccurred = false;
-  let result: any = null;
+  // 5. Process each candidate
+  const results: { property_id: string; phone_found: boolean; phone?: string }[] = [];
+  let phonesFound = 0;
+  let errorsCount = 0;
 
-  try {
-    const resp = await fetch(`${SUPABASE_URL}/functions/v1/extract-phone`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${SERVICE_ROLE}`,
-      },
-      body: JSON.stringify({
-        property_id: target.id,
-        source_url: target.source_url,
-        source: target.source,
-      }),
-    });
-    result = await resp.json();
-    if (result?.phone) phoneFound = true;
-    if (result?.error) errorOccurred = true;
-  } catch (e) {
-    errorOccurred = true;
-    result = { error: (e as Error).message };
+  for (let i = 0; i < candidates.length; i++) {
+    // Wall-clock guard — stop before Supabase kills us
+    if (Date.now() - wallStart > WALL_CLOCK_LIMIT_MS) {
+      console.log(`Batch stopping early after ${i} properties (wall-clock limit)`);
+      break;
+    }
+
+    const target = candidates[i];
+    let phoneFound = false;
+    let errorOccurred = false;
+    let result: any = null;
+
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/extract-phone`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SERVICE_ROLE}`,
+        },
+        body: JSON.stringify({
+          property_id: target.id,
+          source_url: target.source_url,
+          source: target.source,
+        }),
+      });
+      result = await resp.json();
+      if (result?.phone) { phoneFound = true; phonesFound++; }
+      if (result?.error) { errorOccurred = true; errorsCount++; }
+    } catch (e) {
+      errorOccurred = true;
+      errorsCount++;
+      result = { error: (e as Error).message };
+    }
+
+    results.push({ property_id: target.id, phone_found: phoneFound, phone: result?.phone });
+
+    // Cron only: human-like random delay after processing (not needed for manual)
+    if (!manual && i < candidates.length - 1) {
+      const delayMs = 15000 + Math.floor(Math.random() * 30000);
+      await sleep(delayMs);
+    }
   }
 
-  // 6. Random delay (15–45s) to look human (skip on manual to give snappier UX)
-  if (!manual) {
-    const delayMs = 15000 + Math.floor(Math.random() * 30000);
-    await sleep(delayMs);
-  }
-
-  // 7. Finalize run
+  // 6. Finalize run
   if (run?.id) {
     await supabase
       .from('phone_extraction_runs')
       .update({
         ended_at: new Date().toISOString(),
         status: 'completed',
-        phones_found: phoneFound ? 1 : 0,
-        errors_count: errorOccurred ? 1 : 0,
-        notes: { property_id: target.id, result },
+        phones_found: phonesFound,
+        errors_count: errorsCount,
+        notes: {
+          batch_size: results.length,
+          phones_found: phonesFound,
+          // Only keep first 5 results in notes to avoid bloating the column
+          sample: results.slice(0, 5),
+        },
       })
       .eq('id', run.id);
   }
@@ -167,10 +192,12 @@ Deno.serve(async (req) => {
   return new Response(
     JSON.stringify({
       success: true,
-      property_id: target.id,
-      phone_found: phoneFound,
-      result,
+      processed: results.length,
+      phones_found: phonesFound,
+      errors: errorsCount,
       started_at: startedAt,
+      // Legacy field — kept so existing onSuccess check still works
+      phone_found: phonesFound > 0,
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
   );

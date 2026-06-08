@@ -650,6 +650,21 @@ export async function saveProperty(
     return { isNew: false };
   }
 
+  // For newly inserted private listings: trigger phone extraction immediately (fire-and-forget).
+  // The cron worker handles the queue; this just eliminates the up-to-1-minute lag for fresh properties.
+  if (!existedBefore && upsertResult?.id && safeIsPrivate === true
+      && property.source_url && ['homeless', 'yad2', 'madlan'].includes(property.source)) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (supabaseUrl && serviceKey) {
+      fetch(`${supabaseUrl}/functions/v1/extract-phone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
+        body: JSON.stringify({ property_id: upsertResult.id, source_url: property.source_url, source: property.source }),
+      }).catch((err: unknown) => console.warn(`Phone extraction trigger failed for ${upsertResult!.id}: ${err}`));
+    }
+  }
+
   return { isNew: !existedBefore && !!upsertResult };
 }
 
