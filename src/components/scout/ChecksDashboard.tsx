@@ -503,7 +503,7 @@ export const ChecksDashboard: React.FC = () => {
         .select('id', { count: 'exact', head: true })
         .eq('is_active', true)
         .eq('is_private', true)
-        .eq('source', 'homeless');
+        .in('source', ['homeless', 'yad2', 'madlan']);
 
       const [pendingRes, successRes, withPhoneRes] = await Promise.all([
         baseQ().or('owner_phone.is.null,owner_phone.eq.').lt('phone_extraction_attempts', 3).or('phone_extraction_status.is.null,and(phone_extraction_status.neq.success,phone_extraction_status.neq.not_found)'),
@@ -555,9 +555,15 @@ export const ChecksDashboard: React.FC = () => {
       return data;
     },
     onSuccess: (data: any) => {
-      if (data?.skipped) toast.info(`דולג: ${data.reason}`);
-      else if (data?.phone_found) toast.success('נמצא טלפון!');
-      else toast.info('הריצה הסתיימה (ללא טלפון)');
+      if (data?.skipped) {
+        const reasonMap: Record<string, string> = {
+          feature_flag_disabled: 'התהליך כבוי — הפעל את המתג',
+          outside_working_hours: `מחוץ לחלון השעות (${data.window ?? ''})`,
+          queue_empty: 'אין נכסים בתור לחילוץ',
+        };
+        toast.info(reasonMap[data.reason] ?? `דולג: ${data.reason}`);
+      } else if (data?.phone_found) toast.success(`נמצא טלפון! (${data.result?.phone ?? ''})`);
+      else toast.info('נכס עובד — לא נמצא טלפון');
       queryClient.invalidateQueries({ queryKey: ['phone-extraction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['phone-extraction-runs'] });
       queryClient.invalidateQueries({ queryKey: ['phone-extraction-last-run'] });
@@ -790,7 +796,7 @@ export const ChecksDashboard: React.FC = () => {
           settingsContent={
             <div className="space-y-6">
               <LogicDescription lines={[
-                'מחלץ מספרי טלפון של בעלי דירות פרטיות מ-Homeless בלבד (שלב 1).',
+                'מחלץ מספרי טלפון של בעלי דירות פרטיות מ-Homeless, Yad2 ו-Madlan.',
                 'הקרון רץ כל דקה — הפונקציה בודקת את חלון השעות שמוגדר למטה.',
                 'בכל ריצה מטופל נכס אחד עם השהייה רנדומלית של 15–45 שניות — קצב איטי ובטוח שלא נחסם.',
                 'אחרי 3 ניסיונות כושלים נכס מסומן כ-failed ולא ייבדק שוב.',
