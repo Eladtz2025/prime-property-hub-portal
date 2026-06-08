@@ -56,6 +56,7 @@ const statusColors: Record<string, string> = {
   offer_made: 'bg-orange-500 text-white',
   closed_won: 'bg-gray-400 text-white',
   closed_lost: 'bg-red-400 text-white',
+  old_needs_check: 'bg-amber-500 text-white',
 };
 
 const statusLabels: Record<string, string> = {
@@ -66,6 +67,7 @@ const statusLabels: Record<string, string> = {
   offer_made: 'הצעה',
   closed_won: 'נסגר',
   closed_lost: 'אבוד',
+  old_needs_check: 'ישן - לבדיקה',
 };
 
 const priorityColors: Record<string, string> = {
@@ -421,6 +423,7 @@ export const ExpandableCustomerRow = React.memo(({
               <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
               <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
               <SelectItem value="closed_lost">לא סגר</SelectItem>
+              <SelectItem value="old_needs_check">ישן - לבדיקה</SelectItem>
             </SelectContent>
           </Select>
         </TableCell>

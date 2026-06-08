@@ -10,6 +10,7 @@ const STATUS_OPTIONS = [
   { value: 'offer_made', label: 'הצעה בוצעה', color: 'bg-orange-500' },
   { value: 'closed_won', label: 'נסגר בהצלחה', color: 'bg-gray-400' },
   { value: 'closed_lost', label: 'לא סגר', color: 'bg-red-400' },
+  { value: 'old_needs_check', label: 'ישן - לבדיקה', color: 'bg-amber-500' },
 ];
 
 interface WhatsAppBulkBarProps {

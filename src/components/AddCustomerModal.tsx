@@ -444,6 +444,7 @@ export const AddCustomerModal = ({ open, onClose, onSave }: AddCustomerModalProp
                   <SelectItem value="offer_made">הצעה נשלחה</SelectItem>
                   <SelectItem value="closed_won">סגור - זכייה</SelectItem>
                   <SelectItem value="closed_lost">סגור - אובדן</SelectItem>
+                  <SelectItem value="old_needs_check">ישן - לבדיקה</SelectItem>
                 </SelectContent>
               </Select>
             </div>

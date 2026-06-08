@@ -37,6 +37,7 @@ const statusColors: Record<string, string> = {
   offer_made: 'bg-orange-500 text-white',
   closed_won: 'bg-emerald-600 text-white',
   closed_lost: 'bg-gray-500 text-white',
+  old_needs_check: 'bg-amber-500 text-white',
 };
 
 const priorityColors: Record<string, string> = {
@@ -54,6 +55,7 @@ const statusLabels: Record<string, string> = {
   offer_made: 'הצעה בוצעה',
   closed_won: 'נסגר בהצלחה',
   closed_lost: 'נסגר ללא הצלחה',
+  old_needs_check: 'ישן - לבדיקה',
 };
 
 const priorityLabels: Record<string, string> = {
@@ -436,6 +438,7 @@ export const CustomerDetailSheet = ({
                     <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
                     <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
                     <SelectItem value="closed_lost">נסגר ללא הצלחה</SelectItem>
+                    <SelectItem value="old_needs_check">ישן - לבדיקה</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

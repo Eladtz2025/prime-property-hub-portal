@@ -49,6 +49,7 @@ const statusColors: Record<string, string> = {
   offer_made: 'bg-orange-500',
   closed_won: 'bg-emerald-600',
   closed_lost: 'bg-gray-400',
+  old_needs_check: 'bg-amber-500',
 };
 
 const priorityColors: Record<string, string> = {
@@ -66,6 +67,7 @@ const statusLabels: Record<string, string> = {
   offer_made: 'הצעה',
   closed_won: '✓',
   closed_lost: '✗',
+  old_needs_check: 'ישן',
 };
 
 const priorityLabels: Record<string, string> = {
@@ -437,6 +439,7 @@ export const CustomerMobileTable = ({
                     <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
                     <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
                     <SelectItem value="closed_lost">נסגר ללא הצלחה</SelectItem>
+                    <SelectItem value="old_needs_check">ישן - לבדיקה</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

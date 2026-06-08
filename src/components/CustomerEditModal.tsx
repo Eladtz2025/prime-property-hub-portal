@@ -292,6 +292,7 @@ export const CustomerEditModal = ({ customer, open, onClose, onSave, agents = []
                   <SelectItem value="offer_made">הצעה בוצעה</SelectItem>
                   <SelectItem value="closed_won">נסגר בהצלחה</SelectItem>
                   <SelectItem value="closed_lost">נסגר ללא הצלחה</SelectItem>
+                  <SelectItem value="old_needs_check">ישן - לבדיקה</SelectItem>
                 </SelectContent>
               </Select>
             </div>
