@@ -572,6 +572,7 @@ export const ChecksDashboard: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['phone-extraction-stats'] });
       queryClient.invalidateQueries({ queryKey: ['phone-extraction-runs'] });
       queryClient.invalidateQueries({ queryKey: ['phone-extraction-last-run'] });
+      queryClient.invalidateQueries({ queryKey: ['phone-monitor-runs'] });
     },
     onError: (err: any) => toast.error(err.message),
   });
