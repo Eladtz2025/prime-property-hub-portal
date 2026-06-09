@@ -27,6 +27,7 @@ import { FacebookPostPreview } from './FacebookPostPreview';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RotationList } from './RotationList';
 import cityMarketLogo from '@/assets/city-market-icon.png';
+import { formatPropertyPrice, propertyTypeLabel, fillPropertyPlaceholders, fillHashtagPlaceholders } from '@/lib/social-content';
 
 const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -203,36 +204,8 @@ export const AutoPublishManager: React.FC = () => {
     setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   };
 
-  // Property selection for one-time posts
-  const fillPropertyPlaceholders = (text: string, prop: any): string => {
-    const price = prop.monthly_rent
-      ? `₪${Number(prop.monthly_rent).toLocaleString()}`
-      : prop.current_market_value
-        ? `₪${Number(prop.current_market_value).toLocaleString()}`
-        : '';
-    const typeLabel = prop.property_type === 'sale' ? 'מכירה' : prop.property_type === 'rental' ? 'השכרה' : prop.property_type || '';
-    return text
-      .replace(/{address}/g, prop.neighborhood || prop.city || '')
-      .replace(/{price}/g, price)
-      .replace(/{rooms}/g, prop.rooms?.toString() || '')
-      .replace(/{size}/g, prop.property_size?.toString() || '')
-      .replace(/{floor}/g, prop.floor?.toString() || '')
-      .replace(/{neighborhood}/g, prop.neighborhood || '')
-      .replace(/{city}/g, prop.city || '')
-      .replace(/{description}/g, '')
-      .replace(/{property_type}/g, typeLabel);
-  };
-
-  const fillHashtagPlaceholders = (tags: string, prop: any): string => {
-    return tags
-      .replace(/{neighborhood}/g, prop.neighborhood?.replace(/[-\s]/g, '_') || '')
-      .replace(/{city}/g, prop.city?.replace(/[-\s]/g, '_') || '')
-      .replace(/{property_type}/g, prop.property_type === 'sale' ? 'למכירה' : 'להשכרה')
-      .replace(/#{2,}/g, '#')
-      .replace(/#\s/g, '')
-      .replace(/#$/g, '')
-      .trim();
-  };
+  // Property content helpers (placeholders, price, hashtags) now live in
+  // src/lib/social-content.ts and are imported above (deduped from ~10 copies).
 
   const handleSelectProperty = async (propId: string) => {
     setSelectedPropertyId(propId);
@@ -240,12 +213,8 @@ export const AutoPublishManager: React.FC = () => {
     const prop = properties.find(p => p.id === propId);
     if (!prop) return;
     if (!selectedTemplateId) {
-      const price = prop.monthly_rent
-        ? `₪${Number(prop.monthly_rent).toLocaleString()}`
-        : prop.current_market_value
-          ? `₪${Number(prop.current_market_value).toLocaleString()}`
-          : '';
-      const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
+      const price = formatPropertyPrice(prop);
+      const typeLabel = propertyTypeLabel(prop.property_type, 'preposition');
       const neighborhood = prop.neighborhood;
       const details = [
         price ? `💰 ${price}` : '',
@@ -256,7 +225,7 @@ export const AutoPublishManager: React.FC = () => {
       setContentText(
         `🏠 דירה ${typeLabel} ב${prop.city || ''}${neighborhood ? ` - ${neighborhood}` : ''}\n${details}\n📞 לפרטים נוספים צרו קשר`
       );
-      const tags = ['#נדלן', `#דירה${typeLabel.replace('ל', 'ל')}`];
+      const tags = ['#נדלן', `#דירה${typeLabel}`];
       if (prop.city) tags.push(`#${prop.city.replace(/[-\s]/g, '_')}`);
       if (prop.neighborhood) tags.push(`#${prop.neighborhood.replace(/[-\s]/g, '_')}`);
       setHashtags(tags.join(' '));
@@ -472,16 +441,9 @@ export const AutoPublishManager: React.FC = () => {
     const nextProp = getNextProperty(queue);
     if (!nextProp) return 'אין דירות זמינות';
     const template = (queue.template_text as string) || '{neighborhood}, {city}';
-    return template
-      .replace(/{address}/g, nextProp.address || nextProp.neighborhood || '')
-      .replace(/{city}/g, nextProp.city || '')
-      .replace(/{neighborhood}/g, nextProp.neighborhood || '')
-      .replace(/{rooms}/g, nextProp.rooms?.toString() || '')
-      .replace(/{size}/g, nextProp.property_size?.toString() || '')
-      .replace(/{floor}/g, nextProp.floor?.toString() || '')
-      .replace(/{price}/g, nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : '')
-      .replace(/{description}/g, (nextProp as any).description || '')
-      .replace(/{property_type}/g, nextProp.property_type === 'sale' ? 'מכירה' : 'השכרה');
+    return fillPropertyPlaceholders(template, nextProp as any, {
+      addressMode: 'address', priceMode: 'rentOnly', includeDescription: true, typeLabel: 'nounBinary',
+    });
   };
 
   const getFrequencyLabel = (days: number) => {
@@ -990,10 +952,8 @@ export const AutoPublishManager: React.FC = () => {
                   };
 
                   const buildLinkCard = (prop: any) => {
-                    const typeLabel = prop.property_type === 'sale' ? 'למכירה' : 'להשכרה';
-                    const price = prop.property_type === 'sale'
-                      ? (prop.current_market_value ? `₪${Number(prop.current_market_value).toLocaleString()}` : '')
-                      : (prop.monthly_rent ? `₪${Number(prop.monthly_rent).toLocaleString()}${prop.property_type === 'sale' ? '' : '/חודש'}` : '');
+                    const typeLabel = propertyTypeLabel(prop.property_type, 'preposition');
+                    const price = formatPropertyPrice(prop, { typeAware: true, rentSuffix: '/חודש' });
                     linkUrl = `https://www.ctmarketproperties.com/property/${prop.id}`;
                     // Title — synced with og-property: "typePrefix: property.title"
                     linkTitle = `${typeLabel}: ${prop.title || 'נכס'}`;
@@ -1190,7 +1150,7 @@ export const AutoPublishManager: React.FC = () => {
                   <div className="bg-muted/40 rounded-md px-2.5 py-2 text-[11px]">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] text-muted-foreground font-medium">
-                        הבא בתור: {nextProp.address}, {nextProp.neighborhood || nextProp.city} — {nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : ''}
+                        הבא בתור: {nextProp.address}, {nextProp.neighborhood || nextProp.city} — {formatPropertyPrice(nextProp, { rentOnly: true })}
                       </span>
                       <Button
                         size="sm"
@@ -1219,8 +1179,8 @@ export const AutoPublishManager: React.FC = () => {
                     const images = (mainImage ? [mainImage, ...otherImages] : otherImages).map((img: any) => img.image_url);
 
                     if (queuePostStyle === 'link') {
-                      const typeLabel = nextProp.property_type === 'sale' ? 'למכירה' : 'להשכרה';
-                      const price = nextProp.monthly_rent ? `₪${Number(nextProp.monthly_rent).toLocaleString()}` : '';
+                      const typeLabel = propertyTypeLabel(nextProp.property_type, 'preposition');
+                      const price = formatPropertyPrice(nextProp, { rentOnly: true });
                       const descParts: string[] = [];
                       if (nextProp.rooms) descParts.push(`🛏️ ${nextProp.rooms} חד'`);
                       if (nextProp.property_size) descParts.push(`📐 ${nextProp.property_size} מ"ר`);

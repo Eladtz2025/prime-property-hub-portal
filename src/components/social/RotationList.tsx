@@ -3,6 +3,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Button } from '@/components/ui/button';
 import { List, ChevronDown } from 'lucide-react';
 import { useQueuePublishHistory } from '@/hooks/useAutoPublish';
+import { formatPropertyPrice } from '@/lib/social-content';
 import { cn } from '@/lib/utils';
 
 interface RotationListProps {
@@ -47,7 +48,7 @@ export const RotationList: React.FC<RotationListProps> = ({ queueId, filteredPro
             const isPast = idx < safeIndex;
             const publishDate = publishMap.get(prop.id);
             const address = prop.address || prop.neighborhood || prop.city || 'ללא כתובת';
-            const price = prop.monthly_rent ? `₪${Number(prop.monthly_rent).toLocaleString()}` : '';
+            const price = formatPropertyPrice(prop, { rentOnly: true });
 
             return (
               <div
