@@ -24,7 +24,6 @@ export function useSaveSocialAccount() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    retry: false, // non-idempotent (can INSERT a duplicate account on retry)
     mutationFn: async (account: {
       platform: string;
       page_id?: string;
@@ -36,25 +35,12 @@ export function useSaveSocialAccount() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Upsert — one account per platform
-      const { data: existing } = await supabase
+      // Atomic upsert — a UNIQUE(platform) constraint guarantees one row per
+      // platform, so this is idempotent (no read-then-write race, no silent dup).
+      const { error } = await supabase
         .from('social_accounts')
-        .select('id')
-        .eq('platform', account.platform)
-        .maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase
-          .from('social_accounts')
-          .update({ ...account, is_active: true })
-          .eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('social_accounts')
-          .insert({ ...account, user_id: user.id });
-        if (error) throw error;
-      }
+        .upsert({ ...account, user_id: user.id, is_active: true }, { onConflict: 'platform' });
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['social-accounts'] });

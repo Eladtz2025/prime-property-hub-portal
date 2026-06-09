@@ -260,8 +260,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update status to publishing
-    await supabase.from('social_posts').update({ status: 'publishing' }).eq('id', post_id);
+    // Update status to publishing. Persist the privacy intent when provided so a
+    // later scheduler-driven retry doesn't republish a private post publicly.
+    await supabase.from('social_posts').update({
+      status: 'publishing',
+      ...(typeof is_private === 'boolean' ? { is_private } : {}),
+    }).eq('id', post_id);
+
+    // Effective privacy: prefer the explicit request, else the persisted column.
+    const effectivePrivate = typeof is_private === 'boolean'
+      ? is_private
+      : !!(post as Record<string, unknown>).is_private;
 
     // Facebook group posts are semi-automatic — just mark as ready
     if (post.platform === 'facebook_group') {
@@ -333,7 +342,7 @@ Deno.serve(async (req) => {
         imageUrls,
         effectiveVideoUrl,
         post.link_url,
-        is_private
+        effectivePrivate
       );
     } else {
       // Instagram

@@ -73,17 +73,21 @@ Deno.serve(async (req) => {
 
         // For daily frequency, count how many successful publishes happened today for this queue
         if (freqDays <= 1) {
-          const todayStart = new Date(nowIsrael);
-          todayStart.setHours(0, 0, 0, 0);
-          // Convert back to UTC for DB query
-          const todayStartUtc = new Date(todayStart.toLocaleString('en-US', { timeZone: 'UTC' }));
-          
+          // Real-UTC instant of the start of the current Israel day. nowIsrael holds the
+          // Israel wall-clock; the gap to real now is the IL tz offset, so subtract it
+          // from Israel-midnight-wall to get the true UTC boundary (the old code compared
+          // against an offset-shifted value and excluded the first hours of the IL day).
+          const israelOffsetMs = nowIsrael.getTime() - Date.now();
+          const israelMidnightWall = new Date(nowIsrael);
+          israelMidnightWall.setHours(0, 0, 0, 0);
+          const todayStartUtc = new Date(israelMidnightWall.getTime() - israelOffsetMs);
+
           const { data: todayLogs } = await supabase
             .from('auto_publish_log')
             .select('id, published_at')
             .eq('queue_id', queue.id)
             .eq('status', 'published')
-            .gte('published_at', todayStart.toISOString());
+            .gte('published_at', todayStartUtc.toISOString());
 
           const publishedToday = todayLogs?.length || 0;
 
@@ -97,6 +101,22 @@ Deno.serve(async (req) => {
             results.push({ queue: queue.name, skipped: true, reason: `Already published ${publishedToday}/${slotsPassedSoFar} slots today` });
             continue;
           }
+        }
+
+        // Atomic per-slot claim — prevents two overlapping runs from double-posting
+        // the same queue/day/time-slot. The conditional UPDATE succeeds exactly once;
+        // a concurrent run sees last_slot_key already set and skips.
+        const israelDateKey = `${nowIsrael.getFullYear()}-${String(nowIsrael.getMonth() + 1).padStart(2, '0')}-${String(nowIsrael.getDate()).padStart(2, '0')}`;
+        const slotKey = `${israelDateKey}_${publishTimes[activeTimeIndex].replace(':', '')}`;
+        const { data: claimed } = await supabase
+          .from('auto_publish_queues')
+          .update({ last_slot_key: slotKey })
+          .eq('id', queue.id)
+          .or(`last_slot_key.is.null,last_slot_key.neq.${slotKey}`)
+          .select('id');
+        if (!claimed || claimed.length === 0) {
+          results.push({ queue: queue.name, skipped: true, reason: `Slot ${slotKey} already handled` });
+          continue;
         }
 
         if (queue.queue_type === 'property_rotation') {

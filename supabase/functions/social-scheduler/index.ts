@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     // Find posts ready to publish
     const { data: posts, error } = await supabase
       .from('social_posts')
-      .select('id')
+      .select('id, is_private')
       .eq('status', 'scheduled')
       .lte('scheduled_at', new Date().toISOString())
       .order('scheduled_at', { ascending: true })
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
           },
-          body: JSON.stringify({ post_id: post.id }),
+          body: JSON.stringify({ post_id: post.id, is_private: post.is_private }),
         });
 
         const data = await res.json();
