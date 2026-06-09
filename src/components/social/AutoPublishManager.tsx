@@ -452,12 +452,12 @@ export const AutoPublishManager: React.FC = () => {
   const charCount = contentText.length + (hashtags ? hashtags.length + 2 : 0);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold">מערכת פרסום</span>
+          <span className="text-sm font-semibold">מערכת פרסום</span>
           {activeCount > 0 && (
             <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4">
               {activeCount} תבניות פעילות
@@ -468,9 +468,9 @@ export const AutoPublishManager: React.FC = () => {
 
       {/* Inline Form — always visible */}
       <Card className="border-primary/20" ref={formRef}>
-          <CardContent className="pt-3 pb-3 space-y-2">
-            {/* Row 1: All controls in one line */}
-            <div className="flex flex-wrap items-center gap-2">
+          <CardContent className="p-4 space-y-3">
+            {/* Row 1: setup toolbar */}
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/60 bg-muted/30 p-2">
               <Select value={mode === 'one_time' ? 'one_time' : queueType === 'article_oneshot' ? 'auto_articles' : 'auto_properties'} onValueChange={(v) => {
                   if (v === 'one_time') {
                     setMode('one_time');
@@ -709,7 +709,7 @@ export const AutoPublishManager: React.FC = () => {
                     value={contentText}
                     onChange={e => setContentText(e.target.value)}
                     placeholder={mode === 'recurring' ? 'תבנית הפוסט שתפורסם אוטומטית...' : 'כתוב את תוכן הפוסט...'}
-                    className="min-h-[60px] text-sm"
+                    className="min-h-[120px] text-sm resize-y"
                     dir="rtl"
                   />
                   <div className="flex items-center justify-between mt-1">
@@ -818,7 +818,7 @@ export const AutoPublishManager: React.FC = () => {
                 )}
 
                 {/* Schedule + Actions — single row */}
-                <div className="flex flex-wrap items-center gap-2 pt-2">
+                <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-3 mt-1">
                   {mode === 'one_time' && (
                     <>
                       <Popover>
