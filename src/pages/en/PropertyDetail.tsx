@@ -41,10 +41,7 @@ const EnglishPropertyDetail = () => {
   const furnishedImages = allImages.filter(img => img.isFurnished);
 
   const handleWhatsApp = () => {
-    const agentPhone = property?.agent?.phone;
-    const phone = agentPhone 
-      ? agentPhone.replace(/^0/, '972').replace(/\D/g, '') 
-      : '972545503055';
+    const phone = '972542343401'; // Taylor's contact number (0542343401)
     const recordNum = property?.property_number ? `#${property.property_number}` : '';
     const propertyUrl = `https://www.ctmarketproperties.com/property/${property?.id || ''}`;
     const message = `Hi, I'd love to hear more about property ${recordNum} 🏠\n${propertyUrl}`;
@@ -52,9 +49,7 @@ const EnglishPropertyDetail = () => {
   };
 
   const handleCall = () => {
-    const agentPhone = property?.agent?.phone;
-    const phone = agentPhone || '0545503055';
-    window.location.href = `tel:${phone}`;
+    window.location.href = 'tel:0542343401'; // Taylor's contact number
   };
 
   const getShareUrl = () => {

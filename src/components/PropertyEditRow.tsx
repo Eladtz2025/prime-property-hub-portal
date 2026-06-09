@@ -1072,7 +1072,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
               <ImageUpload
                 images={formData.images || []}
                 onImagesChange={handleImagesChange}
-                maxImages={10}
+                maxImages={20}
                 maxSizePerImage={50}
               />
             </TabsContent>

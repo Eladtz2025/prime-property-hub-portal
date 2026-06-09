@@ -41,10 +41,7 @@ const PropertyDetailPage = () => {
   const furnishedImages = allImages.filter(img => img.isFurnished);
 
   const handleWhatsApp = () => {
-    const agentPhone = property?.agent?.phone;
-    const phone = agentPhone 
-      ? agentPhone.replace(/^0/, '972').replace(/\D/g, '') 
-      : '972545503055';
+    const phone = '972542343401'; // Taylor's contact number (0542343401)
     const recordNum = property?.property_number ? `#${property.property_number}` : '';
     const propertyUrl = `https://www.ctmarketproperties.com/property/${property?.id || ''}`;
     const message = `היי, אשמח לשמוע פרטים על נכס ${recordNum} 🏠\n${propertyUrl}`;
@@ -52,9 +49,7 @@ const PropertyDetailPage = () => {
   };
 
   const handleCall = () => {
-    const agentPhone = property?.agent?.phone;
-    const phone = agentPhone || '0545503055';
-    window.location.href = `tel:${phone}`;
+    window.location.href = 'tel:0542343401'; // Taylor's contact number
   };
 
   const handleNativeShare = async () => {
@@ -203,29 +198,29 @@ const PropertyDetailPage = () => {
           </div>
 
           {/* Technical Details */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4" dir="rtl">
             {/* מחיר */}
-              <div className="flex items-center gap-3 col-span-2">
-                <span className="text-lg font-bold">{getPriceDisplay()}</span>
-                <span className="text-xl font-bold text-primary">₪</span>
-              </div>
+            <div className="flex items-center gap-3 col-span-2">
+              <span className="text-xl font-bold text-primary">₪</span>
+              <span className="text-lg font-bold">{getPriceDisplay().replace('₪', '')}</span>
+            </div>
             <div className="flex items-center gap-3">
+              <Bath className="h-5 w-5 text-primary shrink-0" />
               <span>{property.bathrooms} חדרי רחצה</span>
-              <Bath className="h-5 w-5 text-primary" />
             </div>
             {property.rooms && (
               <div className="flex items-center gap-3">
+                <Home className="h-5 w-5 text-primary shrink-0" />
                 <span>{property.rooms} חדרים</span>
-                <Home className="h-5 w-5 text-primary" />
               </div>
             )}
             <div className="flex items-center gap-3">
+              <Building2 className="h-5 w-5 text-primary shrink-0" />
               <span>קומה {property.floor === 0 ? 'קרקע' : property.floor}</span>
-              <Building2 className="h-5 w-5 text-primary" />
             </div>
             <div className="flex items-center gap-3">
+              <Square className="h-5 w-5 text-primary shrink-0" />
               <span>{property.property_size} מ"ר</span>
-              <Square className="h-5 w-5 text-primary" />
             </div>
           </div>
 
@@ -274,11 +269,11 @@ const PropertyDetailPage = () => {
           {/* Key Points */}
           <div className="text-right">
             <h3 className="text-lg font-semibold mb-3 text-right">נקודות מרכזיות</h3>
-            <div className="space-y-2">
+            <div className="space-y-2" dir="rtl">
               {getKeyPoints().map((point, index) => (
               <div key={index} className="flex items-center gap-2">
-                <span className="text-sm text-right">{point}</span>
-                <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                <Check className="h-4 w-4 text-green-600 shrink-0" />
+                <span className="text-sm">{point}</span>
               </div>
               ))}
             </div>
@@ -339,32 +334,32 @@ const PropertyDetailPage = () => {
             </div>
 
             {/* Technical Details */}
-            <div className="space-y-3 text-right">
+            <div className="space-y-3" dir="rtl">
               {/* מחיר */}
-            <div className="flex items-center gap-3 flex-row-reverse justify-end">
-              <span className="text-xl font-bold text-primary">₪</span>
-              <span className="text-lg font-bold">{getPriceDisplay()}</span>
-            </div>
-              <div className="flex items-center gap-3 flex-row-reverse justify-end">
-                <Bath className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3">
+                <span className="text-xl font-bold text-primary">₪</span>
+                <span className="text-lg font-bold">{getPriceDisplay().replace('₪', '')}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Bath className="h-5 w-5 text-primary shrink-0" />
                 <span className="text-sm">
                   {property.bathrooms} {property.bathrooms === 1 ? 'חדר רחצה' : 'חדרי רחצה'}
                 </span>
               </div>
               {property.rooms && (
-                <div className="flex items-center gap-3 flex-row-reverse justify-end">
-                  <Home className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-3">
+                  <Home className="h-5 w-5 text-primary shrink-0" />
                   <span className="text-sm">{property.rooms} חדרים</span>
                 </div>
               )}
-              <div className="flex items-center gap-3 flex-row-reverse justify-end">
-                <Building2 className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3">
+                <Building2 className="h-5 w-5 text-primary shrink-0" />
                 <span className="text-sm">
                   קומה {property.floor === 0 ? 'קרקע' : property.floor}
                 </span>
               </div>
-              <div className="flex items-center gap-3 flex-row-reverse justify-end">
-                <Square className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3">
+                <Square className="h-5 w-5 text-primary shrink-0" />
                 <span className="text-sm">{property.property_size} מ"ר</span>
               </div>
             </div>
@@ -442,11 +437,11 @@ const PropertyDetailPage = () => {
           </p>
 
           <h3 className="text-xl font-semibold mb-4 text-right">נקודות מרכזיות</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3" dir="rtl">
             {getKeyPoints().map((point, index) => (
-              <div key={index} className="flex items-center gap-3 justify-end">
+              <div key={index} className="flex items-center gap-3">
+                <Check className="h-5 w-5 text-green-600 shrink-0" />
                 <span>{point}</span>
-                <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
               </div>
             ))}
           </div>

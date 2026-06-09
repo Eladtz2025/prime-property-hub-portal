@@ -22,7 +22,7 @@ interface ImageUploadProps {
 export const ImageUpload: React.FC<ImageUploadProps> = ({
   images,
   onImagesChange,
-  maxImages = 10,
+  maxImages = 20,
   maxSizePerImage = 20 // Increased to 20MB for mobile photos
 }) => {
   const [isDragging, setIsDragging] = useState(false);

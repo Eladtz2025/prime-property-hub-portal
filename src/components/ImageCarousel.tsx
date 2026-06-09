@@ -232,7 +232,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
 
   // Thumbnail strip component (shared between normal and fullscreen)
   const ThumbnailStrip = ({ dark = false }: { dark?: boolean }) => (
-    <div className={`flex gap-2 p-3 overflow-x-auto ${dark ? 'bg-black/80' : ''}`} dir="rtl">
+    <div className={`flex gap-2 p-3 overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full ${dark ? 'bg-black/80 [&::-webkit-scrollbar-thumb]:bg-white/30' : '[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30'}`} dir="rtl">
       {activeImages.map((image, index) => {
         const isThumbVideo = image.mediaType === 'video';
         const isActive = index === currentIndex;

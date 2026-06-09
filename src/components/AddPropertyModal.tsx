@@ -1128,7 +1128,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 <ImageUpload
                   images={uploadedImages}
                   onImagesChange={setUploadedImages}
-                  maxImages={10}
+                  maxImages={20}
                   maxSizePerImage={20}
                 />
               </AccordionContent>
