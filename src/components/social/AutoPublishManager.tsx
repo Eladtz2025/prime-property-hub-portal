@@ -876,7 +876,9 @@ export const AutoPublishManager: React.FC = () => {
               </div>
 
               {/* Left column — Facebook Preview (sticky) */}
-              <div className="lg:sticky lg:top-0 self-start flex items-start justify-center">
+              <div className="lg:sticky lg:top-0 self-start space-y-1.5">
+                <p className="text-[11px] font-medium text-muted-foreground px-0.5">תצוגה מקדימה — איך זה ייראה בפייסבוק</p>
+                <div className="flex items-start justify-center">
                 {(() => {
                   let previewText = contentText;
                   let previewImages: string[] = imageUrls;
@@ -972,6 +974,7 @@ export const AutoPublishManager: React.FC = () => {
                     />
                   );
                 })()}
+                </div>
                 </div>
               </div>
           </CardContent>
