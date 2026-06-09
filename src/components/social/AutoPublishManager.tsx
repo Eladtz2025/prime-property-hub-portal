@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bot, ChevronDown, Building2, Newspaper, Clock, Facebook, Instagram, Send, Save, Image, X, CalendarDays, Lock, Plus } from 'lucide-react';
+import { Bot, ChevronDown, Building2, Newspaper, Clock, Facebook, Instagram, Send, Save, X, CalendarDays, Lock, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,8 @@ import { FacebookPostPreview } from './FacebookPostPreview';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RotationList } from './RotationList';
 import { SavedQueueCard } from './SavedQueueCard';
+import { FacebookGroupCategorySelector } from './FacebookGroupCategorySelector';
+import { FreePostImageUrlInput } from './FreePostImageUrlInput';
 import cityMarketLogo from '@/assets/city-market-icon.png';
 import { formatPropertyPrice, propertyTypeLabel, fillPropertyPlaceholders, fillHashtagPlaceholders } from '@/lib/social-content';
 
@@ -599,42 +601,11 @@ export const AutoPublishManager: React.FC = () => {
 
             {/* Groups selection by category */}
             {platforms.facebook && publishTarget === 'groups' && (
-              <>
-                {facebookGroups && facebookGroups.length > 0 ? (() => {
-                  const categories = [...new Set(facebookGroups.map((g: any) => g.category).filter(Boolean))] as string[];
-                  if (categories.length === 0) {
-                    return <p className="text-[10px] text-muted-foreground">לא הוגדרו קטגוריות לקבוצות. הגדר קטגוריה בניהול קבוצות.</p>;
-                  }
-                  return (
-                    <div className="flex flex-wrap gap-2 bg-muted/30 rounded-md p-2">
-                      {categories.map((cat) => {
-                        const groupsInCat = facebookGroups.filter((g: any) => g.category === cat);
-                        const groupIds = groupsInCat.map((g: any) => g.id);
-                        const allSelected = groupIds.every((id: string) => selectedGroupIds.includes(id));
-                        return (
-                          <label key={cat} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                            <Checkbox
-                              checked={allSelected}
-                              onCheckedChange={(checked) => {
-                                setSelectedGroupIds(prev => {
-                                  if (checked) {
-                                    return [...new Set([...prev, ...groupIds])];
-                                  } else {
-                                    return prev.filter(id => !groupIds.includes(id));
-                                  }
-                                });
-                              }}
-                            />
-                            <span>{cat} ({groupsInCat.length})</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  );
-                })() : (
-                  <p className="text-[10px] text-muted-foreground">לא נמצאו קבוצות. הוסף קבוצות בהגדרות.</p>
-                )}
-              </>
+              <FacebookGroupCategorySelector
+                facebookGroups={facebookGroups}
+                selectedGroupIds={selectedGroupIds}
+                setSelectedGroupIds={setSelectedGroupIds}
+              />
             )}
 
             {/* Two-column layout: form right, preview left */}
@@ -834,38 +805,14 @@ export const AutoPublishManager: React.FC = () => {
 
                     {/* Manual image URL for free posts */}
                     {(!selectedPropertyId || selectedPropertyId === 'free') && (
-                      <div>
-                        <Label className="text-xs font-medium">
-                          תמונות {platforms.instagram && <span className="text-muted-foreground">(חובה באינסטגרם)</span>}
-                        </Label>
-                        <div className="flex flex-row-reverse gap-2 mt-1">
-                          <Button size="sm" variant="outline" onClick={addImageUrl} disabled={!newImageUrl}>
-                            <Image className="h-3.5 w-3.5" />
-                          </Button>
-                          <Input
-                            value={newImageUrl}
-                            onChange={e => setNewImageUrl(e.target.value)}
-                            placeholder="הזן URL של תמונה"
-                            dir="rtl"
-                            className="text-sm flex-1 text-right"
-                          />
-                        </div>
-                        {imageUrls.length > 0 && (
-                          <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mt-2">
-                            {imageUrls.map((url, i) => (
-                              <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted">
-                                <img src={url} alt="" className="w-full h-full object-cover" />
-                                <button
-                                  onClick={() => removeImage(i)}
-                                  className="absolute top-1 left-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <FreePostImageUrlInput
+                        imageUrls={imageUrls}
+                        newImageUrl={newImageUrl}
+                        instagramSelected={platforms.instagram}
+                        onNewImageUrlChange={setNewImageUrl}
+                        onAdd={addImageUrl}
+                        onRemove={removeImage}
+                      />
                     )}
                   </div>
                 )}
