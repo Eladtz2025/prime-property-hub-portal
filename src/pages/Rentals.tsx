@@ -40,7 +40,8 @@ const Rentals = () => {
       parking: prop.parking,
       elevator: prop.elevator,
       balcony: prop.balcony,
-      yard: prop.yard
+      yard: prop.yard,
+      custom_features: ((prop as any).custom_features || []) as string[]
     }));
 
   const filteredProperties = properties.filter((property) => {
@@ -168,6 +169,11 @@ const Rentals = () => {
                           חצר
                         </Badge>
                       )}
+                      {property.custom_features?.map((f, i) => (
+                        <Badge key={`cf-${i}`} className="bg-orange-500 hover:bg-orange-600 text-white">
+                          {f}
+                        </Badge>
+                      ))}
                     </div>
                     <Button asChild className="w-full mt-auto">
                       <Link to={`/he/property/${property.id}`}>פרטים נוספים</Link>

@@ -41,6 +41,7 @@ const Sales = () => {
         prop.parking ? 'חניה' : null,
         prop.elevator ? 'מעלית' : null,
         prop.balcony ? 'מרפסת' : null,
+        ...((prop as any).custom_features || []),
       ].filter(Boolean) as string[]
     }));
 

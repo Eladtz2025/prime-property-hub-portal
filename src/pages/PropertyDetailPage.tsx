@@ -256,6 +256,9 @@ const PropertyDetailPage = () => {
                 <Shield className="h-3 w-3 mr-1" />
               </Badge>
             )}
+            {((property as any).custom_features as string[] | undefined)?.map((f, i) => (
+              <Badge key={`cf-${i}`} className="bg-orange-500 text-white hover:bg-orange-600 text-sm">{f}</Badge>
+            ))}
           </div>
 
           {/* Description */}
@@ -396,6 +399,9 @@ const PropertyDetailPage = () => {
                   <Shield className="h-3 w-3 mr-1" />
                 </Badge>
               )}
+              {((property as any).custom_features as string[] | undefined)?.map((f, i) => (
+                <Badge key={`cf-${i}`} className="bg-orange-500 text-white hover:bg-orange-600">{f}</Badge>
+              ))}
             </div>
 
             {/* Action Buttons */}

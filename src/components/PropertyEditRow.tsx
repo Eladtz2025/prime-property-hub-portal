@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Switch } from "@/components/ui/switch";
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { Languages, Loader2 } from 'lucide-react';
+import { Languages, Loader2, Plus, X } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -39,6 +39,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
   const [formData, setFormData] = useState<Property & { title_en?: string; description_en?: string; neighborhood_en?: string }>(property as any);
   const [loading, setLoading] = useState(false);
   const [translatingField, setTranslatingField] = useState<string | null>(null);
+  const [newCustomFeature, setNewCustomFeature] = useState('');
   const { toast } = useToast();
   const { permissions, hasPermission } = useAuth();
   const canViewPhone = canViewPhoneNumbers(permissions);
@@ -70,6 +71,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
       sizeRange: (property as any).size_range || '',
       unitsCount: (property as any).units_count || '',
       hasStorage: (property as any).has_storage || false,
+      customFeatures: (property as any).custom_features || [],
       projectStatus: (property as any).project_status || 'under_construction',
       trackingUrl: (property as any).tracking_url || (property as any).trackingUrl || '',
       title_en: '',
@@ -276,6 +278,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
           size_range: (formData as any).sizeRange || null,
           units_count: (formData as any).unitsCount || null,
           has_storage: (formData as any).hasStorage || false,
+          custom_features: (formData as any).customFeatures || [],
           project_status: (formData as any).property_type === 'project' ? ((formData as any).projectStatus || 'under_construction') : null,
           tracking_url: (formData as any).property_type === 'project' ? ((formData as any).trackingUrl || null) : null,
           updated_at: new Date().toISOString(),
@@ -738,10 +741,10 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full h-8 text-xs justify-start">
-                          תוספות ({[formData.parking, formData.elevator, formData.balcony, formData.mamad, formData.yard, (formData as any).hasStorage].filter(Boolean).length})
+                          תוספות ({[formData.parking, formData.elevator, formData.balcony, formData.mamad, formData.yard, (formData as any).hasStorage].filter(Boolean).length + (((formData as any).customFeatures as string[] | undefined)?.length || 0)})
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-40 p-3" align="start">
+                      <PopoverContent className="w-64 p-3" align="start">
                         <div className="space-y-3">
                           <div className="flex items-center gap-2">
                             <Checkbox
@@ -804,6 +807,62 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                               />
                             </div>
                           )}
+                          {/* Custom badge labels — free-text tags shown on the public listing */}
+                          <div className="pt-2 border-t space-y-1.5">
+                            <Label className="text-xs">תוויות מותאמות (תגיות)</Label>
+                            <div className="flex gap-1">
+                              <Input
+                                value={newCustomFeature}
+                                onChange={(e) => setNewCustomFeature(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const v = newCustomFeature.trim();
+                                    const cur = ((formData as any).customFeatures as string[]) || [];
+                                    if (v && !cur.includes(v)) handleInputChange('customFeatures' as any, [...cur, v] as any);
+                                    setNewCustomFeature('');
+                                  }
+                                }}
+                                placeholder="לדוגמה: משופצת"
+                                className="h-7 text-sm"
+                                dir="rtl"
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2 shrink-0"
+                                onClick={() => {
+                                  const v = newCustomFeature.trim();
+                                  const cur = ((formData as any).customFeatures as string[]) || [];
+                                  if (v && !cur.includes(v)) handleInputChange('customFeatures' as any, [...cur, v] as any);
+                                  setNewCustomFeature('');
+                                }}
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                            {(((formData as any).customFeatures as string[]) || []).length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {(((formData as any).customFeatures as string[]) || []).map((feat, i) => (
+                                  <span key={i} className="inline-flex items-center gap-1 rounded-full bg-orange-500 text-white text-[11px] px-2 py-0.5">
+                                    {feat}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const cur = ((formData as any).customFeatures as string[]) || [];
+                                        handleInputChange('customFeatures' as any, cur.filter((_, idx) => idx !== i) as any);
+                                      }}
+                                      className="hover:text-black/70"
+                                      aria-label={`הסר ${feat}`}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </PopoverContent>
                     </Popover>

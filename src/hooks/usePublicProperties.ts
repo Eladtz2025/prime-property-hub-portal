@@ -27,6 +27,7 @@ export interface PublicProperty {
   yard?: boolean;
   mamad?: boolean;
   balcony_yard_size?: number;
+  custom_features?: string[];
   show_management_badge?: boolean;
   monthly_rent?: number;
   price?: number;
@@ -83,6 +84,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
             yard,
             mamad,
             balcony_yard_size,
+            custom_features,
             show_management_badge,
             monthly_rent,
             current_market_value,
@@ -134,6 +136,7 @@ export const usePublicProperties = ({ propertyType }: UsePublicPropertiesOptions
           yard: property.yard,
           mamad: property.mamad,
           balcony_yard_size: property.balcony_yard_size,
+          custom_features: (property as any).custom_features || [],
           show_management_badge: property.show_management_badge,
           monthly_rent: property.monthly_rent,
           price: property.current_market_value,

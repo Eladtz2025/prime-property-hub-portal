@@ -2651,6 +2651,7 @@ export type Database = {
           available: boolean | null
           balcony: boolean | null
           balcony_yard_size: number | null
+          custom_features: string[]
           bathrooms: number | null
           building_committee_fee: number | null
           building_floors: number | null
@@ -2708,6 +2709,7 @@ export type Database = {
           available?: boolean | null
           balcony?: boolean | null
           balcony_yard_size?: number | null
+          custom_features?: string[]
           bathrooms?: number | null
           building_committee_fee?: number | null
           building_floors?: number | null
@@ -2765,6 +2767,7 @@ export type Database = {
           available?: boolean | null
           balcony?: boolean | null
           balcony_yard_size?: number | null
+          custom_features?: string[]
           bathrooms?: number | null
           building_committee_fee?: number | null
           building_floors?: number | null
