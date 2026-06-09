@@ -1,13 +1,16 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+import { getRestrictedCorsHeaders, handleCorsOptions } from '../_shared/cors.ts';
+import { hasCronSecret, isInternalCall, unauthorized } from '../_shared/auth.ts';
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsHeaders = getRestrictedCorsHeaders(req);
+  const optionsResponse = handleCorsOptions(req);
+  if (optionsResponse) return optionsResponse;
+
+  // AUTHZ: this is a cron-only endpoint. Require the CRON_SECRET (or an internal
+  // service-role call). Reject anonymous callers holding only the public anon key.
+  if (!hasCronSecret(req) && !isInternalCall(req)) {
+    return unauthorized(corsHeaders);
   }
 
   try {

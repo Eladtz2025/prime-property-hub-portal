@@ -180,6 +180,14 @@ verify_jwt = false
 [functions.group-publish-queue]
 verify_jwt = false
 
+# verify_jwt is false because these functions implement custom authz in-code
+# (admin JWT / service-role / CRON_SECRET — see supabase/functions/_shared/auth.ts).
+[functions.auto-publish]
+verify_jwt = false
+
+[functions.verify-meta-connection]
+verify_jwt = false
+
 [functions.test-madlan-graphql-search]
 verify_jwt = false
 

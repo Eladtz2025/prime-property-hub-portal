@@ -1,13 +1,16 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+import { getRestrictedCorsHeaders, handleCorsOptions } from '../_shared/cors.ts';
+import { isAdmin, unauthorized } from '../_shared/auth.ts';
 
 const GRAPH_API = 'https://graph.facebook.com/v21.0';
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsHeaders = getRestrictedCorsHeaders(req);
+  const optionsResponse = handleCorsOptions(req);
+  if (optionsResponse) return optionsResponse;
+
+  // AUTHZ: token verification/exchange is an admin-only operation.
+  if (!(await isAdmin(req))) {
+    return unauthorized(corsHeaders);
   }
 
   try {

@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
 import { getRestrictedCorsHeaders, handleCorsOptions } from '../_shared/cors.ts';
+import { isInternalCall, isAdmin, unauthorized } from '../_shared/auth.ts';
 
 const GRAPH_API = 'https://graph.facebook.com/v21.0';
 
@@ -226,6 +227,12 @@ Deno.serve(async (req) => {
   const corsHeaders = getRestrictedCorsHeaders(req);
   const optionsResponse = handleCorsOptions(req);
   if (optionsResponse) return optionsResponse;
+
+  // AUTHZ: only the admin UI (user JWT) or an internal call (scheduler/auto-publish,
+  // which send the service-role key) may publish to the live Page/IG. Reject anon.
+  if (!isInternalCall(req) && !(await isAdmin(req))) {
+    return unauthorized(corsHeaders);
+  }
 
   try {
     const supabase = createClient(
