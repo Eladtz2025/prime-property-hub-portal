@@ -301,12 +301,14 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
 
     hadSuccess = true;
 
+    // Group posts are only QUEUED here — the Chrome extension publishes them later.
+    // Log as 'queued' (not 'published') so counts don't run ahead of reality.
     await supabase.from('auto_publish_log').insert({
       queue_id: queue.id,
       property_id: property.id,
       social_post_id: post.id,
       platforms: ['facebook_group'],
-      status: 'published',
+      status: 'queued',
       error_message: null,
     });
   }
