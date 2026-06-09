@@ -91,7 +91,7 @@ export const AutoPublishManager: React.FC = () => {
   const { data: facebookGroups } = useFacebookGroups();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [previewQueueId, setPreviewQueueId] = useState<string | null>(null);
-  const [logOpen, setLogOpen] = useState(true);
+  const [logOpen, setLogOpen] = useState(false); // history collapsed by default — less clutter
 
   // Unified form state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -102,7 +102,8 @@ export const AutoPublishManager: React.FC = () => {
   const [formName, setFormName] = useState('');
   const [contentText, setContentText] = useState('');
   const [hashtags, setHashtags] = useState('');
-  const [platforms, setPlatforms] = useState({ facebook: true, instagram: true });
+  // apm-4: default to Facebook-only (Instagram requires an image) — matches resetForm.
+  const [platforms, setPlatforms] = useState({ facebook: true, instagram: false });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
 
@@ -171,6 +172,11 @@ export const AutoPublishManager: React.FC = () => {
     setPostStyle('photos');
     setSelectedPrimaryImageIndex(0);
     setSelectedPhotoIndexes([]);
+    // apm-3: these were leaking across submissions — a private/custom-link post
+    // could carry its settings into the next post.
+    setIsPrivatePost(false);
+    setCustomLinkTitle('');
+    setCustomLinkDesc('');
   };
 
   const formRef = useRef<HTMLDivElement>(null);

@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Copy, ExternalLink, Download, Clock, CheckCircle, XCircle, Loader2, Users } from 'lucide-react';
+import { Copy, ExternalLink, Download, Clock, CheckCircle, XCircle, Loader2, Users, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -103,16 +104,23 @@ export const GroupQueueManager: React.FC = () => {
           {failed > 0 && <Badge variant="outline" className="bg-red-50 text-red-700">{failed} נכשלו</Badge>}
         </div>
 
-        {/* Extension install instructions */}
-        <div className="bg-muted/50 rounded p-2 text-[10px] text-muted-foreground space-y-0.5">
-          <strong>התקנת התוסף:</strong>
-          <ol className="list-decimal list-inside space-y-0.5 mr-2">
-            <li>הורד את הקובץ ZIP</li>
-            <li>פתח <code className="bg-muted px-1 rounded">chrome://extensions</code></li>
-            <li>הפעל "מצב מפתח" (Developer mode)</li>
-            <li>לחץ "Load unpacked" ובחר את התיקייה שחולצה</li>
-          </ol>
-        </div>
+        {/* Extension install instructions — one-time setup, tucked behind a disclosure */}
+        <Collapsible>
+          <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronDown className="h-3 w-3" />
+            התקנת התוסף (חד-פעמי)
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="bg-muted/50 rounded p-2 text-[10px] text-muted-foreground space-y-0.5 mt-1">
+              <ol className="list-decimal list-inside space-y-0.5 mr-2">
+                <li>הורד את הקובץ ZIP</li>
+                <li>פתח <code className="bg-muted px-1 rounded">chrome://extensions</code></li>
+                <li>הפעל "מצב מפתח" (Developer mode)</li>
+                <li>לחץ "Load unpacked" ובחר את התיקייה שחולצה</li>
+              </ol>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Queue items */}
         {isLoading ? (

@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
-import { Settings, CheckCircle, Clock, FileText, Send, AlertTriangle } from 'lucide-react';
+import { Settings, CheckCircle, Clock, FileText, Send, AlertTriangle, Megaphone, Users2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SocialAccountSetup } from './SocialAccountSetup';
-
-import { SocialToolsPanel } from './SocialToolsPanel';
 import { AutoPublishManager } from './AutoPublishManager';
 import { GroupQueueManager } from './GroupQueueManager';
+import { FacebookGroupsManager } from './FacebookGroupsManager';
+import { SocialTemplatesManager } from './SocialTemplatesManager';
 import { useSocialAccounts, useSocialPosts } from '@/hooks/useSocialPosts';
 
 export const SocialDashboard: React.FC = () => {
   const { data: accounts } = useSocialAccounts();
   const { data: allPosts } = useSocialPosts('all', 'all');
-  const hasConnectedAccount = accounts && accounts.some(a => a.is_active);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [tab, setTab] = useState('publish');
 
   const publishedCount = allPosts?.filter(p => p.status === 'published').length || 0;
   const scheduledCount = allPosts?.filter(p => p.status === 'scheduled').length || 0;
@@ -33,7 +34,7 @@ export const SocialDashboard: React.FC = () => {
         <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-2.5 flex items-center gap-2 text-xs">
           <AlertTriangle className="h-3.5 w-3.5 text-secondary shrink-0" />
           <span>
-            הטוקן של <strong>{expiringToken.page_name}</strong> עומד לפוג. 
+            הטוקן של <strong>{expiringToken.page_name}</strong> עומד לפוג.
             <Button variant="link" size="sm" className="text-xs h-auto p-0 mr-1" onClick={() => setSettingsOpen(true)}>
               חדש עכשיו
             </Button>
@@ -61,10 +62,15 @@ export const SocialDashboard: React.FC = () => {
           {failedCount > 0 && (
             <>
               <span className="text-border">·</span>
-              <span className="flex items-center gap-1 text-destructive">
+              <button
+                type="button"
+                onClick={() => setTab('publish')}
+                className="flex items-center gap-1 text-destructive hover:underline"
+                title="הצג בלשונית הפרסום"
+              >
                 <AlertTriangle className="h-3 w-3" />
                 {failedCount} נכשלו
-              </span>
+              </button>
             </>
           )}
           <span className="text-border">·</span>
@@ -79,15 +85,43 @@ export const SocialDashboard: React.FC = () => {
           size="sm"
           className="h-7 w-7 p-0"
           onClick={() => setSettingsOpen(true)}
+          aria-label="הגדרות חיבור"
           title="הגדרות חיבור"
         >
           <Settings className="h-4 w-4" />
         </Button>
       </div>
 
-      <AutoPublishManager />
-      <GroupQueueManager />
-      <SocialToolsPanel />
+      {/* Tabbed workspace — one task at a time instead of a long stacked scroll */}
+      <Tabs value={tab} onValueChange={setTab} dir="rtl">
+        <TabsList className="h-9">
+          <TabsTrigger value="publish" className="text-xs gap-1.5">
+            <Megaphone className="h-3.5 w-3.5" />
+            פרסום
+          </TabsTrigger>
+          <TabsTrigger value="groups" className="text-xs gap-1.5">
+            <Users2 className="h-3.5 w-3.5" />
+            קבוצות פייסבוק
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="text-xs gap-1.5">
+            <FileText className="h-3.5 w-3.5" />
+            תבניות
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="publish" className="mt-3">
+          <AutoPublishManager />
+        </TabsContent>
+
+        <TabsContent value="groups" className="mt-3 space-y-3">
+          <GroupQueueManager />
+          <FacebookGroupsManager />
+        </TabsContent>
+
+        <TabsContent value="templates" className="mt-3">
+          <SocialTemplatesManager />
+        </TabsContent>
+      </Tabs>
 
       {/* Settings Sheet */}
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
