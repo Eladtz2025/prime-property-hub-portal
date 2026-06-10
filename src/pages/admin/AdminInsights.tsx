@@ -148,11 +148,11 @@ const AdminInsights = () => {
       ) : items.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">אין תוכן עדיין. צור כתבה או מדריך חדש.</div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-lg overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
-                <th className="text-right p-3">כותרת</th>
+                <th className="text-right p-3 min-w-[200px]">כותרת</th>
                 <th className="text-right p-3">סוג</th>
                 <th className="text-right p-3">קטגוריה</th>
                 <th className="text-center p-3">סטטוס</th>

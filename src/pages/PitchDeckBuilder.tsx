@@ -298,12 +298,12 @@ const PitchDeckBuilder = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       {/* Header */}
       <div className="border-b bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/admin-dashboard')}>
+        <div className="container mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/admin-dashboard')}>
               <ArrowRight className="h-5 w-5" />
             </Button>
-            <h1 className="text-lg font-semibold">
+            <h1 className="text-lg font-semibold truncate">
               {isNew ? 'מצגת חדשה' : `עריכת מצגת: ${title}`}
             </h1>
           </div>

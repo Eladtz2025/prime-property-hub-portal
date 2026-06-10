@@ -77,10 +77,10 @@ export const ExcelImporter = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileSpreadsheet className="h-5 w-5" />
-          Import Properties from Excel
+          ייבוא נכסים מאקסל
         </CardTitle>
         <CardDescription>
-          Upload an Excel file to import property data into the database
+          העלה קובץ אקסל כדי לייבא נתוני נכסים למערכת
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -91,7 +91,7 @@ export const ExcelImporter = () => {
             className="gap-2"
           >
             <Upload className="h-4 w-4" />
-            {isProcessing ? 'Processing...' : 'Upload Excel File'}
+            {isProcessing ? 'מעבד...' : 'העלאת קובץ אקסל'}
           </Button>
           <input
             id="excel-upload"
@@ -109,19 +109,19 @@ export const ExcelImporter = () => {
           <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
-              Import Results
+              תוצאות הייבוא
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
-                <div className="text-muted-foreground">Total</div>
+                <div className="text-muted-foreground">סה"כ</div>
                 <div className="font-bold">{stats.total}</div>
               </div>
               <div>
-                <div className="text-muted-foreground">Successful</div>
+                <div className="text-muted-foreground">הצליחו</div>
                 <div className="font-bold text-green-600">{stats.successful}</div>
               </div>
               <div>
-                <div className="text-muted-foreground">Failed</div>
+                <div className="text-muted-foreground">נכשלו</div>
                 <div className="font-bold text-red-600">{stats.failed}</div>
               </div>
             </div>

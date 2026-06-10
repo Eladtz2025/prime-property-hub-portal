@@ -194,8 +194,8 @@ export const UpcomingAppointmentsCard: React.FC<UpcomingAppointmentsCardProps> =
   }
 
   return (
-    <Card className="h-full flex flex-col border-l-4 border-l-primary/60 overflow-hidden">
-      <CardHeader className="pb-3 bg-gradient-to-l from-transparent to-primary/5">
+    <Card className="h-full flex flex-col border-r-4 border-r-primary/60 overflow-hidden">
+      <CardHeader className="pb-3 bg-gradient-to-r from-transparent to-primary/5">
         <CardTitle className="flex items-center gap-3 text-lg">
           <span className="flex items-center justify-center h-9 w-9 rounded-full bg-primary/10">
             <Calendar className="h-5 w-5 text-primary" />

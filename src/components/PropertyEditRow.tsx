@@ -627,7 +627,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                 {/* Address, City, Neighborhood */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div>
-                    <Label htmlFor="neighborhood_en" className="text-xs">Neighborhood</Label>
+                    <Label htmlFor="neighborhood_en" className="text-xs">שכונה (אנגלית)</Label>
                     <Input
                       id="neighborhood_en"
                       value={(formData as any).neighborhood_en || ''}
@@ -1101,7 +1101,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
                     <div className="flex items-center gap-1">
-                      <Label htmlFor="title_en" className="text-xs flex-1">Title</Label>
+                      <Label htmlFor="title_en" className="text-xs flex-1">כותרת (אנגלית)</Label>
                       <Button
                         type="button"
                         size="sm"
@@ -1153,7 +1153,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
                     <div className="flex items-center gap-1">
-                      <Label htmlFor="description_en" className="text-xs flex-1">Description</Label>
+                      <Label htmlFor="description_en" className="text-xs flex-1">תיאור (אנגלית)</Label>
                       <Button
                         type="button"
                         size="sm"

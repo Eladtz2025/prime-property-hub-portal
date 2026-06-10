@@ -1,17 +1,24 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-  Home, 
+import {
+  Home,
   Building,
   Megaphone,
   Newspaper,
-  LogOut, 
+  LogOut,
   Settings,
   ChevronDown,
   LayoutDashboard,
   Users,
   Wrench,
-  Search
+  Search,
+  Contact,
+  Receipt,
+  Presentation,
+  LayoutList,
+  FileSpreadsheet,
+  Database,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -41,6 +48,20 @@ const roleLevel = (role?: string): number => {
   const levels: Record<string, number> = { property_owner: 0, viewer: 1, manager: 2, admin: 3, super_admin: 4 };
   return levels[role ?? ''] ?? 0;
 };
+
+// Pages that have no slot in the bottom/desktop nav — reachable from the user
+// menu so they're not URL-only (especially on mobile). minRole mirrors each
+// route's ProtectedRoute guard in App.tsx.
+const morePagesItems = [
+  { title: "פניות מהאתר", url: "/admin-dashboard/leads", icon: Contact, minRole: 'viewer' as UserRole },
+  { title: "הצעות מחיר", url: "/admin-dashboard/price-offers", icon: Receipt, minRole: 'viewer' as UserRole },
+  { title: "מצגת חדשה", url: "/admin-dashboard/pitch-decks/new", icon: Presentation, minRole: 'viewer' as UserRole },
+  { title: "ניהול מתקדם", url: "/admin-dashboard/all-features", icon: LayoutList, minRole: 'viewer' as UserRole },
+  { title: "ניהול תובנות", url: "/admin-dashboard/insights", icon: Newspaper, minRole: 'manager' as UserRole },
+  { title: "ייבוא נתונים", url: "/admin-dashboard/import-data", icon: FileSpreadsheet, minRole: 'manager' as UserRole },
+  { title: "ייבוא מ-Storage", url: "/admin-dashboard/import-from-storage", icon: Database, minRole: 'manager' as UserRole },
+  { title: "בקרת מנהל", url: "/admin-dashboard/admin-control", icon: ShieldCheck, minRole: 'admin' as UserRole },
+];
 
 interface EnhancedTopNavigationProps {
   onLogout?: () => void;
@@ -90,20 +111,33 @@ export const EnhancedTopNavigation: React.FC<EnhancedTopNavigationProps> = ({
               <ChevronDown className="h-4 w-4 text-primary-foreground/70" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 bg-popover border shadow-lg">
+          <DropdownMenuContent align="start" className="w-56 bg-popover border shadow-lg max-h-[80vh] overflow-y-auto">
             <div dir="rtl">
               <DropdownMenuLabel className="text-right">
                 <div className="text-sm font-medium">{profile?.full_name || profile?.email}</div>
                 <div className="text-xs text-muted-foreground">{getRoleLabel(profile?.role)}</div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="flex items-center gap-2 cursor-pointer flex-row-reverse justify-end"
                 onClick={() => navigate('/owner-portal')}
               >
                 <LayoutDashboard className="h-4 w-4" />
                 <span>פורטל בעלים</span>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {morePagesItems
+                .filter(item => userLevel >= roleLevel(item.minRole))
+                .map(item => (
+                  <DropdownMenuItem
+                    key={item.url}
+                    className="flex items-center gap-2 cursor-pointer flex-row-reverse justify-end"
+                    onClick={() => navigate(item.url)}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </DropdownMenuItem>
+                ))}
               {userLevel >= roleLevel('admin') && (
                 <>
                   <DropdownMenuSeparator />

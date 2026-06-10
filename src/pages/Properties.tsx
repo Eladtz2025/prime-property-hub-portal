@@ -17,6 +17,16 @@ import {
 } from "@/components/ui/table";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { 
   Search, 
@@ -318,11 +328,19 @@ export const Properties: React.FC = memo(() => {
     setExpandedPropertyId(null);
   };
 
-  const handleDeleteProperty = async (property: Property) => {
+  // Styled confirm dialog instead of window.confirm — consistent with the rest
+  // of the app and harder to fat-finger on mobile.
+  const [propertyPendingDelete, setPropertyPendingDelete] = useState<Property | null>(null);
+
+  const handleDeleteProperty = (property: Property) => {
+    setPropertyPendingDelete(property);
+  };
+
+  const confirmDeleteProperty = async () => {
+    const property = propertyPendingDelete;
+    if (!property) return;
+    setPropertyPendingDelete(null);
     const label = (property.address || '').trim();
-    if (!window.confirm(`האם אתה בטוח שברצונך למחוק את הנכס "${label}"?`)) {
-      return;
-    }
     try {
       // Await the result so we only report success when it actually succeeded
       // (e.g. an RLS/permission or network failure now surfaces an error toast
@@ -835,6 +853,30 @@ export const Properties: React.FC = memo(() => {
           }}
           templateCategory="properties"
         />
+
+        {/* Delete confirmation */}
+        <AlertDialog
+          open={!!propertyPendingDelete}
+          onOpenChange={(open) => { if (!open) setPropertyPendingDelete(null); }}
+        >
+          <AlertDialogContent dir="rtl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>מחיקת נכס</AlertDialogTitle>
+              <AlertDialogDescription>
+                האם אתה בטוח שברצונך למחוק את הנכס "{(propertyPendingDelete?.address || '').trim()}"?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row-reverse gap-2">
+              <AlertDialogAction
+                onClick={confirmDeleteProperty}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                מחק
+              </AlertDialogAction>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </TooltipProvider>
   );

@@ -362,11 +362,11 @@ const PriceOfferBuilder = () => {
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
         <h1 className="text-3xl font-bold">
           {id ? t.editOffer : t.newOffer}
         </h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handlePreview}>
             <Eye className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
             {t.preview}

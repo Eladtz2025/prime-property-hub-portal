@@ -81,6 +81,7 @@ const BusinessExpensesList = () => {
         </Button>
       </div>
 
+      <p className="text-xs text-muted-foreground sm:hidden">← ניתן לגלול את הטבלה הצידה</p>
       <Table>
         <TableHeader>
           <TableRow>
