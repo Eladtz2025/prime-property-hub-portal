@@ -105,11 +105,12 @@ const Rentals = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => (
                 <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full" onClick={() => navigate(`/he/property/${property.id}`)}>
-                  <div className="aspect-video relative">
+                  {/* Image is absolutely positioned so flex min-content sizing can't override the 16:9 ratio */}
+                  <div className="relative aspect-video shrink-0">
                     <img
                       src={property.image || '/images/rental-interior.jpg'}
                       alt={property.title}
-                      className="w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover"
                       loading="lazy"
                       onError={(e) => {
                         e.currentTarget.src = '/images/rental-interior.jpg';
@@ -129,7 +130,7 @@ const Rentals = () => {
                     <h3 className="text-lg font-bold mb-2">{property.title}</h3>
                     <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm" dir="rtl">
                       <MapPin className="h-4 w-4" />
-                      <span>{(property as any).neighborhood || property.city}</span>
+                      <span>{[(property as any).neighborhood, property.city].filter(Boolean).join(', ')}</span>
                     </div>
                     <div className="flex gap-4 mb-3 text-sm text-muted-foreground" dir="rtl">
                       {property.rooms && (

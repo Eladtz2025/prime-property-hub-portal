@@ -28,6 +28,7 @@ const EnglishRentals = () => {
     address: prop.address,
     city: prop.city,
     neighborhood: prop.neighborhood_en || 'Tel Aviv',
+    location: prop.neighborhood_en ? `${prop.neighborhood_en}, Tel Aviv` : 'Tel Aviv',
     status: prop.status,
     monthly_rent: prop.monthly_rent || 0,
     rooms: prop.rooms,
@@ -102,12 +103,13 @@ const EnglishRentals = () => {
           ) : filteredProperties && filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProperties.map((property) => (
-                <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate(`/en/property/${property.id}`)}>
-                  <div className="aspect-video relative">
+                <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full" onClick={() => navigate(`/en/property/${property.id}`)}>
+                  {/* Image is absolutely positioned so flex min-content sizing can't override the 16:9 ratio */}
+                  <div className="relative aspect-video shrink-0">
                     <img
                       src={property.image || '/images/en/properties/luxury-rothschild.jpg'}
                       alt={property.title}
-                      className="w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover"
                       loading="lazy"
                       onError={(e) => {
                         e.currentTarget.src = '/images/en/properties/luxury-rothschild.jpg';
@@ -123,11 +125,11 @@ const EnglishRentals = () => {
                       </div>
                     )}
                   </div>
-                  <div className="p-6">
+                  <div className="p-6 flex flex-col flex-1">
                     <h3 className="text-lg font-bold mb-2">{property.title}</h3>
                     <div className="flex items-center gap-2 text-muted-foreground mb-3 text-sm">
                       <MapPin className="h-4 w-4" />
-                      <span>{property.neighborhood}</span>
+                      <span>{property.location}</span>
                     </div>
                     <div className="flex gap-4 mb-3 text-sm text-muted-foreground">
                       {property.rooms && (
@@ -153,7 +155,7 @@ const EnglishRentals = () => {
                         </Badge>
                       ))}
                     </div>
-                    <Button asChild className="w-full">
+                    <Button asChild className="w-full mt-auto">
                       <Link to={`/en/property/${property.id}`}>View Details</Link>
                     </Button>
                   </div>

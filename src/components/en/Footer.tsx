@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
+import { Instagram, Facebook, Mail, MapPin } from 'lucide-react';
 
 const EnglishFooter = () => {
   const currentYear = new Date().getFullYear();
@@ -77,12 +77,6 @@ const EnglishFooter = () => {
               Contact
             </h4>
             <ul className="space-y-3 font-montserrat text-sm text-background/70">
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <a href="tel:+972545503055" className="hover:text-background transition-colors">
-                  054-550-3055
-                </a>
-              </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
                 <a href="mailto:citymarketlv@gmail.com" className="hover:text-background transition-colors">
