@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo, useEffect } from 'react';
+import React, { useState, useMemo, memo, useEffect, useDeferredValue } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -79,21 +79,21 @@ export const Properties: React.FC = memo(() => {
   const canDeleteProperties = hasPermission('properties', 'delete');
   const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [expandedPropertyId, setExpandedPropertyId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   
   const { 
-    properties, 
+    properties,
     isLoading,
     addProperty,
     addPropertyAsync,
-    updateProperty, 
-    deleteProperty,
+    updateProperty,
+    deletePropertyAsync,
     isUpdatingProperty,
-    refetch 
+    refetch
   } = usePropertyData();
 
   const {
@@ -122,8 +122,13 @@ export const Properties: React.FC = memo(() => {
     return ownerPropertyCounts[ownerKey] || 1;
   };
 
+  // Defer the (potentially large) filtered list so typing in the search box stays
+  // responsive — the expensive Hebrew-collation sort + table re-render runs on the
+  // deferred value instead of synchronously on every keystroke.
+  const deferredSearchResults = useDeferredValue(searchFilteredProperties);
+
   const filteredAndSortedProperties = useMemo(() => {
-    let filtered = [...searchFilteredProperties];
+    let filtered = [...deferredSearchResults];
 
     // Sort properties
     filtered.sort((a, b) => {
@@ -137,20 +142,20 @@ export const Properties: React.FC = memo(() => {
           else comparison = new Date(a.leaseEndDate).getTime() - new Date(b.leaseEndDate).getTime();
           break;
         case 'ownerName':
-          comparison = a.ownerName.localeCompare(b.ownerName, 'he');
+          comparison = (a.ownerName || '').trim().localeCompare((b.ownerName || '').trim(), 'he');
           break;
         case 'status':
-          comparison = a.status.localeCompare(b.status);
+          comparison = (a.status || '').localeCompare(b.status || '');
           break;
-        default: // address
-          comparison = a.address.localeCompare(b.address, 'he');
+        default: // address — trim so a stray leading space doesn't sort the row to the top
+          comparison = (a.address || '').trim().localeCompare((b.address || '').trim(), 'he');
       }
       
       return sortDirection === 'asc' ? comparison : -comparison;
     });
 
     return filtered;
-  }, [searchFilteredProperties, sortBy, sortDirection]);
+  }, [deferredSearchResults, sortBy, sortDirection]);
 
   const {
     currentPage,
@@ -207,10 +212,6 @@ export const Properties: React.FC = memo(() => {
     }
   }, [expandedPropertyId]);
 
-  const propertiesWithWhatsApp = useMemo(() => {
-    return filteredAndSortedProperties.filter(property => property.ownerPhone && property.ownerPhone.trim() !== '');
-  }, [filteredAndSortedProperties]);
-
   const handleToggleSelect = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -219,17 +220,28 @@ export const Properties: React.FC = memo(() => {
     });
   };
 
+  // selectedIds is a cross-page set, so "select all" must compare against the current
+  // page and add/remove just this page's ids — never discard selections from other pages.
+  const allCurrentPageSelected =
+    paginatedProperties.length > 0 && paginatedProperties.every(p => selectedIds.has(p.id));
+
   const handleToggleAll = () => {
-    if (selectedIds.size === paginatedProperties.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(paginatedProperties.map(p => p.id)));
-    }
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allCurrentPageSelected) {
+        paginatedProperties.forEach(p => next.delete(p.id)); // deselect this page only
+      } else {
+        paginatedProperties.forEach(p => next.add(p.id)); // add this page to the selection
+      }
+      return next;
+    });
   };
 
   const bulkRecipients = useMemo(() => {
     const seen = new Set<string>();
-    return paginatedProperties
+    // Build recipients from the FULL filtered list, not just the current page, so
+    // selections made on other pages are actually messaged.
+    return filteredAndSortedProperties
       .filter(p => selectedIds.has(p.id) && p.ownerPhone?.trim())
       .reduce<{ id: string; name: string; phone: string }[]>((acc, p) => {
         const phone = p.ownerPhone!.trim();
@@ -239,75 +251,7 @@ export const Properties: React.FC = memo(() => {
         }
         return acc;
       }, []);
-  }, [selectedIds, paginatedProperties]);
-
-  const handleExportCSV = () => {
-    const headers = [
-      'כתובת',
-      'שם בעל הנכס',
-      'טלפון בעל הנכס',
-      'אימייל בעל הנכס',
-      'שם דייר',
-      'טלפון דייר',
-      'אימייל דייר',
-      'סטטוס',
-      'תאריך סיום חוזה',
-      'שכר דירה',
-      'הערות'
-    ];
-    
-    const csvRows = [
-      headers.join(','),
-      ...filteredAndSortedProperties.map(property => [
-        `"${property.address}"`,
-        `"${property.ownerName}"`,
-        `"${property.ownerPhone || ''}"`,
-        `"${property.ownerEmail || ''}"`,
-        `"${property.tenantName || ''}"`,
-        `"${property.tenantPhone || ''}"`,
-        `"${getStatusText(property.status)}"`,
-        `"${property.leaseEndDate ? new Date(property.leaseEndDate).toLocaleDateString('he-IL') : ''}"`,
-        `"${property.monthlyRent || ''}"`,
-        `"${property.notes || ''}"`
-      ].join(','))
-    ];
-    
-    const csvContent = csvRows.join('\n');
-    const BOM = '\uFEFF'; // UTF-8 BOM for proper Hebrew display
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `רשימת_נכסים_${new Date().toLocaleDateString('he-IL').replace(/\./g, '-')}.csv`;
-    link.click();
-    
-    toast({
-      title: "הקובץ יוצא!",
-      description: `${filteredAndSortedProperties.length} נכסים יוצאו לקובץ CSV`,
-    });
-  };
-
-  const handleCreateWhatsAppGroup = () => {
-    const phoneNumbers = propertiesWithWhatsApp
-      .map(p => p.ownerPhone)
-      .filter(phone => phone)
-      .join(',');
-    
-    const groupUrl = `https://wa.me/qr/group?phones=${phoneNumbers}`;
-    window.open(groupUrl, '_blank');
-  };
-
-  const handleExportContacts = () => {
-    const csvContent = [
-      'שם,טלפון,כתובת',
-      ...propertiesWithWhatsApp.map(p => `${p.ownerName},${p.ownerPhone},${p.address}`)
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'אנשי_קשר_נכסים.csv';
-    link.click();
-  };
+  }, [selectedIds, filteredAndSortedProperties]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -323,7 +267,8 @@ export const Properties: React.FC = memo(() => {
       case 'occupied': return 'תפוס';
       case 'vacant': return 'פנוי';
       case 'maintenance': return 'תחזוקה';
-      default: return status;
+      case 'unknown': return 'לא ידוע';
+      default: return status || 'לא ידוע';
     }
   };
 
@@ -357,11 +302,15 @@ export const Properties: React.FC = memo(() => {
     }
   };
 
+  // Derive the open property from the live list so the modal reflects edits/refetches
+  // instead of the frozen snapshot it used to capture at open time.
+  const selectedProperty = useMemo(
+    () => (selectedPropertyId ? properties.find(p => p.id === selectedPropertyId) ?? null : null),
+    [selectedPropertyId, properties]
+  );
+
   const handleViewDetails = (id: string) => {
-    const property = properties.find(p => p.id === id);
-    if (property) {
-      setSelectedProperty(property);
-    }
+    setSelectedPropertyId(id);
   };
 
   const handlePropertyUpdate = (updatedProperty: Property) => {
@@ -369,12 +318,25 @@ export const Properties: React.FC = memo(() => {
     setExpandedPropertyId(null);
   };
 
-  const handleDeleteProperty = (property: Property) => {
-    if (window.confirm(`האם אתה בטוח שברצונך למחוק את הנכס "${property.address}"?`)) {
-      deleteProperty(property.id);
+  const handleDeleteProperty = async (property: Property) => {
+    const label = (property.address || '').trim();
+    if (!window.confirm(`האם אתה בטוח שברצונך למחוק את הנכס "${label}"?`)) {
+      return;
+    }
+    try {
+      // Await the result so we only report success when it actually succeeded
+      // (e.g. an RLS/permission or network failure now surfaces an error toast
+      // instead of a false "deleted successfully").
+      await deletePropertyAsync(property.id);
       toast({
         title: "הנכס נמחק בהצלחה",
-        description: `הנכס ${property.address} נמחק מהמערכת`,
+        description: `הנכס ${label} נמחק מהמערכת`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "מחיקת הנכס נכשלה",
+        description: "לא ניתן היה למחוק את הנכס. ייתכן שאין הרשאה מתאימה, או שאירעה שגיאת רשת.",
       });
     }
   };
@@ -466,7 +428,13 @@ export const Properties: React.FC = memo(() => {
         {/* Main Content */}
         <Card>
               <PullToRefresh onRefresh={handleRefresh}>
-                {isMobile ? (
+                {totalItems === 0 ? (
+                  <div className="py-16 text-center text-muted-foreground">
+                    {filters.searchTerm
+                      ? 'לא נמצאו נכסים התואמים את החיפוש'
+                      : 'אין נכסים להצגה'}
+                  </div>
+                ) : isMobile ? (
                   <div className="space-y-3 px-2">
                     {paginatedProperties.map((property) => (
                       <React.Fragment key={property.id}>
@@ -504,7 +472,7 @@ export const Properties: React.FC = memo(() => {
                         <TableRow>
                           <TableHead className="text-center px-2 py-3 w-10">
                             <Checkbox
-                              checked={paginatedProperties.length > 0 && selectedIds.size === paginatedProperties.length}
+                              checked={allCurrentPageSelected}
                               onCheckedChange={handleToggleAll}
                             />
                           </TableHead>
@@ -831,10 +799,10 @@ export const Properties: React.FC = memo(() => {
           <PropertyDetailModal
             property={selectedProperty}
             isOpen={true}
-            onClose={() => setSelectedProperty(null)}
+            onClose={() => setSelectedPropertyId(null)}
             onEdit={(property) => {
               setExpandedPropertyId(property.id);
-              setSelectedProperty(null);
+              setSelectedPropertyId(null);
             }}
           />
         )}

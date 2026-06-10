@@ -12,32 +12,50 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
   const [isPulling, setIsPulling] = useState(false);
   const [startY, setStartY] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Mirror isPulling into a ref so the document-level listener and unmount
+  // cleanup can read the live value without re-subscribing.
+  const isPullingRef = useRef(false);
 
   const threshold = 70; // Minimum distance to trigger refresh
 
+  // True only when the relevant scroll container is at the very top.
+  const isAtTop = () => {
+    const el = containerRef.current;
+    const containerTop = el ? el.scrollTop <= 0 : true;
+    return window.scrollY <= 0 && containerTop;
+  };
+
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY > 0) return;
+    if (!isAtTop()) return;
     setStartY(e.touches[0].clientY);
     setIsPulling(true);
+    isPullingRef.current = true;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isPulling || window.scrollY > 0) return;
-    
+    if (!isPulling || !isAtTop()) return;
+
     const currentY = e.touches[0].clientY;
     const distance = currentY - startY;
-    
+
     if (distance > 0) {
       e.preventDefault();
       setPullDistance(Math.min(distance, threshold * 1.5));
     }
   };
 
+  const stopPulling = () => {
+    setIsPulling(false);
+    isPullingRef.current = false;
+    setPullDistance(0);
+  };
+
   const handleTouchEnd = async () => {
     if (!isPulling) return;
-    
+
     setIsPulling(false);
-    
+    isPullingRef.current = false;
+
     if (pullDistance >= threshold) {
       setIsRefreshing(true);
       try {
@@ -46,18 +64,35 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
         setIsRefreshing(false);
       }
     }
-    
+
     setPullDistance(0);
   };
 
+  const handleTouchCancel = () => {
+    stopPulling();
+  };
+
   useEffect(() => {
-    const preventDefault = (e: Event) => e.preventDefault();
-    
-    if (isPulling && pullDistance > 0) {
-      document.addEventListener('touchmove', preventDefault, { passive: false });
-      return () => document.removeEventListener('touchmove', preventDefault);
-    }
-  }, [isPulling, pullDistance]);
+    // Block native scroll only while actively pulling AND at the top of the
+    // scroll container. Reading the refs keeps this independent of stale state.
+    const preventDefault = (e: Event) => {
+      if (isPullingRef.current && isAtTop()) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchmove', preventDefault, { passive: false });
+    return () => document.removeEventListener('touchmove', preventDefault);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Safety net: if the component unmounts mid-gesture, reset pull state so we
+  // never leave a scroll-lock or a dangling "pulling" flag behind.
+  useEffect(() => {
+    return () => {
+      isPullingRef.current = false;
+    };
+  }, []);
 
   const refreshProgress = Math.min(pullDistance / threshold, 1);
   const showRefreshIndicator = pullDistance > 10 || isRefreshing;
@@ -69,6 +104,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchCancel}
     >
       {/* Refresh Indicator */}
       <div 

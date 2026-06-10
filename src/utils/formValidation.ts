@@ -9,6 +9,23 @@ const israeliIdRegex = /^\d{9}$/;
 // Phone validation - Israeli format (more permissive for various input formats)
 const israeliPhoneRegex = /^(\+972|972|0)?-?[2-9]\d{1,2}[-\s]?\d{3}[-\s]?\d{4}$/;
 
+// Normalize an Israeli phone to canonical national form (0XXXXXXXXX) for validation.
+// Strips dashes/spaces/parens and rewrites +972 / 972 prefixes to a leading 0.
+const normalizeIsraeliPhone = (raw: string): string => {
+  let digits = raw.replace(/[-\s()]/g, '');
+  if (digits.startsWith('+972')) digits = '0' + digits.slice(4);
+  else if (digits.startsWith('972')) digits = '0' + digits.slice(3);
+  return digits;
+};
+
+// Accepts Israeli mobiles (05X-XXXXXXX => 10 digits) and landlines (0X... => 9 digits),
+// with or without dashes/spaces and with +972 / 972 prefixes.
+const isValidIsraeliPhone = (raw: string): boolean => {
+  const normalized = normalizeIsraeliPhone(raw);
+  // Mobile: 05X + 7 digits (10 total). Landline: 0[23489] + 7 digits (9 total).
+  return /^05\d{8}$/.test(normalized) || /^0[2-9]\d{7}$/.test(normalized);
+};
+
 // Email validation regex
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -20,15 +37,15 @@ export const phoneSchema = z.string()
   .refine((val) => {
     if (!val) return true; // Optional - empty is ok
     const cleaned = val.replace(/[-\s()]/g, '');
-    
-    // Israeli format
-    const isIsraeli = israeliPhoneRegex.test(val) || /^0[2-9]\d{7,8}$/.test(cleaned) || /^\+?972[2-9]\d{7,8}$/.test(cleaned);
-    
+
+    // Israeli format (mobile 05X-XXXXXXX and landlines 0X..., with/without +972 prefix)
+    const isIsraeli = isValidIsraeliPhone(val);
+
     // International format: starts with + followed by 7-15 digits
     const isInternational = /^\+?[1-9]\d{6,14}$/.test(cleaned);
-    
+
     return isIsraeli || isInternational;
-  }, 'מספר טלפון לא תקין');
+  }, 'מספר טלפון לא תקין (לדוגמה: 050-1234567)');
 
 // Required phone validation - supports Israeli and international formats
 export const requiredPhoneSchema = z.string()
@@ -36,15 +53,15 @@ export const requiredPhoneSchema = z.string()
   .min(1, 'מספר טלפון הוא שדה חובה')
   .refine((val) => {
     const cleaned = val.replace(/[-\s()]/g, '');
-    
-    // Israeli format
-    const isIsraeli = israeliPhoneRegex.test(val) || /^0[2-9]\d{7,8}$/.test(cleaned) || /^\+?972[2-9]\d{7,8}$/.test(cleaned);
-    
+
+    // Israeli format (mobile 05X-XXXXXXX and landlines 0X..., with/without +972 prefix)
+    const isIsraeli = isValidIsraeliPhone(val);
+
     // International format: starts with + followed by 7-15 digits
     const isInternational = /^\+?[1-9]\d{6,14}$/.test(cleaned);
-    
+
     return isIsraeli || isInternational;
-  }, 'מספר טלפון לא תקין');
+  }, 'מספר טלפון לא תקין (לדוגמה: 050-1234567)');
 
 // Email validation schema
 export const emailSchema = z.string()

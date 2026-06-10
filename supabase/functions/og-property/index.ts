@@ -123,8 +123,13 @@ serve(async (req) => {
     });
     
     // Use requested image index if provided, otherwise use main/first image
-    const selectedIndex = imgIndex !== null ? parseInt(imgIndex, 10) : 0;
-    const rawImageUrl = (sortedImages[selectedIndex] || sortedImages[0])?.image_url 
+    // Validate against the attacker-controlled img_index query param: NaN, negative,
+    // or out-of-range values fall back to the main/first image (index 0).
+    const parsedIndex = imgIndex !== null ? parseInt(imgIndex, 10) : 0;
+    const selectedIndex = (Number.isInteger(parsedIndex) && parsedIndex >= 0 && parsedIndex < sortedImages.length)
+      ? parsedIndex
+      : 0;
+    const rawImageUrl = (sortedImages[selectedIndex] || sortedImages[0])?.image_url
       || 'https://jswumsdymlooeobrxict.supabase.co/storage/v1/object/public/property-images/city-market-logo.png';
 
     // Transform to 1200x630 for consistent large Link Card on Facebook
@@ -210,9 +215,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in og-property function:', error);
-    return new Response(`Error: ${error.message}`, { 
+    return new Response('Internal Server Error', {
       status: 500,
-      headers: corsHeaders 
+      headers: corsHeaders
     });
   }
 });

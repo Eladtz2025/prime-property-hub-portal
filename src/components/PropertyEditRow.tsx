@@ -22,6 +22,7 @@ import { PropertyDocuments } from './PropertyDocuments';
 import { ProjectUnitsTable } from './ProjectUnitsTable';
 import { triggerAutoScan } from '@/hooks/useAutoScanProject';
 import { logger } from '@/utils/logger';
+import { phoneSchema, emailSchema, validateField } from '@/utils/formValidation';
 
 interface PropertyEditRowProps {
   property: Property;
@@ -231,15 +232,51 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
   };
 
   const handleSave = async () => {
+    // ===== Validation (mirrors the create modal) =====
+    const ownerPhoneError = formData.ownerPhone ? validateField(phoneSchema, formData.ownerPhone) : null;
+    const ownerEmailError = formData.ownerEmail ? validateField(emailSchema, formData.ownerEmail) : null;
+    if (ownerPhoneError || ownerEmailError) {
+      toast({
+        title: "שגיאה בטופס",
+        description: ownerPhoneError || ownerEmailError || "אנא תקן את השגיאות לפני השמירה",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.leaseStartDate && formData.leaseEndDate &&
+        new Date(formData.leaseEndDate) <= new Date(formData.leaseStartDate)) {
+      toast({
+        title: "שגיאה",
+        description: "תאריך סיום החוזה חייב להיות אחרי תאריך ההתחלה",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (
+      (formData.monthlyRent != null && formData.monthlyRent < 0) ||
+      (formData.rooms != null && (formData.rooms < 0 || formData.rooms > 50)) ||
+      (formData.propertySize != null && (formData.propertySize < 0 || formData.propertySize > 10000))
+    ) {
+      toast({
+        title: "שגיאה",
+        description: "אחד מהערכים המספריים אינו תקין (שכ\"ד, חדרים או מ\"ר)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
-      
+
       const updateData: any = {
           address: formData.address,
           city: formData.city,
           neighborhood: (formData as any).neighborhood || null,
           owner_name: formData.ownerName,
           owner_phone: formData.ownerPhone,
+          owner_email: formData.ownerEmail,
           assigned_user_id: (formData as any).assignedUserId || null,
           co_brokerage_status: (formData as any).co_brokerage_status || 'not_open',
           status: formData.status,
@@ -259,6 +296,8 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
           balcony: formData.balcony || false,
           yard: formData.yard || false,
           mamad: formData.mamad || false,
+          roof: formData.roof || false,
+          furnished: formData.furnished || false,
           balcony_yard_size: formData.balconyYardSize || null,
           bathrooms: (formData as any).bathrooms || null,
           building_floors: (formData as any).buildingFloors || null,
@@ -316,38 +355,74 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
         }
       }
 
-      // Save images
-      if (formData.images && formData.images.length > 0) {
-        await supabase.from('property_images').delete().eq('property_id', formData.id);
+      // Save images — diff against what is already stored instead of delete-all-then-reinsert,
+      // so a mid-save failure can never wipe the gallery.
+      let imageOpFailed = false;
+      if (formData.images) {
+        // Existing rows in the DB (carry a real id + image_url).
+        const { data: existingRows } = await supabase
+          .from('property_images')
+          .select('id, image_url')
+          .eq('property_id', formData.id);
 
-        for (let i = 0; i < formData.images.length; i++) {
-          const image = formData.images[i];
+        const currentImages = formData.images;
+        const keptIds = new Set(
+          currentImages.map(img => img.id).filter(Boolean)
+        );
+        const keptUrls = new Set(
+          currentImages.filter(img => !img.url.startsWith('data:')).map(img => img.url)
+        );
+
+        // 1) Delete only the rows the user actually removed.
+        const removedRows = (existingRows || []).filter(
+          row => !keptIds.has(row.id) && !keptUrls.has(row.image_url)
+        );
+        if (removedRows.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('property_images')
+            .delete()
+            .in('id', removedRows.map(r => r.id));
+          if (deleteError) {
+            imageOpFailed = true;
+            logger.error('Error deleting removed images:', deleteError);
+          }
+        }
+
+        // 2) Insert only NEW images (data: URLs); leave unchanged ones untouched.
+        for (let i = 0; i < currentImages.length; i++) {
+          const image = currentImages[i];
+          // Already-persisted image: skip insert (it stays as-is).
+          if (!image.url.startsWith('data:')) continue;
+
           let imageUrl = image.url;
-          
-          if (image.url.startsWith('data:')) {
-            try {
-              const response = await fetch(image.url);
-              const blob = await response.blob();
-              const fileExt = image.name.split('.').pop() || 'jpg';
-              const fileName = `${formData.id}/${Date.now()}_${i}.${fileExt}`;
-              
-              const { error: uploadError } = await supabase.storage
-                .from('property-images')
-                .upload(fileName, blob);
+          try {
+            const response = await fetch(image.url);
+            const blob = await response.blob();
+            const fileExt = image.name.split('.').pop() || 'jpg';
+            const fileName = `${formData.id}/${Date.now()}_${i}.${fileExt}`;
 
-              if (uploadError) continue;
+            const { error: uploadError } = await supabase.storage
+              .from('property-images')
+              .upload(fileName, blob);
 
-              const { data: { publicUrl } } = supabase.storage
-                .from('property-images')
-                .getPublicUrl(fileName);
-              
-              imageUrl = publicUrl;
-            } catch (uploadError) {
+            if (uploadError) {
+              imageOpFailed = true;
+              logger.error('Error uploading image:', uploadError);
               continue;
             }
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('property-images')
+              .getPublicUrl(fileName);
+
+            imageUrl = publicUrl;
+          } catch (uploadError) {
+            imageOpFailed = true;
+            logger.error('Error processing image upload:', uploadError);
+            continue;
           }
 
-          await supabase.from('property_images').insert({
+          const { error: insertError } = await supabase.from('property_images').insert({
             property_id: formData.id,
             image_url: imageUrl,
             alt_text: image.name || 'תמונת נכס',
@@ -357,6 +432,10 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
             show_on_website: image.showOnWebsite ?? true,
             is_furnished: image.isFurnished || false,
           });
+          if (insertError) {
+            imageOpFailed = true;
+            logger.error('Error inserting image row:', insertError);
+          }
         }
       }
 
@@ -371,11 +450,19 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
         triggerAutoScan(formData.id);
       }
 
-      toast({
-        title: "הנכס עודכן בהצלחה",
-        description: "השינויים נשמרו במערכת",
-      });
-      
+      if (imageOpFailed) {
+        toast({
+          title: "הנכס נשמר, אך חלק מהתמונות נכשלו",
+          description: "פרטי הנכס עודכנו. חלק מהתמונות לא הועלו או לא נשמרו — נסה שוב. התמונות שכבר נשמרו לא נמחקו.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "הנכס עודכן בהצלחה",
+          description: "השינויים נשמרו במערכת",
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ['public-property', property.id] });
       queryClient.invalidateQueries({ queryKey: ['public-properties'] });
       
@@ -696,7 +783,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                           step="0.5"
                           className="text-center h-8 text-sm"
                           value={formData.rooms || ''}
-                          onChange={(e) => handleInputChange('rooms', Number(e.target.value))}
+                          onChange={(e) => handleInputChange('rooms', e.target.value ? Number(e.target.value) : null)}
                         />
                       </div>
                       <div className="min-w-[80px]">
@@ -731,7 +818,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                           type="number"
                           className="text-center h-8 text-sm"
                           value={formData.propertySize || ''}
-                          onChange={(e) => handleInputChange('propertySize', Number(e.target.value))}
+                          onChange={(e) => handleInputChange('propertySize', e.target.value ? Number(e.target.value) : null)}
                         />
                       </div>
                     </>
@@ -741,7 +828,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full h-8 text-xs justify-start">
-                          תוספות ({[formData.parking, formData.elevator, formData.balcony, formData.mamad, formData.yard, (formData as any).hasStorage].filter(Boolean).length + (((formData as any).customFeatures as string[] | undefined)?.length || 0)})
+                          תוספות ({[formData.parking, formData.elevator, formData.balcony, formData.mamad, formData.yard, formData.roof, formData.furnished, (formData as any).hasStorage].filter(Boolean).length + (((formData as any).customFeatures as string[] | undefined)?.length || 0)})
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-64 p-3" align="start">
@@ -785,6 +872,22 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                               onCheckedChange={(checked) => handleInputChange('yard', checked)}
                             />
                             <Label htmlFor="yard" className="text-sm cursor-pointer">חצר</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="roof"
+                              checked={formData.roof || false}
+                              onCheckedChange={(checked) => handleInputChange('roof', checked)}
+                            />
+                            <Label htmlFor="roof" className="text-sm cursor-pointer">גג</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="furnished"
+                              checked={formData.furnished || false}
+                              onCheckedChange={(checked) => handleInputChange('furnished', checked)}
+                            />
+                            <Label htmlFor="furnished" className="text-sm cursor-pointer">מרוהט</Label>
                           </div>
                           {(formData as any).property_type === 'project' && (
                             <div className="flex items-center gap-2">
@@ -868,7 +971,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                     </Popover>
                   </div>
                   <div className="min-w-[80px]">
-                    <Label className="text-xs">מומלץ</Label>
+                    <Label htmlFor="featured" className="text-xs">מומלץ</Label>
                     <div className="flex items-center justify-center h-8 border rounded bg-background">
                       <Checkbox
                         id="featured"
@@ -878,7 +981,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                     </div>
                   </div>
                   <div className="min-w-[80px]">
-                    <Label className="text-xs">באתר</Label>
+                    <Label htmlFor="showOnWebsite" className="text-xs">באתר</Label>
                     <div className="flex items-center justify-center h-8 border rounded bg-background gap-2">
                       <Checkbox
                         id="showOnWebsite"
@@ -889,7 +992,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                   </div>
                   {(formData as any).property_type === 'management' && (
                     <div className="min-w-[80px]">
-                      <Label className="text-xs">תג ניהול</Label>
+                      <Label htmlFor="showManagementBadge" className="text-xs">תג ניהול</Label>
                       <div className="flex items-center justify-center h-8 border rounded bg-background">
                         <Checkbox
                           id="showManagementBadge"
@@ -961,7 +1064,7 @@ export const PropertyEditRow: React.FC<PropertyEditRowProps> = React.memo(({
                         id="monthlyRent"
                         type="number"
                         value={formData.monthlyRent || ''}
-                        onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
+                        onChange={(e) => handleInputChange('monthlyRent', e.target.value ? Number(e.target.value) : null)}
                         className="h-8 text-sm"
                       />
                     </div>

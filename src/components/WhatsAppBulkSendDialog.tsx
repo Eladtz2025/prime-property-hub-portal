@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
-import { Send, Pencil, ChevronDown, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Send, Pencil, ChevronDown, CheckCircle, XCircle, Loader2, StopCircle, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useWhatsAppSender } from '@/hooks/useWhatsAppSender';
@@ -47,6 +47,8 @@ export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onCompl
   const [sendStatuses, setSendStatuses] = useState<Record<string, SendStatus>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [hasFinished, setHasFinished] = useState(false);
+  const cancelRef = useRef(false);
 
   const { toast } = useToast();
   const { sendWhatsAppMessage } = useWhatsAppSender();
@@ -59,6 +61,8 @@ export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onCompl
       setIsBulkSending(false);
       setSendStatuses({});
       setCurrentIndex(0);
+      setHasFinished(false);
+      cancelRef.current = false;
     }
   }, [open]);
 
@@ -106,22 +110,34 @@ export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onCompl
       .replace(/\{name\}/g, recipient.name);
   };
 
-  const handleBulkSend = async () => {
+  const runSend = async (targets: Recipient[]) => {
     if (!message.trim()) {
       toast({ title: 'נא לכתוב הודעה', variant: 'destructive' });
       return;
     }
 
+    cancelRef.current = false;
+    setHasFinished(false);
     setIsBulkSending(true);
-    const initialStatuses: Record<string, SendStatus> = {};
-    recipients.forEach(r => { initialStatuses[r.id] = 'pending'; });
-    setSendStatuses(initialStatuses);
+    // Mark only the current targets as pending; keep prior statuses for the rest
+    // (so a "retry failed" run leaves already-sent recipients alone).
+    setSendStatuses(prev => {
+      const next = { ...prev };
+      targets.forEach(r => { next[r.id] = 'pending'; });
+      return next;
+    });
 
     let successCount = 0;
     let failCount = 0;
+    let cancelled = false;
 
-    for (let i = 0; i < recipients.length; i++) {
-      const recipient = recipients[i];
+    for (let i = 0; i < targets.length; i++) {
+      if (cancelRef.current) {
+        cancelled = true;
+        break;
+      }
+
+      const recipient = targets[i];
       setCurrentIndex(i);
       setSendStatuses(prev => ({ ...prev, [recipient.id]: 'sending' }));
 
@@ -144,19 +160,43 @@ export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onCompl
         failCount++;
       }
 
-      // Small delay between sends
-      if (i < recipients.length - 1) {
+      // Small delay between sends (skip if the next iteration would be cancelled)
+      if (i < targets.length - 1 && !cancelRef.current) {
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
     }
 
+    // Any target not reached because of cancellation goes back to pending.
+    if (cancelled) {
+      setSendStatuses(prev => {
+        const next = { ...prev };
+        targets.forEach(r => {
+          if (next[r.id] === 'sending') next[r.id] = 'pending';
+        });
+        return next;
+      });
+    }
+
     toast({
-      title: 'השליחה הושלמה',
+      title: cancelled ? 'השליחה הופסקה' : 'השליחה הושלמה',
       description: `נשלחו ${successCount} הודעות${failCount > 0 ? `, ${failCount} נכשלו` : ''}`,
     });
 
     setIsBulkSending(false);
+    setHasFinished(true);
     onComplete?.();
+  };
+
+  const handleBulkSend = () => runSend(recipients);
+
+  const handleStop = () => {
+    cancelRef.current = true;
+  };
+
+  const retryFailed = () => {
+    const failedRecipients = recipients.filter(r => sendStatuses[r.id] === 'failed');
+    if (failedRecipients.length === 0) return;
+    runSend(failedRecipients);
   };
 
   const sentCount = Object.values(sendStatuses).filter(s => s === 'sent').length;
@@ -177,7 +217,7 @@ export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onCompl
               {recipients.map(r => (
                 <span key={r.id} className="inline-flex items-center gap-1 text-xs bg-muted rounded-full px-2 py-0.5">
                   {r.name}
-                  {isBulkSending && (
+                  {(isBulkSending || hasFinished) && (
                     sendStatuses[r.id] === 'sent' ? <CheckCircle className="h-3 w-3 text-green-600" /> :
                     sendStatuses[r.id] === 'failed' ? <XCircle className="h-3 w-3 text-destructive" /> :
                     sendStatuses[r.id] === 'sending' ? <Loader2 className="h-3 w-3 animate-spin text-primary" /> :
@@ -195,7 +235,29 @@ export const WhatsAppBulkSendDialog = ({ open, onOpenChange, recipients, onCompl
               <p className="text-xs text-muted-foreground text-center">
                 {sentCount + failedCount} / {recipients.length} — {sentCount} הצליחו, {failedCount} נכשלו
               </p>
+              <Button
+                onClick={handleStop}
+                variant="outline"
+                size="sm"
+                className="w-full gap-2 text-destructive hover:text-destructive"
+              >
+                <StopCircle className="h-4 w-4" />
+                עצור שליחה
+              </Button>
             </div>
+          )}
+
+          {/* Retry failed — after a run that left failures */}
+          {!isBulkSending && hasFinished && failedCount > 0 && (
+            <Button
+              onClick={retryFailed}
+              variant="outline"
+              size="sm"
+              className="w-full gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              שלח שוב ל-{failedCount} שנכשלו
+            </Button>
           )}
 
           {/* Template selector */}

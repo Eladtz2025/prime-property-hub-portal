@@ -28,7 +28,9 @@ const NewDevelopments = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
-        .select("*")
+        // Explicit public columns only (no owner PII / financials) so anon access can
+        // be locked down to these columns at the DB level.
+        .select("id, property_number, title, title_en, address, city, neighborhood, neighborhood_en, description, description_en, property_type, rooms_range, size_range, building_floors, units_count, parking, elevator, balcony, mamad, yard, has_storage, project_status, tracking_url, show_on_website, featured, created_at")
         .eq("property_type", "project")
         .eq("show_on_website", true)
         .order("neighborhood_en", { ascending: true });

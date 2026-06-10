@@ -1716,17 +1716,19 @@ Deno.serve(async (req) => {
               chunks.push(failedProps.slice(i, i + chunkSize).map(p => p.id));
             }
 
-            // Fire-and-forget the first chunk; rely on availability function's own logic
-            fetch(`${supabaseUrl}/functions/v1/check-property-availability-jina`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${supabaseServiceKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ property_ids: chunks[0], run_id: availRun.id })
-            }).catch(err => console.error('Failed to trigger post-backfill availability:', err));
+            // Fire-and-forget all chunks — availability function only processes the IDs it receives
+            for (const chunk of chunks) {
+              fetch(`${supabaseUrl}/functions/v1/check-property-availability-jina`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${supabaseServiceKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ property_ids: chunk, run_id: availRun.id })
+              }).catch(err => console.error('Failed to trigger post-backfill availability:', err));
+            }
 
-            console.log(`✅ Post-backfill availability check triggered for ${chunks[0].length} properties (run ${availRun.id})`);
+            console.log(`✅ Post-backfill availability check triggered for ${failedProps.length} properties across ${chunks.length} chunk(s) (run ${availRun.id})`);
           }
         } else {
           console.log(`✅ No failed-backfill properties to recheck`);

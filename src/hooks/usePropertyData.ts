@@ -6,8 +6,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Property } from '@/types/property';
 
 export const usePropertyStats = (properties: Property[]) => {
+  // Key on a content signature, not just length: an edit that changes a status or
+  // lease date without changing the row count must still invalidate the cached stats.
+  const statsSignature = properties
+    .map((p) => `${p.id}:${p.status}:${p.contactStatus}:${p.leaseEndDate ?? ''}`)
+    .join('|');
+
   return useQuery({
-    queryKey: ['property-stats', properties.length],
+    queryKey: ['property-stats', properties.length, statsSignature],
     queryFn: () => {
       const total = properties.length;
       const occupied = properties.filter(p => p.status === 'occupied').length;

@@ -82,6 +82,17 @@ ${property.status === 'vacant' ? 'הבנתי שהנכס פנוי כרגע.' : ''
         return { success: false, error: errorMsg };
       }
 
+      if (!data) {
+        const noDataMsg = "לא התקבלה תגובה מהשרת";
+        logger.error('WhatsApp send error: empty response (no data)');
+        toast({
+          title: "שגיאה בשליחת ההודעה",
+          description: noDataMsg,
+          variant: "destructive"
+        });
+        return { success: false, error: noDataMsg };
+      }
+
       if (data.success) {
         toast({
           title: "ההודעה נשלחה בהצלחה!",

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,68 +44,83 @@ interface ExistingOwner {
   ownerEmail: string;
 }
 
+const PROPERTY_IMAGES_BUCKET = 'property-images';
+
+// Extract the storage object path inside the property-images bucket from a public URL.
+// e.g. "https://xxx.supabase.co/storage/v1/object/public/property-images/123_abc.jpg" -> "123_abc.jpg"
+const storagePathFromUrl = (url: string): string | null => {
+  const marker = `/${PROPERTY_IMAGES_BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  const path = url.slice(idx + marker.length).split('?')[0];
+  return path || null;
+};
+
+// Default empty form state (kept as a factory so reset always gets a fresh object).
+const makeInitialFormData = () => ({
+  // Basic property
+  address: '',
+  city: 'תל אביב-יפו',
+  property_type: 'rental' as 'rental' | 'sale' | 'management' | 'project' | 'tracked_project',
+  title: '',
+  description: '',
+  status: 'vacant' as Property['status'],
+
+  // Property features
+  rooms: '',
+  bathrooms: '',
+  propertySize: '',
+  floor: '',
+  buildingFloors: '',
+  parking: false,
+  elevator: false,
+  balcony: false,
+  yard: false,
+  roof: false,
+  furnished: false,
+  balconyYardSize: '',
+
+  // Owner
+  ownerName: '',
+  ownerPhone: '',
+  ownerEmail: '',
+
+  // Agent
+  assignedUserId: null as string | null,
+
+  // Tenant
+  tenantName: '',
+  tenantPhone: '',
+
+  // Rental/Sale
+  monthlyRent: '',
+  leaseStartDate: '',
+  leaseEndDate: '',
+  municipalTax: '',
+  buildingCommitteeFee: '',
+  acquisitionCost: '',
+  renovationCosts: '',
+  currentMarketValue: '',
+  featured: false,
+
+  // Project-specific
+  roomsRange: '',
+  sizeRange: '',
+  unitsCount: '',
+  hasStorage: false,
+  projectStatus: 'under_construction' as 'pre_sale' | 'under_construction' | 'ready',
+  trackingUrl: '',
+
+  // Notes
+  notes: ''
+});
+
 export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   isOpen,
   onClose,
   onPropertyAdded
 }) => {
-  const [formData, setFormData] = useState({
-    // Basic property
-    address: '',
-    city: 'תל אביב-יפו',
-    property_type: 'rental' as 'rental' | 'sale' | 'management' | 'project' | 'tracked_project',
-    title: '',
-    description: '',
-    status: 'vacant' as Property['status'],
-    
-    // Property features
-    rooms: '',
-    bathrooms: '',
-    propertySize: '',
-    floor: '',
-    buildingFloors: '',
-    parking: false,
-    elevator: false,
-    balcony: false,
-    yard: false,
-    roof: false,
-    furnished: false,
-    balconyYardSize: '',
-    
-    // Owner
-    ownerName: '',
-    ownerPhone: '',
-    ownerEmail: '',
-    
-    // Agent
-    assignedUserId: null as string | null,
-    
-    // Tenant
-    tenantName: '',
-    tenantPhone: '',
-    
-    // Rental/Sale
-    monthlyRent: '',
-    leaseStartDate: '',
-    leaseEndDate: '',
-    municipalTax: '',
-    buildingCommitteeFee: '',
-    acquisitionCost: '',
-    renovationCosts: '',
-    currentMarketValue: '',
-    featured: false,
-    
-    // Project-specific
-    roomsRange: '',
-    sizeRange: '',
-    unitsCount: '',
-    hasStorage: false,
-    projectStatus: 'under_construction' as 'pre_sale' | 'under_construction' | 'ready',
-    trackingUrl: '',
-    
-    // Notes
-    notes: ''
-  });
+  const [formData, setFormData] = useState(makeInitialFormData);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<PropertyImage[]>([]);
@@ -113,6 +129,50 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const [errors, setErrors] = useState<{ ownerPhone?: string; ownerEmail?: string; tenantPhone?: string }>({});
   const [touched, setTouched] = useState<{ ownerPhone?: boolean; ownerEmail?: boolean; tenantPhone?: boolean }>({});
   const [ownerSource, setOwnerSource] = useState<OwnerSourceType>('manual');
+  // Tracks whether the most recent close followed a successful save, so the
+  // close handler knows NOT to delete the (now property-linked) uploaded images.
+  const savedSuccessfullyRef = useRef(false);
+  // Mirror of uploadedImages so the isOpen-keyed cleanup effect always sees the
+  // latest list (a plain closure would capture a stale value).
+  const uploadedImagesRef = useRef<PropertyImage[]>([]);
+  useEffect(() => {
+    uploadedImagesRef.current = uploadedImages;
+  }, [uploadedImages]);
+
+  // Delete already-uploaded storage objects that were never linked to a saved
+  // property (cancel / X / Escape / failed insert) so they don't orphan in Storage.
+  const cleanupOrphanedUploads = async (images: PropertyImage[]) => {
+    const paths = images
+      .map(img => storagePathFromUrl(img.url))
+      .filter((p): p is string => !!p);
+    if (paths.length === 0) return;
+    try {
+      await supabase.storage.from(PROPERTY_IMAGES_BUCKET).remove(paths);
+    } catch (error) {
+      logger.error('Error cleaning up orphaned uploads:', error, 'AddPropertyModal');
+    }
+  };
+
+  const resetForm = () => {
+    setFormData(makeInitialFormData());
+    setUploadedImages([]);
+    setOwnerSource('manual');
+    setErrors({});
+    setTouched({});
+  };
+
+  // When the modal transitions to closed, reset stale state. If it was closed
+  // WITHOUT a successful save, also remove any images already uploaded to Storage.
+  useEffect(() => {
+    if (!isOpen) {
+      if (!savedSuccessfullyRef.current) {
+        void cleanupOrphanedUploads(uploadedImagesRef.current);
+      }
+      savedSuccessfullyRef.current = false;
+      resetForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // Load existing owners (distinct from properties table)
   const { data: existingOwners = [] } = useQuery({
@@ -195,19 +255,21 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     // Validation
     const isTrackedProject = formData.property_type === 'tracked_project';
     
+    // Required-field validation (all in JS / Hebrew; the form uses noValidate so the
+    // browser's native English "Please fill out this field" bubble never shows).
+    const missing: string[] = [];
     if (isTrackedProject) {
-      if (!formData.trackingUrl.trim() || !formData.city.trim()) {
-        toast({
-          title: "שגיאה",
-          description: "יש למלא קישור לעמוד הפרויקט ועיר",
-          variant: "destructive"
-        });
-        return;
-      }
-    } else if (!formData.address.trim() || !formData.city.trim() || !formData.ownerName.trim()) {
+      if (!formData.trackingUrl.trim()) missing.push('קישור לעמוד הפרויקט');
+      if (!formData.city.trim()) missing.push('עיר');
+    } else {
+      if (!formData.address.trim()) missing.push('כתובת');
+      if (!formData.city.trim()) missing.push('עיר');
+      if (!formData.ownerName.trim()) missing.push('שם בעלים');
+    }
+    if (missing.length > 0) {
       toast({
         title: "שגיאה",
-        description: "יש למלא כתובת, עיר ושם בעלים",
+        description: `יש למלא: ${missing.join(', ')}`,
         variant: "destructive"
       });
       return;
@@ -240,6 +302,37 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         toast({
           title: "שגיאה",
           description: "תאריך סיום החוזה חייב להיות אחרי תאריך ההתחלה",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    // Numeric sanity validation — only check fields that are actually filled.
+    // Each entry: [raw string value, min, max, Hebrew field label].
+    const numericChecks: Array<[string, number, number, string]> = [
+      [formData.monthlyRent, 0, Infinity, 'שכר דירה חודשי'],
+      [formData.rooms, 0, 50, 'מספר חדרים'],
+      [formData.propertySize, 0, 10000, 'גודל הנכס (מ"ר)'],
+      [formData.floor, -5, 200, 'קומה'],
+      [formData.bathrooms, 0, 30, 'מספר חדרי רחצה'],
+      [formData.buildingFloors, 0, 200, 'קומות בבניין'],
+      [formData.unitsCount, 0, Infinity, 'מספר יחידות דיור'],
+      [formData.balconyYardSize, 0, Infinity, 'גודל מרפסת/חצר'],
+      // Sale prices / fees — must not be negative.
+      [formData.acquisitionCost, 0, Infinity, 'עלות רכישה'],
+      [formData.renovationCosts, 0, Infinity, 'עלויות שיפוץ'],
+      [formData.currentMarketValue, 0, Infinity, 'שווי שוק נוכחי'],
+      [formData.municipalTax, 0, Infinity, 'ארנונה חודשית'],
+      [formData.buildingCommitteeFee, 0, Infinity, 'ועד בית חודשי'],
+    ];
+    for (const [raw, min, max, label] of numericChecks) {
+      if (raw === '' || raw === null || raw === undefined) continue; // empty = optional
+      const num = Number(raw);
+      if (Number.isNaN(num) || num < min || num > max) {
+        toast({
+          title: "שגיאה",
+          description: `ערך לא תקין בשדה "${label}"`,
           variant: "destructive"
         });
         return;
@@ -316,7 +409,11 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       };
 
       const propertyId = await onPropertyAdded(newProperty);
-      
+
+      // Property persisted successfully — mark the save so the close-effect does NOT
+      // delete the uploaded images (they are now, or about to be, linked to the property).
+      savedSuccessfullyRef.current = true;
+
       // Save images if uploaded
       if (uploadedImages.length > 0 && propertyId) {
         const imageInserts = uploadedImages.map((img, index) => ({
@@ -351,54 +448,20 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         });
       }
 
-      // Reset form
-      setFormData({
-        address: '',
-        city: 'תל אביב-יפו',
-        property_type: 'rental',
-        title: '',
-        description: '',
-        status: 'vacant',
-        rooms: '',
-        bathrooms: '',
-        propertySize: '',
-        floor: '',
-        buildingFloors: '',
-        parking: false,
-        elevator: false,
-        balcony: false,
-        yard: false,
-        roof: false,
-        furnished: false,
-        balconyYardSize: '',
-        ownerName: '',
-        ownerPhone: '',
-        ownerEmail: '',
-        assignedUserId: null,
-        tenantName: '',
-        tenantPhone: '',
-        monthlyRent: '',
-        leaseStartDate: '',
-        leaseEndDate: '',
-        municipalTax: '',
-        buildingCommitteeFee: '',
-        acquisitionCost: '',
-        renovationCosts: '',
-        currentMarketValue: '',
-        featured: false,
-        roomsRange: '',
-        sizeRange: '',
-        unitsCount: '',
-        hasStorage: false,
-        projectStatus: 'under_construction',
-        trackingUrl: '',
-        notes: ''
-      });
-      setUploadedImages([]);
-      setOwnerSource('manual');
-      
+      // Reset form (the close-effect also resets, but reset here too in case the
+      // parent keeps the modal mounted/open after a successful add).
+      resetForm();
+
     } catch (error) {
       logger.error('Error adding property:', error, 'AddPropertyModal');
+      // The insert failed, so any images already uploaded to Storage are orphaned.
+      // Remove them and clear the list so a retry re-uploads cleanly.
+      savedSuccessfullyRef.current = false;
+      const orphaned = uploadedImages;
+      if (orphaned.length > 0) {
+        await cleanupOrphanedUploads(orphaned);
+        setUploadedImages([]);
+      }
       toast({
         title: "שגיאה בהוספת נכס",
         description: "אנא נסה שוב",
@@ -418,13 +481,14 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>הוספת נכס חדש</DialogTitle>
+          <DialogDescription className="sr-only">טופס להוספת נכס חדש למערכת</DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <Accordion type="single" collapsible defaultValue="property" className="w-full">
             {/* Property Details - Merged Basic + Features */}
             <AccordionItem value="property">
@@ -834,7 +898,8 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   <div>
                     <Label>בחר בעלים</Label>
                     <Select onValueChange={(value) => {
-                      const owner = existingOwners.find(o => `${o.ownerName}-${o.ownerPhone}` === value);
+                      // value is the array index, so duplicate name+blank-phone owners stay distinct.
+                      const owner = existingOwners[Number(value)];
                       if (owner) {
                         setFormData(prev => ({
                           ...prev,
@@ -848,8 +913,8 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         <SelectValue placeholder="בחר מהרשימה..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {existingOwners.map((owner) => (
-                          <SelectItem key={`${owner.ownerName}-${owner.ownerPhone}`} value={`${owner.ownerName}-${owner.ownerPhone}`}>
+                        {existingOwners.map((owner, index) => (
+                          <SelectItem key={`${owner.ownerName}-${owner.ownerPhone}-${index}`} value={String(index)}>
                             {owner.ownerName} {owner.ownerPhone ? `(${owner.ownerPhone})` : ''}
                           </SelectItem>
                         ))}
@@ -868,7 +933,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         setFormData(prev => ({
                           ...prev,
                           ownerName: broker.name,
-                          ownerPhone: broker.phone,
+                          ownerPhone: broker.phone ?? '',
                           ownerEmail: '',
                         }));
                       }
@@ -879,7 +944,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       <SelectContent>
                         {existingBrokers.map((broker) => (
                           <SelectItem key={broker.id} value={broker.id}>
-                            {broker.name} {broker.office_name ? `(${broker.office_name})` : ''} — {broker.phone}
+                            {broker.name} {broker.office_name ? `(${broker.office_name})` : ''}{broker.phone ? ` — ${broker.phone}` : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1129,7 +1194,7 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   images={uploadedImages}
                   onImagesChange={setUploadedImages}
                   maxImages={20}
-                  maxSizePerImage={20}
+                  maxSizePerImage={25}
                 />
               </AccordionContent>
             </AccordionItem>

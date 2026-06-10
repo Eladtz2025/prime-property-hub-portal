@@ -3,8 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Property } from '@/types/property';
 import { logger } from '@/utils/logger';
 import { triggerAutoScan } from '@/hooks/useAutoScanProject';
+import { useToast } from '@/hooks/use-toast';
 
 const log = logger.component('useSupabasePropertyData');
+
+const PROPERTIES_KEY = ['supabase-properties'] as const;
 
 // Transform Supabase data to Property interface
 function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
@@ -17,7 +20,9 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
     ownerEmail: dbProperty.owner_email || undefined,
     tenantName: tenant?.name || undefined,
     tenantPhone: tenant?.phone || undefined,
-    monthlyRent: tenant?.monthly_rent || dbProperty.monthly_rent || undefined,
+    // Prefer the property's own rent (what the edit form writes); fall back to the tenant row.
+    // Use ?? throughout so a legitimate 0 is preserved instead of being coerced away.
+    monthlyRent: dbProperty.monthly_rent ?? tenant?.monthly_rent ?? undefined,
     leaseStartDate: tenant?.lease_start_date || undefined,
     leaseEndDate: tenant?.lease_end_date || undefined,
     status: dbProperty.status || 'unknown',
@@ -25,9 +30,9 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
     lastContactDate: dbProperty.last_contact_date || undefined,
     contactNotes: dbProperty.contact_notes || undefined,
     contactAttempts: dbProperty.contact_attempts || 0,
-    propertySize: dbProperty.property_size || undefined,
-    floor: dbProperty.floor || undefined,
-    rooms: dbProperty.rooms || undefined,
+    propertySize: dbProperty.property_size ?? undefined,
+    floor: dbProperty.floor ?? undefined,
+    rooms: dbProperty.rooms ?? undefined,
     parking: dbProperty.parking || false,
     elevator: dbProperty.elevator || false,
     balcony: dbProperty.balcony || false,
@@ -35,22 +40,22 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
     yard: dbProperty.yard || false,
     roof: dbProperty.roof || false,
     furnished: dbProperty.furnished || false,
-    balconyYardSize: dbProperty.balcony_yard_size || undefined,
-    municipalTax: dbProperty.municipal_tax || undefined,
-    buildingCommitteeFee: dbProperty.building_committee_fee || undefined,
-    bathrooms: dbProperty.bathrooms || undefined,
-    buildingFloors: dbProperty.building_floors || undefined,
+    balconyYardSize: dbProperty.balcony_yard_size ?? undefined,
+    municipalTax: dbProperty.municipal_tax ?? undefined,
+    buildingCommitteeFee: dbProperty.building_committee_fee ?? undefined,
+    bathrooms: dbProperty.bathrooms ?? undefined,
+    buildingFloors: dbProperty.building_floors ?? undefined,
     title: dbProperty.title || undefined,
     description: dbProperty.description || undefined,
-    acquisitionCost: dbProperty.acquisition_cost || undefined,
-    renovationCosts: dbProperty.renovation_costs || undefined,
-    currentMarketValue: dbProperty.current_market_value || undefined,
+    acquisitionCost: dbProperty.acquisition_cost ?? undefined,
+    renovationCosts: dbProperty.renovation_costs ?? undefined,
+    currentMarketValue: dbProperty.current_market_value ?? undefined,
     featured: dbProperty.featured || false,
     showManagementBadge: dbProperty.show_management_badge !== false,
     notes: dbProperty.notes || undefined,
     roomsRange: dbProperty.rooms_range || undefined,
     sizeRange: dbProperty.size_range || undefined,
-    unitsCount: dbProperty.units_count || undefined,
+    unitsCount: dbProperty.units_count ?? undefined,
     hasStorage: dbProperty.has_storage || false,
     projectStatus: dbProperty.project_status || undefined,
     lastUpdated: dbProperty.updated_at,
@@ -80,6 +85,7 @@ function transformSupabaseProperty(dbProperty: any, tenant?: any): Property {
 
 export const useSupabasePropertyData = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch all properties with their tenants
   const propertiesQuery = useQuery({
@@ -89,9 +95,7 @@ export const useSupabasePropertyData = () => {
         log.info('Loading properties from Supabase');
 
         // Get all properties with their images
-    const { data: properties, error: propertiesError } = await supabase
-      .from('properties')
-      .select(`
+        const PROPERTIES_SELECT = `
         *,
         property_images (
           id,
@@ -105,7 +109,23 @@ export const useSupabasePropertyData = () => {
           full_name,
           phone
         )
-      `);
+      `;
+
+        let { data: properties, error: propertiesError } = await supabase
+          .from('properties')
+          .select(PROPERTIES_SELECT)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false });
+
+        // Resilience: if the soft-delete migration hasn't been applied yet, the
+        // deleted_at column won't exist. Fall back so the admin page still loads.
+        if (propertiesError && /deleted_at/i.test(propertiesError.message || '')) {
+          log.warn('deleted_at column missing — falling back (apply the soft-delete migration)');
+          ({ data: properties, error: propertiesError } = await supabase
+            .from('properties')
+            .select(PROPERTIES_SELECT)
+            .order('created_at', { ascending: false }));
+        }
 
         if (propertiesError) {
           log.error('Failed to load properties:', propertiesError);
@@ -173,22 +193,22 @@ export const useSupabasePropertyData = () => {
             yard: updatedProperty.yard || false,
             roof: (updatedProperty as any).roof || false,
             furnished: (updatedProperty as any).furnished || false,
-            balcony_yard_size: updatedProperty.balconyYardSize || null,
-            municipal_tax: updatedProperty.municipalTax || null,
-            building_committee_fee: updatedProperty.buildingCommitteeFee || null,
-            bathrooms: (updatedProperty as any).bathrooms || null,
-            building_floors: (updatedProperty as any).buildingFloors || null,
+            balcony_yard_size: updatedProperty.balconyYardSize ?? null,
+            municipal_tax: updatedProperty.municipalTax ?? null,
+            building_committee_fee: updatedProperty.buildingCommitteeFee ?? null,
+            bathrooms: (updatedProperty as any).bathrooms ?? null,
+            building_floors: (updatedProperty as any).buildingFloors ?? null,
             title: (updatedProperty as any).title || null,
             description: (updatedProperty as any).description || null,
-            acquisition_cost: (updatedProperty as any).acquisitionCost || null,
-            renovation_costs: (updatedProperty as any).renovationCosts || null,
-            current_market_value: (updatedProperty as any).currentMarketValue || null,
+            acquisition_cost: (updatedProperty as any).acquisitionCost ?? null,
+            renovation_costs: (updatedProperty as any).renovationCosts ?? null,
+            current_market_value: (updatedProperty as any).currentMarketValue ?? null,
             featured: (updatedProperty as any).featured || false,
             show_management_badge: (updatedProperty as any).showManagementBadge !== false,
             notes: updatedProperty.notes,
             rooms_range: updatedProperty.roomsRange || null,
             size_range: updatedProperty.sizeRange || null,
-            units_count: updatedProperty.unitsCount || null,
+            units_count: updatedProperty.unitsCount ?? null,
             has_storage: updatedProperty.hasStorage || false,
             project_status: updatedProperty.projectStatus || null,
             tracking_url: updatedProperty.trackingUrl || null,
@@ -207,8 +227,13 @@ export const useSupabasePropertyData = () => {
         throw error;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supabase-properties'] });
+    onSuccess: (updated) => {
+      // Reflect the edit in the cache immediately so it can't visually "revert"
+      // in the window before the refetch resolves.
+      queryClient.setQueryData<Property[]>(PROPERTIES_KEY, (old) =>
+        Array.isArray(old) ? old.map((p) => (p.id === updated.id ? updated : p)) : old
+      );
+      queryClient.invalidateQueries({ queryKey: PROPERTIES_KEY });
       log.info('Property updated successfully');
     },
     onError: (error) => {
@@ -276,23 +301,35 @@ export const useSupabasePropertyData = () => {
           throw propertyError;
         }
 
-        // Create tenant record if tenant data exists
-        if (newProperty.tenantName && newProperty.monthlyRent) {
+        // Persist tenant/lease data whenever ANY of it is provided — not only when
+        // both tenant name AND rent exist (previously lease dates entered without a
+        // rent were silently dropped).
+        let tenantWarning = false;
+        const hasTenantOrLease = !!(
+          newProperty.tenantName ||
+          newProperty.tenantPhone ||
+          newProperty.leaseStartDate ||
+          newProperty.leaseEndDate
+        );
+        if (hasTenantOrLease) {
           const { error: tenantError } = await supabase
             .from('tenants')
             .insert({
               property_id: propertyId,
-              name: newProperty.tenantName,
+              // tenants.name is NOT NULL — fall back to a placeholder so lease dates
+              // entered without a tenant name are still preserved (editable later).
+              name: newProperty.tenantName?.trim() || 'דייר',
               phone: newProperty.tenantPhone || null,
-              monthly_rent: newProperty.monthlyRent,
+              monthly_rent: newProperty.monthlyRent ?? null,
               lease_start_date: newProperty.leaseStartDate || null,
               lease_end_date: newProperty.leaseEndDate || null,
               is_active: true,
             });
 
           if (tenantError) {
+            // Don't swallow it silently — flag so onSuccess can warn the user.
             log.error('Failed to insert tenant:', tenantError);
-            // Continue anyway - property was created successfully
+            tenantWarning = true;
           }
         }
 
@@ -303,14 +340,24 @@ export const useSupabasePropertyData = () => {
           triggerAutoScan(propertyId);
         }
 
-        return { ...newProperty, id: propertyId };
+        return { ...newProperty, id: propertyId, _tenantWarning: tenantWarning } as Property & { _tenantWarning?: boolean };
       } catch (error) {
         log.error('Failed to add property:', error);
         throw error;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supabase-properties'] });
+    // Never auto-retry a client-keyed INSERT: a retried-but-already-committed insert
+    // would fail on a duplicate primary key and report a false "add failed".
+    retry: false,
+    onSuccess: (created) => {
+      queryClient.invalidateQueries({ queryKey: PROPERTIES_KEY });
+      if ((created as any)?._tenantWarning) {
+        toast({
+          variant: 'destructive',
+          title: 'הנכס נשמר, אך פרטי הדייר/החוזה לא נשמרו',
+          description: 'שמירת פרטי השוכר נכשלה. נסה לערוך את הנכס ולהזין אותם מחדש.',
+        });
+      }
       log.info('Property added successfully');
     },
     onError: (error) => {
@@ -320,26 +367,39 @@ export const useSupabasePropertyData = () => {
 
   // Delete property mutation
   const deletePropertyMutation = useMutation({
-    mutationFn: async (propertyId: string): Promise<void> => {
+    mutationFn: async (propertyId: string): Promise<string> => {
       try {
-        log.info('Deleting property from Supabase', { id: propertyId });
+        log.info('Soft-deleting property in Supabase', { id: propertyId });
 
+        // Soft delete: mark deleted and hide from the public site, instead of a
+        // physical DELETE that cascaded to tenants, rent payments, documents and
+        // images. The row stays recoverable (deleted_at can be cleared).
         const { error } = await supabase
           .from('properties')
-          .delete()
+          .update({
+            deleted_at: new Date().toISOString(),
+            available: false,
+            show_on_website: false,
+            updated_at: new Date().toISOString(),
+          })
           .eq('id', propertyId);
 
         if (error) {
           log.error('Failed to delete property:', error);
           throw error;
         }
+        return propertyId;
       } catch (error) {
         log.error('Failed to delete property:', error);
         throw error;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supabase-properties'] });
+    onSuccess: (deletedId) => {
+      // Remove it from the cache immediately so the row disappears without a full refetch.
+      queryClient.setQueryData<Property[]>(PROPERTIES_KEY, (old) =>
+        Array.isArray(old) ? old.filter((p) => p.id !== deletedId) : old
+      );
+      queryClient.invalidateQueries({ queryKey: PROPERTIES_KEY });
       log.info('Property deleted successfully');
     },
     onError: (error) => {
@@ -359,6 +419,7 @@ export const useSupabasePropertyData = () => {
     addPropertyAsync: addPropertyMutation.mutateAsync,
     updateProperty: updatePropertyMutation.mutate,
     deleteProperty: deletePropertyMutation.mutate,
+    deletePropertyAsync: deletePropertyMutation.mutateAsync,
     isAddingProperty: addPropertyMutation.isPending,
     isUpdatingProperty: updatePropertyMutation.isPending,
     isDeletingProperty: deletePropertyMutation.isPending,

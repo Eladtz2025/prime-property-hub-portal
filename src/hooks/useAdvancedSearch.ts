@@ -29,20 +29,47 @@ export const useAdvancedSearch = (properties: Property[]) => {
     }
 
     const searchLower = filters.searchTerm.toLowerCase();
+    // When the search term is mostly digits, also do a format-insensitive
+    // phone match (strip non-digits from both sides) so "054-228" matches "0542284477".
+    const searchDigits = filters.searchTerm.replace(/\D/g, '');
+    const digitRatio = filters.searchTerm.length > 0
+      ? searchDigits.length / filters.searchTerm.length
+      : 0;
+    const isPhoneSearch = searchDigits.length >= 3 && digitRatio >= 0.5;
+
     return properties.filter(property => {
       const searchFields = [
-        property.address,
-        property.ownerName,
+        property.address || '',
+        property.ownerName || '',
         property.tenantName || '',
         property.ownerPhone || '',
         property.tenantPhone || '',
         property.ownerEmail || '',
-        property.notes || ''
+        property.notes || '',
+        property.city || '',
+        property.title || '',
+        property.description || '',
+        property.assignedAgent?.full_name || '',
+        property.assignedAgent?.phone || ''
       ];
 
-      return searchFields.some(field => 
-        field.toLowerCase().includes(searchLower)
-      );
+      if (searchFields.some(field => field.toLowerCase().includes(searchLower))) {
+        return true;
+      }
+
+      if (isPhoneSearch) {
+        const phoneFields = [
+          property.ownerPhone || '',
+          property.tenantPhone || '',
+          property.assignedAgent?.phone || ''
+        ];
+        return phoneFields.some(field => {
+          const fieldDigits = field.replace(/\D/g, '');
+          return fieldDigits.length > 0 && fieldDigits.includes(searchDigits);
+        });
+      }
+
+      return false;
     });
   }, [properties, filters.searchTerm]);
 

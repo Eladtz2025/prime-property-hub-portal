@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,44 +33,48 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
 
   useEffect(() => {
-    if (isOpen && property.id) {
-      loadPropertyImages();
-    }
+    if (!isOpen || !property.id) return;
+
+    let cancelled = false;
+    // Reset to the prop images first so a slow fetch can't briefly show a
+    // different property's gallery when the user switches the open property.
+    setImages(property.images || []);
+
+    (async () => {
+      try {
+        logger.info('🔍 Loading images for property:', property.id);
+        const { data, error } = await supabase
+          .from('property_images')
+          .select('*')
+          .eq('property_id', property.id)
+          .order('order_index', { ascending: true });
+
+        if (cancelled) return; // a newer property was opened; ignore this stale response
+
+        if (error) {
+          logger.error('❌ Error loading images:', error);
+          return;
+        }
+
+        logger.info('✅ Loaded', data?.length || 0, 'images from DB');
+        setImages(
+          (data || []).map(img => ({
+            id: img.id,
+            name: img.alt_text || 'תמונת נכס',
+            url: img.image_url,
+            isPrimary: img.is_main || false,
+            uploadedAt: img.created_at || new Date().toISOString(),
+          }))
+        );
+      } catch (error) {
+        if (!cancelled) logger.error('❌ Error loading property images:', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [property.id, isOpen]);
-
-  const loadPropertyImages = async () => {
-    try {
-      logger.info('🔍 Loading images for property:', property.id);
-      const { data, error } = await supabase
-        .from('property_images')
-        .select('*')
-        .eq('property_id', property.id)
-        .order('order_index', { ascending: true });
-
-      if (error) {
-        logger.error('❌ Error loading images:', error);
-        return;
-      }
-
-      logger.info('✅ Loaded', data?.length || 0, 'images from DB');
-      
-      if (data && data.length > 0) {
-        const loadedImages: PropertyImage[] = data.map(img => ({
-          id: img.id,
-          name: img.alt_text || 'תמונת נכס',
-          url: img.image_url,
-          isPrimary: img.is_main || false,
-          uploadedAt: img.created_at || new Date().toISOString(),
-        }));
-
-        setImages(loadedImages);
-      } else {
-        setImages([]);
-      }
-    } catch (error) {
-      logger.error('❌ Error loading property images:', error);
-    }
-  };
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -86,7 +90,8 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
       case 'occupied': return 'תפוס';
       case 'vacant': return 'פנוי';
       case 'maintenance': return 'תחזוקה';
-      default: return status;
+      case 'unknown': return 'לא ידוע';
+      default: return status || 'לא ידוע';
     }
   };
 
@@ -100,7 +105,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6" dir="rtl">
         <DialogHeader className="pt-2 pb-0">
           <div className="flex flex-col gap-3">
@@ -108,6 +113,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
             <div className="flex items-start justify-between gap-2">
               <div className="text-right flex-1 min-w-0">
                 <DialogTitle className="text-base sm:text-xl leading-tight">{property.address}</DialogTitle>
+                <DialogDescription className="sr-only">פרטי הנכס המלאים</DialogDescription>
                 <p className="text-muted-foreground text-xs sm:text-sm">{property.city}</p>
               </div>
               <Badge className={`${getStatusColor(property.status)} text-xs shrink-0`}>
