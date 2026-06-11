@@ -26,16 +26,17 @@ const PropertyDetailPage = () => {
   const { data: property, isLoading, error } = usePublicProperty(id);
 
 
-  // Convert property images to PropertyImage format with cache busting
-  const allImages: (PropertyImage & { isFurnished?: boolean })[] = property?.images.map(img => ({
-    id: img.id,
-    name: img.alt_text || 'תמונת נכס',
-    url: `${img.image_url}?t=${Date.now()}`,
-    isPrimary: img.is_main,
-    uploadedAt: new Date().toISOString(),
-    mediaType: img.media_type || 'image',
-    isFurnished: img.is_furnished || false,
-  })) || [];
+  const allImages: (PropertyImage & { isFurnished?: boolean })[] = useMemo(() =>
+    property?.images.map(img => ({
+      id: img.id,
+      name: img.alt_text || 'תמונת נכס',
+      url: img.image_url,
+      isPrimary: img.is_main,
+      uploadedAt: img.id,
+      mediaType: img.media_type || 'image',
+      isFurnished: img.is_furnished || false,
+    })) || []
+  , [property?.images]);
 
   const propertyImages = allImages.filter(img => !img.isFurnished);
   const furnishedImages = allImages.filter(img => img.isFurnished);
