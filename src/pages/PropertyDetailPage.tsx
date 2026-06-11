@@ -307,9 +307,9 @@ const PropertyDetailPage = () => {
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden lg:block container mx-auto px-4 py-8 pt-24">
+      <div className="hidden lg:block container mx-auto px-4 py-5 pt-20 xl:py-8 xl:pt-24">
         {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-row-reverse justify-end mb-6" aria-label="Breadcrumb" dir="rtl">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-row-reverse justify-end mb-3 xl:mb-6" aria-label="Breadcrumb" dir="rtl">
           <Link to="/" className="hover:text-primary transition-colors">
             דף הבית
           </Link>
@@ -321,9 +321,9 @@ const PropertyDetailPage = () => {
           <span className="text-foreground">נכס #{property.property_number}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 xl:gap-8">
           {/* Right Column (RTL) - Property Details */}
-          <div className="space-y-6 order-2 lg:order-1">
+          <div className="space-y-3 xl:space-y-6 order-2 lg:order-1">
             {/* Badge and Title */}
             <div className="text-right">
               <div className="mb-3">
