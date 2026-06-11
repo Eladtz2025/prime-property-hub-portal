@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Expand, Image as ImageIcon, Play, Volume2, VolumeX, Sofa, ArrowLeft, X } from 'lucide-react';
 import { PropertyImage } from '../types/property';
 
+// Serve resized WebP via Supabase image transforms; falls back to original on error
+function getOptimizedUrl(url: string, width: number): string {
+  if (!url?.includes('/storage/v1/object/public/')) return url;
+  return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
+    + `?width=${width}&quality=80&format=webp`;
+}
+
 // --- Sub-components ---
 
 const ImageWithPlaceholder: React.FC<{
@@ -14,8 +21,24 @@ const ImageWithPlaceholder: React.FC<{
   loading?: "lazy" | "eager";
   sizes?: string;
 }> = ({ src, alt, className, loading = "lazy", sizes }) => {
+  const [displaySrc, setDisplaySrc] = useState(src);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setDisplaySrc(src);
+    setIsLoaded(false);
+    setHasError(false);
+  }, [src]);
+
+  const handleError = useCallback(() => {
+    if (displaySrc.includes('/render/image/')) {
+      // Transform failed (free plan) — fall back to original URL
+      setDisplaySrc(displaySrc.replace('/storage/v1/render/image/public/', '/storage/v1/object/public/').split('?')[0]);
+    } else {
+      setHasError(true);
+    }
+  }, [displaySrc]);
 
   if (hasError) {
     return (
@@ -31,14 +54,14 @@ const ImageWithPlaceholder: React.FC<{
         <div className={`${className} absolute inset-0 bg-muted animate-pulse`} />
       )}
       <img
-        src={src}
+        src={displaySrc}
         alt={alt}
         className={`${className} transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         loading={loading}
         decoding="async"
         sizes={sizes}
         onLoad={() => setIsLoaded(true)}
-        onError={() => setHasError(true)}
+        onError={handleError}
       />
     </div>
   );
@@ -264,8 +287,9 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
               </>
             ) : (
               <img
-                src={image.url}
+                src={getOptimizedUrl(image.url, 200)}
                 alt={image.name}
+                onError={(e) => { e.currentTarget.src = image.url; }}
                 className="w-full h-full object-cover"
                 loading="lazy"
               />
@@ -320,10 +344,11 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
                   className="max-w-full max-h-full object-contain"
                 />
               ) : (
-                <img
-                  src={currentImage.url}
+                <ImageWithPlaceholder
+                  src={getOptimizedUrl(currentImage.url, 1200)}
                   alt={currentImage.name}
                   className="max-w-full max-h-full object-contain drop-shadow-lg"
+                  loading="eager"
                 />
               )}
             </div>

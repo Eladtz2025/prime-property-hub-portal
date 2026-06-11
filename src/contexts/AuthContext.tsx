@@ -118,12 +118,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch profile when user changes
+  // Fetch profile once per unique user login (user?.id is stable, user object reference is not)
   useEffect(() => {
     if (user && !profile) {
       refreshProfile();
     }
-  }, [user, profile, refreshProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const value = useMemo<AuthContextType>(() => ({
     user,
