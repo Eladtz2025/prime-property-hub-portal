@@ -297,7 +297,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = React.memo(({
         <CardContent className="p-0 relative flex-1 flex flex-col">
           {/* Main image container - stable aspect ratio */}
           <div
-            className="relative overflow-hidden rounded-t-lg md:rounded-xl bg-black/5 aspect-[4/3] md:aspect-auto md:h-[50vh] md:max-h-[500px] min-h-[280px]"
+            className="relative overflow-hidden rounded-t-lg md:rounded-xl bg-black/5 aspect-[4/3] lg:aspect-auto lg:h-[48vh] lg:max-h-[500px] min-h-[280px]"
             {...swipeHandlers}
           >
             {/* Blurred background for non-covering images */}

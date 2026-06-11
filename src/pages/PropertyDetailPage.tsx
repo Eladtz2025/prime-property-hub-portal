@@ -214,10 +214,12 @@ const PropertyDetailPage = () => {
                 <span>{property.rooms} חדרים</span>
               </div>
             )}
-            <div className="flex items-center gap-3">
-              <Building2 className="h-5 w-5 text-primary shrink-0" />
-              <span>קומה {property.floor === 0 ? 'קרקע' : property.floor}</span>
-            </div>
+            {property.floor != null && (
+              <div className="flex items-center gap-3">
+                <Building2 className="h-5 w-5 text-primary shrink-0" />
+                <span>קומה {property.floor === 0 ? 'קרקע' : property.floor}</span>
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <Square className="h-5 w-5 text-primary shrink-0" />
               <span>{property.property_size} מ"ר</span>
@@ -355,12 +357,14 @@ const PropertyDetailPage = () => {
                   <span className="text-sm">{property.rooms} חדרים</span>
                 </div>
               )}
-              <div className="flex items-center gap-3">
-                <Building2 className="h-5 w-5 text-primary shrink-0" />
-                <span className="text-sm">
-                  קומה {property.floor === 0 ? 'קרקע' : property.floor}
-                </span>
-              </div>
+              {property.floor != null && (
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-5 w-5 text-primary shrink-0" />
+                  <span className="text-sm">
+                    קומה {property.floor === 0 ? 'קרקע' : property.floor}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center gap-3">
                 <Square className="h-5 w-5 text-primary shrink-0" />
                 <span className="text-sm">{property.property_size} מ"ר</span>
