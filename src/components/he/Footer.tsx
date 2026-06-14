@@ -93,15 +93,12 @@ const HebrewFooter = () => {
         <div className="text-center">
           <p className="text-xs text-background/50">
             © {currentYear} City Market Properties. כל הזכויות שמורות.{" "}
-            <span
-              onClick={() => navigate('/he/sitemap')}
-              role="link"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter') navigate('/he/sitemap'); }}
+            <Link
+              to="/he/sitemap"
               className="underline hover:text-background transition-colors cursor-pointer"
             >
               מפת האתר
-            </span>
+            </Link>
           </p>
         </div>
       </div>

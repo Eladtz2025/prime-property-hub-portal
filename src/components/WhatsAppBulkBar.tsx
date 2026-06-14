@@ -57,7 +57,7 @@ export const WhatsAppBulkBar = ({
               <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" dir="rtl">
+          <DropdownMenuContent align="end">
             {STATUS_OPTIONS.map(opt => (
               <DropdownMenuItem key={opt.value} onClick={() => onStatusChange(opt.value)} className="gap-2">
                 <span className={`h-2 w-2 rounded-full ${opt.color} shrink-0`} />

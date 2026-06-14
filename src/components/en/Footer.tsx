@@ -106,15 +106,12 @@ const EnglishFooter = () => {
         <div className="text-center">
           <p className="font-montserrat text-xs text-background/50">
             © {currentYear} City Market Properties. All rights reserved.{" "}
-            <span
-              onClick={() => navigate('/en/sitemap')}
-              role="link"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter') navigate('/en/sitemap'); }}
+            <Link
+              to="/en/sitemap"
               className="underline hover:text-background transition-colors cursor-pointer"
             >
               Sitemap
-            </span>
+            </Link>
           </p>
         </div>
       </div>

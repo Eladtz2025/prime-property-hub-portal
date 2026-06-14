@@ -14,7 +14,7 @@ export interface OwnPropertyMatch {
   rooms: number | null;
   monthly_rent: number | null;
   current_market_value: number | null;
-  property_number: string | null;
+  property_number: number | null;
 }
 import { useCustomerMatches, GroupedMatch } from "@/hooks/useCustomerMatches";
 import { useDismissMatch, useRestoreMatch } from "@/hooks/useDismissedMatches";

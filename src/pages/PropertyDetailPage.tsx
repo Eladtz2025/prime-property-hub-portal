@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { ImageCarousel } from '@/components/ImageCarousel';
 import { PropertyImage } from '@/types/property';
 import { MessageCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { usePublicProperty } from '@/hooks/usePublicProperty';
 import { Skeleton } from '@/components/ui/skeleton';
 import HebrewFooter from '@/components/he/Footer';

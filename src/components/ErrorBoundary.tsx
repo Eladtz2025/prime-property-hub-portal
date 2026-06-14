@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
+import { captureError } from '@/lib/sentry';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -24,8 +25,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error to external service here if needed
     console.error('Error caught by boundary:', error, errorInfo);
+    // Forward to Sentry so we get notified about errors that the boundary swallows.
+    // (Caught render errors never reach Sentry's global window.onerror handler.)
+    captureError(error, { componentStack: errorInfo.componentStack });
   }
 
   resetError = () => {
