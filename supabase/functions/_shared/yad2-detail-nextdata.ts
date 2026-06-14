@@ -1,19 +1,28 @@
 /**
- * Yad2 Detail Parser — __NEXT_DATA__ extraction via CF Worker proxy.
+ * Yad2 Detail Parser — public JSON item API.
  *
- * Why this exists:
- *   - Yad2 detail pages contain full structured data inside the __NEXT_DATA__
- *     JSON blob (description, images, address, condition, balconies, etc.).
- *   - Jina Reader returns CAPTCHA shells often (Radware WAF).
- *   - The internal CF Worker proxy bypasses the WAF reliably (~100% success
- *     for both listing and detail pages).
+ * Why this design (changed 2026-06-14):
+ *   - Yad2 detail pages used to be fetched as HTML via the Cloudflare Worker
+ *     proxy and parsed out of __NEXT_DATA__. Yad2's Radware/ShieldSquare WAF now
+ *     blocks that proxy (and Jina) — it returns a CAPTCHA shell, so backfill got
+ *     nothing for Yad2 (same outage that killed list scraping).
+ *   - Yad2's public JSON item API (gw.yad2.co.il/realestate-item/{token}) returns
+ *     the SAME item object that __NEXT_DATA__ embedded — description, images,
+ *     additionalDetails, address, inProperty, customer — and is reachable from
+ *     the Edge runtime (same host extract-phone uses). No HTML, no WAF challenge.
  *
- * This parser is used by backfill-property-data-jina specifically for Yad2.
- * Madlan/Homeless are untouched.
+ * Used by backfill-property-data-jina for Yad2. Madlan/Homeless untouched.
  */
 
-const CF_WORKER_URL = 'https://yad2-proxy.taylor-kelly88.workers.dev/';
-const CF_TIMEOUT_MS = 25000;
+const IPHONE_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
+const GW_HEADERS: Record<string, string> = {
+  'User-Agent': IPHONE_UA,
+  'Accept': 'application/json, text/plain, */*',
+  'Origin': 'https://www.yad2.co.il',
+  'Referer': 'https://www.yad2.co.il/',
+};
+const GW_TIMEOUT_MS = 20000;
 
 export interface Yad2DetailNextResult {
   // Core
@@ -60,7 +69,6 @@ export interface Yad2DetailNextResult {
 
 /** Map Yad2 inProperty item ids to our internal feature keys. */
 const IN_PROPERTY_MAP: Record<string, string> = {
-  // Common identifiers seen in Yad2 next-data items
   'elevator': 'elevator',
   'parking': 'parking',
   'balcony': 'balcony',
@@ -87,6 +95,40 @@ const IN_PROPERTY_MAP: Record<string, string> = {
   'roof': 'roof',
   'long_term': 'longTerm',
   'roommates': 'roommates',
+};
+
+/**
+ * The JSON API returns inProperty as an OBJECT with camelCase keys like
+ * `includeElevator`, `includeParking`, `includeSecurityRoom`, `isRenovated`.
+ * Normalize (strip include/is/has prefix, lowercase, drop non-letters) → feature.
+ */
+const NORMALIZED_FEATURE_MAP: Record<string, string> = {
+  elevator: 'elevator',
+  parking: 'parking',
+  balcony: 'balcony',
+  securityroom: 'mamad',
+  shelter: 'mamad',
+  mamad: 'mamad',
+  storage: 'storage',
+  warehouse: 'storage',
+  airconditioner: 'airConditioner',
+  airconditioning: 'airConditioner',
+  tornadoac: 'tadiran',
+  bars: 'bars',
+  accessibility: 'accessible',
+  handicap: 'accessible',
+  pets: 'pets',
+  boiler: 'sunHeater',
+  sunheater: 'sunHeater',
+  renovated: 'renovated',
+  furniture: 'furnished',
+  furnished: 'furnished',
+  garden: 'yard',
+  roof: 'roof',
+  pandordoors: 'pandorDoors',
+  kosherkitchen: 'kosherKitchen',
+  longterm: 'longTerm',
+  roommates: 'roommates',
 };
 
 /** Map Hebrew text labels (from inProperty[].text) to our feature keys. */
@@ -120,7 +162,11 @@ const TEXT_FEATURE_MAP: Record<string, string> = {
 };
 
 function mapInPropertyKey(rawKey: string | undefined, text: string | undefined): string | null {
-  if (rawKey && IN_PROPERTY_MAP[rawKey]) return IN_PROPERTY_MAP[rawKey];
+  if (rawKey) {
+    if (IN_PROPERTY_MAP[rawKey]) return IN_PROPERTY_MAP[rawKey];
+    const norm = rawKey.replace(/^(include|is|has)/i, '').toLowerCase().replace(/[^a-z]/g, '');
+    if (NORMALIZED_FEATURE_MAP[norm]) return NORMALIZED_FEATURE_MAP[norm];
+  }
   if (text) {
     const trimmed = text.trim();
     if (TEXT_FEATURE_MAP[trimmed]) return TEXT_FEATURE_MAP[trimmed];
@@ -132,108 +178,116 @@ function mapInPropertyKey(rawKey: string | undefined, text: string | undefined):
   return null;
 }
 
+/** Extract the Yad2 listing token from a public detail URL. */
+function parseYad2Token(sourceUrl: string): string | null {
+  const m = sourceUrl.match(/yad2\.co\.il\/realestate\/item\/(?:[^\/]+\/)?([a-zA-Z0-9]+)/i);
+  return m ? m[1] : null;
+}
+
 /**
- * Fetch a Yad2 detail page via CF Worker and extract structured data from __NEXT_DATA__.
- * Returns null on failure / removed listing / WAF block.
+ * Fetch a Yad2 detail item via the public JSON API and map it to
+ * Yad2DetailNextResult. Returns null on removal / WAF block / failure.
  */
 export async function fetchYad2DetailNextData(sourceUrl: string): Promise<Yad2DetailNextResult | null> {
   if (!sourceUrl || !sourceUrl.includes('yad2.co.il')) {
     console.log(`⚠️ yad2-detail-nextdata: invalid URL: ${sourceUrl}`);
     return null;
   }
-
-  const proxyKey = Deno.env.get('YAD2_PROXY_KEY');
-  if (!proxyKey) {
-    console.error('❌ yad2-detail-nextdata: YAD2_PROXY_KEY missing');
+  const token = parseYad2Token(sourceUrl);
+  if (!token) {
+    console.warn(`⚠️ yad2-detail-nextdata: no token in URL: ${sourceUrl}`);
     return null;
   }
 
-  let html = '';
-  let upstreamStatus = 0;
+  const apiUrl = `https://gw.yad2.co.il/realestate-item/${token}`;
   for (let attempt = 1; attempt <= 2; attempt++) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), CF_TIMEOUT_MS);
+    const timeoutId = setTimeout(() => controller.abort(), GW_TIMEOUT_MS);
     try {
       const t0 = Date.now();
-      const resp = await fetch(CF_WORKER_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-proxy-key': proxyKey },
-        body: JSON.stringify({ url: sourceUrl, target: 'yad2' }),
-        signal: controller.signal,
-      });
+      const resp = await fetch(apiUrl, { headers: GW_HEADERS, signal: controller.signal });
       clearTimeout(timeoutId);
 
-      if (!resp.ok) {
-        console.warn(`⚠️ yad2-detail-nextdata: CF worker ${resp.status} (attempt ${attempt})`);
-        await resp.text();
-        if (attempt < 2) { await new Promise(r => setTimeout(r, 3000)); continue; }
+      if (resp.status === 404 || resp.status === 410) {
+        console.log(`⚠️ Yad2 detail removed (${resp.status}): ${token}`);
         return null;
       }
-      const json = await resp.json();
-      html = json.html || '';
-      upstreamStatus = json.status || 0;
-      console.log(`✅ yad2-detail CF: ${Date.now() - t0}ms upstream=${upstreamStatus} html=${html.length}`);
 
-      // Check removal / 404
-      if (upstreamStatus === 404 || upstreamStatus === 410 ||
-          html.includes('error-section') || html.includes('חיפשנו בכל מקום')) {
-        console.log(`⚠️ Yad2 detail removed: ${sourceUrl}`);
+      const ct = resp.headers.get('content-type') || '';
+      const text = await resp.text();
+
+      if (!resp.ok || !ct.includes('application/json')) {
+        const blocked = /__uzdbm|ShieldSquare|captcha|perfdrive|<html/i.test(text);
+        console.warn(`⚠️ yad2-detail gw attempt ${attempt}: status=${resp.status} ct=${ct} blocked=${blocked}`);
+        if (attempt < 2) { await new Promise((r) => setTimeout(r, 3000)); continue; }
         return null;
       }
-      // Check WAF block
-      if (html.includes('Radware') || /Bot\s*Manager\s*Captcha/i.test(html)) {
-        console.warn(`⚠️ yad2-detail-nextdata: WAF block (attempt ${attempt})`);
-        if (attempt < 2) { await new Promise(r => setTimeout(r, 5000)); continue; }
+
+      let json: any;
+      try { json = JSON.parse(text); }
+      catch (e) {
+        console.warn(`⚠️ yad2-detail gw: JSON parse failed: ${(e as Error).message}`);
+        if (attempt < 2) { await new Promise((r) => setTimeout(r, 3000)); continue; }
         return null;
       }
-      if (html.length < 5000) {
-        console.warn(`⚠️ yad2-detail-nextdata: too short (${html.length})`);
-        if (attempt < 2) { await new Promise(r => setTimeout(r, 3000)); continue; }
+
+      const item = json?.data;
+      if (!item || typeof item !== 'object') {
+        console.warn(`⚠️ yad2-detail gw: no data for token ${token}`);
         return null;
       }
-      break;
+      console.log(`✅ yad2-detail gw: ${Date.now() - t0}ms token=${token}`);
+      return mapYad2DetailItem(item);
     } catch (err) {
       clearTimeout(timeoutId);
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`⚠️ yad2-detail-nextdata fetch error (attempt ${attempt}): ${msg}`);
-      if (attempt < 2) await new Promise(r => setTimeout(r, 3000));
+      console.warn(`⚠️ yad2-detail gw fetch error (attempt ${attempt}): ${msg}`);
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 3000));
     }
   }
-
-  if (!html) return null;
-  return parseYad2DetailNextData(html);
+  return null;
 }
 
+/**
+ * Legacy HTML entry point — extract the item from __NEXT_DATA__ and map it.
+ * Retained for compatibility/debugging; the live path uses the JSON API above.
+ */
 export function parseYad2DetailNextData(html: string): Yad2DetailNextResult | null {
   const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
   if (!m) {
     console.warn('⚠️ yad2-detail-nextdata: no __NEXT_DATA__ block');
     return null;
   }
-
   let data: any;
   try { data = JSON.parse(m[1]); }
   catch (e) {
     console.error('❌ yad2-detail-nextdata: JSON parse error', (e as Error).message);
     return null;
   }
-
   const queries = data?.props?.pageProps?.dehydratedState?.queries || [];
   const itemQ = queries.find((q: any) => Array.isArray(q.queryKey) && q.queryKey[0] === 'item');
   if (!itemQ) {
     console.warn('⚠️ yad2-detail-nextdata: no item query in dehydratedState');
     return null;
   }
-
   const item = itemQ.state?.data;
   if (!item) return null;
+  return mapYad2DetailItem(item);
+}
+
+/**
+ * Map a Yad2 item object (from either the JSON API or __NEXT_DATA__) to
+ * Yad2DetailNextResult. The two sources share this object shape.
+ */
+export function mapYad2DetailItem(item: any): Yad2DetailNextResult | null {
+  if (!item || typeof item !== 'object') return null;
 
   const result: Yad2DetailNextResult = {
     features: {},
     raw_meta_keys: Object.keys(item.metaData || {}),
   };
 
-  // ===== Description & images (the missing pieces) =====
+  // ===== Description & images =====
   if (item.metaData?.description && typeof item.metaData.description === 'string') {
     const desc = item.metaData.description.trim();
     if (desc.length > 5) result.description = desc;
@@ -259,9 +313,7 @@ export function parseYad2DetailNextData(html: string): Yad2DetailNextResult | nu
   if (typeof ad.squareMeter === 'number' && ad.squareMeter > 10) result.size = ad.squareMeter;
   if (typeof ad.squareMeterBuild === 'number' && ad.squareMeterBuild > 10) result.sizeBuild = ad.squareMeterBuild;
   if (typeof ad.buildingTopFloor === 'number' && ad.buildingTopFloor > 0) result.totalFloors = ad.buildingTopFloor;
-  // FIX 2026-04-29: parkingSpacesCount is the AUTHORITATIVE source for parking
-  // (inProperty's parking flag is unreliable — often "true" even when no parking).
-  // We capture spots here, then overwrite features.parking below regardless of inProperty.
+  // parkingSpacesCount is the AUTHORITATIVE source for parking (inProperty's flag is unreliable).
   if (typeof ad.parkingSpacesCount === 'number' && ad.parkingSpacesCount > 0) {
     result.parkingSpots = ad.parkingSpacesCount;
   }
@@ -283,7 +335,6 @@ export function parseYad2DetailNextData(html: string): Yad2DetailNextResult | nu
   if (addr.coords?.lat) result.lat = addr.coords.lat;
   if (addr.coords?.lon) result.lon = addr.coords.lon;
 
-  // Compose human address: "street houseNumber, city"
   if (result.street) {
     let composed = result.street;
     if (result.houseNumber) composed += ` ${result.houseNumber}`;
@@ -303,13 +354,12 @@ export function parseYad2DetailNextData(html: string): Yad2DetailNextResult | nu
   }
 
   // ===== Features (inProperty) =====
-  // inProperty can be: array of {id, text, included} OR object map
+  // inProperty can be: array of {id/key, text, included} OR object map of {includeX:bool}.
   const inProp = item.inProperty;
   if (Array.isArray(inProp)) {
     for (const f of inProp) {
       const key = mapInPropertyKey(f?.key || f?.id, f?.text);
       if (!key) continue;
-      // included/has === true means present
       const present = f?.included !== false && f?.has !== false && f?.disabled !== true;
       result.features[key] = !!present;
     }
@@ -321,23 +371,19 @@ export function parseYad2DetailNextData(html: string): Yad2DetailNextResult | nu
     }
   }
 
-  // FIX 2026-04-29: parking is derived ONLY from parkingSpacesCount.
-  // inProperty's parking flag is unreliable in Yad2 next-data (often true when no parking).
+  // parking is derived ONLY from parkingSpacesCount (inProperty's flag is unreliable).
   if (typeof ad.parkingSpacesCount === 'number') {
     result.features.parking = ad.parkingSpacesCount > 0;
   } else {
-    // Authoritative source missing → drop parking so the Cheerio fallback
-    // (or existing DB value) can supply it instead of the wrong inProperty flag.
     delete result.features.parking;
   }
-  // Derive balcony from balconiesCount
+  // Derive balcony from balconiesCount when not otherwise set
   if (result.balconiesCount !== undefined && result.features.balcony === undefined) {
     result.features.balcony = result.balconiesCount > 0;
   }
-  console.log(`🅿️ Yad2 next-data parking: parkingSpacesCount=${ad.parkingSpacesCount} → features.parking=${result.features.parking}`);
 
   const featCount = Object.keys(result.features).length;
-  console.log(`✅ Yad2 next-data parsed: desc=${result.description?.length || 0}ch, imgs=${result.images?.length || 0}, features=${featCount}, price=${result.price}, rooms=${result.rooms}, size=${result.size}, neighborhood=${result.neighborhood}, adType=${result.adType}`);
+  console.log(`✅ Yad2 detail mapped: desc=${result.description?.length || 0}ch, imgs=${result.images?.length || 0}, features=${featCount}, price=${result.price}, rooms=${result.rooms}, size=${result.size}, neighborhood=${result.neighborhood}, adType=${result.adType}`);
 
   return result;
 }

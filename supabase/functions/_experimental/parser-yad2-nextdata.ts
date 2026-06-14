@@ -1,16 +1,18 @@
 /**
- * Yad2 __NEXT_DATA__ Parser
+ * Yad2 feed parser.
  *
- * Parses Yad2 listing pages by extracting the structured JSON embedded in
- * <script id="__NEXT_DATA__">. This is dramatically more reliable than the
- * markdown parser because:
- *   - All fields are typed and labeled (no Hebrew regex guessing)
- *   - Address is split into street/houseNumber/neighborhood/city
- *   - is_private is determined by adType ('private' vs 'broker')
- *   - Returns ALL listings on the page, including platinum/commercial
+ * Yad2 listings come as structured feed items with typed fields (no Hebrew
+ * regex guessing): address split into street/houseNumber/neighborhood/city,
+ * is_private from adType, price/rooms/size from additionalDetails.
  *
- * Source: served by the Cloudflare Worker proxy (yad2-proxy) — Yad2's
- * Cloudflare WAF blocks Supabase Edge IPs directly.
+ * Two sources produce the SAME item shape and share one mapper (`mapItems`):
+ *   1. parseYad2NextData(html)  — items embedded in <script id="__NEXT_DATA__">
+ *      (legacy SSR-HTML path, via the Cloudflare proxy).
+ *   2. parseYad2Markers(markers) — items from the public JSON feed API
+ *      (gw.yad2.co.il/realestate-feed/{rent|forsale}/map). This is the live
+ *      path: Yad2's WAF (Radware/ShieldSquare) now blocks the HTML proxy, but
+ *      the JSON API is reachable from the Edge runtime (same one extract-phone
+ *      uses). The map markers carry the identical fields the mapper needs.
  */
 
 import type { ParsedProperty, ParserResult, PropertyFeatures } from './parser-utils.ts';
@@ -76,7 +78,7 @@ function buildAddress(item: Yad2FeedItem): string | null {
   const num = item.address?.house?.number;
   if (!street || street.length < 2) return null;
   // Hebrew letters check
-  if (!/[\u0590-\u05FF]/.test(street)) return null;
+  if (!/[֐-׿]/.test(street)) return null;
   if (typeof num === 'number' && num > 0) return `${street} ${num}`;
   return street;
 }
@@ -119,9 +121,13 @@ function extractFeedItems(nextData: any): Yad2FeedItem[] {
     if (Array.isArray(d.king)) items.push(...d.king);
     if (Array.isArray(d.yad1)) items.push(...d.yad1);
   }
-  // Deduplicate by token
+  return dedupeByToken(items);
+}
+
+/** Deduplicate feed items by token, dropping tokenless entries. */
+function dedupeByToken(items: Yad2FeedItem[]): Yad2FeedItem[] {
   const seen = new Set<string>();
-  return items.filter(i => {
+  return items.filter((i) => {
     const t = i.token;
     if (!t || seen.has(t)) return false;
     seen.add(t);
@@ -129,16 +135,8 @@ function extractFeedItems(nextData: any): Yad2FeedItem[] {
   });
 }
 
-/**
- * Main entry point — extract __NEXT_DATA__ JSON from raw HTML and parse it
- * into ParsedProperty[].
- */
-export function parseYad2NextData(
-  html: string,
-  propertyType: 'rent' | 'sale',
-  ownerTypeFilter?: string | null,
-): ParserResult {
-  const result: ParserResult = {
+function emptyResult(): ParserResult {
+  return {
     success: false,
     properties: [],
     stats: {
@@ -152,29 +150,20 @@ export function parseYad2NextData(
       broker_count: 0,
       unknown_count: 0,
     },
+    errors: [],
   };
+}
 
-  if (!html || html.length < 1000) {
-    console.warn(`⚠️ parseYad2NextData: html too short (${html?.length || 0})`);
-    return result;
-  }
-
-  const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-  if (!m) {
-    console.warn('⚠️ parseYad2NextData: __NEXT_DATA__ not found');
-    return result;
-  }
-
-  let nextData: any;
-  try {
-    nextData = JSON.parse(m[1]);
-  } catch (e) {
-    console.error('❌ parseYad2NextData: JSON parse failed:', (e as Error).message);
-    return result;
-  }
-
-  const items = extractFeedItems(nextData);
-  console.log(`🟠 parseYad2NextData: extracted ${items.length} feed items`);
+/**
+ * Shared mapper: feed items → ParsedProperty[]. Used by both the HTML and the
+ * JSON-API entry points so the two paths produce identical output.
+ */
+function mapItems(
+  items: Yad2FeedItem[],
+  propertyType: 'rent' | 'sale',
+  ownerTypeFilter?: string | null,
+): ParserResult {
+  const result = emptyResult();
 
   for (const item of items) {
     if (!item.token) continue;
@@ -237,4 +226,52 @@ export function parseYad2NextData(
   result.stats.total_found = result.properties.length;
   result.success = result.properties.length > 0;
   return result;
+}
+
+/**
+ * JSON-API entry point — map the `data.markers` array from the gw feed API
+ * directly into ParsedProperty[]. This is the live scraping path.
+ */
+export function parseYad2Markers(
+  markers: any[],
+  propertyType: 'rent' | 'sale',
+  ownerTypeFilter?: string | null,
+): ParserResult {
+  if (!Array.isArray(markers) || markers.length === 0) return emptyResult();
+  const items = dedupeByToken(markers as Yad2FeedItem[]);
+  console.log(`🟠 parseYad2Markers: ${items.length} unique feed items from ${markers.length} markers`);
+  return mapItems(items, propertyType, ownerTypeFilter);
+}
+
+/**
+ * HTML entry point — extract __NEXT_DATA__ JSON from raw HTML and parse it.
+ * Retained for the SSR-HTML path / debugging; the live path uses the JSON API.
+ */
+export function parseYad2NextData(
+  html: string,
+  propertyType: 'rent' | 'sale',
+  ownerTypeFilter?: string | null,
+): ParserResult {
+  if (!html || html.length < 1000) {
+    console.warn(`⚠️ parseYad2NextData: html too short (${html?.length || 0})`);
+    return emptyResult();
+  }
+
+  const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (!m) {
+    console.warn('⚠️ parseYad2NextData: __NEXT_DATA__ not found');
+    return emptyResult();
+  }
+
+  let nextData: any;
+  try {
+    nextData = JSON.parse(m[1]);
+  } catch (e) {
+    console.error('❌ parseYad2NextData: JSON parse failed:', (e as Error).message);
+    return emptyResult();
+  }
+
+  const items = extractFeedItems(nextData);
+  console.log(`🟠 parseYad2NextData: extracted ${items.length} feed items`);
+  return mapItems(items, propertyType, ownerTypeFilter);
 }
