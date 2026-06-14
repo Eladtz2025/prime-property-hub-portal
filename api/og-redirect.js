@@ -59,7 +59,14 @@ export default async function handler(request) {
       return new Response(html, {
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=3600',
+          // CRITICAL: this bot-only HTML contains a window.location.href redirect.
+          // It must NEVER be stored in Vercel's shared edge cache — otherwise it gets
+          // served to real browsers and creates an infinite redirect loop
+          // (/he/property/:id -> /property/:id -> /he/property/:id -> ...), because
+          // every property URL is rewritten back to this function in vercel.json.
+          // Keep it per-request only; social platforms cache OG data on their side.
+          'Cache-Control': 'private, no-store, max-age=0',
+          'Vary': 'User-Agent',
         },
       });
     } catch (error) {
@@ -67,8 +74,15 @@ export default async function handler(request) {
     }
   }
 
-  // For regular users, serve the SPA
-  // Fetch the main index.html
+  // For regular users, serve the SPA shell (index.html).
+  // Add Vary: User-Agent so this can never share a cache entry with the bot HTML above.
   const indexUrl = new URL('/index.html', url.origin);
-  return fetch(indexUrl);
+  const indexResponse = await fetch(indexUrl);
+  const headers = new Headers(indexResponse.headers);
+  headers.set('Vary', 'User-Agent');
+  return new Response(indexResponse.body, {
+    status: indexResponse.status,
+    statusText: indexResponse.statusText,
+    headers,
+  });
 }
