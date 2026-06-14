@@ -11,6 +11,7 @@ on:
 jobs:
   mirror:
     runs-on: ubuntu-latest
+    if: github.repository == 'taylor174/prime-property-hub-portal'
     permissions:
       contents: read
 
