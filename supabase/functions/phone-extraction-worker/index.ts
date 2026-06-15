@@ -14,20 +14,34 @@ const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const MANUAL_BATCH_SIZE = 20;
 const WALL_CLOCK_LIMIT_MS = 50_000; // stay well within Supabase's 60s edge-function timeout
 
-function israelHourNow(): number {
-  return parseInt(
-    new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Asia/Jerusalem',
-      hour: '2-digit',
-      hour12: false,
-    }).format(new Date()),
-    10,
-  );
+// Minutes-since-midnight in Israel time, so the window honors minutes (e.g. 08:30),
+// not just the hour. Previously only the hour was parsed, so '08:30'→8 / '09:30'→9
+// collapsed a 08:30–09:30 window into 08:00–08:59.
+function israelNowMinutes(): number {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Jerusalem',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+  const h = parseInt(parts.find(p => p.type === 'hour')?.value ?? '0', 10);
+  const m = parseInt(parts.find(p => p.type === 'minute')?.value ?? '0', 10);
+  return (Number.isNaN(h) ? 0 : h) * 60 + (Number.isNaN(m) ? 0 : m);
 }
 
-function isWithinWindow(startHour: number, endHour: number): boolean {
-  const h = israelHourNow();
-  return h >= startHour && h < endHour;
+// Parse 'HH:MM' (or 'HH') to minutes-since-midnight; fall back on bad input.
+function parseHHMMToMinutes(raw: string, fallbackMin: number): number {
+  const cleaned = String(raw).replace(/"/g, '').trim();
+  const [hh, mm] = cleaned.split(':');
+  const h = parseInt(hh, 10);
+  if (Number.isNaN(h)) return fallbackMin;
+  const m = parseInt(mm ?? '0', 10);
+  return h * 60 + (Number.isNaN(m) ? 0 : m);
+}
+
+function isWithinWindow(startMin: number, endMin: number): boolean {
+  const now = israelNowMinutes();
+  return now >= startMin && now < endMin;
 }
 
 async function sleep(ms: number) {
@@ -70,13 +84,13 @@ Deno.serve(async (req) => {
   const rows = windowRes.data ?? [];
   const rawStart = rows.find(r => r.setting_key === 'window_start')?.setting_value ?? '09:00';
   const rawEnd   = rows.find(r => r.setting_key === 'window_end')?.setting_value   ?? '21:00';
-  const startHour = parseInt(String(rawStart).replace(/"/g, '').split(':')[0], 10) || 9;
-  const endHour   = parseInt(String(rawEnd).replace(/"/g, '').split(':')[0], 10)   || 21;
+  const startMin = parseHHMMToMinutes(rawStart, 9 * 60);
+  const endMin   = parseHHMMToMinutes(rawEnd, 21 * 60);
 
   // 2. Time window (skip if manual — manual always runs)
-  if (!manual && !isWithinWindow(startHour, endHour)) {
+  if (!manual && !isWithinWindow(startMin, endMin)) {
     return new Response(
-      JSON.stringify({ skipped: true, reason: 'outside_working_hours', window: `${startHour}–${endHour}` }),
+      JSON.stringify({ skipped: true, reason: 'outside_working_hours', window: `${rawStart}–${rawEnd}` }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }

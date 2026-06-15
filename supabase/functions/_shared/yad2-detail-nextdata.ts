@@ -188,7 +188,7 @@ function parseYad2Token(sourceUrl: string): string | null {
  * Fetch a Yad2 detail item via the public JSON API and map it to
  * Yad2DetailNextResult. Returns null on removal / WAF block / failure.
  */
-export async function fetchYad2DetailNextData(sourceUrl: string): Promise<Yad2DetailNextResult | null> {
+export async function fetchYad2DetailNextData(sourceUrl: string): Promise<Yad2DetailNextResult | 'removed' | null> {
   if (!sourceUrl || !sourceUrl.includes('yad2.co.il')) {
     console.log(`⚠️ yad2-detail-nextdata: invalid URL: ${sourceUrl}`);
     return null;
@@ -209,8 +209,10 @@ export async function fetchYad2DetailNextData(sourceUrl: string): Promise<Yad2De
       clearTimeout(timeoutId);
 
       if (resp.status === 404 || resp.status === 410) {
-        console.log(`⚠️ Yad2 detail removed (${resp.status}): ${token}`);
-        return null;
+        // Definitive removal signal — distinct from null (transient/WAF/timeout) so the
+        // caller can RETIRE the listing instead of looping it through retry attempts.
+        console.log(`🗑️ Yad2 detail removed (${resp.status}): ${token}`);
+        return 'removed';
       }
 
       const ct = resp.headers.get('content-type') || '';

@@ -331,6 +331,19 @@ Deno.serve(async (req) => {
           if (prop.source === 'yad2') {
             // Try __NEXT_DATA__ first (gives description + images + everything)
             nextDataResult = await fetchYad2DetailNextData(prop.source_url);
+            // gw item API 404/410 → listing removed; retire it (don't loop).
+            if (nextDataResult === 'removed') {
+              await supabase.from('scouted_properties').update({
+                is_active: false,
+                status: 'inactive',
+                backfill_status: 'not_needed',
+                availability_checked_at: new Date().toISOString(),
+                availability_check_reason: 'yad2_gw_404_removed',
+              }).eq('id', prop.id);
+              r.status = 'removed';
+              results.push(r);
+              continue;
+            }
             // If next-data missed features, fall back to Cheerio for the feature grid
             if (!nextDataResult || Object.keys(nextDataResult.features).length === 0) {
               detailResult = await fetchYad2DetailFeatures(prop.source_url);
@@ -735,6 +748,7 @@ Deno.serve(async (req) => {
       blacklisted: 0,
       non_ta_deactivated: 0,
       scrape_failed: 0,
+      removed_404: 0,
       timeout_skipped: 0,
       no_content: 0,
       no_new_data: 0,
@@ -949,11 +963,40 @@ Deno.serve(async (req) => {
           continue; // Skip Jina path for madlan
         }
 
-        // ===== YAD2: CF Worker proxy + __NEXT_DATA__ (with Cheerio fallback) =====
+        // ===== YAD2: public JSON item API (gw.yad2.co.il) + Cheerio fallback =====
         if (prop.source === 'yad2') {
           try {
-            // PRIMARY: __NEXT_DATA__ via CF Worker — gives description, images, full structured data
+            // PRIMARY: Yad2 public JSON item API (gw.yad2.co.il) — description, images, full structured data
             const nextData = await fetchYad2DetailNextData(prop.source_url);
+
+            // gw item API returned 404/410 → the listing is gone from Yad2. RETIRE it instead of
+            // looping it through 3 failed attempts. The Jina availability double-check below is
+            // WAF-blocked and can't confirm removal, which previously stranded dead rows as
+            // permanent 'failed' (and re-queued them on every reset → endless error storm).
+            if (nextData === 'removed') {
+              await supabase.from('scouted_properties').update({
+                is_active: false,
+                status: 'inactive',
+                backfill_status: 'not_needed',
+                availability_checked_at: new Date().toISOString(),
+                availability_check_reason: 'yad2_gw_404_removed',
+              }).eq('id', prop.id);
+              successCount++;
+              batchStats.removed_404++;
+              batchStats.total_processed++;
+              await saveRecentItem({
+                address: prop.address || prop.title,
+                neighborhood: prop.neighborhood,
+                source: prop.source,
+                source_url: prop.source_url,
+                status: 'removed_auto',
+                timestamp: new Date().toISOString(),
+                error_reason: 'הוסר מיד2 (404 ב-API הפריט)',
+              });
+              await new Promise(r => setTimeout(r, 300));
+              continue;
+            }
+
             // FALLBACK: Cheerio HTML parser if next-data missing or has zero features
             let detailResult: any = nextData;
             if (!nextData || Object.keys(nextData.features || {}).length === 0) {
@@ -1582,7 +1625,7 @@ Deno.serve(async (req) => {
       'address_no_number_in_source', 'address_street_mismatch', 'address_validation_failed',
       'address_already_has_number', 'address_set_from_scratch', 'address_no_address',
       'features_updated', 'broker_classified', 'blacklisted', 'non_ta_deactivated',
-      'scrape_failed', 'no_content', 'no_new_data', 'update_db_error'
+      'scrape_failed', 'removed_404', 'no_content', 'no_new_data', 'update_db_error'
     ];
     for (const key of numericKeys) {
       mergedSummary[key] = (existingSummary[key] || 0) + (batchStats[key as keyof typeof batchStats] as number || 0);
