@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
-import { Building2, Newspaper, Clock, Facebook, Instagram, Eye, RotateCcw, Edit2, Trash2, Lock, Globe } from 'lucide-react';
+import { Building2, Newspaper, Clock, Facebook, Instagram, Eye, RotateCcw, Edit2, Trash2, Lock, Globe, AlertTriangle } from 'lucide-react';
 import { formatPropertyPrice, propertyTypeLabel } from '@/lib/social-content';
 import { RotationList } from './RotationList';
 import { AutoPublishArticles } from './AutoPublishArticles';
@@ -116,20 +116,37 @@ export const SavedQueueCard: React.FC<SavedQueueCardProps> = ({
         </div>
 
         {/* Progress bar for property rotation */}
-        {queue.queue_type === 'property_rotation' && cycleInfo && queue.is_active && (
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <RotateCcw className="h-2.5 w-2.5" />
-                סבב {cycleInfo.cycle} · פורסמו: {cycleInfo.currentIdx}/{cycleInfo.totalProps}
-              </span>
-              {queue.last_published_at && (
-                <span>אחרון: {new Date(queue.last_published_at).toLocaleDateString('he-IL')}</span>
-              )}
+        {queue.queue_type === 'property_rotation' && cycleInfo && queue.is_active && (() => {
+          // Staleness check: an active queue that hasn't published within its expected
+          // cadence (frequency_days + 1 day grace) is almost certainly stuck — surface
+          // that loudly instead of a benign "last published" date that's easy to miss.
+          const lastPub = queue.last_published_at ? new Date(queue.last_published_at) : null;
+          const daysSince = lastPub ? Math.floor((Date.now() - lastPub.getTime()) / 86400000) : null;
+          const freqDays = (queue.frequency_days as number) || 1;
+          const isStale = daysSince === null || daysSince > freqDays + 1;
+          return (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <RotateCcw className="h-2.5 w-2.5" />
+                  סבב {cycleInfo.cycle} · פורסמו: {cycleInfo.currentIdx}/{cycleInfo.totalProps}
+                </span>
+                {lastPub ? (
+                  <span className={isStale ? 'flex items-center gap-0.5 text-red-600 font-medium' : ''}>
+                    {isStale && <AlertTriangle className="h-2.5 w-2.5" />}
+                    אחרון: {lastPub.toLocaleDateString('he-IL')}
+                    {isStale && daysSince !== null && ` · לא פורסם ${daysSince} ימים!`}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-0.5 text-amber-600 font-medium">
+                    <AlertTriangle className="h-2.5 w-2.5" />טרם פורסם
+                  </span>
+                )}
+              </div>
+              <Progress value={cycleInfo.progress} className={`h-1.5 ${isStale ? '[&>div]:bg-red-500' : ''}`} />
             </div>
-            <Progress value={cycleInfo.progress} className="h-1.5" />
-          </div>
-        )}
+          );
+        })()}
 
         {/* Rotation list */}
         {queue.queue_type === 'property_rotation' && queue.is_active && (
