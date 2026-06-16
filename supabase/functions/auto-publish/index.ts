@@ -104,17 +104,28 @@ Deno.serve(async (req) => {
         }
 
         // Atomic per-slot claim — prevents two overlapping runs from double-posting
-        // the same queue/day/time-slot. The conditional UPDATE succeeds exactly once;
-        // a concurrent run sees last_slot_key already set and skips.
+        // the same queue/day/time-slot. Done via the claim_publish_slot() SQL function
+        // so the "claim only when NULL or a different slot" condition is evaluated in
+        // Postgres. The previous supabase-js `.or(last_slot_key.is.null,...)` form
+        // returned empty even when last_slot_key was NULL, so every in-window run
+        // skipped "already handled" and NOTHING ever published (2026-06-16 incident);
+        // the error was also swallowed (data-only destructure). Both fixed here.
         const israelDateKey = `${nowIsrael.getFullYear()}-${String(nowIsrael.getMonth() + 1).padStart(2, '0')}-${String(nowIsrael.getDate()).padStart(2, '0')}`;
         const slotKey = `${israelDateKey}_${publishTimes[activeTimeIndex].replace(':', '')}`;
-        const { data: claimed } = await supabase
-          .from('auto_publish_queues')
-          .update({ last_slot_key: slotKey })
-          .eq('id', queue.id)
-          .or(`last_slot_key.is.null,last_slot_key.neq.${slotKey}`)
-          .select('id');
-        if (!claimed || claimed.length === 0) {
+        const { data: claimedSlot, error: claimErr } = await supabase
+          .rpc('claim_publish_slot', { p_queue_id: queue.id, p_slot_key: slotKey });
+        if (claimErr) {
+          console.error(`Queue ${queue.name} slot-claim error:`, claimErr.message);
+          results.push({ queue: queue.name, error: `slot-claim failed: ${claimErr.message}` });
+          await supabase.from('auto_publish_log').insert({
+            queue_id: queue.id,
+            status: 'failed',
+            error_message: `slot-claim failed: ${claimErr.message}`,
+            platforms: queue.platforms,
+          });
+          continue;
+        }
+        if (!claimedSlot) {
           results.push({ queue: queue.name, skipped: true, reason: `Slot ${slotKey} already handled` });
           continue;
         }
@@ -338,7 +349,7 @@ async function handlePropertyRotation(supabase: ReturnType<typeof createClient>,
       body: { post_id: post.id, is_private: !!queue.is_private },
     });
 
-    const publishFailed = publishErr || (publishResult && publishResult.success === false);
+    const publishFailed = !!publishErr || !publishResult || publishResult.success !== true;
     const publishError = publishErr?.message || publishResult?.error || null;
 
     if (!publishFailed) hadSuccess = true;
@@ -448,7 +459,7 @@ async function handleArticleOneshot(supabase: ReturnType<typeof createClient>, q
       body: { post_id: post.id, is_private: !!queue.is_private },
     });
 
-    const publishFailed = publishErr || (publishResult && publishResult.success === false);
+    const publishFailed = !!publishErr || !publishResult || publishResult.success !== true;
     const publishError = publishErr?.message || publishResult?.error || null;
 
     await supabase.from('auto_publish_log').insert({
