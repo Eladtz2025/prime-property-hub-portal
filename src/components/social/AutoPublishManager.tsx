@@ -357,8 +357,10 @@ export const AutoPublishManager: React.FC = () => {
       toast({ title: 'לא נבחרו קבוצות פייסבוק', variant: 'destructive' });
       return false;
     }
+    // Include img_index + a v= cache-buster so Facebook re-scrapes a FRESH rich
+    // OG card (photo + title) each time, instead of reusing a stale/empty preview.
     const propertyUrl = selectedPropertyId && selectedPropertyId !== 'free'
-      ? `https://www.ctmarketproperties.com/property/${selectedPropertyId}`
+      ? `https://www.ctmarketproperties.com/property/${selectedPropertyId}?img_index=${selectedPrimaryImageIndex}&v=${Date.now()}`
       : undefined;
     const rtlMark = '‏';
     const groupText = rtlMark + contentText

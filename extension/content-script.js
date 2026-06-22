@@ -25,21 +25,31 @@ async function publishToGroup(text) {
   log('Starting publish flow…');
   if (!text || !text.trim()) throw new Error('No text to publish');
 
-  // 1) Wait for the group feed + composer trigger to render, then open it.
+  // Separate the property link from the body. Facebook needs the link IN the
+  // composer to build the rich preview card (photo + title + price), but we do
+  // NOT want the raw URL cluttering the final post (it also wrecks RTL layout).
+  // So: paste the link first to trigger the card, then replace the text with the
+  // clean body — Facebook keeps the card attached once it has loaded.
+  const linkMatch = text.match(/https?:\/\/\S*ctmarketproperties\.com\/\S+/i);
+  const link = linkMatch ? linkMatch[0] : null;
+  const cleanText = (link
+    ? text.replace(link, '').replace(/🔗/g, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n')
+    : text).trim();
+
+  // 1) Open the composer.
   const composerTrigger = await waitFor(() => findComposerTrigger(), 25000);
   if (!composerTrigger) throw new Error('Composer trigger not found');
   composerTrigger.click();
 
   // 2) Find the composer MODAL — the visible dialog that has BOTH an editable
-  //    textbox and a Post button. This is what distinguishes it from Messenger
-  //    and, crucially, from the inline "Comment as …" boxes in the feed.
+  //    textbox and a Post button (distinguishes it from Messenger and the inline
+  //    "Comment as …" boxes in the feed).
   const modal = await waitFor(() => findComposerModal(), 12000);
   let scope, textbox;
   if (modal) {
     scope = modal;
     textbox = modal.querySelector('[role="textbox"][contenteditable="true"]');
   } else {
-    // Fallback: a visible composer textbox that is NOT a comment field.
     textbox = await waitFor(() => [...document.querySelectorAll('[role="textbox"][contenteditable="true"]')]
       .find(t => t.offsetParent !== null && !/comment|תגוב/i.test(t.getAttribute('aria-label') || '')), 4000);
     scope = document;
@@ -48,30 +58,29 @@ async function publishToGroup(text) {
   textbox.focus();
   await sleep(500);
 
-  // 3) PASTE the whole text in one shot (line by line to preserve paragraphs).
-  const inserted = await insertText(textbox, text);
-  if (!inserted) throw new Error('Could not insert the post text');
-
-  // 4) If the text carries the property link, wait for Facebook to render its
-  //    preview card (and to enable the Post button). Never block forever.
-  if (text.includes(PROPERTY_DOMAIN)) {
-    const previewed = await waitForLinkPreview(scope, 12000);
-    log(previewed ? 'Link preview loaded' : 'Link preview not detected (continuing anyway)');
-    await sleep(1500);
+  // 3) Build the post: link-first for the card, then the clean body.
+  if (link) {
+    if (!await insertText(textbox, link)) throw new Error('Could not insert the link');
+    const previewed = await waitForLinkPreview(scope, 15000);
+    log(previewed ? 'Link preview loaded' : 'Link preview not detected');
+    await sleep(1800); // let the card finish attaching before we swap the text
+    if (!await insertText(textbox, cleanText)) throw new Error('Could not insert the post text');
+    await sleep(1000);
   } else {
+    if (!await insertText(textbox, cleanText)) throw new Error('Could not insert the post text');
     await sleep(1500);
   }
 
-  // 5) Click Post (inside the modal; poll until it is enabled).
+  // 4) Click Post (inside the modal; poll until it is enabled).
   const clicked = await clickPostButton(scope);
   if (!clicked) throw new Error('Post button not found or not clickable');
 
-  // 6) VERIFY: the composer must actually close. Facebook only closes the dialog
-  //    on a SUCCESSFUL submit (on error it keeps the dialog open with the error),
-  //    so this is a real confirmation, not a guess. A big group + the link-preview
-  //    fetch can take 15-30s to submit, so we wait generously — a too-short
-  //    timeout would falsely report failure and trigger a retry → double post.
-  const closed = await waitForComposerClosed(modal, textbox, 45000);
+  // 5) VERIFY: the composer must actually close. Facebook only closes the dialog
+  //    on a SUCCESSFUL submit, so this is a real confirmation. A fresh OG scrape
+  //    (cache-busted link) makes a big group slow to submit — observed 45s+ — so
+  //    wait generously: a too-short timeout would falsely report failure and
+  //    trigger a retry → double post.
+  const closed = await waitForComposerClosed(modal, textbox, 90000);
   if (!closed) throw new Error('Post not confirmed — composer stayed open');
 
   log('✅ Post confirmed (composer closed)');
