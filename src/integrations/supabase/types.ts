@@ -3732,6 +3732,9 @@ export type Database = {
           group_url: string
           id: string
           is_active: boolean
+          is_joined: boolean
+          joined_at: string | null
+          member_count: number | null
           notes: string | null
         }
         Insert: {
@@ -3742,6 +3745,9 @@ export type Database = {
           group_url: string
           id?: string
           is_active?: boolean
+          is_joined?: boolean
+          joined_at?: string | null
+          member_count?: number | null
           notes?: string | null
         }
         Update: {
@@ -3752,6 +3758,9 @@ export type Database = {
           group_url?: string
           id?: string
           is_active?: boolean
+          is_joined?: boolean
+          joined_at?: string | null
+          member_count?: number | null
           notes?: string | null
         }
         Relationships: [

@@ -259,6 +259,9 @@ export function useSaveFacebookGroup() {
       category?: string;
       notes?: string;
       is_active?: boolean;
+      member_count?: number | null;
+      is_joined?: boolean;
+      joined_at?: string | null;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -292,5 +295,22 @@ export function useDeleteFacebookGroup() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['facebook-groups'] }),
+  });
+}
+
+// Lightweight partial update — used by the table's one-click "joined" toggle and
+// any other in-place field patch, without forcing a full add/edit dialog save.
+export function useUpdateFacebookGroup() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: unknown }) => {
+      const { error } = await supabase.from('social_facebook_groups').update(updates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['facebook-groups'] }),
+    onError: (e: Error) => {
+      toast({ title: 'שגיאה', description: e.message, variant: 'destructive' });
+    },
   });
 }
