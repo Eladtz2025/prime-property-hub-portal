@@ -5,55 +5,71 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const FUNC_URL = `${SUPABASE_URL}/functions/v1/group-publish-queue`;
 
 const CHECK_INTERVAL_MINUTES = 2;
-const POST_DELAY = { min: 60000, max: 120000 }; // 60-120 sec
+const POST_DELAY = { min: 60000, max: 120000 }; // 60-120s cool-down between posts
+const LEASE_KEY = 'processingLease';
+const LEASE_MS = 6 * 60 * 1000; // one post must finish within 6 min, else the lease auto-expires
 
-// ─── State ───
-let isProcessing = false;
-
-// ─── Alarm setup ───
-chrome.alarms.create('checkQueue', { periodInMinutes: CHECK_INTERVAL_MINUTES });
+// ─── Alarm setup — also (re)created on install/startup so it survives the
+//     MV3 service worker being suspended. ───
+function ensureAlarm() {
+  chrome.alarms.create('checkQueue', { periodInMinutes: CHECK_INTERVAL_MINUTES });
+}
+ensureAlarm();
+chrome.runtime.onInstalled.addListener(ensureAlarm);
+chrome.runtime.onStartup.addListener(ensureAlarm);
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== 'checkQueue') return;
-
   const { paused } = await chrome.storage.local.get('paused');
   if (paused) return;
-  if (isProcessing) return;
-
   await processNextPost();
 });
 
+// ─── Processing lease ───
+// A persistent lock in storage. The MV3 worker can be killed mid-post (a single
+// post runs for 1-3 min); without this, the next 2-min alarm would wake a fresh
+// worker with the in-memory flag reset and start a SECOND overlapping run —
+// double-posting, which is exactly what Facebook bans accounts for. The lease
+// survives worker sleep and auto-expires if a run dies, so the queue never stalls
+// forever either.
+async function acquireLease() {
+  const { [LEASE_KEY]: until = 0 } = await chrome.storage.local.get(LEASE_KEY);
+  if (until && Date.now() < until) return false; // a run is already in progress
+  await chrome.storage.local.set({ [LEASE_KEY]: Date.now() + LEASE_MS });
+  return true;
+}
+async function releaseLease() {
+  await chrome.storage.local.set({ [LEASE_KEY]: 0 });
+}
+
 // ─── Main processing loop ───
 async function processNextPost() {
-  isProcessing = true;
+  if (!(await acquireLease())) return; // someone else holds the lease
 
   try {
-    // 1. Fetch next post from queue
+    // 1. Fetch next post from the queue
     const res = await fetch(`${FUNC_URL}?action=next`, {
       headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` },
     });
     const data = await res.json();
-
-    if (!data || !data.id) {
-      isProcessing = false;
-      return;
-    }
+    if (!data || !data.id) return;
 
     await addLog(`🔄 פותח קבוצה: ${data.group_name}`);
 
-    // 2. Open a tab to the group
-    const tab = await chrome.tabs.create({ url: data.group_url, active: false });
+    // 2. Open the group on the canonical desktop site (our selectors target it).
+    const groupUrl = normalizeFacebookUrl(data.group_url);
+    const tab = await chrome.tabs.create({ url: groupUrl, active: false });
 
-    // 3. Wait for tab to load
-    await waitForTabLoad(tab.id);
-    await sleep(3000); // Extra wait for Facebook JS to render
-
-    // 4. Send message to content script
     try {
+      // 3. Wait for the tab, then hand the prepared text to the content script.
+      //    No images: we rely on Facebook's link-preview image (option A), so we
+      //    only pass the text (which already contains the property link).
+      await waitForTabLoad(tab.id);
+      await sleep(3000);
+
       const result = await chrome.tabs.sendMessage(tab.id, {
         action: 'publishPost',
         text: data.content_text,
-        images: data.image_urls || [],
       });
 
       if (result && result.success) {
@@ -70,30 +86,35 @@ async function processNextPost() {
       await reportFail(data.id, err.message || 'Message send failed');
       await addLog(`❌ שגיאה: ${data.group_name} — ${err.message}`);
       await incrementStat('failed');
+    } finally {
+      // 4. Close the tab no matter what.
+      try { await chrome.tabs.remove(tab.id); } catch (_) {}
     }
 
-    // 5. Close the tab
-    try { await chrome.tabs.remove(tab.id); } catch (_) {}
-
-    // 6. Random delay before next post
+    // 5. Cool-down before the next post — kept INSIDE the lease so the 2-min
+    //    alarm can't start an overlapping run during the gap.
     const delay = POST_DELAY.min + Math.random() * (POST_DELAY.max - POST_DELAY.min);
     await sleep(delay);
-
   } catch (err) {
     await addLog(`⚠️ שגיאת מערכת: ${err.message}`);
+  } finally {
+    await releaseLease();
   }
+}
 
-  isProcessing = false;
+function normalizeFacebookUrl(url) {
+  try {
+    return String(url)
+      .replace('://m.facebook.com', '://www.facebook.com')
+      .replace('://web.facebook.com', '://www.facebook.com');
+  } catch (_) { return url; }
 }
 
 // ─── API helpers ───
 async function reportComplete(id) {
   await fetch(`${FUNC_URL}?action=complete`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ id }),
   });
 }
@@ -101,10 +122,7 @@ async function reportComplete(id) {
 async function reportFail(id, error) {
   await fetch(`${FUNC_URL}?action=fail`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ id, error }),
   });
 }
@@ -119,7 +137,8 @@ function waitForTabLoad(tabId) {
       }
     };
     chrome.tabs.onUpdated.addListener(listener);
-    // Timeout after 30 seconds
+    // Resolve anyway after 30s — the content script polls for the composer, so a
+    // slightly-early start is fine.
     setTimeout(() => {
       chrome.tabs.onUpdated.removeListener(listener);
       resolve();
@@ -127,15 +146,12 @@ function waitForTabLoad(tabId) {
   });
 }
 
-function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ─── Logging ───
+// ─── Logging / stats ───
 async function addLog(message) {
   const { logs = [] } = await chrome.storage.local.get('logs');
   logs.unshift({ time: new Date().toISOString(), message });
-  // Keep last 50 entries
   await chrome.storage.local.set({ logs: logs.slice(0, 50) });
 }
 
@@ -154,7 +170,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
   if (msg.action === 'forceCheck') {
-    processNextPost();
+    // processNextPost() no-ops while the lease is held, so a manual click can't
+    // start a second overlapping run.
+    chrome.storage.local.get('paused', ({ paused }) => { if (!paused) processNextPost(); });
     sendResponse({ ok: true });
   }
 });
@@ -164,7 +182,7 @@ async function getStats() {
   const { stats = {}, logs = [], paused = false } = await chrome.storage.local.get(['stats', 'logs', 'paused']);
   const todayStats = stats[today] || { published: 0, failed: 0 };
 
-  // Also fetch queue stats from server
+  // Also fetch queue stats from the server.
   try {
     const res = await fetch(`${FUNC_URL}?action=stats`, {
       headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` },
