@@ -46,7 +46,9 @@ import {
   Share2,
   MessageCircle,
   Facebook,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Printer,
+  PhoneCall
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -77,6 +79,30 @@ import { useQueryClient } from '@tanstack/react-query';
 
 const OptimizedMobilePropertyCard = memo(MobilePropertyCard);
 
+// Plain-Hebrew "how long ago" for the last-contact column (no extra deps / locale imports).
+const relativeFromNow = (iso?: string): string | null => {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return null;
+  const days = Math.floor((Date.now() - t) / 86400000);
+  if (days <= 0) return 'היום';
+  if (days === 1) return 'אתמול';
+  if (days < 7) return `לפני ${days} ימים`;
+  if (days < 30) { const w = Math.floor(days / 7); return w === 1 ? 'לפני שבוע' : `לפני ${w} שבועות`; }
+  if (days < 365) { const m = Math.floor(days / 30); return m === 1 ? 'לפני חודש' : `לפני ${m} חודשים`; }
+  const y = Math.floor(days / 365);
+  return y === 1 ? 'לפני שנה' : `לפני ${y} שנים`;
+};
+
+// Escape user-entered text before it goes into the print window's raw HTML.
+const escapeHtml = (s: unknown): string =>
+  String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 export const Properties: React.FC = memo(() => {
   const { isMobile } = useMobileOptimization();
   const { toast } = useToast();
@@ -87,7 +113,7 @@ export const Properties: React.FC = memo(() => {
   const canCreateProperties = hasPermission('properties', 'create');
   const canEditProperties = hasPermission('properties', 'update');
   const canDeleteProperties = hasPermission('properties', 'delete');
-  const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate'>('address');
+  const [sortBy, setSortBy] = useState<'address' | 'ownerName' | 'status' | 'leaseEndDate' | 'lastContactDate'>('address');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [expandedPropertyId, setExpandedPropertyId] = useState<string | null>(null);
@@ -101,6 +127,7 @@ export const Properties: React.FC = memo(() => {
     addProperty,
     addPropertyAsync,
     updateProperty,
+    updatePropertyAsync,
     deletePropertyAsync,
     isUpdatingProperty,
     refetch
@@ -150,6 +177,13 @@ export const Properties: React.FC = memo(() => {
           else if (!a.leaseEndDate) comparison = 1;
           else if (!b.leaseEndDate) comparison = -1;
           else comparison = new Date(a.leaseEndDate).getTime() - new Date(b.leaseEndDate).getTime();
+          break;
+        case 'lastContactDate':
+          // Never-contacted (no date) always sort to the end on ascending, like lease dates.
+          if (!a.lastContactDate && !b.lastContactDate) comparison = 0;
+          else if (!a.lastContactDate) comparison = 1;
+          else if (!b.lastContactDate) comparison = -1;
+          else comparison = new Date(a.lastContactDate).getTime() - new Date(b.lastContactDate).getTime();
           break;
         case 'ownerName':
           comparison = (a.ownerName || '').trim().localeCompare((b.ownerName || '').trim(), 'he');
@@ -301,7 +335,7 @@ export const Properties: React.FC = memo(() => {
     }
   };
 
-  const handleSort = (field: 'address' | 'ownerName' | 'status' | 'leaseEndDate') => {
+  const handleSort = (field: 'address' | 'ownerName' | 'status' | 'leaseEndDate' | 'lastContactDate') => {
     if (sortBy === field) {
       // Toggle direction if clicking same column
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -310,6 +344,121 @@ export const Properties: React.FC = memo(() => {
       setSortBy(field);
       setSortDirection('asc');
     }
+  };
+
+  // Quick, non-destructive "I spoke to the owner today" stamp. Writes only the
+  // last-contact date (leaves contact status / attempt counters untouched) so the
+  // new column is fillable straight from the table.
+  const handleMarkTalkedToday = async (property: Property) => {
+    try {
+      await updatePropertyAsync({
+        ...property,
+        lastContactDate: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+      });
+      toast({
+        title: "עודכן",
+        description: `סומן שדיברת היום עם ${(property.ownerName || '').trim() || 'בעל הנכס'}`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "העדכון נכשל",
+        description: "לא ניתן היה לעדכן את תאריך השיחה. ייתכן שאין הרשאה מתאימה, או שאירעה שגיאת רשת.",
+      });
+    }
+  };
+
+  // Print the FULL filtered + sorted list (not just the current page) as a clean,
+  // self-contained RTL report. A dedicated print window avoids fighting the admin
+  // layout's sidebar/nav, and prints every matching row in the on-screen sort order.
+  const handlePrint = () => {
+    const rows = filteredAndSortedProperties;
+    if (rows.length === 0) {
+      toast({ title: "אין נכסים להדפסה", description: "הרשימה ריקה או שאין תוצאות לחיפוש הנוכחי." });
+      return;
+    }
+    const win = window.open('', '_blank');
+    if (!win) {
+      toast({
+        variant: "destructive",
+        title: "ההדפסה נחסמה",
+        description: "אפשר חלונות קופצים (popups) עבור האתר כדי להדפיס.",
+      });
+      return;
+    }
+
+    const sortLabels: Record<typeof sortBy, string> = {
+      address: 'כתובת',
+      ownerName: 'בעל הנכס',
+      status: 'סטטוס',
+      leaseEndDate: 'סיום חוזה',
+      lastContactDate: 'שיחה אחרונה',
+    };
+    const generatedAt = new Date().toLocaleString('he-IL');
+
+    const bodyRows = rows.map((p, i) => {
+      const lastContact = p.lastContactDate
+        ? `${escapeHtml(new Date(p.lastContactDate).toLocaleDateString('he-IL'))} <span class="muted">(${escapeHtml(relativeFromNow(p.lastContactDate) || '')})</span>`
+        : '<span class="muted">טרם דובר</span>';
+      const phone = p.ownerPhone ? escapeHtml(formatPhoneDisplay(p.ownerPhone, canViewPhone)) : '';
+      const lease = p.leaseEndDate ? escapeHtml(new Date(p.leaseEndDate).toLocaleDateString('he-IL')) : '—';
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${escapeHtml(p.address || '')}</td>
+        <td>${escapeHtml(p.ownerName || '')}${phone ? `<br><span class="muted">${phone}</span>` : ''}</td>
+        <td>${escapeHtml(getPropertyTypeText(p.property_type))}</td>
+        <td>${escapeHtml(getStatusText(p.status))}</td>
+        <td>${lease}</td>
+        <td>${lastContact}</td>
+      </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8" />
+  <title>רשימת נכסים</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, 'Segoe UI', sans-serif; margin: 24px; direction: rtl; color: #111; }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    .meta { color: #555; font-size: 12px; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: right; vertical-align: top; }
+    th { background: #f3f4f6; font-weight: bold; }
+    tr:nth-child(even) td { background: #fafafa; }
+    .muted { color: #777; font-size: 11px; }
+    .footer { margin-top: 18px; font-size: 11px; color: #888; }
+    @media print { body { margin: 0; } @page { size: A4; margin: 10mm; } }
+  </style>
+</head>
+<body onload="window.focus(); window.print();">
+  <h1>רשימת נכסים</h1>
+  <div class="meta">
+    נוצר בתאריך: ${escapeHtml(generatedAt)} &middot; סה״כ ${rows.length} נכסים &middot; ממוין לפי: ${escapeHtml(sortLabels[sortBy])} (${sortDirection === 'asc' ? 'עולה' : 'יורד'})${filters.searchTerm ? ` &middot; חיפוש: "${escapeHtml(filters.searchTerm)}"` : ''}
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>כתובת</th>
+        <th>בעל הנכס</th>
+        <th>סוג</th>
+        <th>סטטוס</th>
+        <th>סיום חוזה</th>
+        <th>שיחה אחרונה</th>
+      </tr>
+    </thead>
+    <tbody>${bodyRows}</tbody>
+  </table>
+  <div class="footer">City Market &mdash; הופק ממערכת ניהול הנכסים</div>
+</body>
+</html>`;
+
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
   };
 
   // Derive the open property from the live list so the modal reflects edits/refetches
@@ -399,13 +548,21 @@ export const Properties: React.FC = memo(() => {
                   {startIndex}-{endIndex} מתוך {totalItems} נכסים
                 </div>
               )}
-              <Button 
+              <Button
                 onClick={handleRefreshProperties}
                 variant="outline"
                 size={isMobile ? "sm" : "default"}
               >
                 <RefreshCw className="h-4 w-4 ml-2" />
                 רענן נתונים
+              </Button>
+              <Button
+                onClick={handlePrint}
+                variant="outline"
+                size={isMobile ? "sm" : "default"}
+              >
+                <Printer className="h-4 w-4 ml-2" />
+                הדפס
               </Button>
               {canCreateProperties && (
                 <Button onClick={() => setShowAddModal(true)} size={isMobile ? "sm" : "default"}>
@@ -525,12 +682,21 @@ export const Properties: React.FC = memo(() => {
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
-                          <TableHead 
+                          <TableHead
                             className="text-center cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
                             onClick={() => handleSort('leaseEndDate')}
                           >
                             <div className="flex items-center justify-center gap-2">
                               סיום חוזה
+                              <ArrowUpDown className="h-4 w-4" />
+                            </div>
+                          </TableHead>
+                          <TableHead
+                            className="text-center cursor-pointer hover:bg-muted/50 px-4 py-3 border-l border-border"
+                            onClick={() => handleSort('lastContactDate')}
+                          >
+                            <div className="flex items-center justify-center gap-2">
+                              שיחה אחרונה
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
@@ -636,6 +802,37 @@ export const Properties: React.FC = memo(() => {
                                 ) : (
                                   <span className="text-muted-foreground text-sm">—</span>
                                 )}
+                              </TableCell>
+                              <TableCell className="text-center px-4 py-3 border-l border-border">
+                                <div className="flex flex-col items-center gap-1">
+                                  {property.lastContactDate ? (
+                                    <>
+                                      <div className="flex items-center justify-center gap-2">
+                                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm">{new Date(property.lastContactDate).toLocaleDateString('he-IL')}</span>
+                                      </div>
+                                      <span className="text-xs text-muted-foreground">{relativeFromNow(property.lastContactDate)}</span>
+                                    </>
+                                  ) : (
+                                    <span className="text-muted-foreground text-sm">טרם דובר</span>
+                                  )}
+                                  {canEditProperties && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleMarkTalkedToday(property)}
+                                          className="h-7 px-2 text-xs text-primary"
+                                        >
+                                          <PhoneCall className="h-3.5 w-3.5 ml-1" />
+                                          דיברתי היום
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>סמן שדיברת עם בעל הנכס היום</TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell className="text-center px-4 py-3 border-l border-border">
                                 <div className="flex items-center justify-center gap-3">
@@ -768,7 +965,7 @@ export const Properties: React.FC = memo(() => {
                             {/* Expandable Edit Row */}
                             {expandedPropertyId === property.id && (
                               <TableRow>
-                                <TableCell colSpan={10} className="p-0 border-0">
+                                <TableCell colSpan={11} className="p-0 border-0">
                                   <PropertyEditRow
                                     property={property}
                                     isOpen={true}
