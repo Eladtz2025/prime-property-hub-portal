@@ -346,6 +346,43 @@ export const AutoPublishManager: React.FC = () => {
     }
   };
 
+  // Facebook blocks API posting to groups, so a "groups" post is written to the
+  // social_group_publish_queue table that the browser extension drains — one row
+  // per selected group. The property link is embedded in the text so Facebook
+  // renders its preview card (the extension pastes text, not photos). This is the
+  // immediate/one-time counterpart of the recurring campaign's group fan-out.
+  const publishToGroupQueue = async (action: 'schedule' | 'publish', scheduledAt?: string): Promise<boolean> => {
+    const groups = (facebookGroups || []).filter((g: any) => selectedGroupIds.includes(g.id) && g.is_active !== false);
+    if (groups.length === 0) {
+      toast({ title: 'לא נבחרו קבוצות פייסבוק', variant: 'destructive' });
+      return false;
+    }
+    const propertyUrl = selectedPropertyId && selectedPropertyId !== 'free'
+      ? `https://www.ctmarketproperties.com/property/${selectedPropertyId}`
+      : undefined;
+    const rtlMark = '‏';
+    const groupText = rtlMark + contentText
+      + (hashtags ? `\n\n${hashtags}` : '')
+      + (propertyUrl ? `\n\n🔗 ${propertyUrl}` : '');
+    const when = action === 'publish' ? new Date().toISOString() : (scheduledAt || new Date().toISOString());
+    const rows = groups.map((g: any) => ({
+      group_id: g.id,
+      group_url: g.group_url,
+      group_name: g.group_name,
+      content_text: groupText,
+      image_urls: [],
+      scheduled_at: when,
+      status: 'pending',
+    }));
+    const { error } = await supabase.from('social_group_publish_queue').insert(rows);
+    if (error) {
+      toast({ title: 'שגיאה ביצירת תור הקבוצות', description: error.message, variant: 'destructive' });
+      return false;
+    }
+    toast({ title: action === 'publish' ? `🚀 נשלח ל-${groups.length} קבוצות (בתור הפרסום)` : `⏰ תוזמן ל-${groups.length} קבוצות` });
+    return true;
+  };
+
   const executeSave = async (action: 'draft' | 'schedule' | 'publish') => {
     const selectedPlatforms = getPlatformsList();
     let scheduledAt: string | undefined;
@@ -355,7 +392,17 @@ export const AutoPublishManager: React.FC = () => {
       dt.setHours(hours, mins, 0, 0);
       scheduledAt = dt.toISOString();
     }
+
+    // Facebook + "groups" target → the extension queue (not a Page post).
+    if (platforms.facebook && publishTarget === 'groups' && action !== 'draft') {
+      const ok = await publishToGroupQueue(action, scheduledAt);
+      if (!ok) return;
+      if (!platforms.instagram) { resetForm(); return; }
+    }
+
     for (const platform of selectedPlatforms) {
+      // Facebook was already routed to groups above — don't also post to the Page.
+      if (platform === 'facebook_page' && publishTarget === 'groups') continue;
       // In photos mode, send selected images; in link mode, Facebook generates OG card
       const isPhotosMode = postStyle === 'photos';
 
