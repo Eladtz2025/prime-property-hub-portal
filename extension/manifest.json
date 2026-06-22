@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "CT Market Auto Publisher",
   "description": "פרסום אוטומטי של נכסים בקבוצות פייסבוק — CT Market Properties",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "permissions": ["tabs", "storage", "alarms"],
   "host_permissions": [
     "https://*.facebook.com/*",

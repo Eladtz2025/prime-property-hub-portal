@@ -1,14 +1,16 @@
 // ===== CT Market Auto Publisher — Content Script =====
 // Runs inside a Facebook group page and posts the prepared listing by PASTING
-// the ready text (which already contains the property link), waiting for
-// Facebook to render the link-preview card, then posting — and only reporting
-// success once the composer actually closes (a real confirmation, not a guess).
+// the ready text (which already contains the property link) into the "Create
+// post" dialog, waiting for Facebook to render the link-preview card, then
+// posting — and only reporting success once the dialog actually closes.
 //
-// v3.0 — paste-based (no human-style typing), link-preview aware, verified
-//        success. No photo upload: we rely on Facebook's link-preview image
-//        generated from the property link in the text ("option A").
+// v3.1 — targets the composer MODAL specifically (the dialog that has both an
+//        editable textbox AND a Post button) so we never type into a feed
+//        comment box by mistake, and we poll for Post to become enabled. No
+//        photo upload: we rely on Facebook's link-preview image ("option A").
 
 const PROPERTY_DOMAIN = 'ctmarketproperties.com';
+const POST_LABELS = ['פרסום', 'פרסם', 'פרסמי', 'Post', 'Publish', 'שיתוף', 'Share'];
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'publishPost') {
@@ -23,18 +25,25 @@ async function publishToGroup(text) {
   log('Starting publish flow…');
   if (!text || !text.trim()) throw new Error('No text to publish');
 
-  // 1) Wait for the group feed + composer trigger to actually render. Facebook
-  //    lazy-loads (especially in a background tab), so we poll instead of a
-  //    fixed sleep.
+  // 1) Wait for the group feed + composer trigger to render, then open it.
   const composerTrigger = await waitFor(() => findComposerTrigger(), 25000);
   if (!composerTrigger) throw new Error('Composer trigger not found');
   composerTrigger.click();
 
-  // 2) Wait for the editable textbox to open (dialog or inline composer).
-  const textbox = await waitForElement(
-    '[role="dialog"] [role="textbox"][contenteditable="true"], [role="textbox"][contenteditable="true"]',
-    12000
-  );
+  // 2) Find the composer MODAL — the visible dialog that has BOTH an editable
+  //    textbox and a Post button. This is what distinguishes it from Messenger
+  //    and, crucially, from the inline "Comment as …" boxes in the feed.
+  const modal = await waitFor(() => findComposerModal(), 12000);
+  let scope, textbox;
+  if (modal) {
+    scope = modal;
+    textbox = modal.querySelector('[role="textbox"][contenteditable="true"]');
+  } else {
+    // Fallback: a visible composer textbox that is NOT a comment field.
+    textbox = await waitFor(() => [...document.querySelectorAll('[role="textbox"][contenteditable="true"]')]
+      .find(t => t.offsetParent !== null && !/comment|תגוב/i.test(t.getAttribute('aria-label') || '')), 4000);
+    scope = document;
+  }
   if (!textbox) throw new Error('Composer textbox did not open');
   textbox.focus();
   await sleep(500);
@@ -44,28 +53,51 @@ async function publishToGroup(text) {
   if (!inserted) throw new Error('Could not insert the post text');
 
   // 4) If the text carries the property link, wait for Facebook to render its
-  //    preview card. This both gives the listing photo and is our "the link was
-  //    accepted" signal. We never block on it forever — proceed after a timeout.
+  //    preview card (and to enable the Post button). Never block forever.
   if (text.includes(PROPERTY_DOMAIN)) {
-    const previewed = await waitForLinkPreview(12000);
+    const previewed = await waitForLinkPreview(scope, 12000);
     log(previewed ? 'Link preview loaded' : 'Link preview not detected (continuing anyway)');
-    await sleep(1500); // let the card settle
+    await sleep(1500);
   } else {
     await sleep(1500);
   }
 
-  // 5) Click Post.
-  const clicked = await clickPostButton();
+  // 5) Click Post (inside the modal; poll until it is enabled).
+  const clicked = await clickPostButton(scope);
   if (!clicked) throw new Error('Post button not found or not clickable');
 
-  // 6) VERIFY: the composer must actually close. If it stays open the post did
-  //    NOT go through (Facebook blocked it / wrong button) — report a real
-  //    failure instead of a false "published".
-  const closed = await waitForComposerToClose(textbox, 15000);
+  // 6) VERIFY: the composer must actually close. Facebook only closes the dialog
+  //    on a SUCCESSFUL submit (on error it keeps the dialog open with the error),
+  //    so this is a real confirmation, not a guess. A big group + the link-preview
+  //    fetch can take 15-30s to submit, so we wait generously — a too-short
+  //    timeout would falsely report failure and trigger a retry → double post.
+  const closed = await waitForComposerClosed(modal, textbox, 45000);
   if (!closed) throw new Error('Post not confirmed — composer stayed open');
 
   log('✅ Post confirmed (composer closed)');
   return { success: true };
+}
+
+// ============================================
+// Composer modal
+// ============================================
+
+// The "Create post" dialog is the visible [role=dialog] that contains BOTH an
+// editable textbox and a Post button. Picking it this way avoids the feed's
+// comment boxes and the Messenger panel.
+function findComposerModal() {
+  for (const d of document.querySelectorAll('[role="dialog"], [aria-modal="true"]')) {
+    if (d.offsetParent === null) continue;
+    const tb = d.querySelector('[role="textbox"][contenteditable="true"]');
+    if (!tb) continue;
+    const hasPost = [...d.querySelectorAll('[role="button"], [aria-label]')].some(b => {
+      const t = (b.textContent || '').trim();
+      const a = (b.getAttribute('aria-label') || '').trim();
+      return POST_LABELS.includes(t) || POST_LABELS.includes(a);
+    });
+    if (hasPost) return d;
+  }
+  return null;
 }
 
 // ============================================
@@ -76,7 +108,6 @@ async function insertText(element, text) {
   element.focus();
   await sleep(200);
 
-  // Clear anything already in the box.
   try {
     document.execCommand('selectAll', false, null);
     document.execCommand('delete', false, null);
@@ -84,8 +115,7 @@ async function insertText(element, text) {
   await sleep(100);
 
   // Primary: insert line by line. execCommand('insertText') drops the whole
-  // string at the caret and fires the input events Facebook's editor listens
-  // for; insertLineBreak keeps paragraph breaks without submitting the post.
+  // string at the caret and fires the input events Facebook's editor listens for.
   const lines = text.split('\n');
   for (let i = 0; i < lines.length; i++) {
     if (i > 0) { insertNewline(element); await sleep(30); }
@@ -103,7 +133,6 @@ async function insertText(element, text) {
   await sleep(400);
   if (textLanded(element, text)) return true;
 
-  // Last resort: real clipboard + execCommand paste (may be blocked; best effort).
   try {
     await navigator.clipboard.writeText(text);
     document.execCommand('paste');
@@ -118,8 +147,7 @@ function insertNewline(element) {
   } catch (_) {}
 }
 
-// True only when most of the text (and the link, if present) actually landed in
-// the box — so we never click Post on an empty or half-filled composer.
+// True only when most of the text (and the link, if present) actually landed.
 function textLanded(element, text) {
   const content = (element.textContent || element.innerText || '').replace(/\s+/g, ' ').trim();
   const want = text.replace(/\s+/g, ' ').trim();
@@ -133,14 +161,11 @@ function textLanded(element, text) {
 // Link preview
 // ============================================
 
-async function waitForLinkPreview(timeoutMs) {
+async function waitForLinkPreview(root, timeoutMs) {
+  const scope = root || document.body;
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    const scope = document.querySelector('[role="dialog"], [aria-modal="true"]') || document.body;
-    // A rendered anchor to our domain inside the composer is a definite signal.
     if (scope.querySelector(`a[href*="${PROPERTY_DOMAIN}"]`)) return true;
-    // Otherwise: the domain text shows up twice (once in the typed URL, once in
-    // the rendered preview card).
     const txt = scope.innerText || '';
     const hits = (txt.match(/ctmarketproperties\.com/gi) || []).length;
     if (hits >= 2) return true;
@@ -154,7 +179,6 @@ async function waitForLinkPreview(timeoutMs) {
 // ============================================
 
 function findComposerTrigger() {
-  // Strategy 1: aria-label
   const ariaLabels = [
     'Create a public post…', 'Create a public post', 'Create a post',
     'Write something…', 'Write something',
@@ -166,20 +190,16 @@ function findComposerTrigger() {
     if (el) { log(`Composer via aria-label: "${label}"`); return el; }
   }
 
-  // Strategy 2: role="button" with matching text
   const triggerTexts = [
     'כתבו משהו', 'Write something', 'מה חדש',
     "What's on your mind", 'יצירת פוסט', 'Create a post', 'מה על דעתך',
   ];
-  const buttons = document.querySelectorAll('[role="button"]');
-  for (const btn of buttons) {
+  for (const btn of document.querySelectorAll('[role="button"]')) {
     const btnText = btn.textContent || btn.innerText || '';
     if (triggerTexts.some(t => btnText.includes(t))) { log('Composer via button text'); return btn; }
   }
 
-  // Strategy 3: placeholder spans
-  const placeholderEls = document.querySelectorAll('span[data-text="true"], span[style*="user-select"]');
-  for (const el of placeholderEls) {
+  for (const el of document.querySelectorAll('span[data-text="true"], span[style*="user-select"]')) {
     const txt = el.textContent || '';
     if (triggerTexts.some(t => txt.includes(t))) {
       const clickable = el.closest('[role="button"]') || el.closest('[tabindex="0"]') || el.parentElement;
@@ -187,13 +207,11 @@ function findComposerTrigger() {
     }
   }
 
-  // Strategy 4: form structure
   for (const form of document.querySelectorAll('form[method="POST"]')) {
     const trigger = form.querySelector('[role="button"][tabindex="0"]');
     if (trigger) { log('Composer via form structure'); return trigger; }
   }
 
-  // Strategy 5: size heuristic (last resort)
   for (const el of document.querySelectorAll('[tabindex="0"][role="button"]')) {
     const rect = el.getBoundingClientRect();
     if (rect.height >= 30 && rect.height <= 70 && rect.width >= 200 && rect.top > 100 && rect.top < 600) {
@@ -206,15 +224,16 @@ function findComposerTrigger() {
 }
 
 // ============================================
-// Post button — prefer "Post", fall back to "Share"
+// Post button — prefer "Post", fall back to "Share"; poll until enabled
 // ============================================
 
-async function clickPostButton() {
+async function clickPostButton(root) {
+  const scope = root || document;
   const primary = ['פרסום', 'פרסם', 'פרסמי', 'Post', 'Publish'];
   const fallback = ['שיתוף', 'Share'];
 
-  const findIn = (root, labels) => {
-    for (const btn of root.querySelectorAll('[role="button"], [aria-label]')) {
+  const findEnabled = (labels) => {
+    for (const btn of scope.querySelectorAll('[role="button"], [aria-label]')) {
       if (btn.getAttribute('aria-disabled') === 'true') continue;
       if (btn.offsetParent === null) continue;
       const label = (btn.getAttribute('aria-label') || '').trim();
@@ -224,10 +243,9 @@ async function clickPostButton() {
     return null;
   };
 
-  const dialogs = document.querySelectorAll('[role="dialog"], [aria-modal="true"]');
-  for (const d of dialogs) { const b = findIn(d, primary); if (b) { log('Post button (dialog/primary)'); b.click(); return true; } }
-  for (const d of dialogs) { const b = findIn(d, fallback); if (b) { log('Post button (dialog/share)'); b.click(); return true; } }
-  const any = findIn(document, primary); if (any) { log('Post button (global/primary)'); any.click(); return true; }
+  // Facebook enables Post a beat after the text/preview lands — poll for it.
+  const btn = await waitFor(() => findEnabled(primary) || findEnabled(fallback), 8000);
+  if (btn) { log(`Clicking post button: "${(btn.textContent || btn.getAttribute('aria-label') || '').trim()}"`); btn.click(); return true; }
   return false;
 }
 
@@ -235,12 +253,12 @@ async function clickPostButton() {
 // Success verification
 // ============================================
 
-async function waitForComposerToClose(textbox, timeoutMs) {
+async function waitForComposerClosed(modal, textbox, timeoutMs) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    const gone = !document.contains(textbox) || textbox.offsetParent === null;
-    const stillOpen = document.querySelector('[role="dialog"] [role="textbox"][contenteditable="true"]');
-    if (gone && !stillOpen) return true;
+    const modalGone = !modal || !document.contains(modal) || modal.offsetParent === null;
+    const boxGone = !document.contains(textbox) || textbox.offsetParent === null;
+    if (modalGone && boxGone) return true;
     await sleep(500);
   }
   return false;
